@@ -69,6 +69,8 @@ import {
   XCircle,
   Filter,
   Search,
+  Bell,
+  LayoutDashboard,
 } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
@@ -194,12 +196,12 @@ export default function ManagerDashboard() {
 
   // Reports filters
   const [reportsFilter, setReportsFilter] = useState("today");
-  
+
   // Announcements state
   const [currentAnnouncementIndex, setCurrentAnnouncementIndex] = useState(0);
   const [announcementMessage, setAnnouncementMessage] = useState("");
   const [announcementTarget, setAnnouncementTarget] = useState("generators");
-  
+
   // Initialize filters with proper default values
   React.useEffect(() => {
     if (!selectedHouseholdFilter) {
@@ -210,11 +212,19 @@ export default function ManagerDashboard() {
     }
   }, []);
 
+  // Fetch announcements
+  const { data: announcements = [], isLoading: announcementsLoading } =
+    useQuery<any[]>({
+      queryKey: ["/api/announcements", user?.villageId],
+      enabled: !!user?.villageId,
+    });
   // Auto-rotate announcements
   React.useEffect(() => {
     if (announcements && announcements.length > 1) {
       const interval = setInterval(() => {
-        setCurrentAnnouncementIndex((prev) => (prev + 1) % Math.min(announcements.length, 3));
+        setCurrentAnnouncementIndex(
+          (prev) => (prev + 1) % Math.min(announcements.length, 3),
+        );
       }, 4000);
       return () => clearInterval(interval);
     }
@@ -277,12 +287,6 @@ export default function ManagerDashboard() {
   // Fetch village feedback data
   const { data: feedbacks = [] } = useQuery<any[]>({
     queryKey: ["/api/feedback/village", user?.villageId],
-    enabled: !!user?.villageId,
-  });
-
-  // Fetch announcements
-  const { data: announcements = [], isLoading: announcementsLoading } = useQuery<any[]>({
-    queryKey: ["/api/announcements", user?.villageId],
     enabled: !!user?.villageId,
   });
 
@@ -1202,14 +1206,14 @@ export default function ManagerDashboard() {
           <div className="fixed bottom-0 left-0 right-0 bg-white border-t z-50 md:hidden">
             <div className="flex">
               {[
-                { id: "overview", icon: BarChart3 },
+                { id: "overview", icon: LayoutDashboard },
                 { id: "collectors", icon: Users },
                 { id: "households", icon: Home },
                 { id: "collections", icon: Package },
                 { id: "issues", icon: AlertTriangle },
                 { id: "reports", icon: BarChart3 },
                 { id: "feedback", icon: MessageSquare },
-                { id: "announcements", icon: MessageSquare },
+                { id: "announcements", icon: Bell },
               ].map(({ id, icon: Icon }) => (
                 <button
                   key={id}
@@ -1240,7 +1244,7 @@ export default function ManagerDashboard() {
                       : "text-gray-700 hover:bg-gray-100",
                   )}
                 >
-                  <BarChart3 className="h-5 w-5" />
+                  <LayoutDashboard className="h-5 w-5" />
                   Overview
                 </button>
                 <button
@@ -1324,7 +1328,7 @@ export default function ManagerDashboard() {
                       : "text-gray-700 hover:bg-gray-100",
                   )}
                 >
-                  <MessageSquare className="h-5 w-5" />
+                  <Bell className="h-5 w-5" />
                   Announcements
                 </button>
               </nav>
@@ -1379,10 +1383,10 @@ export default function ManagerDashboard() {
                         Latest Announcements
                       </div>
                       {announcements && announcements.length > 3 && (
-                        <Button 
-                          size="sm" 
+                        <Button
+                          size="sm"
                           variant="outline"
-                          onClick={() => setActiveTab('announcements')}
+                          onClick={() => setActiveTab("announcements")}
                           className="text-xs"
                         >
                           View All
@@ -1397,37 +1401,47 @@ export default function ManagerDashboard() {
                       </div>
                     ) : announcements && announcements.length > 0 ? (
                       <div className="relative overflow-hidden">
-                        <div 
+                        <div
                           className="flex transition-transform duration-500 ease-in-out"
-                          style={{ 
+                          style={{
                             transform: `translateX(-${(currentAnnouncementIndex % Math.min(announcements.length, 3)) * 100}%)`,
-                            width: `${Math.min(announcements.length, 3) * 100}%`
+                            width: `${Math.min(announcements.length, 3) * 100}%`,
                           }}
                         >
-                          {announcements.slice(0, 3).map((announcement: any, index: number) => (
-                            <div 
-                              key={announcement.id} 
-                              className="w-full flex-shrink-0 px-1"
-                            >
-                              <div className="p-3 bg-blue-50 rounded-lg border-l-4 border-blue-400">
-                                <p className="text-sm text-gray-800 font-medium line-clamp-2">{announcement.message}</p>
-                                <p className="text-xs text-gray-500 mt-1">
-                                  {new Date(announcement.createdAt).toLocaleDateString()}
-                                </p>
+                          {announcements
+                            .slice(0, 3)
+                            .map((announcement: any, index: number) => (
+                              <div
+                                key={announcement.id}
+                                className="w-full flex-shrink-0 px-1"
+                              >
+                                <div className="p-3 bg-blue-50 rounded-lg border-l-4 border-blue-400">
+                                  <p className="text-sm text-gray-800 font-medium line-clamp-2">
+                                    {announcement.message}
+                                  </p>
+                                  <p className="text-xs text-gray-500 mt-1">
+                                    {new Date(
+                                      announcement.createdAt,
+                                    ).toLocaleDateString()}
+                                  </p>
+                                </div>
                               </div>
-                            </div>
-                          ))}
+                            ))}
                         </div>
                         {announcements.length > 1 && (
                           <div className="flex justify-center mt-3 space-x-1">
                             {announcements.slice(0, 3).map((_, index) => (
                               <button
                                 key={index}
-                                onClick={() => setCurrentAnnouncementIndex(index)}
+                                onClick={() =>
+                                  setCurrentAnnouncementIndex(index)
+                                }
                                 className={`w-2 h-2 rounded-full transition-colors ${
-                                  index === (currentAnnouncementIndex % Math.min(announcements.length, 3)) 
-                                    ? 'bg-blue-600'
-                                    : 'bg-gray-300'
+                                  index ===
+                                  currentAnnouncementIndex %
+                                    Math.min(announcements.length, 3)
+                                    ? "bg-blue-600"
+                                    : "bg-gray-300"
                                 }`}
                               />
                             ))}
@@ -1437,7 +1451,9 @@ export default function ManagerDashboard() {
                     ) : (
                       <div className="text-center py-4">
                         <MessageSquare className="w-8 h-8 text-gray-300 mx-auto mb-2" />
-                        <p className="text-gray-500 text-sm">No announcements</p>
+                        <p className="text-gray-500 text-sm">
+                          No announcements
+                        </p>
                       </div>
                     )}
                   </CardContent>
@@ -1557,8 +1573,8 @@ export default function ManagerDashboard() {
                           <CardContent className="p-4">
                             <div className="flex items-center justify-between">
                               <div className="flex-1">
-                                <div className="flex items-center gap-4">
-                                  <div>
+                                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 ">
+                                  <div className="sm:flex sm:justify-between">
                                     <h3 className="font-semibold">
                                       {collector.name}
                                     </h3>
@@ -4202,7 +4218,7 @@ export default function ManagerDashboard() {
           )}
 
           {activeTab === "announcements" && (
-            <div className="space-y-6">
+            <div className="space-y-6 md:w-full sm:mb-10 md:mr-8">
               <div className="flex justify-between items-center">
                 <div>
                   <h2 className="text-2xl font-bold">Announcements</h2>
@@ -4254,7 +4270,9 @@ export default function ManagerDashboard() {
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="generators">Generators (Households)</SelectItem>
+                          <SelectItem value="generators">
+                            Generators (Households)
+                          </SelectItem>
                           <SelectItem value="collectors">Collectors</SelectItem>
                           <SelectItem value="all">All Village Users</SelectItem>
                         </SelectContent>
@@ -4262,7 +4280,10 @@ export default function ManagerDashboard() {
                     </div>
                     <Button
                       type="submit"
-                      disabled={sendAnnouncementMutation.isPending || !announcementMessage.trim()}
+                      disabled={
+                        sendAnnouncementMutation.isPending ||
+                        !announcementMessage.trim()
+                      }
                       className="w-full"
                     >
                       {sendAnnouncementMutation.isPending
@@ -4306,20 +4327,27 @@ export default function ManagerDashboard() {
                                   variant="secondary"
                                   className="text-xs whitespace-nowrap"
                                 >
-                                  {announcement.targetAudience === 'generators' ? 'Households' : 
-                                   announcement.targetAudience === 'collectors' ? 'Collectors' : 
-                                   'All Users'}
+                                  {announcement.targetAudience === "generators"
+                                    ? "Households"
+                                    : announcement.targetAudience ===
+                                        "collectors"
+                                      ? "Collectors"
+                                      : "All Users"}
                                 </Badge>
                               </div>
-                              
+
                               <div className="flex items-center justify-between text-xs text-gray-500">
                                 <div className="flex items-center space-x-2">
                                   <MessageSquare className="w-3 h-3" />
-                                  <span className="font-medium">Official Announcement</span>
+                                  <span className="font-medium">
+                                    Official Announcement
+                                  </span>
                                 </div>
                                 <div className="flex items-center space-x-2">
                                   <span>
-                                    {new Date(announcement.createdAt).toLocaleDateString()}
+                                    {new Date(
+                                      announcement.createdAt,
+                                    ).toLocaleDateString()}
                                   </span>
                                 </div>
                               </div>
@@ -4334,7 +4362,8 @@ export default function ManagerDashboard() {
                           No Announcements
                         </h3>
                         <p className="text-gray-500 mb-4">
-                          You haven't sent any announcements yet. Send your first announcement above!
+                          You haven't sent any announcements yet. Send your
+                          first announcement above!
                         </p>
                       </div>
                     )}
