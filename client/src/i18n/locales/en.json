@@ -32,7 +32,19 @@
     "optional": "Optional",
     "or": "OR",
     "yes": "Yes",
-    "no": "No"
+    "no": "No",
+    "new": "New",
+    "welcome": "Welcome",
+    "change": "Change",
+    "changing": "Changing",
+    "submitting": "Submitting",
+    "all": "All",
+    "minimumChars": "Minimum 3 characters required",
+    "characters": "characters",
+    "minimum10Chars": "Minimum 10 characters required",
+    "tapToChange": "Tap to change photo",
+    "tapToUpload": "Tap to upload photo",
+    "photosHelp": "Photos help resolve issues faster"
   },
   "auth": {
     "login": "Login",
@@ -167,7 +179,13 @@
     "resolved": "Resolved",
     "closed": "Closed",
     "totalIssues": "Total Issues",
-    "openIssues": "Open Issues"
+    "openIssues": "Open Issues",
+    "noIssuesFound": "No issues reported yet. Report any problems you encounter during collection.",
+    "helpCommunity": "Help improve your community by reporting issues",
+    "exampleTitle": "e.g., Garbage not collected for 3 days",
+    "category": "Category",
+    "descriptionPlaceholder": "Provide detailed information about the issue, location, and when it started...",
+    "photoEvidence": "Photo Evidence"
   },
   "feedback": {
     "title": "Feedback",
@@ -215,7 +233,8 @@
     "expiryDate": "Expiry Date",
     "urgent": "Urgent",
     "normal": "Normal",
-    "sendAnnouncement": "Send Announcement"
+    "sendAnnouncement": "Send Announcement",
+    "checkLater": "Check back later for important updates"
   },
   "villages": {
     "title": "Villages",

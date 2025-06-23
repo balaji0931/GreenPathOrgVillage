@@ -19,7 +19,32 @@
     "previous": "पिछला",
     "refresh": "रीफ्रेश",
     "export": "निर्यात",
-    "download": "डाउनलोड"
+    "download": "डाउनलोड",
+    "viewAll": "सभी देखें",
+    "pending": "लंबित",
+    "changePassword": "पासवर्ड बदलें",
+    "newPassword": "नया पासवर्ड",
+    "confirmPassword": "पासवर्ड की पुष्टि करें",
+    "quickActions": "त्वरित कार्य",
+    "recentActivity": "हाल की गतिविधि",
+    "noData": "कोई डेटा उपलब्ध नहीं",
+    "rating": "रेटिंग",
+    "optional": "वैकल्पिक",
+    "or": "या",
+    "yes": "हाँ",
+    "no": "नहीं",
+    "new": "नया",
+    "welcome": "स्वागत",
+    "change": "बदलें",
+    "changing": "बदल रहा है",
+    "submitting": "जमा कर रहे हैं",
+    "all": "सभी",
+    "minimumChars": "न्यूनतम 3 अक्षर आवश्यक",
+    "characters": "अक्षर",
+    "minimum10Chars": "न्यूनतम 10 अक्षर आवश्यक",
+    "tapToChange": "फोटो बदलने के लिए टैप करें",
+    "tapToUpload": "फोटो अपलोड करने के लिए टैप करें",
+    "photosHelp": "फोटो समस्याओं को तेजी से हल करने में मदद करती हैं"
   },
   "auth": {
     "login": "लॉगिन",
@@ -144,17 +169,23 @@
     "status": "स्थिति",
     "reportedBy": "रिपोर्ट किया गया",
     "reportedDate": "रिपोर्ट दिनांक",
-    "resolvedDate": "हल दिनांक",
-    "managerResponse": "प्रबंधक की प्रतिक्रिया",
+    "resolvedDate": "समाधान दिनांक",
+    "managerResponse": "प्रबंधक प्रतिक्रिया",
     "high": "उच्च",
     "medium": "मध्यम",
     "low": "कम",
     "open": "खुला",
     "inProgress": "प्रगति में",
-    "resolved": "हल हो गया",
+    "resolved": "हल किया गया",
     "closed": "बंद",
     "totalIssues": "कुल समस्याएं",
-    "openIssues": "खुली समस्याएं"
+    "openIssues": "खुली समस्याएं",
+    "noIssuesFound": "अभी तक कोई समस्या की रिपोर्ट नहीं की गई है। संग्रह के दौरान आने वाली समस्याओं की रिपोर्ट करें।",
+    "helpCommunity": "समस्याओं की रिपोर्ट करके अपने समुदाय को बेहतर बनाने में मदद करें",
+    "exampleTitle": "जैसे, 3 दिनों से कचरा एकत्र नहीं किया गया",
+    "category": "श्रेणी",
+    "descriptionPlaceholder": "समस्या, स्थान और यह कब शुरू हुई, इसकी विस्तृत जानकारी प्रदान करें...",
+    "photoEvidence": "फोटो प्रमाण"
   },
   "feedback": {
     "title": "प्रतिक्रिया",
@@ -166,12 +197,12 @@
     "feedbackDate": "प्रतिक्रिया दिनांक",
     "positiveComments": "सकारात्मक टिप्पणी",
     "suggestions": "सुधार के सुझाव",
-    "overallSatisfaction": "कुल संतुष्टि"
+    "overallSatisfaction": "समग्र संतुष्टि"
   },
   "reports": {
     "title": "रिपोर्ट और विश्लेषण",
     "subtitle": "वास्तविक समय डेटा विश्लेषण और प्रदर्शन अंतर्दृष्टि",
-    "generateReport": "रिपोर्ट तैयार करें",
+    "generateReport": "रिपोर्ट बनाएं",
     "exportReport": "रिपोर्ट निर्यात करें",
     "dateRange": "दिनांक सीमा",
     "timePeriod": "समय अवधि",
@@ -181,10 +212,10 @@
     "allTime": "सभी समय",
     "collectionTrends": "संग्रह रुझान",
     "performanceMetrics": "प्रदर्शन मेट्रिक्स",
-    "segregationRates": "पृथक्करण दर",
+    "segregationRates": "पृथक्करण दरें",
     "collectorPerformance": "संग्रहकर्ता प्रदर्शन",
     "householdParticipation": "घरेलू भागीदारी",
-    "wasteComposition": "कचरे की संरचना",
+    "wasteComposition": "कचरा संरचना",
     "environmentalImpact": "पर्यावरणीय प्रभाव",
     "applyFilters": "फिल्टर लागू करें",
     "clearFilters": "फिल्टर साफ करें"
@@ -202,7 +233,8 @@
     "expiryDate": "समाप्ति दिनांक",
     "urgent": "तत्काल",
     "normal": "सामान्य",
-    "sendAnnouncement": "घोषणा भेजें"
+    "sendAnnouncement": "घोषणा भेजें",
+    "checkLater": "महत्वपूर्ण अपडेट के लिए बाद में वापस आएं"
   },
   "villages": {
     "title": "गांव",
@@ -213,7 +245,7 @@
     "managerPhone": "प्रबंधक फोन",
     "totalVillages": "कुल गांव",
     "activeVillages": "सक्रिय गांव",
-    "villageStats": "गांव के आंकड़े",
+    "villageStats": "गांव आंकड़े",
     "createVillage": "गांव बनाएं"
   },
   "profile": {
@@ -226,7 +258,7 @@
     "personalInfo": "व्यक्तिगत जानकारी",
     "accountSettings": "खाता सेटिंग्स",
     "languagePreference": "भाषा प्राथमिकता",
-    "notifications": "सूचनाएं",
+    "notifications": "अधिसूचनाएं",
     "updateProfile": "प्रोफाइल अपडेट करें"
   },
   "filters": {
@@ -246,10 +278,10 @@
     "operationSuccess": "ऑपरेशन सफलतापूर्वक पूरा हुआ",
     "operationFailed": "ऑपरेशन विफल",
     "confirmDelete": "क्या आप वाकई इस आइटम को हटाना चाहते हैं?",
-    "unsavedChanges": "आपके पास अनसेव्ड परिवर्तन हैं",
+    "unsavedChanges": "आपके पास असहेजे गए परिवर्तन हैं",
     "sessionTimeout": "आपका सत्र समाप्त हो गया है। कृपया फिर से लॉगिन करें।",
     "networkError": "नेटवर्क कनेक्शन त्रुटि। कृपया पुनः प्रयास करें।",
-    "fileUploadSuccess": "फाइल सफलतापूर्वक अपलोड की गई",
+    "fileUploadSuccess": "फाइल सफलतापूर्वक अपलोड हुई",
     "fileUploadError": "फाइल अपलोड करने में त्रुटि"
   },
   "validation": {

@@ -861,7 +861,7 @@ export default function CollectorDashboard() {
                     {collection.status}
                   </Badge>
                 </div>
-              )) || <p className="text-gray-500 text-center py-4">No recent collections</p>}
+              )) || <p className="text-gray-500 text-center py-4">{t('app.noData')}</p>}
             </div>
           </div>
         )}
@@ -870,13 +870,13 @@ export default function CollectorDashboard() {
         {activeTab === 'announcements' && (
           <div className="space-y-4 p-4">
             <div className="flex items-center justify-between">
-              <h2 className="text-lg font-bold">All Announcements</h2>
+              <h2 className="text-lg font-bold">{t('announcements.title')}</h2>
             </div>
 
             {announcementsLoading ? (
               <div className="text-center py-8">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600 mx-auto"></div>
-                <p className="text-sm text-gray-500 mt-2">Loading announcements...</p>
+                <p className="text-sm text-gray-500 mt-2">{t('app.loading')}...</p>
               </div>
             ) : announcements && announcements.length > 0 ? (
               <div className="space-y-3">
@@ -886,14 +886,14 @@ export default function CollectorDashboard() {
                       <div className="flex items-start justify-between">
                         <p className="text-sm font-medium text-gray-900 flex-1 pr-2">{announcement.message}</p>
                         <Badge variant="secondary" className="text-xs whitespace-nowrap">
-                          New
+                          {t('app.new')}
                         </Badge>
                       </div>
                       
                       <div className="flex items-center justify-between text-xs text-gray-500">
                         <div className="flex items-center space-x-2">
                           <Bell className="w-3 h-3" />
-                          <span className="font-medium">Official Announcement</span>
+                          <span className="font-medium">{t('announcements.title')}</span>
                         </div>
                         <div className="flex items-center space-x-2">
                           <Clock className="w-3 h-3" />
@@ -907,8 +907,8 @@ export default function CollectorDashboard() {
             ) : (
               <div className="text-center py-12">
                 <Bell className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-gray-900 mb-2">No Announcements</h3>
-                <p className="text-gray-500 mb-4">Check back later for important updates and news</p>
+                <h3 className="text-lg font-medium text-gray-900 mb-2">{t('app.noData')}</h3>
+                <p className="text-gray-500 mb-4">{t('announcements.checkLater')}</p>
               </div>
             )}
           </div>
@@ -918,28 +918,33 @@ export default function CollectorDashboard() {
         {activeTab === 'issues' && (
           <div className="space-y-4 p-4">
             <div className="flex items-center justify-between">
-              <h2 className="text-lg font-bold">Village Issues</h2>
+              <h2 className="text-lg font-bold">{t('issues.title')}</h2>
               <Button 
                 size="sm"
                 onClick={() => setShowIssueModal(true)}
                 className="bg-red-600 hover:bg-red-700"
               >
                 <Plus className="w-4 h-4 mr-1" />
-                Report
+                {t('issues.reportIssue')}
               </Button>
             </div>
 
             {/* Filter Tabs */}
             <div className="flex space-x-2 overflow-x-auto pb-2">
-              {['All', 'Open', 'In Progress', 'Resolved'].map((filter) => (
+              {[
+                { key: 'All', label: t('app.all') },
+                { key: 'Open', label: t('issues.open') },
+                { key: 'In Progress', label: t('issues.inProgress') },
+                { key: 'Resolved', label: t('issues.resolved') }
+              ].map((filter) => (
                 <Button 
-                  key={filter}
-                  variant={issueFilter === filter ? "default" : "outline"} 
+                  key={filter.key}
+                  variant={issueFilter === filter.key ? "default" : "outline"} 
                   size="sm"
                   className="whitespace-nowrap text-xs"
-                  onClick={() => setIssueFilter(filter)}
+                  onClick={() => setIssueFilter(filter.key)}
                 >
-                  {filter}
+                  {filter.label}
                 </Button>
               ))}
             </div>
@@ -1513,10 +1518,10 @@ export default function CollectorDashboard() {
         <DialogContent className="w-[96vw] max-w-lg max-h-[90vh] overflow-y-auto p-4 mx-auto">
           <DialogHeader className="pb-4">
             <DialogTitle className="text-xl font-bold text-center text-gray-900">
-              🚨 Report Village Issue
+              🚨 {t('issues.reportIssue')}
             </DialogTitle>
             <p className="text-sm text-gray-600 text-center mt-1">
-              Help improve your community by reporting issues
+              {t('issues.helpCommunity')}
             </p>
           </DialogHeader>
           
@@ -1524,20 +1529,20 @@ export default function CollectorDashboard() {
             {/* Title Field */}
             <div className="space-y-2">
               <Label htmlFor="title" className="text-sm font-semibold text-gray-800 flex items-center">
-                📝 Issue Title <span className="text-red-500 ml-1">*</span>
+                📝 {t('issues.issueTitle')} <span className="text-red-500 ml-1">*</span>
               </Label>
               <Input
                 id="title"
                 value={newIssue.title}
                 onChange={(e) => setNewIssue({ ...newIssue, title: e.target.value })}
-                placeholder="e.g., Garbage not collected for 3 days"
+                placeholder={t('issues.exampleTitle')}
                 className="h-12 text-base border-2 focus:border-red-400"
                 maxLength={100}
               />
               <div className="flex justify-between items-center">
                 <p className="text-xs text-gray-500">{newIssue.title.length}/100 characters</p>
                 {newIssue.title.trim().length < 3 && newIssue.title.length > 0 && (
-                  <p className="text-xs text-red-500">Minimum 3 characters required</p>
+                  <p className="text-xs text-red-500">{t('app.minimumChars')}</p>
                 )}
               </div>
             </div>
@@ -1545,7 +1550,7 @@ export default function CollectorDashboard() {
             {/* Category Field */}
             <div className="space-y-2">
               <Label htmlFor="category" className="text-sm font-semibold text-gray-800 flex items-center">
-                🏷️ Category <span className="text-red-500 ml-1">*</span>
+                🏷️ {t('issues.category')} <span className="text-red-500 ml-1">*</span>
               </Label>
               <Select value={newIssue.category} onValueChange={(value) => setNewIssue({ ...newIssue, category: value })}>
                 <SelectTrigger className="h-12 text-base border-2 focus:border-red-400">
@@ -1570,7 +1575,7 @@ export default function CollectorDashboard() {
                 id="description"
                 value={newIssue.description}
                 onChange={(e) => setNewIssue({ ...newIssue, description: e.target.value })}
-                placeholder="Provide detailed information about the issue, location, and when it started..."
+                placeholder={t('issues.descriptionPlaceholder')}
                 rows={5}
                 className="text-base border-2 focus:border-red-400 resize-none"
                 maxLength={500}
@@ -1616,10 +1621,10 @@ export default function CollectorDashboard() {
                         <Upload className="w-8 h-8 text-gray-400" />
                       </div>
                       <p className="text-sm font-medium text-gray-700">
-                        Tap to upload photo
+                        {t('app.tapToUpload')}
                       </p>
                       <p className="text-xs text-gray-500">
-                        Photos help resolve issues faster
+                        {t('app.photosHelp')}
                       </p>
                     </div>
                   )}
@@ -1839,7 +1844,7 @@ export default function CollectorDashboard() {
             onClick={() => setActiveTab('home')}
           >
             <Home size={18} />
-            <span className="text-xs mt-1">Home</span>
+            <span className="text-xs mt-1">{t('navigation.dashboard')}</span>
           </button>
           <button
             className={`flex flex-col items-center py-2 px-1 rounded-lg transition-colors ${
@@ -1853,7 +1858,7 @@ export default function CollectorDashboard() {
             }}
           >
             <QrCode size={18} />
-            <span className="text-xs mt-1">Scan</span>
+            <span className="text-xs mt-1">{t('collections.scanQR')}</span>
           </button>
           <button
             className={`flex flex-col items-center py-2 px-1 rounded-lg transition-colors ${
@@ -1864,7 +1869,7 @@ export default function CollectorDashboard() {
             onClick={() => setActiveTab('announcements')}
           >
             <Bell size={18} />
-            <span className="text-xs mt-1">News</span>
+            <span className="text-xs mt-1">{t('navigation.announcements')}</span>
           </button>
           <button
             className={`flex flex-col items-center py-2 px-1 rounded-lg transition-colors ${
@@ -1875,7 +1880,7 @@ export default function CollectorDashboard() {
             onClick={() => setActiveTab('issues')}
           >
             <AlertCircle size={18} />
-            <span className="text-xs mt-1">Issues</span>
+            <span className="text-xs mt-1">{t('navigation.issues')}</span>
           </button>
           <button
             className={`flex flex-col items-center py-2 px-1 rounded-lg transition-colors ${
@@ -1886,7 +1891,7 @@ export default function CollectorDashboard() {
             onClick={() => setActiveTab('profile')}
           >
             <User size={18} />
-            <span className="text-xs mt-1">Profile</span>
+            <span className="text-xs mt-1">{t('navigation.profile')}</span>
           </button>
         </div>
       </div>
