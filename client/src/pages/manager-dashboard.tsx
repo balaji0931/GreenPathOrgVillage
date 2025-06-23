@@ -2919,10 +2919,12 @@ export default function ManagerDashboard() {
           </div>
 
           {activeTab === "issues" && (
-            <div className="space-y-6">
+            <div className="space-y-6 md:w-full md:mr-8 mb-10">
               <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                 <div>
-                  <h2 className="text-xl sm:text-2xl font-bold">Issues Management</h2>
+                  <h2 className="text-xl sm:text-2xl font-bold">
+                    Issues Management
+                  </h2>
                   <p className="text-sm sm:text-base text-muted-foreground">
                     Manage and resolve issues reported by villagers
                   </p>
@@ -2950,7 +2952,9 @@ export default function ManagerDashboard() {
                     <AlertTriangle className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground flex-shrink-0" />
                   </CardHeader>
                   <CardContent className="p-3 sm:p-6 pt-0">
-                    <div className="text-lg sm:text-2xl font-bold">{allIssues.length}</div>
+                    <div className="text-lg sm:text-2xl font-bold">
+                      {allIssues.length}
+                    </div>
                     <p className="text-xs text-muted-foreground">All time</p>
                   </CardContent>
                 </Card>
@@ -3011,7 +3015,9 @@ export default function ManagerDashboard() {
               {/* Issues List */}
               <Card>
                 <CardHeader className="p-3 sm:p-6">
-                  <CardTitle className="text-lg sm:text-xl">Issue Reports</CardTitle>
+                  <CardTitle className="text-lg sm:text-xl">
+                    Issue Reports
+                  </CardTitle>
                   <CardDescription className="text-sm">
                     View and manage issues reported by village residents
                   </CardDescription>
@@ -3049,7 +3055,10 @@ export default function ManagerDashboard() {
                                             .replace("_", " ")
                                             .toUpperCase()}
                                         </Badge>
-                                        <Badge variant="outline" className="text-xs">
+                                        <Badge
+                                          variant="outline"
+                                          className="text-xs"
+                                        >
                                           {issue.category}
                                         </Badge>
                                       </div>
@@ -3084,7 +3093,9 @@ export default function ManagerDashboard() {
                                         className="text-xs"
                                       >
                                         <Eye className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
-                                        <span className="hidden xs:inline">Photo</span>
+                                        <span className="hidden xs:inline">
+                                          Photo
+                                        </span>
                                         <span className="xs:hidden">📷</span>
                                       </Button>
                                     )}
@@ -3097,7 +3108,9 @@ export default function ManagerDashboard() {
                                       className="text-xs"
                                     >
                                       <Edit className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
-                                      <span className="hidden xs:inline">Manage</span>
+                                      <span className="hidden xs:inline">
+                                        Manage
+                                      </span>
                                       <span className="xs:hidden">Edit</span>
                                     </Button>
                                   </div>
@@ -4071,7 +4084,9 @@ export default function ManagerDashboard() {
       <Dialog open={showIssueDialog} onOpenChange={setShowIssueDialog}>
         <DialogContent className="max-w-[95vw] sm:max-w-md max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle className="text-lg sm:text-xl">Manage Issue</DialogTitle>
+            <DialogTitle className="text-lg sm:text-xl">
+              Manage Issue
+            </DialogTitle>
           </DialogHeader>
           {selectedIssue && (
             <form
@@ -4093,11 +4108,15 @@ export default function ManagerDashboard() {
                 <h4 className="font-medium text-sm">Issue Details</h4>
                 <div>
                   <Label className="text-xs text-gray-600">Title</Label>
-                  <p className="text-sm font-medium break-words">{selectedIssue.title}</p>
+                  <p className="text-sm font-medium break-words">
+                    {selectedIssue.title}
+                  </p>
                 </div>
                 <div>
                   <Label className="text-xs text-gray-600">Description</Label>
-                  <p className="text-sm break-words">{selectedIssue.description}</p>
+                  <p className="text-sm break-words">
+                    {selectedIssue.description}
+                  </p>
                 </div>
                 <div>
                   <Label className="text-xs text-gray-600">Reported By</Label>
@@ -4111,12 +4130,16 @@ export default function ManagerDashboard() {
                 </div>
                 {selectedIssue.photoUrl && (
                   <div>
-                    <Label className="text-xs text-gray-600">Attached Photo</Label>
+                    <Label className="text-xs text-gray-600">
+                      Attached Photo
+                    </Label>
                     <Button
                       type="button"
                       size="sm"
                       variant="outline"
-                      onClick={() => window.open(selectedIssue.photoUrl, "_blank")}
+                      onClick={() =>
+                        window.open(selectedIssue.photoUrl, "_blank")
+                      }
                       className="mt-1"
                     >
                       <Eye className="h-3 w-3 mr-1" />
@@ -4126,7 +4149,9 @@ export default function ManagerDashboard() {
                 )}
                 {selectedIssue.managerReply && (
                   <div>
-                    <Label className="text-xs text-gray-600">Current Manager Reply</Label>
+                    <Label className="text-xs text-gray-600">
+                      Current Manager Reply
+                    </Label>
                     <p className="text-sm p-2 bg-blue-50 rounded border break-words">
                       {selectedIssue.managerReply}
                     </p>
@@ -4136,9 +4161,13 @@ export default function ManagerDashboard() {
 
               {/* Update Form Section */}
               <div className="space-y-4">
-                <h4 className="font-medium text-sm border-b pb-2">Update Issue</h4>
+                <h4 className="font-medium text-sm border-b pb-2">
+                  Update Issue
+                </h4>
                 <div>
-                  <Label htmlFor="status" className="text-sm">Status</Label>
+                  <Label htmlFor="status" className="text-sm">
+                    Status
+                  </Label>
                   <Select name="status" defaultValue={selectedIssue.status}>
                     <SelectTrigger className="mt-1">
                       <SelectValue />
@@ -4151,7 +4180,9 @@ export default function ManagerDashboard() {
                   </Select>
                 </div>
                 <div>
-                  <Label htmlFor="managerReply" className="text-sm">Manager Reply</Label>
+                  <Label htmlFor="managerReply" className="text-sm">
+                    Manager Reply
+                  </Label>
                   <Textarea
                     id="managerReply"
                     name="managerReply"
@@ -4177,7 +4208,9 @@ export default function ManagerDashboard() {
                   disabled={updateIssueMutation.isPending}
                   className="flex-1"
                 >
-                  {updateIssueMutation.isPending ? "Updating..." : "Update Issue"}
+                  {updateIssueMutation.isPending
+                    ? "Updating..."
+                    : "Update Issue"}
                 </Button>
               </div>
             </form>
