@@ -3,7 +3,6 @@ import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { queryClient } from "@/lib/queryClient";
 import { useAuth } from "@/hooks/useAuth";
-import { registerServiceWorker } from "@/hooks/usePWA";
 import { InstallPWA } from "@/components/InstallPWA";
 import Login from "@/pages/login";
 import AdminDashboard from "@/pages/admin-dashboard";
@@ -12,9 +11,6 @@ import CollectorDashboard from "@/pages/collector-dashboard";
 import GeneratorDashboard from "@/pages/generator-dashboard";
 import NotFound from "@/pages/not-found";
 import "./i18n";
-
-// Register service worker
-registerServiceWorker();
 
 function App() {
   return (

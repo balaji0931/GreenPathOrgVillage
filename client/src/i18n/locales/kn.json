@@ -50,7 +50,14 @@
     "observationExcessivePlastic": "ಅತಿಯಾದ ಪ್ಲಾಸ್ಟಿಕ್",
     "observationCleanOrganized": "ಶುಭ್ರ ಮತ್ತು ಸಂಘಟಿತ",
     "observationPoorHygiene": "ಕೆಟ್ಟ ನೈರ್ಮಲ್ಯ",
-    "observationNoWaste": "ತ್ಯಾಜ್ಯ ಇಲ್ಲ"
+    "observationNoWaste": "ತ್ಯಾಜ್ಯ ಇಲ್ಲ",
+    "installApp": "GreenPath ಆ್ಯಪ್ ಇನ್‌ಸ್ಟಾಲ್ ಮಾಡಿ",
+    "install": "ಇನ್‌ಸ್ಟಾಲ್ ಮಾಡಿ",
+    "installing": "ಇನ್‌ಸ್ಟಾಲ್ ಮಾಡುತ್ತಿದೆ...",
+    "installDescription": "ವೇಗವಾದ ಪ್ರವೇಶ ಮತ್ತು ಆಫ್‌ಲೈನ್ ವೈಶಿಷ್ಟ್ಯಗಳಿಗಾಗಿ ನಮ್ಮ ಆ್ಯಪ್ ಇನ್‌ಸ್ಟಾಲ್ ಮಾಡಿ",
+    "later": "ನಂತರ",
+    "worksOffline": "ಆಫ್‌ಲೈನ್‌ನಲ್ಲಿ ಕೆಲಸ ಮಾಡುತ್ತದೆ",
+    "fastLoading": "ವೇಗವಾದ ಲೋಡಿಂಗ್ • ಪುಶ್ ಅಧಿಸೂಚನೆಗಳು"
   },
   "auth": {
     "login": "ಲಾಗಿನ್",

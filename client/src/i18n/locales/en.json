@@ -50,7 +50,14 @@
     "observationExcessivePlastic": "Excessive plastic",
     "observationCleanOrganized": "Clean and organized",
     "observationPoorHygiene": "Poor hygiene",
-    "observationNoWaste": "No waste present"
+    "observationNoWaste": "No waste present",
+    "installApp": "Install GreenPath App",
+    "install": "Install",
+    "installing": "Installing...",
+    "installDescription": "Install our app for faster access and offline features",
+    "later": "Later",
+    "worksOffline": "Works offline",
+    "fastLoading": "Fast loading • Push notifications"
   },
   "auth": {
     "login": "Login",

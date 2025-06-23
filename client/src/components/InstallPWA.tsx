@@ -1,13 +1,19 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Download, Smartphone, Wifi, WifiOff } from 'lucide-react';
+import { Download, Smartphone, Wifi, WifiOff, X } from 'lucide-react';
 import { usePWA } from '@/hooks/usePWA';
 import { useTranslation } from 'react-i18next';
 
-export function InstallPWA() {
+interface InstallPWAProps {
+  showInline?: boolean;
+  onInstallComplete?: () => void;
+}
+
+export function InstallPWA({ showInline = false, onInstallComplete }: InstallPWAProps) {
   const { isInstallable, isInstalled, isOnline, installApp } = usePWA();
   const [isInstalling, setIsInstalling] = useState(false);
+  const [isHidden, setIsHidden] = useState(false);
   const { t } = useTranslation();
 
   const handleInstall = async () => {
@@ -17,11 +23,29 @@ export function InstallPWA() {
     
     if (success) {
       console.log('App installed successfully');
+      onInstallComplete?.();
     }
   };
 
-  if (isInstalled) {
-    return null; // Don't show install prompt if already installed
+  if (isInstalled || isHidden) {
+    return null; // Don't show install prompt if already installed or hidden
+  }
+
+  // Inline version for login page
+  if (showInline) {
+    if (!isInstallable) return null;
+    
+    return (
+      <Button
+        onClick={handleInstall}
+        disabled={isInstalling}
+        variant="outline"
+        className="w-full border-green-200 text-green-700 hover:bg-green-50"
+      >
+        <Download className="h-4 w-4 mr-2" />
+        {isInstalling ? t('app.installing') : t('app.installApp')}
+      </Button>
+    );
   }
 
   return (
@@ -41,12 +65,22 @@ export function InstallPWA() {
         <div className="fixed bottom-4 left-4 right-4 md:left-auto md:right-4 md:w-80 z-40">
           <Card className="shadow-lg border-green-200">
             <CardHeader className="pb-3">
-              <CardTitle className="flex items-center gap-2 text-lg">
-                <Smartphone className="h-5 w-5 text-green-600" />
-                Install GreenPath App
-              </CardTitle>
+              <div className="flex items-center justify-between">
+                <CardTitle className="flex items-center gap-2 text-lg">
+                  <Smartphone className="h-5 w-5 text-green-600" />
+                  {t('app.installApp')}
+                </CardTitle>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setIsHidden(true)}
+                  className="h-6 w-6 p-0"
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
               <CardDescription>
-                Install our app for faster access and offline features
+                {t('app.installDescription')}
               </CardDescription>
             </CardHeader>
             <CardContent className="pt-0">
@@ -58,25 +92,22 @@ export function InstallPWA() {
                   size="sm"
                 >
                   <Download className="h-4 w-4 mr-2" />
-                  {isInstalling ? 'Installing...' : 'Install'}
+                  {isInstalling ? t('app.installing') : t('app.install')}
                 </Button>
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => {
-                    // Hide the install prompt temporarily
-                    window.dispatchEvent(new Event('hideinstallprompt'));
-                  }}
+                  onClick={() => setIsHidden(true)}
                 >
-                  Later
+                  {t('app.later')}
                 </Button>
               </div>
               <div className="mt-3 text-xs text-muted-foreground">
                 <div className="flex items-center gap-1 mb-1">
                   <Wifi className="h-3 w-3" />
-                  Works offline
+                  {t('app.worksOffline')}
                 </div>
-                <div>Fast loading • Push notifications</div>
+                <div>{t('app.fastLoading')}</div>
               </div>
             </CardContent>
           </Card>

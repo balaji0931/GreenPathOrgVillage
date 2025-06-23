@@ -20,6 +20,11 @@ export function usePWA() {
     if (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) {
       setIsInstalled(true);
     }
+    
+    // Also check for iOS standalone mode
+    if ('standalone' in window.navigator && (window.navigator as any).standalone) {
+      setIsInstalled(true);
+    }
 
     // Listen for beforeinstallprompt event
     const handleBeforeInstallPrompt = (e: Event) => {
@@ -85,7 +90,8 @@ export function registerServiceWorker() {
     window.addEventListener('load', async () => {
       try {
         const registration = await navigator.serviceWorker.register('/sw.js', {
-          scope: '/'
+          scope: '/',
+          updateViaCache: 'none'
         });
 
         console.log('[PWA] Service Worker registered successfully:', registration.scope);

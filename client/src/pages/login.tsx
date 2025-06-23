@@ -7,6 +7,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { useTranslation } from 'react-i18next';
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
+import { InstallPWA } from "@/components/InstallPWA";
 import { Leaf } from "lucide-react";
 
 export default function Login() {

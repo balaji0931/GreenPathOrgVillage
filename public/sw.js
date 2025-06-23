@@ -7,10 +7,7 @@ const STATIC_ASSETS = [
   '/',
   '/manifest.json',
   '/icons/icon-192x192.png',
-  '/icons/icon-512x512.png',
-  // Add critical CSS and JS files
-  '/assets/index.css',
-  '/assets/index.js'
+  '/icons/icon-512x512.png'
 ];
 
 // API endpoints to cache
@@ -29,7 +26,11 @@ self.addEventListener('install', event => {
     caches.open(STATIC_CACHE)
       .then(cache => {
         console.log('[Service Worker] Caching static assets');
-        return cache.addAll(STATIC_ASSETS);
+        return cache.addAll(STATIC_ASSETS).catch(error => {
+          console.warn('[Service Worker] Failed to cache some assets:', error);
+          // Don't fail the entire installation if some assets can't be cached
+          return Promise.resolve();
+        });
       })
       .then(() => {
         console.log('[Service Worker] Installation complete');

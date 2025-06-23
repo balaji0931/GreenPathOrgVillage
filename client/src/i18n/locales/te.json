@@ -50,7 +50,14 @@
     "observationExcessivePlastic": "అధిక ప్లాస్టిక్",
     "observationCleanOrganized": "శుభ్రంగా మరియు వ్యవస్థీకృతంగా",
     "observationPoorHygiene": "చెడు పరిశుభ్రత",
-    "observationNoWaste": "వ్యర్థాలు లేవు"
+    "observationNoWaste": "వ్యర్థాలు లేవు",
+    "installApp": "GreenPath యాప్ ఇన్‌స్టాల్ చేయండి",
+    "install": "ఇన్‌స్టాల్ చేయండి",
+    "installing": "ఇన్‌స్టాల్ చేస్తోంది...",
+    "installDescription": "వేగవంతమైన యాక్సెస్ మరియు ఆఫ్‌లైన్ ఫీచర్‌ల కోసం మా యాప్‌ను ఇన్‌స్టాల్ చేయండి",
+    "later": "తరువాత",
+    "worksOffline": "ఆఫ్‌లైన్‌లో పనిచేస్తుంది",
+    "fastLoading": "వేగవంతమైన లోడింగ్ • పుష్ నోటిఫికేషన్‌లు"
   },
   "auth": {
     "login": "లాగిన్",
