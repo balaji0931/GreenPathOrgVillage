@@ -9,6 +9,7 @@ import ManagerDashboard from "@/pages/manager-dashboard";
 import CollectorDashboard from "@/pages/collector-dashboard";
 import GeneratorDashboard from "@/pages/generator-dashboard";
 import NotFound from "@/pages/not-found";
+import "./i18n";
 
 function App() {
   return (

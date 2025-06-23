@@ -3,6 +3,8 @@ import React from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
+import { useTranslation } from 'react-i18next';
+import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import {
   Card,
   CardContent,
@@ -171,6 +173,7 @@ export default function ManagerDashboard() {
   const { user } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { t } = useTranslation();
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [activeTab, setActiveTab] = useState("overview");
   const [householdSubTab, setHouseholdSubTab] = useState("list");
@@ -1171,13 +1174,14 @@ export default function ManagerDashboard() {
           <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 sm:gap-4">
             <div className="flex-1 min-w-0">
               <h1 className="text-lg sm:text-xl font-semibold truncate">
-                Manager Dashboard
+                {t('navigation.dashboard')}
               </h1>
               <p className="text-xs sm:text-sm text-muted-foreground truncate">
                 Village: {user?.villageId} | Manager: {user?.name}
               </p>
             </div>
             <div className="flex items-center gap-2 sm:gap-4 flex-wrap">
+              <LanguageSwitcher />
               <Button
                 variant="outline"
                 size="sm"
@@ -1195,7 +1199,7 @@ export default function ManagerDashboard() {
                 className="flex-1 sm:flex-none text-xs sm:text-sm"
               >
                 <LogOut className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
-                Logout
+                {t('auth.logout')}
               </Button>
             </div>
           </div>
@@ -1245,7 +1249,7 @@ export default function ManagerDashboard() {
                   )}
                 >
                   <LayoutDashboard className="h-5 w-5" />
-                  Overview
+                  {t('dashboard.overview')}
                 </button>
                 <button
                   onClick={() => setActiveTab("collectors")}
@@ -1257,7 +1261,7 @@ export default function ManagerDashboard() {
                   )}
                 >
                   <Users className="h-5 w-5" />
-                  Collectors
+                  {t('navigation.collectors')}
                 </button>
                 <button
                   onClick={() => setActiveTab("households")}
@@ -1269,7 +1273,7 @@ export default function ManagerDashboard() {
                   )}
                 >
                   <Home className="h-5 w-5" />
-                  Households
+                  {t('navigation.households')}
                 </button>
                 <button
                   onClick={() => setActiveTab("collections")}
@@ -1281,7 +1285,7 @@ export default function ManagerDashboard() {
                   )}
                 >
                   <Package className="h-5 w-5" />
-                  Collections
+                  {t('navigation.collections')}
                 </button>
                 <button
                   onClick={() => setActiveTab("issues")}
@@ -1293,7 +1297,7 @@ export default function ManagerDashboard() {
                   )}
                 >
                   <AlertTriangle className="h-5 w-5" />
-                  Issues
+                  {t('navigation.issues')}
                 </button>
                 <button
                   onClick={() => setActiveTab("reports")}
@@ -1305,7 +1309,7 @@ export default function ManagerDashboard() {
                   )}
                 >
                   <BarChart3 className="h-5 w-5" />
-                  Reports
+                  {t('navigation.reports')}
                 </button>
                 <button
                   onClick={() => setActiveTab("feedback")}
@@ -1317,7 +1321,7 @@ export default function ManagerDashboard() {
                   )}
                 >
                   <MessageSquare className="h-5 w-5" />
-                  Feedback
+                  {t('navigation.feedback')}
                 </button>
                 <button
                   onClick={() => setActiveTab("announcements")}
@@ -1329,7 +1333,7 @@ export default function ManagerDashboard() {
                   )}
                 >
                   <Bell className="h-5 w-5" />
-                  Announcements
+                  {t('navigation.announcements')}
                 </button>
               </nav>
             </div>
@@ -1340,9 +1344,9 @@ export default function ManagerDashboard() {
             {activeTab === "overview" && (
               <div className="space-y-6">
                 <div>
-                  <h2 className="text-2xl font-bold mb-2">Village Overview</h2>
+                  <h2 className="text-2xl font-bold mb-2">{t('dashboard.overview')}</h2>
                   <p className="text-muted-foreground">
-                    Summary of your village operations
+                    {t('dashboard.stats')}
                   </p>
                 </div>
 
