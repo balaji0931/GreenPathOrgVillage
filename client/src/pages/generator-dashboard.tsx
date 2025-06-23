@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
+import { useTranslation } from "react-i18next";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -24,6 +25,7 @@ import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { apiRequest, queryClient } from "@/lib/queryClient";
+import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import {
   Home,
   FileText,
@@ -69,6 +71,7 @@ const ISSUE_CATEGORIES = [
 export default function GeneratorDashboard() {
   const { user, logout } = useAuth();
   const { toast } = useToast();
+  const { t } = useTranslation();
 
   const [activeTab, setActiveTab] = useState("home");
   const [showIssueModal, setShowIssueModal] = useState(false);
@@ -414,15 +417,18 @@ export default function GeneratorDashboard() {
           <div className="flex items-center">
             <Home className="mr-3" size={24} />
             <div>
-              <h1 className="font-bold text-lg">Generator App</h1>
-              <p className="text-xs opacity-90">GreenPathOrg</p>
+              <h1 className="font-bold text-lg">{t('app.title')}</h1>
+              <p className="text-xs opacity-90">{t('roles.generator')}</p>
             </div>
           </div>
-          <div className="text-right">
-            <p className="text-sm font-medium">
-              {user?.name?.split(" - ")[1] || user?.name}
-            </p>
-            <p className="text-xs opacity-90">{user?.userId}</p>
+          <div className="flex items-center space-x-2">
+            <LanguageSwitcher />
+            <div className="text-right">
+              <p className="text-sm font-medium">
+                {user?.name?.split(" - ")[1] || user?.name}
+              </p>
+              <p className="text-xs opacity-90">{user?.userId}</p>
+            </div>
           </div>
         </div>
       </div>
@@ -440,7 +446,7 @@ export default function GeneratorDashboard() {
                 <CardTitle className="flex items-center justify-between text-lg">
                   <div className="flex items-center">
                     <Bell className="w-5 h-5 mr-2 text-blue-600" />
-                    Latest Announcements
+                    {t('announcements.title')}
                   </div>
                   {announcements && announcements.length > 3 && (
                     <Button
@@ -449,7 +455,7 @@ export default function GeneratorDashboard() {
                       onClick={() => setActiveTab("announcements")}
                       className="text-xs"
                     >
-                      View All
+                      {t('app.viewAll')}
                     </Button>
                   )}
                 </CardTitle>
@@ -509,7 +515,7 @@ export default function GeneratorDashboard() {
                 ) : (
                   <div className="text-center py-4">
                     <Bell className="w-8 h-8 text-gray-300 mx-auto mb-2" />
-                    <p className="text-gray-500 text-sm">No announcements</p>
+                    <p className="text-gray-500 text-sm">{t('app.noData')}</p>
                   </div>
                 )}
               </CardContent>
@@ -518,7 +524,7 @@ export default function GeneratorDashboard() {
             {/* Quick Actions */}
             <Card>
               <CardHeader className="pb-3">
-                <CardTitle className="text-lg">Quick Actions</CardTitle>
+                <CardTitle className="text-lg">{t('app.quickActions')}</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-2 gap-3">
@@ -528,7 +534,7 @@ export default function GeneratorDashboard() {
                     variant="outline"
                   >
                     <BarChart3 className="w-6 h-6" />
-                    <span className="text-xs">View Reports</span>
+                    <span className="text-xs">{t('reports.title')}</span>
                   </Button>
 
                   <Button
@@ -537,7 +543,7 @@ export default function GeneratorDashboard() {
                     variant="outline"
                   >
                     <Plus className="w-6 h-6" />
-                    <span className="text-xs">Report Issue</span>
+                    <span className="text-xs">{t('issues.reportIssue')}</span>
                   </Button>
                 </div>
               </CardContent>
@@ -546,7 +552,7 @@ export default function GeneratorDashboard() {
             {/* Recent Activity */}
             <Card>
               <CardHeader className="pb-3">
-                <CardTitle className="text-lg">Recent Collections</CardTitle>
+                <CardTitle className="text-lg">{t('collections.title')}</CardTitle>
               </CardHeader>
               <CardContent>
                 {historyLoading ? (
@@ -593,7 +599,7 @@ export default function GeneratorDashboard() {
                 ) : (
                   <div className="text-center py-4">
                     <Trash2 className="w-8 h-8 text-gray-300 mx-auto mb-2" />
-                    <p className="text-gray-500 text-sm">No collections yet</p>
+                    <p className="text-gray-500 text-sm">{t('app.noData')}</p>
                   </div>
                 )}
               </CardContent>
@@ -1157,12 +1163,12 @@ export default function GeneratorDashboard() {
       <div className="fixed bottom-0 left-1/2 transform -translate-x-1/2 w-full max-w-md bg-white border-t border-gray-200 px-4 py-2">
         <div className="flex justify-around">
           {[
-            { id: "home", label: "Home", icon: Home },
-            { id: "reports", label: "Reports", icon: BarChart3 },
-            { id: "collections", label: "History", icon: FileText },
-            { id: "issues", label: "Issues", icon: AlertTriangle },
-            { id: "announcements", label: "News", icon: Bell },
-            { id: "profile", label: "Profile", icon: User },
+            { id: "home", label: t('navigation.dashboard'), icon: Home },
+            { id: "reports", label: t('navigation.reports'), icon: BarChart3 },
+            { id: "collections", label: t('navigation.collections'), icon: FileText },
+            { id: "issues", label: t('navigation.issues'), icon: AlertTriangle },
+            { id: "announcements", label: t('navigation.announcements'), icon: Bell },
+            { id: "profile", label: t('navigation.profile'), icon: User },
           ].map((tab) => (
             <button
               key={tab.id}

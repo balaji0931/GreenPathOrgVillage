@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import * as React from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
+import { useTranslation } from "react-i18next";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -14,6 +15,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { QRScanner } from "@/components/qr-scanner";
+import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import { 
   Home, 
   QrCode, 
@@ -85,6 +87,7 @@ const ISSUE_CATEGORIES = [
 export default function CollectorDashboard() {
   const { user, logout } = useAuth();
   const { toast } = useToast();
+  const { t } = useTranslation();
   
   const [showScanner, setShowScanner] = useState(false);
   const [showCollectionModal, setShowCollectionModal] = useState(false);
@@ -650,13 +653,16 @@ export default function CollectorDashboard() {
           <div className="flex items-center">
             <Package className="mr-3" size={24} />
             <div>
-              <h1 className="font-bold text-lg">Collector App</h1>
-              <p className="text-xs opacity-90">GreenPathOrg</p>
+              <h1 className="font-bold text-lg">{t('app.title')}</h1>
+              <p className="text-xs opacity-90">{t('roles.collector')}</p>
             </div>
           </div>
-          <div className="text-right">
-            <p className="text-sm font-medium">{user?.name}</p>
-            <p className="text-xs opacity-90">{user?.userId}</p>
+          <div className="flex items-center space-x-2">
+            <LanguageSwitcher />
+            <div className="text-right">
+              <p className="text-sm font-medium">{user?.name}</p>
+              <p className="text-xs opacity-90">{user?.userId}</p>
+            </div>
           </div>
         </div>
       </div>
@@ -671,11 +677,11 @@ export default function CollectorDashboard() {
             <div className="grid grid-cols-2 gap-3" key={`stats-${collectionsToday.length}`}>
               <div className="bg-green-50 p-3 rounded-lg border">
                 <div className="text-xl font-bold text-green-600">{collectionsToday.length}</div>
-                <div className="text-xs text-green-700">Collected Today</div>
+                <div className="text-xs text-green-700">{t('collections.todayCollections')}</div>
               </div>
               <div className="bg-orange-50 p-3 rounded-lg border">
                 <div className="text-xl font-bold text-orange-600">{pendingHouseholds.length}</div>
-                <div className="text-xs text-orange-700">Pending</div>
+                <div className="text-xs text-orange-700">{t('app.pending')}</div>
               </div>
             </div>
 
@@ -685,7 +691,7 @@ export default function CollectorDashboard() {
                 <CardTitle className="flex items-center justify-between text-lg">
                   <div className="flex items-center">
                     <Bell className="w-5 h-5 mr-2 text-blue-600" />
-                    Latest Announcements
+                    {t('announcements.title')}
                   </div>
                   {announcements && announcements.length > 3 && (
                     <Button 
@@ -694,7 +700,7 @@ export default function CollectorDashboard() {
                       onClick={() => setActiveTab('announcements')}
                       className="text-xs"
                     >
-                      View All
+                      {t('app.viewAll')}
                     </Button>
                   )}
                 </CardTitle>
@@ -1428,7 +1434,7 @@ export default function CollectorDashboard() {
             {/* Voice Recording or Text Comments */}
             <div className="p-3 border border-gray-200 bg-gray-50 rounded-xl">
               <Label className="text-base font-bold text-center block mb-3">
-                💬 Add Comments (Optional)
+                💬 {t('collections.remarks')} ({t('app.optional')})
               </Label>
               
               {/* Voice Recording */}
@@ -1445,19 +1451,19 @@ export default function CollectorDashboard() {
                   disabled={createCollectionMutation.isPending}
                 >
                   {isRecording ? (
-                    <>🔴 Stop Recording</>
+                    <>🔴 {t('collections.stopRecording')}</>
                   ) : collectionForm.voiceRecording ? (
-                    <>✅ Voice Recorded</>
+                    <>✅ {t('collections.voiceRecorded')}</>
                   ) : (
-                    <>🎤 Record Voice</>
+                    <>🎤 {t('collections.recordVoice')}</>
                   )}
                 </Button>
               </div>
 
               {/* Text Input */}
-              <div className="text-center text-sm text-gray-600 mb-2">OR</div>
+              <div className="text-center text-sm text-gray-600 mb-2">{t('app.or')}</div>
               <Textarea
-                placeholder="Type any comments here..."
+                placeholder={t('collections.typeComments')}
                 rows={2}
                 value={collectionForm.remarks}
                 onChange={(e) => setCollectionForm({ ...collectionForm, remarks: e.target.value })}
