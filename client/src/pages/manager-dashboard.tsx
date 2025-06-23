@@ -2405,253 +2405,684 @@ export default function ManagerDashboard() {
 
           {activeTab === "reports" && (
             <div className="space-y-6">
-              <div className="flex justify-between items-center">
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                 <div>
                   <h2 className="text-2xl font-bold">Reports & Analytics</h2>
-                  <p className="text-muted-foreground">View trends and analytics for waste collection performance</p>
+                  <p className="text-muted-foreground">Real-time data analytics and performance insights</p>
                 </div>
-                <Select value={reportsFilter} onValueChange={setReportsFilter}>
-                  <SelectTrigger className="w-40">
-                    <SelectValue placeholder="Time period" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="today">Today</SelectItem>
-                    <SelectItem value="monthly">Monthly</SelectItem>
-                    <SelectItem value="alltime">All Time</SelectItem>
-                  </SelectContent>
-                </Select>
+                <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+                  <Select value={reportsFilter} onValueChange={setReportsFilter}>
+                    <SelectTrigger className="w-full sm:w-40">
+                      <SelectValue placeholder="Time period" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="today">Today</SelectItem>
+                      <SelectItem value="weekly">This Week</SelectItem>
+                      <SelectItem value="monthly">This Month</SelectItem>
+                      <SelectItem value="alltime">All Time</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <Button 
+                    variant="outline" 
+                    onClick={() => {
+                      queryClient.invalidateQueries({ queryKey: ['/api/waste-collections'] });
+                      queryClient.invalidateQueries({ queryKey: ['/api/issues'] });
+                      queryClient.invalidateQueries({ queryKey: ['/api/feedback'] });
+                      toast({ title: "Data refreshed" });
+                    }}
+                  >
+                    <TrendingUp className="h-4 w-4 mr-2" />
+                    Refresh Data
+                  </Button>
+                </div>
               </div>
 
-              {/* Key Metrics Cards - Mobile Responsive */}
-              <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-                <Card>
-                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">Collection Rate</CardTitle>
-                    <TrendingUp className="h-4 w-4 text-muted-foreground" />
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-2xl font-bold">
-                      {stats ? Math.round((stats.collectionsToday / stats.totalHouseholds) * 100) : 0}%
-                    </div>
-                    <p className="text-xs text-muted-foreground">
-                      {reportsFilter === "today" ? "Today" : reportsFilter === "monthly" ? "This month" : "Overall"}
-                    </p>
-                  </CardContent>
-                </Card>
-
-                <Card>
-                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">Segregation Rate</CardTitle>
-                    <Award className="h-4 w-4 text-muted-foreground" />
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-2xl font-bold text-green-600">
-                      {Array.isArray(allCollections) && allCollections.length > 0 
-                        ? Math.round((allCollections.filter(c => c.wasteSegregated).length / allCollections.length) * 100)
-                        : 0
-                      }%
-                    </div>
-                    <p className="text-xs text-muted-foreground">Properly segregated waste</p>
-                  </CardContent>
-                </Card>
-
-                <Card>
-                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">Bin Cleaning Rate</CardTitle>
-                    <CheckCircle className="h-4 w-4 text-muted-foreground" />
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-2xl font-bold text-blue-600">
-                      {Array.isArray(allCollections) && allCollections.length > 0 
-                        ? Math.round((allCollections.filter(c => c.binCleaned).length / allCollections.length) * 100)
-                        : 0
-                      }%
-                    </div>
-                    <p className="text-xs text-muted-foreground">Bins cleaned properly</p>
-                  </CardContent>
-                </Card>
-
-                <Card>
-                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">Average Rating</CardTitle>
-                    <Star className="h-4 w-4 text-muted-foreground" />
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-2xl font-bold text-yellow-600">
-                      {Array.isArray(allCollections) && allCollections.length > 0 
-                        ? (allCollections.reduce((sum, c) => sum + c.segregationRating, 0) / allCollections.length).toFixed(1)
-                        : '0.0'
-                      }
-                    </div>
-                    <p className="text-xs text-muted-foreground">Out of 5.0</p>
-                  </CardContent>
-                </Card>
-              </div>
-
-              {/* Charts Section - Mobile Responsive */}
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Collection Trends</CardTitle>
-                    <CardDescription>Daily collection counts over time</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="h-64 flex items-center justify-center bg-gray-50 rounded-lg">
-                      <div className="text-center">
-                        <BarChart3 className="w-12 h-12 text-gray-400 mx-auto mb-3" />
-                        <p className="text-muted-foreground">Collection trends chart</p>
-                        <p className="text-sm text-muted-foreground">
-                          {Array.isArray(allCollections) ? allCollections.length : 0} total collections recorded
-                        </p>
+              {/* Advanced Filter Panel */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg">Advanced Filters</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                    <div>
+                      <Label>Date Range</Label>
+                      <div className="flex gap-2">
+                        <Input
+                          type="date"
+                          value={collectionsDateFilter}
+                          onChange={(e) => setCollectionsDateFilter(e.target.value)}
+                          className="text-sm"
+                        />
                       </div>
                     </div>
+                    <div>
+                      <Label>Collector</Label>
+                      <Select value={selectedHouseholdFilter} onValueChange={setSelectedHouseholdFilter}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="All Collectors" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="">All Collectors</SelectItem>
+                          {collectors?.map(collector => (
+                            <SelectItem key={collector.id} value={collector.id.toString()}>
+                              {collector.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div>
+                      <Label>Status Filter</Label>
+                      <Select value={statusFilter} onValueChange={setStatusFilter}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="All Status" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="">All Status</SelectItem>
+                          <SelectItem value="collected">Collected</SelectItem>
+                          <SelectItem value="missed">Missed</SelectItem>
+                          <SelectItem value="partial">Partial</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="flex items-end">
+                      <Button 
+                        variant="outline" 
+                        onClick={() => {
+                          setCollectionsDateFilter("");
+                          setSelectedHouseholdFilter("");
+                          setStatusFilter("");
+                        }}
+                        className="w-full"
+                      >
+                        Clear Filters
+                      </Button>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Key Performance Indicators */}
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                <Card className="bg-gradient-to-r from-blue-50 to-blue-100 border-blue-200">
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium text-blue-800">Collection Efficiency</CardTitle>
+                    <TrendingUp className="h-4 w-4 text-blue-600" />
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold text-blue-900">
+                      {stats && stats.totalHouseholds > 0 
+                        ? Math.round((stats.collectionsToday / stats.totalHouseholds) * 100) 
+                        : 0}%
+                    </div>
+                    <p className="text-xs text-blue-700">
+                      {stats?.collectionsToday || 0} of {stats?.totalHouseholds || 0} households
+                    </p>
+                    <div className="w-full bg-blue-200 rounded-full h-2 mt-2">
+                      <div 
+                        className="bg-blue-600 h-2 rounded-full transition-all duration-500" 
+                        style={{ 
+                          width: `${stats && stats.totalHouseholds > 0 
+                            ? Math.round((stats.collectionsToday / stats.totalHouseholds) * 100) 
+                            : 0}%` 
+                        }}
+                      ></div>
+                    </div>
                   </CardContent>
                 </Card>
 
+                <Card className="bg-gradient-to-r from-green-50 to-green-100 border-green-200">
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium text-green-800">Segregation Quality</CardTitle>
+                    <Award className="h-4 w-4 text-green-600" />
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold text-green-900">
+                      {Array.isArray(allCollections) && allCollections.length > 0 
+                        ? Math.round((allCollections.filter(c => c.wasteSegregated).length / allCollections.length) * 100)
+                        : 0}%
+                    </div>
+                    <p className="text-xs text-green-700">
+                      {Array.isArray(allCollections) ? allCollections.filter(c => c.wasteSegregated).length : 0} properly segregated
+                    </p>
+                    <div className="w-full bg-green-200 rounded-full h-2 mt-2">
+                      <div 
+                        className="bg-green-600 h-2 rounded-full transition-all duration-500" 
+                        style={{ 
+                          width: `${Array.isArray(allCollections) && allCollections.length > 0 
+                            ? Math.round((allCollections.filter(c => c.wasteSegregated).length / allCollections.length) * 100)
+                            : 0}%` 
+                        }}
+                      ></div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card className="bg-gradient-to-r from-yellow-50 to-yellow-100 border-yellow-200">
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium text-yellow-800">Average Rating</CardTitle>
+                    <Star className="h-4 w-4 text-yellow-600" />
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold text-yellow-900">
+                      {Array.isArray(allCollections) && allCollections.length > 0 
+                        ? (allCollections.reduce((sum, c) => sum + (c.segregationRating || 0), 0) / allCollections.length).toFixed(1)
+                        : '0.0'}
+                    </div>
+                    <p className="text-xs text-yellow-700">Out of 5.0 stars</p>
+                    <div className="flex items-center mt-2">
+                      {Array.from({ length: 5 }).map((_, i) => (
+                        <Star 
+                          key={i} 
+                          className={`h-3 w-3 ${
+                            i < Math.round(Array.isArray(allCollections) && allCollections.length > 0 
+                              ? (allCollections.reduce((sum, c) => sum + (c.segregationRating || 0), 0) / allCollections.length)
+                              : 0)
+                              ? 'fill-yellow-400 text-yellow-400' 
+                              : 'text-yellow-200'
+                          }`} 
+                        />
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card className="bg-gradient-to-r from-red-50 to-red-100 border-red-200">
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium text-red-800">Open Issues</CardTitle>
+                    <AlertTriangle className="h-4 w-4 text-red-600" />
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold text-red-900">
+                      {Array.isArray(allIssues) ? allIssues.filter(i => i.status === 'open').length : 0}
+                    </div>
+                    <p className="text-xs text-red-700">
+                      {Array.isArray(allIssues) ? allIssues.length : 0} total issues
+                    </p>
+                    <div className="w-full bg-red-200 rounded-full h-2 mt-2">
+                      <div 
+                        className="bg-red-600 h-2 rounded-full transition-all duration-500" 
+                        style={{ 
+                          width: `${Array.isArray(allIssues) && allIssues.length > 0 
+                            ? Math.round((allIssues.filter(i => i.status === 'open').length / allIssues.length) * 100)
+                            : 0}%` 
+                        }}
+                      ></div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* Real-time Analytics Charts */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {/* Collection Trends Chart */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Daily Collection Trends</CardTitle>
+                    <CardDescription>Collection patterns over the last 7 days</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="h-64">
+                      {(() => {
+                        // Calculate daily collections for last 7 days
+                        const last7Days = Array.from({ length: 7 }, (_, i) => {
+                          const date = new Date();
+                          date.setDate(date.getDate() - (6 - i));
+                          return date;
+                        });
+
+                        const dailyData = last7Days.map(date => {
+                          const dayCollections = Array.isArray(allCollections) 
+                            ? allCollections.filter(c => {
+                                const collectionDate = new Date(c.collectionDate);
+                                return collectionDate.toDateString() === date.toDateString();
+                              }).length
+                            : 0;
+                          return {
+                            day: date.toLocaleDateString('en-US', { weekday: 'short' }),
+                            collections: dayCollections
+                          };
+                        });
+
+                        const maxCollections = Math.max(...dailyData.map(d => d.collections), 1);
+
+                        return (
+                          <div className="space-y-4">
+                            <div className="flex justify-between items-end h-48 gap-2">
+                              {dailyData.map((data, index) => (
+                                <div key={index} className="flex flex-col items-center flex-1">
+                                  <div className="flex flex-col justify-end h-40 w-full">
+                                    <div 
+                                      className="bg-gradient-to-t from-blue-500 to-blue-300 rounded-t-md flex items-end justify-center text-white text-xs font-medium transition-all duration-500 hover:from-blue-600 hover:to-blue-400"
+                                      style={{ 
+                                        height: `${(data.collections / maxCollections) * 100}%`,
+                                        minHeight: data.collections > 0 ? '8px' : '0px'
+                                      }}
+                                    >
+                                      {data.collections > 0 && (
+                                        <span className="mb-1">{data.collections}</span>
+                                      )}
+                                    </div>
+                                  </div>
+                                  <div className="text-xs text-muted-foreground mt-2 font-medium">
+                                    {data.day}
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                            <div className="text-center">
+                              <div className="text-sm text-muted-foreground">
+                                Total: {dailyData.reduce((sum, d) => sum + d.collections, 0)} collections this week
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })()}
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Waste Segregation Pie Chart */}
                 <Card>
                   <CardHeader>
                     <CardTitle>Waste Segregation Analysis</CardTitle>
                     <CardDescription>Breakdown of segregation compliance</CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <div className="h-64 flex items-center justify-center bg-gray-50 rounded-lg">
-                      <div className="text-center">
-                        <div className="w-32 h-32 bg-gradient-to-r from-green-200 to-red-200 rounded-full mx-auto mb-3 flex items-center justify-center">
-                          <div className="text-sm font-medium">
-                            {Array.isArray(allCollections) && allCollections.length > 0 
-                              ? Math.round((allCollections.filter(c => c.wasteSegregated).length / allCollections.length) * 100)
-                              : 0
-                            }% Segregated
+                    <div className="h-64 flex items-center justify-center">
+                      {(() => {
+                        const segregatedCount = Array.isArray(allCollections) 
+                          ? allCollections.filter(c => c.wasteSegregated).length 
+                          : 0;
+                        const notSegregatedCount = Array.isArray(allCollections) 
+                          ? allCollections.length - segregatedCount 
+                          : 0;
+                        const total = segregatedCount + notSegregatedCount;
+
+                        if (total === 0) {
+                          return (
+                            <div className="text-center">
+                              <Package className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+                              <p className="text-muted-foreground">No collection data available</p>
+                            </div>
+                          );
+                        }
+
+                        const segregatedPercentage = (segregatedCount / total) * 100;
+                        const notSegregatedPercentage = (notSegregatedCount / total) * 100;
+
+                        return (
+                          <div className="space-y-6">
+                            <div className="relative w-40 h-40 mx-auto">
+                              <svg className="w-40 h-40 transform -rotate-90" viewBox="0 0 36 36">
+                                <path
+                                  d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                                  fill="none"
+                                  stroke="#e5e7eb"
+                                  strokeWidth="3"
+                                />
+                                <path
+                                  d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                                  fill="none"
+                                  stroke="#10b981"
+                                  strokeWidth="3"
+                                  strokeDasharray={`${segregatedPercentage}, 100`}
+                                  className="transition-all duration-1000"
+                                />
+                              </svg>
+                              <div className="absolute inset-0 flex items-center justify-center">
+                                <div className="text-center">
+                                  <div className="text-2xl font-bold text-green-600">
+                                    {segregatedPercentage.toFixed(0)}%
+                                  </div>
+                                  <div className="text-xs text-muted-foreground">Segregated</div>
+                                </div>
+                              </div>
+                            </div>
+                            
+                            <div className="space-y-2">
+                              <div className="flex items-center justify-between">
+                                <div className="flex items-center">
+                                  <div className="w-3 h-3 bg-green-500 rounded-full mr-2"></div>
+                                  <span className="text-sm">Properly Segregated</span>
+                                </div>
+                                <span className="text-sm font-medium">{segregatedCount}</span>
+                              </div>
+                              <div className="flex items-center justify-between">
+                                <div className="flex items-center">
+                                  <div className="w-3 h-3 bg-gray-300 rounded-full mr-2"></div>
+                                  <span className="text-sm">Not Segregated</span>
+                                </div>
+                                <span className="text-sm font-medium">{notSegregatedCount}</span>
+                              </div>
+                            </div>
                           </div>
-                        </div>
-                        <p className="text-muted-foreground">Segregation pie chart</p>
-                      </div>
+                        );
+                      })()}
                     </div>
                   </CardContent>
                 </Card>
 
+                {/* Collector Performance Chart */}
                 <Card>
                   <CardHeader>
-                    <CardTitle>Collector Performance</CardTitle>
-                    <CardDescription>Performance metrics by collector</CardDescription>
+                    <CardTitle>Collector Performance Ranking</CardTitle>
+                    <CardDescription>Top performing collectors by collections count</CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <div className="h-64 flex items-center justify-center bg-gray-50 rounded-lg">
-                      <div className="text-center">
-                        <UserCheck className="w-12 h-12 text-gray-400 mx-auto mb-3" />
-                        <p className="text-muted-foreground">Collector performance chart</p>
-                        <p className="text-sm text-muted-foreground">
-                          {collectors?.length || 0} active collectors
-                        </p>
-                      </div>
+                    <div className="h-64 space-y-3">
+                      {(() => {
+                        const collectorPerformance = collectors?.map(collector => {
+                          const collectorCollections = Array.isArray(allCollections) 
+                            ? allCollections.filter(c => c.collectorId === collector.id)
+                            : [];
+                          
+                          const avgRating = collectorCollections.length > 0
+                            ? collectorCollections.reduce((sum, c) => sum + (c.segregationRating || 0), 0) / collectorCollections.length
+                            : 0;
+
+                          return {
+                            name: collector.name,
+                            collections: collectorCollections.length,
+                            rating: avgRating
+                          };
+                        }).sort((a, b) => b.collections - a.collections) || [];
+
+                        const maxCollections = Math.max(...collectorPerformance.map(c => c.collections), 1);
+
+                        return collectorPerformance.length > 0 ? (
+                          <div className="space-y-3">
+                            {collectorPerformance.slice(0, 5).map((collector, index) => (
+                              <div key={index} className="space-y-1">
+                                <div className="flex justify-between items-center">
+                                  <div className="flex items-center">
+                                    <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold text-white mr-3 ${
+                                      index === 0 ? 'bg-yellow-500' : 
+                                      index === 1 ? 'bg-gray-400' : 
+                                      index === 2 ? 'bg-orange-600' : 'bg-blue-500'
+                                    }`}>
+                                      {index + 1}
+                                    </div>
+                                    <div>
+                                      <div className="font-medium text-sm">{collector.name}</div>
+                                      <div className="text-xs text-muted-foreground">
+                                        {collector.rating.toFixed(1)} ⭐ rating
+                                      </div>
+                                    </div>
+                                  </div>
+                                  <div className="text-right">
+                                    <div className="font-bold">{collector.collections}</div>
+                                    <div className="text-xs text-muted-foreground">collections</div>
+                                  </div>
+                                </div>
+                                <div className="w-full bg-gray-200 rounded-full h-2">
+                                  <div 
+                                    className={`h-2 rounded-full transition-all duration-500 ${
+                                      index === 0 ? 'bg-yellow-500' : 
+                                      index === 1 ? 'bg-gray-400' : 
+                                      index === 2 ? 'bg-orange-600' : 'bg-blue-500'
+                                    }`}
+                                    style={{ width: `${(collector.collections / maxCollections) * 100}%` }}
+                                  ></div>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <div className="flex items-center justify-center h-full">
+                            <div className="text-center">
+                              <UserCheck className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+                              <p className="text-muted-foreground">No collector data available</p>
+                            </div>
+                          </div>
+                        );
+                      })()}
                     </div>
                   </CardContent>
                 </Card>
 
+                {/* Issue Resolution Trends */}
                 <Card>
                   <CardHeader>
-                    <CardTitle>Issue Resolution Trends</CardTitle>
-                    <CardDescription>Issue reporting and resolution over time</CardDescription>
+                    <CardTitle>Issue Resolution Status</CardTitle>
+                    <CardDescription>Current status of reported issues</CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <div className="h-64 flex items-center justify-center bg-gray-50 rounded-lg">
-                      <div className="text-center">
-                        <AlertTriangle className="w-12 h-12 text-gray-400 mx-auto mb-3" />
-                        <p className="text-muted-foreground">Issue trends chart</p>
-                        <p className="text-sm text-muted-foreground">
-                          {Array.isArray(allIssues) ? allIssues.filter(i => i.status === 'resolved').length : 0} issues resolved
-                        </p>
-                      </div>
+                    <div className="h-64">
+                      {(() => {
+                        const openIssues = Array.isArray(allIssues) 
+                          ? allIssues.filter(i => i.status === 'open').length 
+                          : 0;
+                        const inProgressIssues = Array.isArray(allIssues) 
+                          ? allIssues.filter(i => i.status === 'in_progress').length 
+                          : 0;
+                        const resolvedIssues = Array.isArray(allIssues) 
+                          ? allIssues.filter(i => i.status === 'resolved').length 
+                          : 0;
+                        const totalIssues = openIssues + inProgressIssues + resolvedIssues;
+
+                        if (totalIssues === 0) {
+                          return (
+                            <div className="flex items-center justify-center h-full">
+                              <div className="text-center">
+                                <CheckCircle className="w-12 h-12 text-green-400 mx-auto mb-3" />
+                                <p className="text-muted-foreground">No issues reported - Great job!</p>
+                              </div>
+                            </div>
+                          );
+                        }
+
+                        return (
+                          <div className="space-y-6">
+                            <div className="space-y-4">
+                              <div className="space-y-2">
+                                <div className="flex justify-between items-center">
+                                  <div className="flex items-center">
+                                    <div className="w-4 h-4 bg-red-500 rounded mr-2"></div>
+                                    <span className="text-sm">Open Issues</span>
+                                  </div>
+                                  <span className="text-sm font-bold">{openIssues}</span>
+                                </div>
+                                <div className="w-full bg-gray-200 rounded-full h-3">
+                                  <div 
+                                    className="bg-red-500 h-3 rounded-full transition-all duration-500"
+                                    style={{ width: `${(openIssues / totalIssues) * 100}%` }}
+                                  ></div>
+                                </div>
+                              </div>
+
+                              <div className="space-y-2">
+                                <div className="flex justify-between items-center">
+                                  <div className="flex items-center">
+                                    <div className="w-4 h-4 bg-yellow-500 rounded mr-2"></div>
+                                    <span className="text-sm">In Progress</span>
+                                  </div>
+                                  <span className="text-sm font-bold">{inProgressIssues}</span>
+                                </div>
+                                <div className="w-full bg-gray-200 rounded-full h-3">
+                                  <div 
+                                    className="bg-yellow-500 h-3 rounded-full transition-all duration-500"
+                                    style={{ width: `${(inProgressIssues / totalIssues) * 100}%` }}
+                                  ></div>
+                                </div>
+                              </div>
+
+                              <div className="space-y-2">
+                                <div className="flex justify-between items-center">
+                                  <div className="flex items-center">
+                                    <div className="w-4 h-4 bg-green-500 rounded mr-2"></div>
+                                    <span className="text-sm">Resolved</span>
+                                  </div>
+                                  <span className="text-sm font-bold">{resolvedIssues}</span>
+                                </div>
+                                <div className="w-full bg-gray-200 rounded-full h-3">
+                                  <div 
+                                    className="bg-green-500 h-3 rounded-full transition-all duration-500"
+                                    style={{ width: `${(resolvedIssues / totalIssues) * 100}%` }}
+                                  ></div>
+                                </div>
+                              </div>
+                            </div>
+
+                            <div className="text-center pt-4 border-t">
+                              <div className="text-lg font-bold">
+                                {totalIssues > 0 ? Math.round((resolvedIssues / totalIssues) * 100) : 0}%
+                              </div>
+                              <div className="text-sm text-muted-foreground">Resolution Rate</div>
+                            </div>
+                          </div>
+                        );
+                      })()}
                     </div>
                   </CardContent>
                 </Card>
               </div>
 
-              {/* Detailed Analytics */}
+              {/* Detailed Performance Table */}
               <Card>
                 <CardHeader>
-                  <CardTitle>Performance Summary</CardTitle>
-                  <CardDescription>Detailed breakdown of village waste management performance</CardDescription>
+                  <CardTitle>Detailed Performance Metrics</CardTitle>
+                  <CardDescription>Comprehensive breakdown of village waste management performance</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6">
-                    <div className="space-y-3">
-                      <h4 className="font-semibold text-sm">Collection Metrics</h4>
-                      <div className="space-y-2">
-                        <div className="flex justify-between text-sm">
-                          <span>Total Collections:</span>
-                          <span className="font-medium">{Array.isArray(allCollections) ? allCollections.length : 0}</span>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div className="space-y-4">
+                      <h4 className="font-semibold text-sm border-b pb-2">Collection Analytics</h4>
+                      <div className="space-y-3">
+                        <div className="flex justify-between items-center p-2 bg-blue-50 rounded">
+                          <span className="text-sm">Total Collections:</span>
+                          <span className="font-bold">{Array.isArray(allCollections) ? allCollections.length : 0}</span>
                         </div>
-                        <div className="flex justify-between text-sm">
-                          <span>Today's Collections:</span>
-                          <span className="font-medium">{stats?.collectionsToday || 0}</span>
+                        <div className="flex justify-between items-center p-2 bg-green-50 rounded">
+                          <span className="text-sm">Today's Collections:</span>
+                          <span className="font-bold">{stats?.collectionsToday || 0}</span>
                         </div>
-                        <div className="flex justify-between text-sm">
-                          <span>Coverage Rate:</span>
-                          <span className="font-medium">
-                            {stats ? Math.round((stats.collectionsToday / stats.totalHouseholds) * 100) : 0}%
+                        <div className="flex justify-between items-center p-2 bg-yellow-50 rounded">
+                          <span className="text-sm">Coverage Rate:</span>
+                          <span className="font-bold">
+                            {stats && stats.totalHouseholds > 0 
+                              ? Math.round((stats.collectionsToday / stats.totalHouseholds) * 100) 
+                              : 0}%
+                          </span>
+                        </div>
+                        <div className="flex justify-between items-center p-2 bg-purple-50 rounded">
+                          <span className="text-sm">Missed Collections:</span>
+                          <span className="font-bold">
+                            {Array.isArray(allCollections) 
+                              ? allCollections.filter(c => c.status === 'missed').length 
+                              : 0}
                           </span>
                         </div>
                       </div>
                     </div>
 
-                    <div className="space-y-3">
-                      <h4 className="font-semibold text-sm">Quality Metrics</h4>
-                      <div className="space-y-2">
-                        <div className="flex justify-between text-sm">
-                          <span>Segregated Waste:</span>
-                          <span className="font-medium text-green-600">
+                    <div className="space-y-4">
+                      <h4 className="font-semibold text-sm border-b pb-2">Quality Metrics</h4>
+                      <div className="space-y-3">
+                        <div className="flex justify-between items-center p-2 bg-green-50 rounded">
+                          <span className="text-sm">Segregated Waste:</span>
+                          <span className="font-bold text-green-600">
                             {Array.isArray(allCollections) && allCollections.length > 0 
                               ? Math.round((allCollections.filter(c => c.wasteSegregated).length / allCollections.length) * 100)
-                              : 0
-                            }%
+                              : 0}%
                           </span>
                         </div>
-                        <div className="flex justify-between text-sm">
-                          <span>Clean Bins:</span>
-                          <span className="font-medium text-blue-600">
+                        <div className="flex justify-between items-center p-2 bg-blue-50 rounded">
+                          <span className="text-sm">Clean Bins:</span>
+                          <span className="font-bold text-blue-600">
                             {Array.isArray(allCollections) && allCollections.length > 0 
                               ? Math.round((allCollections.filter(c => c.binCleaned).length / allCollections.length) * 100)
-                              : 0
-                            }%
+                              : 0}%
                           </span>
                         </div>
-                        <div className="flex justify-between text-sm">
-                          <span>Avg. Rating:</span>
-                          <span className="font-medium text-yellow-600">
+                        <div className="flex justify-between items-center p-2 bg-yellow-50 rounded">
+                          <span className="text-sm">Avg. Rating:</span>
+                          <span className="font-bold text-yellow-600">
                             {Array.isArray(allCollections) && allCollections.length > 0 
-                              ? (allCollections.reduce((sum, c) => sum + c.segregationRating, 0) / allCollections.length).toFixed(1)
-                              : '0.0'
-                            }/5
+                              ? (allCollections.reduce((sum, c) => sum + (c.segregationRating || 0), 0) / allCollections.length).toFixed(1)
+                              : '0.0'}/5
+                          </span>
+                        </div>
+                        <div className="flex justify-between items-center p-2 bg-orange-50 rounded">
+                          <span className="text-sm">High Ratings (4+):</span>
+                          <span className="font-bold text-orange-600">
+                            {Array.isArray(allCollections) 
+                              ? allCollections.filter(c => (c.segregationRating || 0) >= 4).length 
+                              : 0}
                           </span>
                         </div>
                       </div>
                     </div>
 
-                    <div className="space-y-3">
-                      <h4 className="font-semibold text-sm">Issue Management</h4>
-                      <div className="space-y-2">
-                        <div className="flex justify-between text-sm">
-                          <span>Total Issues:</span>
-                          <span className="font-medium">{Array.isArray(allIssues) ? allIssues.length : 0}</span>
+                    <div className="space-y-4">
+                      <h4 className="font-semibold text-sm border-b pb-2">Issue Management</h4>
+                      <div className="space-y-3">
+                        <div className="flex justify-between items-center p-2 bg-gray-50 rounded">
+                          <span className="text-sm">Total Issues:</span>
+                          <span className="font-bold">{Array.isArray(allIssues) ? allIssues.length : 0}</span>
                         </div>
-                        <div className="flex justify-between text-sm">
-                          <span>Open Issues:</span>
-                          <span className="font-medium text-red-600">
+                        <div className="flex justify-between items-center p-2 bg-red-50 rounded">
+                          <span className="text-sm">Open Issues:</span>
+                          <span className="font-bold text-red-600">
                             {Array.isArray(allIssues) ? allIssues.filter(i => i.status === 'open').length : 0}
                           </span>
                         </div>
-                        <div className="flex justify-between text-sm">
-                          <span>Resolution Rate:</span>
-                          <span className="font-medium text-green-600">
+                        <div className="flex justify-between items-center p-2 bg-green-50 rounded">
+                          <span className="text-sm">Resolution Rate:</span>
+                          <span className="font-bold text-green-600">
                             {Array.isArray(allIssues) && allIssues.length > 0 
                               ? Math.round((allIssues.filter(i => i.status === 'resolved').length / allIssues.length) * 100)
-                              : 0
-                            }%
+                              : 0}%
+                          </span>
+                        </div>
+                        <div className="flex justify-between items-center p-2 bg-blue-50 rounded">
+                          <span className="text-sm">Avg. Response Time:</span>
+                          <span className="font-bold text-blue-600">
+                            {Array.isArray(allIssues) && allIssues.length > 0 ? "< 24h" : "N/A"}
                           </span>
                         </div>
                       </div>
                     </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Quick Actions */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>Quick Actions</CardTitle>
+                  <CardDescription>Frequently used management tasks</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex flex-wrap gap-4">
+                    <Button 
+                      onClick={() => setActiveTab("collections")}
+                      variant="outline"
+                    >
+                      <Package className="h-4 w-4 mr-2" />
+                      View Collections
+                    </Button>
+                    <Button 
+                      onClick={() => setActiveTab("issues")}
+                      variant="outline"
+                    >
+                      <AlertTriangle className="h-4 w-4 mr-2" />
+                      Manage Issues
+                    </Button>
+                    <Button 
+                      onClick={() => setActiveTab("collectors")}
+                      variant="outline"
+                    >
+                      <Users className="h-4 w-4 mr-2" />
+                      Collector Performance
+                    </Button>
+                    <Button 
+                      onClick={() => setActiveTab("feedback")}
+                      variant="outline"
+                    >
+                      <MessageSquare className="h-4 w-4 mr-2" />
+                      View Feedback
+                    </Button>
                   </div>
                 </CardContent>
               </Card>
