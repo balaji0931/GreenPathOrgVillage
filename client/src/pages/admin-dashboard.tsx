@@ -23,18 +23,18 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContaine
 export default function AdminDashboard() {
   const { user, logout } = useAuth();
   const { toast } = useToast();
-  
+
   const [activeTab, setActiveTab] = useState("overview");
   const [selectedVillage, setSelectedVillage] = useState("");
   const [createdCredentials, setCreatedCredentials] = useState<any>(null);
   const [villageList, setVillageList] = useState([{ villageName: "", managerName: "", managerPhone: "" }]);
-  
+
   const [newVillage, setNewVillage] = useState({
     villageName: "",
     managerName: "",
     managerPhone: "",
   });
-  
+
   const [announcement, setAnnouncement] = useState({
     message: "",
     targetAudience: "all",
@@ -331,7 +331,7 @@ export default function AdminDashboard() {
         <h2 className="text-3xl font-bold mb-2">Admin Dashboard</h2>
         <p className="text-muted-foreground">Manage your waste management system</p>
       </div>
-      
+
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <Card>
@@ -344,7 +344,7 @@ export default function AdminDashboard() {
             <p className="text-xs text-muted-foreground">Active communities</p>
           </CardContent>
         </Card>
-        
+
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Managers</CardTitle>
@@ -355,7 +355,7 @@ export default function AdminDashboard() {
             <p className="text-xs text-muted-foreground">Village managers</p>
           </CardContent>
         </Card>
-        
+
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Open Issues</CardTitle>
@@ -366,7 +366,7 @@ export default function AdminDashboard() {
             <p className="text-xs text-muted-foreground">Pending resolution</p>
           </CardContent>
         </Card>
-        
+
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Today's Collections</CardTitle>
@@ -574,51 +574,53 @@ export default function AdminDashboard() {
           <CardTitle>All Villages</CardTitle>
         </CardHeader>
         <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Village ID</TableHead>
-                <TableHead>Name</TableHead>
-                <TableHead>Households</TableHead>
-                <TableHead>Collectors</TableHead>
-                <TableHead>Open Issues</TableHead>
-                <TableHead>Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {villages?.map((village: any) => (
-                <TableRow key={village.id}>
-                  <TableCell className="font-medium">{village.villageId}</TableCell>
-                  <TableCell>{village.name}</TableCell>
-                  <TableCell>{village.totalHouseholds || 0}</TableCell>
-                  <TableCell>{village.totalCollectors || 0}</TableCell>
-                  <TableCell>
-                    <Badge variant={village.openIssues > 0 ? "destructive" : "secondary"}>
-                      {village.openIssues || 0}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex space-x-2">
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => setSelectedVillage(village.villageId)}
-                      >
-                        <Eye className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="destructive"
-                        onClick={() => deleteVillageMutation.mutate(village.villageId)}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </TableCell>
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Village ID</TableHead>
+                  <TableHead>Name</TableHead>
+                  <TableHead>Households</TableHead>
+                  <TableHead>Collectors</TableHead>
+                  <TableHead>Open Issues</TableHead>
+                  <TableHead>Actions</TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+              </TableHeader>
+              <TableBody>
+                {villages?.map((village: any) => (
+                  <TableRow key={village.id}>
+                    <TableCell className="font-medium">{village.villageId}</TableCell>
+                    <TableCell>{village.name}</TableCell>
+                    <TableCell>{village.totalHouseholds || 0}</TableCell>
+                    <TableCell>{village.totalCollectors || 0}</TableCell>
+                    <TableCell>
+                      <Badge variant={village.openIssues > 0 ? "destructive" : "secondary"}>
+                        {village.openIssues || 0}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex space-x-2">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => setSelectedVillage(village.villageId)}
+                        >
+                          <Eye className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="destructive"
+                          onClick={() => deleteVillageMutation.mutate(village.villageId)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
         </CardContent>
       </Card>
 
@@ -629,7 +631,7 @@ export default function AdminDashboard() {
             <DialogHeader>
               <DialogTitle>Village Details - {villageDetails.village?.name}</DialogTitle>
             </DialogHeader>
-            
+
             <div className="space-y-6">
               {/* Stats */}
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -770,43 +772,45 @@ export default function AdminDashboard() {
                   </Dialog>
                 </CardHeader>
                 <CardContent>
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Manager ID</TableHead>
-                        <TableHead>Name</TableHead>
-                        <TableHead>Phone</TableHead>
-                        <TableHead>Actions</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {villageDetails.managers?.map((manager: any) => (
-                        <TableRow key={manager.id}>
-                          <TableCell>{manager.userId}</TableCell>
-                          <TableCell>{manager.name}</TableCell>
-                          <TableCell>{manager.phone}</TableCell>
-                          <TableCell>
-                            <div className="flex space-x-2">
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => resetPasswordMutation.mutate(manager.userId)}
-                              >
-                                <RotateCcw className="h-4 w-4" />
-                              </Button>
-                              <Button
-                                size="sm"
-                                variant="destructive"
-                                onClick={() => deleteManagerMutation.mutate(manager.userId)}
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            </div>
-                          </TableCell>
+                  <div className="overflow-x-auto">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Manager ID</TableHead>
+                          <TableHead>Name</TableHead>
+                          <TableHead>Phone</TableHead>
+                          <TableHead>Actions</TableHead>
                         </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
+                      </TableHeader>
+                      <TableBody>
+                        {villageDetails.managers?.map((manager: any) => (
+                          <TableRow key={manager.id}>
+                            <TableCell>{manager.userId}</TableCell>
+                            <TableCell>{manager.name}</TableCell>
+                            <TableCell>{manager.phone}</TableCell>
+                            <TableCell>
+                              <div className="flex space-x-2">
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => resetPasswordMutation.mutate(manager.userId)}
+                                >
+                                  <RotateCcw className="h-4 w-4" />
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="destructive"
+                                  onClick={() => deleteManagerMutation.mutate(manager.userId)}
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
                 </CardContent>
               </Card>
 
@@ -817,24 +821,26 @@ export default function AdminDashboard() {
                     <CardTitle>Recent Households</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead>UID</TableHead>
-                          <TableHead>Head Name</TableHead>
-                          <TableHead>House Number</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {villageDetails.households?.slice(0, 5).map((household: any) => (
-                          <TableRow key={household.id}>
-                            <TableCell>{household.uid}</TableCell>
-                            <TableCell>{household.headName}</TableCell>
-                            <TableCell>{household.houseNumber}</TableCell>
+                    <div className="overflow-x-auto">
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>UID</TableHead>
+                            <TableHead>Head Name</TableHead>
+                            <TableHead>House Number</TableHead>
                           </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
+                        </TableHeader>
+                        <TableBody>
+                          {villageDetails.households?.slice(0, 5).map((household: any) => (
+                            <TableRow key={household.id}>
+                              <TableCell>{household.uid}</TableCell>
+                              <TableCell>{household.headName}</TableCell>
+                              <TableCell>{household.houseNumber}</TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </div>
                   </CardContent>
                 </Card>
 
@@ -843,28 +849,30 @@ export default function AdminDashboard() {
                     <CardTitle>Recent Issues</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead>Title</TableHead>
-                          <TableHead>Status</TableHead>
-                          <TableHead>Date</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {villageDetails.issues?.slice(0, 5).map((issue: any) => (
-                          <TableRow key={issue.id}>
-                            <TableCell>{issue.title}</TableCell>
-                            <TableCell>
-                              <Badge variant={issue.status === 'open' ? 'destructive' : 'default'}>
-                                {issue.status}
-                              </Badge>
-                            </TableCell>
-                            <TableCell>{new Date(issue.createdAt).toLocaleDateString()}</TableCell>
+                    <div className="overflow-x-auto">
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>Title</TableHead>
+                            <TableHead>Status</TableHead>
+                            <TableHead>Date</TableHead>
                           </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
+                        </TableHeader>
+                        <TableBody>
+                          {villageDetails.issues?.slice(0, 5).map((issue: any) => (
+                            <TableRow key={issue.id}>
+                              <TableCell>{issue.title}</TableCell>
+                              <TableCell>
+                                <Badge variant={issue.status === 'open' ? 'destructive' : 'default'}>
+                                  {issue.status}
+                                </Badge>
+                              </TableCell>
+                              <TableCell>{new Date(issue.createdAt).toLocaleDateString()}</TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </div>
                   </CardContent>
                 </Card>
               </div>
@@ -873,7 +881,7 @@ export default function AdminDashboard() {
         </Dialog>
       )}
 
-      {/* Credentials Display Modal */}
+      {/*       Credentials Display Modal */}
       {createdCredentials && (
         <Dialog open={!!createdCredentials} onOpenChange={() => setCreatedCredentials(null)}>
           <DialogContent>
@@ -916,49 +924,51 @@ export default function AdminDashboard() {
           <CardTitle>All Managers</CardTitle>
         </CardHeader>
         <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Manager ID</TableHead>
-                <TableHead>Name</TableHead>
-                <TableHead>Village</TableHead>
-                <TableHead>Phone</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {managers?.map((manager: any) => (
-                <TableRow key={manager.id}>
-                  <TableCell className="font-medium">{manager.userId}</TableCell>
-                  <TableCell>{manager.name}</TableCell>
-                  <TableCell>{manager.villageId}</TableCell>
-                  <TableCell>{manager.phone}</TableCell>
-                  <TableCell>
-                    <Badge variant="default">Active</Badge>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex space-x-2">
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => resetPasswordMutation.mutate(manager.userId)}
-                      >
-                        <RotateCcw className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="destructive"
-                        onClick={() => deleteManagerMutation.mutate(manager.userId)}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </TableCell>
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Manager ID</TableHead>
+                  <TableHead>Name</TableHead>
+                  <TableHead>Village</TableHead>
+                  <TableHead>Phone</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Actions</TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+              </TableHeader>
+              <TableBody>
+                {managers?.map((manager: any) => (
+                  <TableRow key={manager.id}>
+                    <TableCell className="font-medium">{manager.userId}</TableCell>
+                    <TableCell>{manager.name}</TableCell>
+                    <TableCell>{manager.villageId}</TableCell>
+                    <TableCell>{manager.phone}</TableCell>
+                    <TableCell>
+                      <Badge variant="default">Active</Badge>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex space-x-2">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => resetPasswordMutation.mutate(manager.userId)}
+                        >
+                          <RotateCcw className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="destructive"
+                          onClick={() => deleteManagerMutation.mutate(manager.userId)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
         </CardContent>
       </Card>
     </div>
@@ -1026,7 +1036,7 @@ export default function AdminDashboard() {
                 <p className="text-xs text-muted-foreground">Waste collections made</p>
               </CardContent>
             </Card>
-            
+
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">Total Issues</CardTitle>
@@ -1039,7 +1049,7 @@ export default function AdminDashboard() {
                 <p className="text-xs text-muted-foreground">Reported issues</p>
               </CardContent>
             </Card>
-            
+
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">Avg Segregation</CardTitle>
@@ -1055,7 +1065,7 @@ export default function AdminDashboard() {
                 <p className="text-xs text-muted-foreground">Out of 5.0</p>
               </CardContent>
             </Card>
-            
+
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">Avg Plastic Rating</CardTitle>
@@ -1191,34 +1201,36 @@ export default function AdminDashboard() {
                 <CardTitle>Collection Performance</CardTitle>
               </CardHeader>
               <CardContent>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Village</TableHead>
-                      <TableHead>Collections</TableHead>
-                      <TableHead>Avg Segregation</TableHead>
-                      <TableHead>Avg Plastic</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {reportData.collections?.map((item: any, index: number) => (
-                      <TableRow key={index}>
-                        <TableCell>{item.villageName}</TableCell>
-                        <TableCell>{item.collections}</TableCell>
-                        <TableCell>
-                          <Badge variant={parseFloat(item.avgSegregationRating || 0) >= 4 ? "default" : "secondary"}>
-                            {item.avgSegregationRating ? parseFloat(item.avgSegregationRating).toFixed(1) : 'N/A'}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>
-                          <Badge variant={parseFloat(item.avgPlasticRating || 0) >= 4 ? "default" : "secondary"}>
-                            {item.avgPlasticRating ? parseFloat(item.avgPlasticRating).toFixed(1) : 'N/A'}
-                          </Badge>
-                        </TableCell>
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Village</TableHead>
+                        <TableHead>Collections</TableHead>
+                        <TableHead>Avg Segregation</TableHead>
+                        <TableHead>Avg Plastic</TableHead>
                       </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
+                    </TableHeader>
+                    <TableBody>
+                      {reportData.collections?.map((item: any, index: number) => (
+                        <TableRow key={index}>
+                          <TableCell>{item.villageName}</TableCell>
+                          <TableCell>{item.collections}</TableCell>
+                          <TableCell>
+                            <Badge variant={parseFloat(item.avgSegregationRating || 0) >= 4 ? "default" : "secondary"}>
+                              {item.avgSegregationRating ? parseFloat(item.avgSegregationRating).toFixed(1) : 'N/A'}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant={parseFloat(item.avgPlasticRating || 0) >= 4 ? "default" : "secondary"}>
+                              {item.avgPlasticRating ? parseFloat(item.avgPlasticRating).toFixed(1) : 'N/A'}
+                            </Badge>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
               </CardContent>
             </Card>
 
@@ -1227,30 +1239,32 @@ export default function AdminDashboard() {
                 <CardTitle>Issues by Village</CardTitle>
               </CardHeader>
               <CardContent>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Village</TableHead>
-                      <TableHead>Total Issues</TableHead>
-                      <TableHead>Open</TableHead>
-                      <TableHead>Resolved</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {reportData.issues?.map((item: any, index: number) => (
-                      <TableRow key={index}>
-                        <TableCell>{item.villageName}</TableCell>
-                        <TableCell>{item.totalIssues}</TableCell>
-                        <TableCell>
-                          <Badge variant="destructive">{item.openIssues}</Badge>
-                        </TableCell>
-                        <TableCell>
-                          <Badge variant="default">{item.resolvedIssues}</Badge>
-                        </TableCell>
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Village</TableHead>
+                        <TableHead>Total Issues</TableHead>
+                        <TableHead>Open</TableHead>
+                        <TableHead>Resolved</TableHead>
                       </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
+                    </TableHeader>
+                    <TableBody>
+                      {reportData.issues?.map((item: any, index: number) => (
+                        <TableRow key={index}>
+                          <TableCell>{item.villageName}</TableCell>
+                          <TableCell>{item.totalIssues}</TableCell>
+                          <TableCell>
+                            <Badge variant="destructive">{item.openIssues}</Badge>
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant="default">{item.resolvedIssues}</Badge>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
               </CardContent>
             </Card>
           </div>
@@ -1434,7 +1448,7 @@ export default function AdminDashboard() {
               </div>
             </div>
           </div>
-          
+
           {/* User Profile Section */}
           <div className="mt-4 p-3 bg-muted rounded-lg">
             <div className="flex items-center space-x-3 mb-3">
@@ -1446,7 +1460,7 @@ export default function AdminDashboard() {
                 <p className="text-xs text-muted-foreground">Administrator</p>
               </div>
             </div>
-            
+
             {/* Quick Actions */}
             <div className="flex space-x-2">
               <Button 
