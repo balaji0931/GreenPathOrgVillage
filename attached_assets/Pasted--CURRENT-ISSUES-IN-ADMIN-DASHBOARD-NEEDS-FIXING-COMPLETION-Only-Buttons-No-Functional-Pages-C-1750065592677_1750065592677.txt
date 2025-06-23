@@ -1,0 +1,137 @@
+🔧 CURRENT ISSUES IN ADMIN DASHBOARD (NEEDS FIXING & COMPLETION)
+Only Buttons, No Functional Pages
+Currently, most buttons (like "Reports", "Manage Villages", etc.) exist on the UI but don’t lead to actual working pages.
+Expectation: Every button should open a fully functional page as per the plan. Empty pages with placeholder text are not acceptable.
+Add Village & Manager — Broken Login Flow
+Villages are being added but the manager account created is not able to login.
+The credentials (User ID and Password) are auto-generated, but:
+Either they're not correctly stored in the database.
+Or passwords are not being set to the same value as User ID (as required).
+Fix Needed:
+When a village and manager are created, generate:
+Manager ID (e.g., V001-M1)
+Password: Same as ID by default (e.g., V001-M1)
+Ensure manager is added to the login-auth system with the correct role.
+Manager should be able to login immediately.
+No Profile/Password Management
+Admin cannot change their own password or edit profile.
+Add:
+“Profile” section for Admin.
+Fields: Name, Email (optional), Password (with current password verification).
+Update password flow with secure hashing.
+Incomplete Reports Section
+The Reports section exists only as a placeholder.
+No filters (village-wise, date-wise, user-type-wise).
+No downloadable summaries or charts.
+Expected:
+Filter: by village, by role, by time period.
+View:
+Total collections
+Feedbacks submitted
+Issues raised/resolved
+Ratings per village/collector
+Include charts (pie/bar/line).
+Export reports as PDF and CSV.
+Missing Features
+Many of the core features requested are missing or partially implemented.
+This includes:
+Announcement Management
+Message Board
+Banner Display
+Full Village Management Panel
+Issue overview dashboard
+Collector performance dashboards
+🎯 FULL FEATURE LIST – ADMIN DASHBOARD (DETAILED & FINAL)
+Below is the official list of expected and confirmed features of the Admin Dashboard that must be implemented as per project requirements:
+
+✅ 1. Dashboard Overview
+Top summary cards:
+Total Villages
+Total Managers
+Total Generators
+Total Collectors
+Total Issues Raised
+Recent 5 actions or logs (village created, issue resolved, etc.)
+✅ 2. Add Village + Manager
+Form:
+Village Name
+Manager Name
+Manager Phone Number
+Auto generates:
+villageID like V001
+Manager ID: V001-M1
+Password: V001-M1
+Add manager to login database.
+After creation:
+Display login credentials
+Button: Copy & Download credentials
+✅ 3. Manage Villages
+Table of all villages
+Expandable rows for:
+Manager info
+Generator count
+Collector count
+Action buttons:
+View
+Delete
+Reset Manager Password
+Search by Village name or ID
+✅ 4. Manage Managers
+View/Edit/Delete manager info
+Reset password
+Assign new village if needed
+✅ 5. Announcements
+Text + optional banner
+Target:
+All users
+Only Managers
+Only Generators
+Sent announcements stored in history
+Date-wise sorting
+✅ 6. Reports & Analytics
+Filters:
+Village
+Role
+Date Range
+View:
+Collection stats
+Feedback data
+Top/low performing collectors
+Issues (open, resolved, pending)
+Export:
+CSV / PDF
+Graphs: Bar, Pie, Line
+✅ 7. Issue Tracking
+View all issues raised by users
+Filter:
+By village
+Status (Open, In Progress, Resolved)
+See:
+Who raised it
+Date
+Manager remarks
+Add admin remarks
+✅ 8. Message Board & Banner Management
+Admin can:
+Send message to all users or selected role
+Post a rotating or static banner (shows under nav bar in app)
+Message saved in user's inbox
+✅ 9. Profile Management
+Update Name
+Change Password
+View login ID (non-editable)
+✅ 10. Security & Authentication
+All logins role-based
+Password hashing required
+Session/token management
+✅ 11. Logs and Audit Trail (Optional, but Highly Recommended)
+Every major action (village created, password reset, etc.) should be logged
+Admin can view logs
+📌 FINAL NOTES
+
+Every feature must be developed, functional, and connected to database properly.
+Each screen must:
+
+Perform CRUD operations as expected.
+Sync correctly with MongoDB.
+Use correct IDs and role structure.

@@ -1,0 +1,370 @@
+🌱 Project Name: GreenPathOrg
+ 
+🌍 Vision & Overview
+GreenPathOrg is a centralized waste management and community engagement platform built specifically for Indian rural and semi-urban village ecosystems. It streamlines waste collection, promotes segregation, ensures accountability among stakeholders, and empowers villagers to raise and track issues.
+The project includes:
+•	A mobile Android app for all user roles: Admin, Manager, Waste Collector, Waste Generator.
+•	A web version (browser access) for Admins and Managers for ease of data entry, monitoring, and report generation.
+ 
+🏠 Public Page (Android/Web - before login)
+•	Logo & app name with light green theme.
+•	Description: “Empowering Clean Villages through Smart Waste Management.”
+•	Fields: Login (ID & Password).
+•	Button: "Login" (no signups for any role).
+ 
+🔐 Login System
+•	Only Admin has hardcoded default credentials.
+•	All other users (Manager, Collector, Generator) are added by roles above them.
+•	All user IDs follow a structured format:
+o	VillageID-M1, VillageID-C1, VillageID-G1, etc.
+•	Default password = user ID (changeable after login).
+ 
+👤 User Roles & Their Dashboards
+ 
+🛠️ Admin Dashboard (Mobile + Web)
+Purpose: Manages villages and managers. Can monitor everything.
+Features:
+1.	Add New Village
+o	Auto-generates villageID (V001, V002…)
+o	Assigns a Manager with default ID/password.
+2.	Manage Villages
+o	View list of all villages.
+o	View Manager performance via feedback reports, issues solved, etc.
+3.	Send Announcements
+o	Can choose audience:
+	All users in all villages.
+	Only Managers.
+	Only Generators.
+o	Banners shown in app.
+4.	View Reports
+o	All reports across all villages (issue tracking, collection stats, feedback summaries).
+5.	Track Issues
+o	See raised issues from each village.
+o	Track how Managers handle those.
+ 
+👨‍💼 Manager Dashboard (Mobile + Web)
+Purpose: Oversees village operations. Creates and monitors collectors and generators.
+Features:
+1.	Create Waste Generators (Households)
+o	Add in bulk or single.
+o	Each gets a unique UID + downloadable QR code in 3x4 PDF format.
+o	Fields: UID, head of house, phone, house number, village.
+2.	Create Waste Collectors
+o	Assign each to a specific village and Panchayat.
+3.	Manage Users
+o	Edit/delete generators or collectors.
+o	Reset passwords.
+4.	Mark Attendance
+o	Daily attendance of collectors.
+5.	Send Announcements
+o	Can send banners/messages to all users in the village.
+o	View message history.
+6.	View Issues
+o	Raised by generators.
+o	Can update status, reply, and mark resolved.
+7.	Track Collection Feedback
+o	View segregation scores, missed pickups, and photos submitted by collectors.
+8.	Reports
+o	Weekly/monthly stats on collection, issues, user activity.
+ 
+🚛 Waste Collector Dashboard (Mobile only)
+Purpose: Collects waste from assigned households and provides feedback.
+Features:
+1.	Daily Route/Schedule
+o	List of households with status:
+	Pending ✅
+	Collected 🟢
+	Missed ❌
+2.	Scan QR Code
+o	Each household has a QR for easy identification.
+3.	Submit Feedback
+o	Simple interface:
+	Stars for Segregation, Plastic Use
+	Checkboxes for common observations
+	Remarks (optional)
+	Upload photo (optional)
+	Deleted automatically if rating > 3.
+4.	Compliments/Complaints
+o	Can praise or complain about households.
+5.	Reason for Missed Pickup
+o	Dropdown options (gate locked, no waste, etc.).
+6.	Track Collection
+o	Daily/weekly status of tasks.
+ 
+🧑‍🌾 Waste Generator Dashboard (Mobile only)
+Purpose: Households that generate waste.
+Features:
+1.	View Collection History
+o	Up to 1-month detailed logs of:
+	Feedback from collector
+	Ratings received
+	Compliments or complaints
+2.	Provide Feedback
+o	Star rating for collectors
+o	Remarks/Complaints about them.
+3.	Raise Issues
+o	Related to garbage dumping, delay in collection, etc.
+o	Issues are visible to all generators in the same village.
+o	Track manager responses and updates.
+4.	Suggestions Box
+o	Send suggestions for improvement.
+5.	Announcements & Messages
+o	Banner section on homepage.
+o	View messages sent by manager or admin.
+ 
+🧱 Design/UI Notes
+•	Theme: Light green tones, white backgrounds.
+•	Buttons:
+o	Primary: Light green
+o	Danger: Red
+o	Info: Blue
+•	NavBar: Persistent on top for web, bottom for mobile.
+•	Home Sections: Cards with icons and short descriptions.
+•	UX:
+o	Minimal taps to complete actions
+o	Fast submission forms (for collectors)
+o	Notifications for new messages/feedback/issues
+ 
+📦 Important Functional Details
+•	QR Codes are central: used to track waste collection per household.
+•	All data is filtered by villageID, so each village is isolated in logic.
+•	MongoDB online used from day one with real-time cloud connection.
+•	Issues, reviews, feedbacks, and messages all support reply/update threads.
+•	Bulk actions (create users, download QR PDFs) are included.
+•	Images are not stored unless necessary (i.e., low rating photos).
+ 
+Would you like me to generate this version in a PDF/DOC format too?
+Let me know if any features are missing or you’d like to update/add something before we start development.
+You said:
+give descriptive like when managers want to add generators it will take data and create QR codes and give option to download the pdf and save that pdf. collectors clicks scan buttons and scans QR code and a form opens to fill like this very action. when viewing reports filter and all can be seen like this explain every page every action and eveything
+ChatGPT said:
+Absolutely! Here's a highly detailed, step-by-step explanation of every page, action, and feature in your project — from login to the final report pages. This guide will help any developer or team understand exactly how each screen and function should behave.
+ 
+🌿 Application Name: GreenPathOrg
+🏗 Platform:
+•	Android App → For Admin, Manager, Collector, Generator
+•	Web Version → Only for Admin and Manager (Desktop access for efficiency)
+ 
+📱 PUBLIC PAGES
+1. Login Page
+•	Fields: User ID, Password
+•	Roles: Auto-detected after login (based on ID format: V001-M1, V001-C1...)
+•	No Signup
+•	Password change prompt if first-time login (password = ID)
+ 
+🧑‍💼 ADMIN DASHBOARD (App + Web)
+1. Add Village
+•	Admin clicks “Add Village”
+•	System auto-generates a villageID (e.g., V001)
+•	Admin fills:
+o	Village Name
+o	Manager Full Name
+o	Manager Phone Number
+•	Auto-Creation:
+o	Manager UID: V001-M1
+o	Password: V001-M1 (same as ID)
+•	Display: Manager credentials with option to Copy / Download
+ 
+2. Manage Villages
+•	List of all villages
+•	Each entry expandable to show:
+o	Manager info
+o	Number of households (generators)
+o	Number of collectors
+o	Total issues raised and resolved
+o	Link to detailed report
+ 
+3. Send Announcements
+•	Form with:
+o	Text Message
+o	Optional banner image (resize and preview)
+o	Dropdown:
+	📢 All users
+	🎯 Only Managers
+	👥 Only Generators
+•	Button: "Send"
+•	Stored in "Messages" section for future access
+ 
+4. View Reports
+•	Filterable by:
+o	Village
+o	Date range
+o	Role (manager/collector)
+•	Downloadable (CSV, PDF)
+•	Charts:
+o	Pie chart: Issue Status
+o	Bar: Collection Ratings
+o	Line: Feedback Trends
+ 
+👨‍💼 MANAGER DASHBOARD (App + Web)
+1. Add Generators (Households)
+•	Click "Add Households"
+•	Form:
+o	Head of Family
+o	Phone number
+o	House No.
+•	Can upload CSV file for bulk creation
+•	Auto generate:
+o	UID: V001-G1, V001-G2...
+o	QR code (scannable)
+•	After Submission:
+o	Page displays QR codes in 3x4 grid
+o	Button: Download as PDF
+o	Each code shows:
+	QR
+	UID
+	Head name
+	House No.
+ 
+2. Add Collector
+•	Fields:
+o	Name
+o	Phone Number
+•	Generates UID like: V001-C1
+•	Password same as UID
+•	QR Code not required
+ 
+3. Mark Attendance
+•	Daily table
+•	Toggle switch (🟢 present, 🔴 absent)
+•	Auto-submitted every evening
+ 
+4. Issue Management
+•	View list of issues raised by villagers
+•	Status tags:
+o	🕒 Open
+o	⚒ In Progress
+o	✅ Resolved
+•	Can reply, update, and close
+•	Attach photo or video (optional)
+ 
+5. Send Announcements
+•	Same as Admin, but limited to their village
+•	Sent announcements are shown as a list
+ 
+6. View Reports
+•	Filterable views:
+o	By Collector
+o	By Date
+o	By Household
+•	Ratings per collector
+•	Top 5 households (best segregators)
+•	Weekly summary export (PDF/CSV)
+ 
+7. Manage Users
+•	Can:
+o	Edit Generator info
+o	Reset passwords
+o	Delete user (with confirmation)
+•	Search bar to filter by UID/Name
+ 
+🚛 COLLECTOR DASHBOARD (App Only)
+1. Today’s Route
+•	List of all households for that day
+•	Each card:
+o	Household Name
+o	House No.
+o	UID
+o	Status:
+	🚫 Not Visited
+	✅ Done
+	❌ Skipped
+ 
+2. Scan QR Code
+•	Button: "Start Scan"
+•	Opens camera and scans household QR
+•	After scan, a form opens:
+o	Stars for segregation, cleanliness, plastic use
+o	Checkboxes:
+	Mixed waste
+	Non-biodegradable items
+	No waste present
+o	Remarks (Optional)
+o	Upload photo (Optional)
+	Note: Photo is auto-deleted if rating > 3
+o	Button: "Submit & Next"
+ 
+3. Missed Pickup
+•	For any skipped house:
+o	Select Reason (dropdown)
+	Locked gate
+	No one home
+	No waste
+o	Optional comment
+o	Submit
+ 
+4. Track Day’s Work
+•	Table:
+o	UID
+o	Status (✅/❌)
+o	Feedback given?
+•	Totals: Visits done, Pending, Skipped
+ 
+🧑‍🌾 GENERATOR DASHBOARD (App Only)
+1. View Collection History
+•	List of last 15 pickups
+•	Each shows:
+o	Date
+o	Rating from collector
+o	Remarks
+o	Photo (if rating ≤ 3)
+ 
+2. Submit Feedback
+•	For collector of current week
+o	Stars
+o	Remarks
+o	Optional complaint
+ 
+3. Raise an Issue
+•	Form:
+o	Title
+o	Description
+o	Photo upload
+•	Visible to:
+o	All generators of same village
+o	Manager and Admin
+•	Managers can reply
+•	Status: Open / Under Progress / Resolved
+ 
+4. View Messages
+•	Scrollable message board
+•	Filters:
+o	Only Manager
+o	Only Admin
+•	Banners appear above navbar
+ 
+5. Suggest Improvements
+•	Simple form
+o	Text
+o	Optional image
+•	Forwarded to Manager inbox
+ 
+🎨 UI/UX Notes (App & Web)
+•	Primary Theme: Light green & white
+•	Buttons:
+o	Green (Primary)
+o	Blue (Info)
+o	Red (Danger)
+o	Yellow (Warning)
+•	Typography: Rounded clean fonts, high readability
+•	App NavBar:
+o	Bottom for mobile
+o	Sidebar/Top for Web
+•	Feedback forms: Quick tap based
+•	List items: Cards with clear icons and actions
+ 
+📂 REPORTS & ANALYTICS
+•	Reports can be generated by Manager/Admin
+•	Charts for:
+o	Most compliant households
+o	Worst segregators
+o	Collector performance
+o	Village cleanliness trends
+•	Export:
+o	PDF for summary
+o	CSV for data
+•	Filters:
+o	Village
+o	Date range
+o	Household/Collector
+

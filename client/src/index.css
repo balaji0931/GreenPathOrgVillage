@@ -1,0 +1,279 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: hsl(0, 0%, 100%);
+  --foreground: hsl(20, 14.3%, 4.1%);
+  --muted: hsl(60, 4.8%, 95.9%);
+  --muted-foreground: hsl(25, 5.3%, 44.7%);
+  --popover: hsl(0, 0%, 100%);
+  --popover-foreground: hsl(20, 14.3%, 4.1%);
+  --card: hsl(0, 0%, 100%);
+  --card-foreground: hsl(20, 14.3%, 4.1%);
+  --border: hsl(20, 5.9%, 90%);
+  --input: hsl(20, 5.9%, 90%);
+  --primary: hsl(122, 39%, 49%);
+  --primary-foreground: hsl(0, 0%, 100%);
+  --secondary: hsl(60, 4.8%, 95.9%);
+  --secondary-foreground: hsl(24, 9.8%, 10%);
+  --accent: hsl(60, 4.8%, 95.9%);
+  --accent-foreground: hsl(24, 9.8%, 10%);
+  --destructive: hsl(0, 84.2%, 60.2%);
+  --destructive-foreground: hsl(60, 9.1%, 97.8%);
+  --ring: hsl(20, 14.3%, 4.1%);
+  --radius: 0.5rem;
+  
+  /* Green theme colors */
+  --green-primary: hsl(122, 39%, 49%);
+  --green-dark: hsl(122, 39%, 35%);
+  --green-light: hsl(122, 39%, 65%);
+  --green-pale: hsl(122, 39%, 85%);
+  --blue-info: hsl(207, 90%, 54%);
+  --red-danger: hsl(0, 84.2%, 60.2%);
+  --orange-warning: hsl(25, 95%, 53%);
+}
+
+.dark {
+  --background: hsl(240, 10%, 3.9%);
+  --foreground: hsl(0, 0%, 98%);
+  --muted: hsl(240, 3.7%, 15.9%);
+  --muted-foreground: hsl(240, 5%, 64.9%);
+  --popover: hsl(240, 10%, 3.9%);
+  --popover-foreground: hsl(0, 0%, 98%);
+  --card: hsl(240, 10%, 3.9%);
+  --card-foreground: hsl(0, 0%, 98%);
+  --border: hsl(240, 3.7%, 15.9%);
+  --input: hsl(240, 3.7%, 15.9%);
+  --primary: hsl(122, 39%, 49%);
+  --primary-foreground: hsl(0, 0%, 100%);
+  --secondary: hsl(240, 3.7%, 15.9%);
+  --secondary-foreground: hsl(0, 0%, 98%);
+  --accent: hsl(240, 3.7%, 15.9%);
+  --accent-foreground: hsl(0, 0%, 98%);
+  --destructive: hsl(0, 62.8%, 30.6%);
+  --destructive-foreground: hsl(0, 0%, 98%);
+  --ring: hsl(240, 4.9%, 83.9%);
+  --radius: 0.5rem;
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply font-sans antialiased bg-background text-foreground;
+  }
+}
+
+/* Custom green theme utilities */
+.bg-green-primary {
+  background-color: var(--green-primary);
+}
+
+
+/* Custom responsive utility classes */
+@layer utilities {
+  .xs\:inline {
+    @media (min-width: 475px) {
+      display: inline;
+    }
+  }
+  
+  .xs\:hidden {
+    @media (min-width: 475px) {
+      display: none;
+    }
+  }
+}
+
+.bg-green-dark {
+  background-color: var(--green-dark);
+}
+
+.bg-green-light {
+  background-color: var(--green-light);
+}
+
+.bg-green-pale {
+  background-color: var(--green-pale);
+}
+
+.text-green-primary {
+  color: var(--green-primary);
+}
+
+.text-green-dark {
+  color: var(--green-dark);
+}
+
+.border-green-primary {
+  border-color: var(--green-primary);
+}
+
+.bg-blue-info {
+  background-color: var(--blue-info);
+}
+
+.text-blue-info {
+  color: var(--blue-info);
+}
+
+.bg-red-danger {
+  background-color: var(--red-danger);
+}
+
+.text-red-danger {
+  color: var(--red-danger);
+}
+
+.bg-orange-warning {
+  background-color: var(--orange-warning);
+}
+
+.text-orange-warning {
+  color: var(--orange-warning);
+}
+
+/* Mobile navigation styles */
+.mobile-nav {
+  @apply fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-50;
+}
+
+.mobile-nav-item {
+  @apply flex flex-col items-center py-2 px-1 text-gray-400 hover:text-green-600 transition-colors;
+}
+
+.mobile-nav-item.active {
+  @apply text-green-600;
+}
+
+/* QR code styles */
+.qr-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+@media print {
+  .qr-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+/* Star rating styles */
+.star-rating {
+  @apply flex items-center space-x-1;
+}
+
+.star-rating button {
+  @apply text-xl transition-colors hover:scale-110;
+}
+
+.star-rating .star-filled {
+  @apply text-yellow-400;
+}
+
+.star-rating .star-empty {
+  @apply text-gray-300;
+}
+
+/* Form styles */
+.form-section {
+  @apply space-y-4 p-4 border border-gray-200 rounded-lg bg-gray-50;
+}
+
+.form-section.active {
+  @apply bg-white;
+}
+
+/* Status badges */
+.status-badge {
+  @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium;
+}
+
+.status-open {
+  @apply bg-red-100 text-red-800;
+}
+
+.status-in-progress {
+  @apply bg-yellow-100 text-yellow-800;
+}
+
+.status-resolved {
+  @apply bg-green-100 text-green-800;
+}
+
+.status-collected {
+  @apply bg-green-100 text-green-800;
+}
+
+.status-missed {
+  @apply bg-red-100 text-red-800;
+}
+
+.status-pending {
+  @apply bg-orange-100 text-orange-800;
+}
+
+/* Card hover effects */
+.card-hover {
+  @apply transition-all duration-200 hover:shadow-md hover:scale-105;
+}
+
+/* Mobile responsiveness */
+@media (max-width: 768px) {
+  .desktop-only {
+    @apply hidden;
+  }
+  
+  .mobile-padding {
+    @apply px-4;
+  }
+  
+  .mobile-text {
+    @apply text-sm;
+  }
+}
+
+@media (min-width: 769px) {
+  .mobile-only {
+    @apply hidden;
+  }
+}
+
+/* Animation utilities */
+.fade-in {
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.slide-up {
+  animation: slideUp 0.3s ease-out;
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+/* Loading spinner */
+.spinner {
+  @apply inline-block w-4 h-4 border-2 border-gray-300 border-t-transparent rounded-full animate-spin;
+}
