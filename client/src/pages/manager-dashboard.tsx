@@ -194,6 +194,12 @@ export default function ManagerDashboard() {
 
   // Reports filters
   const [reportsFilter, setReportsFilter] = useState("today");
+  
+  // Announcements state
+  const [currentAnnouncementIndex, setCurrentAnnouncementIndex] = useState(0);
+  const [announcementMessage, setAnnouncementMessage] = useState("");
+  const [announcementTarget, setAnnouncementTarget] = useState("generators");
+  
   // Initialize filters with proper default values
   React.useEffect(() => {
     if (!selectedHouseholdFilter) {
@@ -203,6 +209,16 @@ export default function ManagerDashboard() {
       setStatusFilter("all");
     }
   }, []);
+
+  // Auto-rotate announcements
+  React.useEffect(() => {
+    if (announcements && announcements.length > 1) {
+      const interval = setInterval(() => {
+        setCurrentAnnouncementIndex((prev) => (prev + 1) % Math.min(announcements.length, 3));
+      }, 4000);
+      return () => clearInterval(interval);
+    }
+  }, [announcements]);
 
   // Logout mutation
   const logoutMutation = useMutation({
@@ -261,6 +277,12 @@ export default function ManagerDashboard() {
   // Fetch village feedback data
   const { data: feedbacks = [] } = useQuery<any[]>({
     queryKey: ["/api/feedback/village", user?.villageId],
+    enabled: !!user?.villageId,
+  });
+
+  // Fetch announcements
+  const { data: announcements = [], isLoading: announcementsLoading } = useQuery<any[]>({
+    queryKey: ["/api/announcements", user?.villageId],
     enabled: !!user?.villageId,
   });
 
@@ -337,6 +359,23 @@ export default function ManagerDashboard() {
     onSuccess: () => {
       toast({ title: "Complaint resolved successfully" });
       queryClient.invalidateQueries({ queryKey: ["/api/complaints"] });
+    },
+  });
+
+  // Send announcement mutation
+  const sendAnnouncementMutation = useMutation({
+    mutationFn: (data: { message: string; targetAudience: string }) =>
+      apiRequest("POST", "/api/announcements", {
+        ...data,
+        villageId: user?.villageId,
+      }),
+    onSuccess: () => {
+      toast({ title: "Announcement sent successfully!" });
+      queryClient.invalidateQueries({ queryKey: ["/api/announcements"] });
+      setAnnouncementMessage("");
+    },
+    onError: () => {
+      toast({ title: "Failed to send announcement", variant: "destructive" });
     },
   });
 
@@ -1170,6 +1209,7 @@ export default function ManagerDashboard() {
                 { id: "issues", icon: AlertTriangle },
                 { id: "reports", icon: BarChart3 },
                 { id: "feedback", icon: MessageSquare },
+                { id: "announcements", icon: MessageSquare },
               ].map(({ id, icon: Icon }) => (
                 <button
                   key={id}
@@ -1275,6 +1315,18 @@ export default function ManagerDashboard() {
                   <MessageSquare className="h-5 w-5" />
                   Feedback
                 </button>
+                <button
+                  onClick={() => setActiveTab("announcements")}
+                  className={cn(
+                    "w-full flex items-center gap-3 px-3 py-2 rounded-lg text-left transition-colors text-sm",
+                    activeTab === "announcements"
+                      ? "bg-blue-100 text-blue-700"
+                      : "text-gray-700 hover:bg-gray-100",
+                  )}
+                >
+                  <MessageSquare className="h-5 w-5" />
+                  Announcements
+                </button>
               </nav>
             </div>
           </div>
@@ -1317,6 +1369,79 @@ export default function ManagerDashboard() {
                     description="Pending resolution"
                   />
                 </div>
+
+                {/* Sliding Announcements */}
+                <Card>
+                  <CardHeader className="pb-3">
+                    <CardTitle className="flex items-center justify-between text-lg">
+                      <div className="flex items-center">
+                        <MessageSquare className="w-5 h-5 mr-2 text-blue-600" />
+                        Latest Announcements
+                      </div>
+                      {announcements && announcements.length > 3 && (
+                        <Button 
+                          size="sm" 
+                          variant="outline"
+                          onClick={() => setActiveTab('announcements')}
+                          className="text-xs"
+                        >
+                          View All
+                        </Button>
+                      )}
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    {announcementsLoading ? (
+                      <div className="text-center py-4">
+                        <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-green-600 mx-auto"></div>
+                      </div>
+                    ) : announcements && announcements.length > 0 ? (
+                      <div className="relative overflow-hidden">
+                        <div 
+                          className="flex transition-transform duration-500 ease-in-out"
+                          style={{ 
+                            transform: `translateX(-${(currentAnnouncementIndex % Math.min(announcements.length, 3)) * 100}%)`,
+                            width: `${Math.min(announcements.length, 3) * 100}%`
+                          }}
+                        >
+                          {announcements.slice(0, 3).map((announcement: any, index: number) => (
+                            <div 
+                              key={announcement.id} 
+                              className="w-full flex-shrink-0 px-1"
+                            >
+                              <div className="p-3 bg-blue-50 rounded-lg border-l-4 border-blue-400">
+                                <p className="text-sm text-gray-800 font-medium line-clamp-2">{announcement.message}</p>
+                                <p className="text-xs text-gray-500 mt-1">
+                                  {new Date(announcement.createdAt).toLocaleDateString()}
+                                </p>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                        {announcements.length > 1 && (
+                          <div className="flex justify-center mt-3 space-x-1">
+                            {announcements.slice(0, 3).map((_, index) => (
+                              <button
+                                key={index}
+                                onClick={() => setCurrentAnnouncementIndex(index)}
+                                className={`w-2 h-2 rounded-full transition-colors ${
+                                  index === (currentAnnouncementIndex % Math.min(announcements.length, 3)) 
+                                    ? 'bg-blue-600'
+                                    : 'bg-gray-300'
+                                }`}
+                              />
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    ) : (
+                      <div className="text-center py-4">
+                        <MessageSquare className="w-8 h-8 text-gray-300 mx-auto mb-2" />
+                        <p className="text-gray-500 text-sm">No announcements</p>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
 
                 <Card>
                   <CardHeader className="p-3 sm:p-6">
@@ -4070,6 +4195,149 @@ export default function ManagerDashboard() {
                       <MessageSquare className="h-4 w-4 mr-2" />
                       View Feedback
                     </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          )}
+
+          {activeTab === "announcements" && (
+            <div className="space-y-6">
+              <div className="flex justify-between items-center">
+                <div>
+                  <h2 className="text-2xl font-bold">Announcements</h2>
+                  <p className="text-muted-foreground">
+                    Send announcements to your village community
+                  </p>
+                </div>
+              </div>
+
+              {/* Send New Announcement */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>Send New Announcement</CardTitle>
+                  <CardDescription>
+                    Send important updates and notifications to your villagers
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <form
+                    onSubmit={(e) => {
+                      e.preventDefault();
+                      if (announcementMessage.trim()) {
+                        sendAnnouncementMutation.mutate({
+                          message: announcementMessage,
+                          targetAudience: announcementTarget,
+                        });
+                      }
+                    }}
+                    className="space-y-4"
+                  >
+                    <div>
+                      <Label htmlFor="message">Announcement Message</Label>
+                      <Textarea
+                        id="message"
+                        value={announcementMessage}
+                        onChange={(e) => setAnnouncementMessage(e.target.value)}
+                        placeholder="Type your announcement message..."
+                        rows={4}
+                        required
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="target">Target Audience</Label>
+                      <Select
+                        value={announcementTarget}
+                        onValueChange={setAnnouncementTarget}
+                      >
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="generators">Generators (Households)</SelectItem>
+                          <SelectItem value="collectors">Collectors</SelectItem>
+                          <SelectItem value="all">All Village Users</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <Button
+                      type="submit"
+                      disabled={sendAnnouncementMutation.isPending || !announcementMessage.trim()}
+                      className="w-full"
+                    >
+                      {sendAnnouncementMutation.isPending
+                        ? "Sending..."
+                        : "Send Announcement"}
+                    </Button>
+                  </form>
+                </CardContent>
+              </Card>
+
+              {/* Announcements History */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>Announcement History</CardTitle>
+                  <CardDescription>
+                    View all previously sent announcements
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    {announcementsLoading ? (
+                      <div className="text-center py-8">
+                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600 mx-auto"></div>
+                        <p className="text-sm text-gray-500 mt-2">
+                          Loading announcements...
+                        </p>
+                      </div>
+                    ) : announcements && announcements.length > 0 ? (
+                      <div className="space-y-3">
+                        {announcements.map((announcement: any) => (
+                          <Card
+                            key={announcement.id}
+                            className="p-4 shadow-sm border-l-4 border-l-blue-400"
+                          >
+                            <div className="space-y-2">
+                              <div className="flex items-start justify-between">
+                                <p className="text-sm font-medium text-gray-900 flex-1 pr-2">
+                                  {announcement.message}
+                                </p>
+                                <Badge
+                                  variant="secondary"
+                                  className="text-xs whitespace-nowrap"
+                                >
+                                  {announcement.targetAudience === 'generators' ? 'Households' : 
+                                   announcement.targetAudience === 'collectors' ? 'Collectors' : 
+                                   'All Users'}
+                                </Badge>
+                              </div>
+                              
+                              <div className="flex items-center justify-between text-xs text-gray-500">
+                                <div className="flex items-center space-x-2">
+                                  <MessageSquare className="w-3 h-3" />
+                                  <span className="font-medium">Official Announcement</span>
+                                </div>
+                                <div className="flex items-center space-x-2">
+                                  <span>
+                                    {new Date(announcement.createdAt).toLocaleDateString()}
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
+                          </Card>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="text-center py-12">
+                        <MessageSquare className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+                        <h3 className="text-lg font-medium text-gray-900 mb-2">
+                          No Announcements
+                        </h3>
+                        <p className="text-gray-500 mb-4">
+                          You haven't sent any announcements yet. Send your first announcement above!
+                        </p>
+                      </div>
+                    )}
                   </div>
                 </CardContent>
               </Card>
