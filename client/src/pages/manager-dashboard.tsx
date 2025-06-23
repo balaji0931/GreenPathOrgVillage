@@ -2919,16 +2919,16 @@ export default function ManagerDashboard() {
           </div>
 
           {activeTab === "issues" && (
-            <div className="w-full mr-8">
-              <div className="flex justify-between items-center">
+            <div className="space-y-6">
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                 <div>
-                  <h2 className="text-2xl font-bold">Issues Management</h2>
-                  <p className="text-muted-foreground">
+                  <h2 className="text-xl sm:text-2xl font-bold">Issues Management</h2>
+                  <p className="text-sm sm:text-base text-muted-foreground">
                     Manage and resolve issues reported by villagers
                   </p>
                 </div>
                 <Select value={issuesFilter} onValueChange={setIssuesFilter}>
-                  <SelectTrigger className="w-40">
+                  <SelectTrigger className="w-full sm:w-40">
                     <SelectValue placeholder="Filter by status" />
                   </SelectTrigger>
                   <SelectContent>
@@ -2943,27 +2943,27 @@ export default function ManagerDashboard() {
               {/* Issues Overview Cards - Mobile Responsive */}
               <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
                 <Card>
-                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 p-3 sm:p-6">
+                    <CardTitle className="text-xs sm:text-sm font-medium truncate pr-1">
                       Total Issues
                     </CardTitle>
-                    <AlertTriangle className="h-4 w-4 text-muted-foreground" />
+                    <AlertTriangle className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground flex-shrink-0" />
                   </CardHeader>
-                  <CardContent>
-                    <div className="text-2xl font-bold">{allIssues.length}</div>
+                  <CardContent className="p-3 sm:p-6 pt-0">
+                    <div className="text-lg sm:text-2xl font-bold">{allIssues.length}</div>
                     <p className="text-xs text-muted-foreground">All time</p>
                   </CardContent>
                 </Card>
 
                 <Card>
-                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 p-3 sm:p-6">
+                    <CardTitle className="text-xs sm:text-sm font-medium truncate pr-1">
                       Open Issues
                     </CardTitle>
-                    <AlertCircle className="h-4 w-4 text-red-500" />
+                    <AlertCircle className="h-3 w-3 sm:h-4 sm:w-4 text-red-500 flex-shrink-0" />
                   </CardHeader>
-                  <CardContent>
-                    <div className="text-2xl font-bold text-red-600">
+                  <CardContent className="p-3 sm:p-6 pt-0">
+                    <div className="text-lg sm:text-2xl font-bold text-red-600">
                       {allIssues.filter((i) => i.status === "open").length}
                     </div>
                     <p className="text-xs text-muted-foreground">
@@ -2973,14 +2973,14 @@ export default function ManagerDashboard() {
                 </Card>
 
                 <Card>
-                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 p-3 sm:p-6">
+                    <CardTitle className="text-xs sm:text-sm font-medium truncate pr-1">
                       In Progress
                     </CardTitle>
-                    <Clock className="h-4 w-4 text-yellow-500" />
+                    <Clock className="h-3 w-3 sm:h-4 sm:w-4 text-yellow-500 flex-shrink-0" />
                   </CardHeader>
-                  <CardContent>
-                    <div className="text-2xl font-bold text-yellow-600">
+                  <CardContent className="p-3 sm:p-6 pt-0">
+                    <div className="text-lg sm:text-2xl font-bold text-yellow-600">
                       {
                         allIssues.filter((i) => i.status === "in_progress")
                           .length
@@ -2993,14 +2993,14 @@ export default function ManagerDashboard() {
                 </Card>
 
                 <Card>
-                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 p-3 sm:p-6">
+                    <CardTitle className="text-xs sm:text-sm font-medium truncate pr-1">
                       Resolved
                     </CardTitle>
-                    <CheckCircle className="h-4 w-4 text-green-500" />
+                    <CheckCircle className="h-3 w-3 sm:h-4 sm:w-4 text-green-500 flex-shrink-0" />
                   </CardHeader>
-                  <CardContent>
-                    <div className="text-2xl font-bold text-green-600">
+                  <CardContent className="p-3 sm:p-6 pt-0">
+                    <div className="text-lg sm:text-2xl font-bold text-green-600">
                       {allIssues.filter((i) => i.status === "resolved").length}
                     </div>
                     <p className="text-xs text-muted-foreground">Completed</p>
@@ -3010,14 +3010,14 @@ export default function ManagerDashboard() {
 
               {/* Issues List */}
               <Card>
-                <CardHeader>
-                  <CardTitle>Issue Reports</CardTitle>
-                  <CardDescription>
+                <CardHeader className="p-3 sm:p-6">
+                  <CardTitle className="text-lg sm:text-xl">Issue Reports</CardTitle>
+                  <CardDescription className="text-sm">
                     View and manage issues reported by village residents
                   </CardDescription>
                 </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
+                <CardContent className="p-3 sm:p-6 pt-0">
+                  <div className="space-y-3 sm:space-y-4">
                     {Array.isArray(allIssues) && allIssues.length > 0 ? (
                       allIssues
                         .filter((issue) => {
@@ -3025,52 +3025,55 @@ export default function ManagerDashboard() {
                           return issue.status === issuesFilter;
                         })
                         .map((issue) => (
-                          <Card key={issue.id}>
-                            <CardContent className="p-4">
+                          <Card key={issue.id} className="overflow-hidden">
+                            <CardContent className="p-3 sm:p-4">
                               <div className="space-y-3">
-                                <div className="flex items-start justify-between">
-                                  <div className="flex-1">
-                                    <div className="flex items-center sm:gap-1 mb-2">
-                                      <h4 className="font-semibold">
+                                <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+                                  <div className="flex-1 min-w-0">
+                                    <div className="flex flex-col sm:flex-row sm:items-center gap-2 mb-2">
+                                      <h4 className="font-semibold text-sm sm:text-base truncate">
                                         {issue.title}
                                       </h4>
-                                      <Badge
-                                        variant={
-                                          issue.status === "open"
-                                            ? "destructive"
-                                            : issue.status === "in_progress"
-                                              ? "secondary"
-                                              : "default"
-                                        }
-                                      >
-                                        {issue.status
-                                          .replace("_", " ")
-                                          .toUpperCase()}
-                                      </Badge>
-                                      <Badge variant="outline">
-                                        {issue.category}
-                                      </Badge>
+                                      <div className="flex flex-wrap gap-1">
+                                        <Badge
+                                          variant={
+                                            issue.status === "open"
+                                              ? "destructive"
+                                              : issue.status === "in_progress"
+                                                ? "secondary"
+                                                : "default"
+                                          }
+                                          className="text-xs"
+                                        >
+                                          {issue.status
+                                            .replace("_", " ")
+                                            .toUpperCase()}
+                                        </Badge>
+                                        <Badge variant="outline" className="text-xs">
+                                          {issue.category}
+                                        </Badge>
+                                      </div>
                                     </div>
-                                    <p className="text-sm text-muted-foreground mb-2">
+                                    <p className="text-xs sm:text-sm text-muted-foreground mb-2">
                                       Reported by: {issue.reportedBy} on{" "}
                                       {new Date(
                                         issue.createdAt,
                                       ).toLocaleDateString()}
                                     </p>
-                                    <p className="text-sm">
+                                    <p className="text-xs sm:text-sm break-words">
                                       {issue.description}
                                     </p>
 
                                     {issue.managerReply && (
-                                      <div className="mt-3 p-3 bg-blue-50 rounded-lg">
-                                        <p className="text-sm">
+                                      <div className="mt-3 p-2 sm:p-3 bg-blue-50 rounded-lg">
+                                        <p className="text-xs sm:text-sm break-words">
                                           <strong>Manager Reply:</strong>{" "}
                                           {issue.managerReply}
                                         </p>
                                       </div>
                                     )}
                                   </div>
-                                  <div className="flex gap-2 ml-4">
+                                  <div className="flex flex-row sm:flex-col gap-2 flex-shrink-0">
                                     {issue.photoUrl && (
                                       <Button
                                         size="sm"
@@ -3078,9 +3081,11 @@ export default function ManagerDashboard() {
                                         onClick={() =>
                                           window.open(issue.photoUrl, "_blank")
                                         }
+                                        className="text-xs"
                                       >
-                                        <Eye className="h-4 w-4 mr-1" />
-                                        Photo
+                                        <Eye className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
+                                        <span className="hidden xs:inline">Photo</span>
+                                        <span className="xs:hidden">📷</span>
                                       </Button>
                                     )}
                                     <Button
@@ -3089,9 +3094,11 @@ export default function ManagerDashboard() {
                                         setSelectedIssue(issue);
                                         setShowIssueDialog(true);
                                       }}
+                                      className="text-xs"
                                     >
-                                      <Edit className="h-4 w-4 mr-1" />
-                                      Manage
+                                      <Edit className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
+                                      <span className="hidden xs:inline">Manage</span>
+                                      <span className="xs:hidden">Edit</span>
                                     </Button>
                                   </div>
                                 </div>
@@ -3102,7 +3109,7 @@ export default function ManagerDashboard() {
                     ) : (
                       <div className="text-center py-8">
                         <AlertTriangle className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-                        <p className="text-muted-foreground">
+                        <p className="text-sm sm:text-base text-muted-foreground">
                           No issues reported
                         </p>
                       </div>
@@ -4062,9 +4069,9 @@ export default function ManagerDashboard() {
 
       {/* Issue Management Dialog */}
       <Dialog open={showIssueDialog} onOpenChange={setShowIssueDialog}>
-        <DialogContent>
+        <DialogContent className="max-w-[95vw] sm:max-w-md max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Manage Issue</DialogTitle>
+            <DialogTitle className="text-lg sm:text-xl">Manage Issue</DialogTitle>
           </DialogHeader>
           {selectedIssue && (
             <form
@@ -4081,49 +4088,98 @@ export default function ManagerDashboard() {
               }}
               className="space-y-4"
             >
-              <div>
-                <Label htmlFor="title">Title</Label>
-                <Input id="title" value={selectedIssue.title} disabled />
+              {/* Issue Details Section */}
+              <div className="p-3 bg-gray-50 rounded-lg space-y-3">
+                <h4 className="font-medium text-sm">Issue Details</h4>
+                <div>
+                  <Label className="text-xs text-gray-600">Title</Label>
+                  <p className="text-sm font-medium break-words">{selectedIssue.title}</p>
+                </div>
+                <div>
+                  <Label className="text-xs text-gray-600">Description</Label>
+                  <p className="text-sm break-words">{selectedIssue.description}</p>
+                </div>
+                <div>
+                  <Label className="text-xs text-gray-600">Reported By</Label>
+                  <p className="text-sm">{selectedIssue.reportedBy}</p>
+                </div>
+                <div>
+                  <Label className="text-xs text-gray-600">Category</Label>
+                  <Badge variant="outline" className="text-xs">
+                    {selectedIssue.category}
+                  </Badge>
+                </div>
+                {selectedIssue.photoUrl && (
+                  <div>
+                    <Label className="text-xs text-gray-600">Attached Photo</Label>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      onClick={() => window.open(selectedIssue.photoUrl, "_blank")}
+                      className="mt-1"
+                    >
+                      <Eye className="h-3 w-3 mr-1" />
+                      View Photo
+                    </Button>
+                  </div>
+                )}
+                {selectedIssue.managerReply && (
+                  <div>
+                    <Label className="text-xs text-gray-600">Current Manager Reply</Label>
+                    <p className="text-sm p-2 bg-blue-50 rounded border break-words">
+                      {selectedIssue.managerReply}
+                    </p>
+                  </div>
+                )}
               </div>
-              <div>
-                <Label htmlFor="description">Description</Label>
-                <Textarea
-                  id="description"
-                  value={selectedIssue.description}
-                  disabled
-                  rows={3}
-                />
+
+              {/* Update Form Section */}
+              <div className="space-y-4">
+                <h4 className="font-medium text-sm border-b pb-2">Update Issue</h4>
+                <div>
+                  <Label htmlFor="status" className="text-sm">Status</Label>
+                  <Select name="status" defaultValue={selectedIssue.status}>
+                    <SelectTrigger className="mt-1">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="open">Open</SelectItem>
+                      <SelectItem value="in_progress">In Progress</SelectItem>
+                      <SelectItem value="resolved">Resolved</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label htmlFor="managerReply" className="text-sm">Manager Reply</Label>
+                  <Textarea
+                    id="managerReply"
+                    name="managerReply"
+                    defaultValue={selectedIssue.managerReply || ""}
+                    placeholder="Add your response to this issue..."
+                    rows={3}
+                    className="mt-1 text-sm"
+                  />
+                </div>
               </div>
-              <div>
-                <Label htmlFor="status">Status</Label>
-                <Select name="status" defaultValue={selectedIssue.status}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="open">Open</SelectItem>
-                    <SelectItem value="in_progress">In Progress</SelectItem>
-                    <SelectItem value="resolved">Resolved</SelectItem>
-                  </SelectContent>
-                </Select>
+
+              <div className="flex gap-2 pt-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setShowIssueDialog(false)}
+                  className="flex-1"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  type="submit"
+                  disabled={updateIssueMutation.isPending}
+                  className="flex-1"
+                >
+                  {updateIssueMutation.isPending ? "Updating..." : "Update Issue"}
+                </Button>
               </div>
-              <div>
-                <Label htmlFor="managerReply">Manager Reply</Label>
-                <Textarea
-                  id="managerReply"
-                  name="managerReply"
-                  defaultValue={selectedIssue.managerReply || ""}
-                  placeholder="Add your response to this issue..."
-                  rows={3}
-                />
-              </div>
-              <Button
-                type="submit"
-                disabled={updateIssueMutation.isPending}
-                className="w-full"
-              >
-                {updateIssueMutation.isPending ? "Updating..." : "Update Issue"}
-              </Button>
             </form>
           )}
         </DialogContent>
