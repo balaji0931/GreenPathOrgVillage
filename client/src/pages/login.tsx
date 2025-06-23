@@ -102,6 +102,11 @@ export default function Login() {
                   t('auth.loginButton')
                 )}
               </Button>
+              
+              {/* PWA Install Button */}
+              <div className="mt-4">
+                <InstallPWA showInline={true} />
+              </div>
             </form>
 
             <div className="mt-6 text-center">

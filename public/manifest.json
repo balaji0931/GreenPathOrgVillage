@@ -73,44 +73,5 @@
       "type": "image/png",
       "purpose": "maskable"
     }
-  ],
-  "screenshots": [
-    {
-      "src": "/screenshots/desktop-home.png",
-      "sizes": "1280x720",
-      "type": "image/png",
-      "form_factor": "wide",
-      "label": "Dashboard Overview"
-    },
-    {
-      "src": "/screenshots/mobile-home.png",
-      "sizes": "360x640",
-      "type": "image/png",
-      "form_factor": "narrow",
-      "label": "Mobile Dashboard"
-    }
-  ],
-  "shortcuts": [
-    {
-      "name": "Manager Dashboard",
-      "short_name": "Manager",
-      "description": "Access manager dashboard",
-      "url": "/manager",
-      "icons": [{ "src": "/icons/manager-shortcut.png", "sizes": "96x96" }]
-    },
-    {
-      "name": "Collector Dashboard",
-      "short_name": "Collector",
-      "description": "Access collector dashboard",
-      "url": "/collector",
-      "icons": [{ "src": "/icons/collector-shortcut.png", "sizes": "96x96" }]
-    },
-    {
-      "name": "Household Portal",
-      "short_name": "Household",
-      "description": "Access household portal",
-      "url": "/generator",
-      "icons": [{ "src": "/icons/household-shortcut.png", "sizes": "96x96" }]
-    }
   ]
 }

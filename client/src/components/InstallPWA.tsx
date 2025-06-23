@@ -33,17 +33,21 @@ export function InstallPWA({ showInline = false, onInstallComplete }: InstallPWA
 
   // Inline version for login page
   if (showInline) {
-    if (!isInstallable) return null;
-    
+    // Always show the install button for testing, even if not installable yet
     return (
       <Button
         onClick={handleInstall}
-        disabled={isInstalling}
+        disabled={isInstalling || !isInstallable}
         variant="outline"
         className="w-full border-green-200 text-green-700 hover:bg-green-50"
       >
         <Download className="h-4 w-4 mr-2" />
         {isInstalling ? t('app.installing') : t('app.installApp')}
+        {!isInstallable && (
+          <span className="ml-2 text-xs opacity-60">
+            ({isOnline ? 'Preparing...' : 'Offline'})
+          </span>
+        )}
       </Button>
     );
   }

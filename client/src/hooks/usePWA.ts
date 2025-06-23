@@ -58,7 +58,11 @@ export function usePWA() {
   }, []);
 
   const installApp = async () => {
-    if (!deferredPrompt) return false;
+    if (!deferredPrompt) {
+      // Fallback for browsers that don't support beforeinstallprompt
+      console.log('Install prompt not available. Please use browser menu to install.');
+      return false;
+    }
 
     try {
       await deferredPrompt.prompt();
@@ -118,6 +122,16 @@ export function registerServiceWorker() {
 
       } catch (error) {
         console.error('[PWA] Service Worker registration failed:', error);
+        // Try to register from different path as fallback
+        try {
+          const fallbackRegistration = await navigator.serviceWorker.register('./sw.js', {
+            scope: './',
+            updateViaCache: 'none'
+          });
+          console.log('[PWA] Service Worker registered via fallback:', fallbackRegistration.scope);
+        } catch (fallbackError) {
+          console.error('[PWA] Fallback registration also failed:', fallbackError);
+        }
       }
     });
   }
