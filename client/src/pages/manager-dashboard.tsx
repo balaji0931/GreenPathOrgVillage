@@ -216,8 +216,8 @@ export default function ManagerDashboard() {
 
   // Update issue mutation
   const updateIssueMutation = useMutation({
-    mutationFn: ({ id, status, managerReply }: { id: number; status: string; managerReply?: string }) =>
-      apiRequest('PUT', `/api/issues/${id}`, { status, managerReply }),
+    mutationFn: ({ issueId, status, managerReply }: { issueId: number; status: string; managerReply?: string }) =>
+      apiRequest('PUT', `/api/issues/${issueId}`, { status, managerReply }),
     onSuccess: () => {
       toast({ title: "Issue updated successfully" });
       queryClient.invalidateQueries({ queryKey: ['/api/issues'] });
@@ -938,7 +938,7 @@ export default function ManagerDashboard() {
   return (
     <>
       <div className="min-h-screen flex flex-col bg-gray-50">
-        {/* Top Navbar - Mobile Responsive */}
+        {/* Top Navbar -Mobile Responsive */}
         <div className="bg-white border-b px-3 sm:px-6 py-3 sm:py-4">
           <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 sm:gap-4">
             <div className="flex-1 min-w-0">
@@ -1634,124 +1634,6 @@ export default function ManagerDashboard() {
             </div>
           )}
 
-          {activeTab === "issues" && (
-            <div className="space-y-6">
-              <div className="flex justify-between items-center">
-                <div>
-                  <h2 className="text-2xl font-bold">Issues Management</h2>
-                  <p className="text-muted-foreground">Manage and resolve community issues</p>
-                </div>
-              </div>
-
-              <div className="space-y-4">
-                {/* Note: Using issues data here, but fetching issues separately would be ideal */}
-                {/* This is a placeholder since we need issues data, not feedback data */}
-                <Card>
-                  <CardContent className="p-8 text-center">
-                    <p className="text-muted-foreground">
-                      Issues management will be available once the issues endpoint is properly connected.
-                    </p>
-                  </CardContent>
-                </Card>
-                {false && feedbacks && feedbacks.length > 0 && feedbacks.map((issue: any) => (
-                  <Card key={issue.id}>
-                    <CardContent className="p-4">
-                      <div className="flex items-start justify-between">
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2 mb-2">
-                            <h3 className="font-semibold">{issue.title}</h3>
-                            <Badge variant={
-                              issue.status === 'open' ? 'destructive' : 
-                              issue.status === 'in_progress' ? 'secondary' : 'default'
-                            }>
-                              {issue.status}
-                            </Badge>
-                          </div>
-                          <p className="text-sm text-muted-foreground mb-2">
-                            Category: {issue.category} | Reported by: {issue.reportedBy}
-                          </p>
-                          <p className="text-sm mb-3">{issue.description}</p>
-                          {issue.photoUrl && (
-                            <div className="mb-3">
-                              <Button size="sm" variant="outline">
-                                <Eye className="h-4 w-4 mr-1" />
-                                View Photo
-                              </Button>
-                            </div>
-                          )}
-                          {issue.managerReply && (
-                            <div className="mt-3 p-3 bg-muted rounded-lg">
-                              <span className="font-medium text-sm">Manager Reply:</span>
-                              <p className="text-sm">{issue.managerReply}</p>
-                            </div>
-                          )}
-                        </div>
-                        <div className="flex flex-col gap-2">
-                          <Select
-                            value={issue.status}
-                            onValueChange={(status) => updateIssueMutation.mutate({ 
-                              id: issue.id, 
-                              status,
-                              managerReply: issue.managerReply 
-                            })}
-                          >
-                            <SelectTrigger className="w-32">
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="open">Open</SelectItem>
-                              <SelectItem value="in_progress">In Progress</SelectItem>
-                              <SelectItem value="resolved">Resolved</SelectItem>
-                            </SelectContent>
-                          </Select>
-                          <Dialog>
-                            <DialogTrigger asChild>
-                              <Button size="sm" variant="outline">
-                                <MessageSquare className="h-4 w-4 mr-1" />
-                                Reply
-                              </Button>
-                            </DialogTrigger>
-                            <DialogContent>
-                              <DialogHeader>
-                                <DialogTitle>Reply to Issue</DialogTitle>
-                              </DialogHeader>
-                              <div className="space-y-4">
-                                <div>
-                                  <Label>Manager Reply</Label>
-                                  <Textarea
-                                    placeholder="Type your reply..."
-                                    defaultValue={issue.managerReply || ""}
-                                    id={`reply-${issue.id}`}
-                                  />
-                                </div>
-                                <Button onClick={() => {
-                                  const replyElement = document.getElementById(`reply-${issue.id}`) as HTMLTextAreaElement;
-                                  if (replyElement) {
-                                    updateIssueMutation.mutate({
-                                      id: issue.id,
-                                      status: issue.status,
-                                      managerReply: replyElement.value
-                                    });
-                                  }
-                                }}>
-                                  Submit Reply
-                                </Button>
-                              </div>
-                            </DialogContent>
-                          </Dialog>
-                        </div>
-                      </div>
-                      <div className="flex justify-between items-center mt-3 text-xs text-muted-foreground">
-                        <span>Created: {new Date(issue.createdAt).toLocaleString()}</span>
-                        <span>Updated: {new Date(issue.updatedAt).toLocaleString()}</span>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            </div>
-          )}
-
           {activeTab === "feedback" && (
             <div className="space-y-6">
               <div className="flex justify-between items-center">
@@ -1870,14 +1752,14 @@ export default function ManagerDashboard() {
                             const headName = (feedback.headName || '').toLowerCase();
                             const collectorName = (feedback.collectorName || '').toLowerCase();
                             const householdUid = (feedback.householdUid || '').toLowerCase();
-                            
+
                             if (!headName.includes(searchLower) && 
                                 !collectorName.includes(searchLower) &&
                                 !householdUid.includes(searchLower)) {
                               return false;
                             }
                           }
-                          
+
                           // Date filter
                           if (feedbackDate) {
                             const feedbackDateObj = new Date(feedback.createdAt);
@@ -2372,11 +2254,7 @@ export default function ManagerDashboard() {
               </Card>
             </div>
           )}
-
-          
         </div>
-
-
 
           {activeTab === "issues" && (
             <div className="space-y-6">
@@ -2779,8 +2657,6 @@ export default function ManagerDashboard() {
               </Card>
             </div>
           )}
-
-          
         </div>
       </div>
 
@@ -2802,6 +2678,7 @@ export default function ManagerDashboard() {
                 status: formData.get('status') as string,
                 managerReply: formData.get('managerReply') as string,
               });
+              setShowIssueDialog(false);
             }} className="space-y-4">
               <div>
                 <Label htmlFor="title">Title</Label>
