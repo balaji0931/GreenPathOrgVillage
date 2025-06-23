@@ -44,7 +44,13 @@
     "minimum10Chars": "కనీసం 10 అక్షరాలు అవసరం",
     "tapToChange": "ఫోటో మార్చడానికి నొక్కండి",
     "tapToUpload": "ఫోటో అప్లోడ్ చేయడానికి నొక్కండి",
-    "photosHelp": "ఫోటోలు సమస్యలను వేగంగా పరిష్కరించడంలో సహాయపడతాయి"
+    "photosHelp": "ఫోటోలు సమస్యలను వేగంగా పరిష్కరించడంలో సహాయపడతాయి",
+    "observationGoodSegregation": "మంచి వేరుచేయడం",
+    "observationMixedWaste": "మిశ్రమ వ్యర్థాలు",
+    "observationExcessivePlastic": "అధిక ప్లాస్టిక్",
+    "observationCleanOrganized": "శుభ్రంగా మరియు వ్యవస్థీకృతంగా",
+    "observationPoorHygiene": "చెడు పరిశుభ్రత",
+    "observationNoWaste": "వ్యర్థాలు లేవు"
   },
   "auth": {
     "login": "లాగిన్",
@@ -67,7 +73,9 @@
     "overview": "అవలోకనం",
     "stats": "గణాంకాలు",
     "recentActivity": "ఇటీవల కార్యకలాపాలు",
-    "quickActions": "త్వరిత చర్యలు"
+    "quickActions": "త్వరిత చర్యలు",
+    "todaySummary": "నేటి సారాంశం",
+    "missed": "తప్పిపోయినవి"
   },
   "navigation": {
     "dashboard": "డాష్‌బోర్డ్",
@@ -158,7 +166,31 @@
     "typeComments": "ఇక్కడ ఏవైనా వ్యాఖ్యలు టైప్ చేయండి...",
     "photoTaken": "ఫోటో తీశారు",
     "takePhoto": "ఫోటో తీయండి",
-    "required": "అవసరం"
+    "required": "అవసరం",
+    "collectionForm": "సేకరణ ఫారం",
+    "wasteProperlySegregated": "వ్యర్థాలు సరిగా వేరు చేయబడ్డాయా?",
+    "howGoodSegregation": "వేరుచేయడం ఎంత మంచిది?",
+    "selectRating": "రేటింగ్ ఎంచుకోండి",
+    "veryPoor": "చాలా చెడు",
+    "poor": "చెడు",
+    "veryGood": "చాలా మంచి",
+    "isPlasticReduced": "ప్లాస్టిక్ వాడకం తగ్గించబడిందా?",
+    "isWetWasteComposting": "తేమ వ్యర్థాల కంపోస్టింగ్ చేయబడిందా?",
+    "howCleanArea": "ప్రాంతం ఎంత శుభ్రంగా ఉంది?",
+    "whatDidYouSee": "మీరు ఏమి చూశారు?",
+    "wasteCollectionStatus": "వ్యర్థ సేకరణ స్థితి",
+    "collected": "సేకరించబడింది",
+    "notCollected": "సేకరించబడలేదు",
+    "reasonNotCollecting": "సేకరించకపోవడానికి కారణం",
+    "selectReason": "కారణం ఎంచుకోండి",
+    "photoRequired": "ఫోటో అవసరం",
+    "takePhotoFirst": "దయచేసి ముందుగా ఫోటో తీయండి",
+    "voiceOrText": "వాయిస్ రికార్డింగ్ లేదా వచన వ్యాఖ్యలు",
+    "submitCollectionBtn": "సేకరణ సమర్పించండి",
+    "submittingForm": "సమర్పిస్తోంది...",
+    "confirmSubmissionTitle": "సేకరణ సమర్పించాలా?",
+    "confirmSubmissionText": "మీరు నిజంగా దీని కోసం ఈ సేకరణను సమర్పించాలనుకుంటున్నారా:",
+    "okSubmit": "అవును, సమర్పించండి"
   },
   "issues": {
     "title": "సమస్యలు",

@@ -1099,7 +1099,7 @@ export default function CollectorDashboard() {
 
             <Card>
               <CardHeader>
-                <CardTitle className="text-lg">Settings</CardTitle>
+                <CardTitle className="text-lg">{t('navigation.settings')}</CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
                 <Button
@@ -1108,7 +1108,7 @@ export default function CollectorDashboard() {
                   onClick={() => setShowPasswordModal(true)}
                 >
                   <Settings className="mr-3" size={20} />
-                  Change Password
+{t('auth.changePassword')}
                 </Button>
                 
                 <Button
@@ -1117,24 +1117,24 @@ export default function CollectorDashboard() {
                   onClick={logout}
                 >
                   <LogOut className="mr-3" size={20} />
-                  Logout
+{t('auth.logout')}
                 </Button>
               </CardContent>
             </Card>
 
             <Card>
               <CardHeader>
-                <CardTitle className="text-lg">Today's Summary</CardTitle>
+                <CardTitle className="text-lg">{t('dashboard.todaySummary')}</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-2 gap-4 text-center">
                   <div>
                     <div className="text-2xl font-bold text-green-600">{dailyStats.completed}</div>
-                    <div className="text-sm text-gray-600">Collections</div>
+                    <div className="text-sm text-gray-600">{t('collections.title')}</div>
                   </div>
                   <div>
                     <div className="text-2xl font-bold text-orange-500">{dailyStats.missed}</div>
-                    <div className="text-sm text-gray-600">Missed</div>
+                    <div className="text-sm text-gray-600">{t('dashboard.missed')}</div>
                   </div>
                 </div>
               </CardContent>
@@ -1147,7 +1147,7 @@ export default function CollectorDashboard() {
       <Dialog open={showScanner} onOpenChange={setShowScanner}>
         <DialogContent className="max-w-sm">
           <DialogHeader>
-            <DialogTitle>Scan QR Code</DialogTitle>
+            <DialogTitle>{t('collections.scanQR')}</DialogTitle>
           </DialogHeader>
           <QRScanner onScan={handleQRScan} onClose={() => setShowScanner(false)} />
         </DialogContent>
@@ -1157,7 +1157,7 @@ export default function CollectorDashboard() {
       <Dialog open={showCollectionModal} onOpenChange={setShowCollectionModal}>
         <DialogContent className="max-w-sm max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle className="text-center">📋 Collection Form</DialogTitle>
+            <DialogTitle className="text-center">📋 {t('collections.collectionForm')}</DialogTitle>
           </DialogHeader>
 
           <div className="space-y-6">
@@ -1172,7 +1172,7 @@ export default function CollectorDashboard() {
             {/* Waste Segregated? - REQUIRED */}
             <div className="p-4 border-2 border-orange-200 bg-orange-50 rounded-xl">
               <Label className="text-lg font-bold text-center block mb-3">
-                🗂️ Was waste properly segregated? *
+                🗂️ {t('collections.wasteProperlySegregated')} *
               </Label>
               <div className="flex space-x-3">
                 <Button
@@ -1184,7 +1184,7 @@ export default function CollectorDashboard() {
                       : 'bg-white border-2 border-green-300 text-green-700 hover:bg-green-50'
                   }`}
                 >
-                  ✅ YES
+                  ✅ {t('app.yes')}
                 </Button>
                 <Button
                   variant={collectionForm.wasteSegregated === false ? "destructive" : "outline"}
@@ -1195,7 +1195,7 @@ export default function CollectorDashboard() {
                       : 'bg-white border-2 border-red-300 text-red-700 hover:bg-red-50'
                   }`}
                 >
-                  ❌ NO
+                  ❌ {t('app.no')}
                 </Button>
               </div>
             </div>
@@ -1203,7 +1203,7 @@ export default function CollectorDashboard() {
             {/* Segregation Rating - REQUIRED */}
             <div className="p-4 border-2 border-yellow-200 bg-yellow-50 rounded-xl">
               <Label className="text-lg font-bold text-center block mb-3">
-                ⭐ How good is the segregation? *
+                ⭐ {t('collections.howGoodSegregation')} *
               </Label>
               <div className="flex justify-center space-x-2">
                 {[1, 2, 3, 4, 5].map((rating) => (
@@ -1224,19 +1224,19 @@ export default function CollectorDashboard() {
                 ))}
               </div>
               <div className="text-center mt-2 text-sm text-gray-600">
-                {collectionForm.segregationRating === 0 && "Select rating"}
-                {collectionForm.segregationRating === 1 && "😞 Very Poor"}
-                {collectionForm.segregationRating === 2 && "😐 Poor"}
-                {collectionForm.segregationRating === 3 && "🙂 Good"}
-                {collectionForm.segregationRating === 4 && "😊 Very Good"}
-                {collectionForm.segregationRating === 5 && "🤩 Excellent"}
+                {collectionForm.segregationRating === 0 && t('collections.selectRating')}
+                {collectionForm.segregationRating === 1 && `😞 ${t('collections.veryPoor')}`}
+                {collectionForm.segregationRating === 2 && `😐 ${t('collections.poor')}`}
+                {collectionForm.segregationRating === 3 && `🙂 ${t('collections.good')}`}
+                {collectionForm.segregationRating === 4 && `😊 ${t('collections.veryGood')}`}
+                {collectionForm.segregationRating === 5 && `🤩 ${t('collections.excellent')}`}
               </div>
             </div>
 
             {/* Plastic Reduced? */}
             <div className="p-3 border border-gray-200 bg-gray-50 rounded-xl">
               <Label className="text-base font-bold text-center block mb-3">
-                ♻️ Is plastic use reduced?
+                ♻️ {t('collections.isPlasticReduced')}
               </Label>
               <div className="flex space-x-3">
                 <Button
@@ -1248,7 +1248,7 @@ export default function CollectorDashboard() {
                       : 'border-green-300 text-green-700 hover:bg-green-50'
                   }`}
                 >
-                  ✅ YES
+                  ✅ {t('app.yes')}
                 </Button>
                 <Button
                   variant={collectionForm.plasticReduced === false ? "destructive" : "outline"}
@@ -1259,7 +1259,7 @@ export default function CollectorDashboard() {
                       : 'border-red-300 text-red-700 hover:bg-red-50'
                   }`}
                 >
-                  ❌ NO
+                  ❌ {t('app.no')}
                 </Button>
               </div>
             </div>
@@ -1267,7 +1267,7 @@ export default function CollectorDashboard() {
             {/* Wet Waste Composting */}
             <div className="p-3 border border-gray-200 bg-gray-50 rounded-xl">
               <Label className="text-base font-bold text-center block mb-3">
-                🌱 Is wet waste composting done?
+                🌱 {t('collections.isWetWasteComposting')}
               </Label>
               <div className="flex space-x-3">
                 <Button
@@ -1279,7 +1279,7 @@ export default function CollectorDashboard() {
                       : 'border-green-300 text-green-700 hover:bg-green-50'
                   }`}
                 >
-                  ✅ YES
+                  ✅ {t('app.yes')}
                 </Button>
                 <Button
                   variant={collectionForm.wetWasteComposting === false ? "destructive" : "outline"}
@@ -1290,7 +1290,7 @@ export default function CollectorDashboard() {
                       : 'border-red-300 text-red-700 hover:bg-red-50'
                   }`}
                 >
-                  ❌ NO
+                  ❌ {t('app.no')}
                 </Button>
               </div>
             </div>
@@ -1298,7 +1298,7 @@ export default function CollectorDashboard() {
             {/* Cleanliness Rating */}
             <div className="p-3 border border-gray-200 bg-gray-50 rounded-xl">
               <Label className="text-base font-bold text-center block mb-3">
-                🧹 How clean is the area?
+                🧹 {t('collections.howCleanArea')}
               </Label>
               <div className="flex justify-center space-x-2">
                 {[1, 2, 3, 4, 5].map((rating) => (
@@ -1323,10 +1323,19 @@ export default function CollectorDashboard() {
             {/* Observations */}
             <div className="p-3 border border-gray-200 bg-gray-50 rounded-xl">
               <Label className="text-base font-bold text-center block mb-3">
-                👀 What did you see?
+                👀 {t('collections.whatDidYouSee')}
               </Label>
               <div className="grid grid-cols-2 gap-2">
                 {OBSERVATION_OPTIONS.map((observation) => {
+                  const observationKeys = {
+                    "Good segregation": "observationGoodSegregation",
+                    "Mixed waste": "observationMixedWaste", 
+                    "Excessive plastic": "observationExcessivePlastic",
+                    "Clean and organized": "observationCleanOrganized",
+                    "Poor hygiene": "observationPoorHygiene",
+                    "No waste present": "observationNoWaste"
+                  };
+                  
                   const emoji = {
                     "Good segregation": "✅",
                     "Mixed waste": "🔄", 
@@ -1348,7 +1357,7 @@ export default function CollectorDashboard() {
                       }`}
                     >
                       <div className="text-lg">{emoji}</div>
-                      <div className="text-xs mt-1">{observation}</div>
+                      <div className="text-xs mt-1">{t(`app.${observationKeys[observation]}`)}</div>
                     </Button>
                   );
                 })}
@@ -1395,7 +1404,7 @@ export default function CollectorDashboard() {
 
             {/* Waste Accepted? */}
             <div>
-              <Label className="text-sm font-medium">Waste Collection Status</Label>
+              <Label className="text-sm font-medium">{t('collections.wasteCollectionStatus')}</Label>
               <div className="flex space-x-4 mt-2">
                 <Button
                   variant={collectionForm.wasteAccepted === true ? "default" : "outline"}
@@ -1403,7 +1412,7 @@ export default function CollectorDashboard() {
                   className="flex-1"
                 >
                   <CheckCircle className="mr-2" size={16} />
-                  Collected
+                  {t('collections.collected')}
                 </Button>
                 <Button
                   variant={collectionForm.wasteAccepted === false ? "destructive" : "outline"}
@@ -1411,7 +1420,7 @@ export default function CollectorDashboard() {
                   className="flex-1"
                 >
                   <XCircle className="mr-2" size={16} />
-                  Not Collected
+{t('collections.notCollected')}
                 </Button>
               </div>
             </div>
@@ -1419,13 +1428,13 @@ export default function CollectorDashboard() {
             {/* If not collected, show reason */}
             {collectionForm.wasteAccepted === false && (
               <div>
-                <Label className="text-sm font-medium">Reason for not collecting</Label>
+                <Label className="text-sm font-medium">{t('collections.reasonNotCollecting')}</Label>
                 <Select
                   value={collectionForm.notCollectedReason}
                   onValueChange={(value) => setCollectionForm({...collectionForm, notCollectedReason: value})}
                 >
                   <SelectTrigger className="mt-2">
-                    <SelectValue placeholder="Select reason" />
+                    <SelectValue placeholder={t('collections.selectReason')} />
                   </SelectTrigger>
                   <SelectContent>
                     {NOT_COLLECTED_REASONS.map((reason) => (

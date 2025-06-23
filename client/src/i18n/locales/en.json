@@ -44,7 +44,13 @@
     "minimum10Chars": "Minimum 10 characters required",
     "tapToChange": "Tap to change photo",
     "tapToUpload": "Tap to upload photo",
-    "photosHelp": "Photos help resolve issues faster"
+    "photosHelp": "Photos help resolve issues faster",
+    "observationGoodSegregation": "Good segregation",
+    "observationMixedWaste": "Mixed waste",
+    "observationExcessivePlastic": "Excessive plastic",
+    "observationCleanOrganized": "Clean and organized",
+    "observationPoorHygiene": "Poor hygiene",
+    "observationNoWaste": "No waste present"
   },
   "auth": {
     "login": "Login",
@@ -67,7 +73,9 @@
     "overview": "Overview",
     "stats": "Statistics",
     "recentActivity": "Recent Activity",
-    "quickActions": "Quick Actions"
+    "quickActions": "Quick Actions",
+    "todaySummary": "Today's Summary",
+    "missed": "Missed"
   },
   "navigation": {
     "dashboard": "Dashboard",
@@ -158,7 +166,31 @@
     "typeComments": "Type any comments here...",
     "photoTaken": "Photo Taken",
     "takePhoto": "Take Photo",
-    "required": "Required"
+    "required": "Required",
+    "collectionForm": "Collection Form",
+    "wasteProperlySegregated": "Was waste properly segregated?",
+    "howGoodSegregation": "How good is the segregation?",
+    "selectRating": "Select rating",
+    "veryPoor": "Very Poor",
+    "poor": "Poor",
+    "veryGood": "Very Good",
+    "isPlasticReduced": "Is plastic use reduced?",
+    "isWetWasteComposting": "Is wet waste composting done?",
+    "howCleanArea": "How clean is the area?",
+    "whatDidYouSee": "What did you see?",
+    "wasteCollectionStatus": "Waste Collection Status",
+    "collected": "Collected",
+    "notCollected": "Not Collected",
+    "reasonNotCollecting": "Reason for not collecting",
+    "selectReason": "Select reason",
+    "photoRequired": "Photo Required",
+    "takePhotoFirst": "Please take a photo first",
+    "voiceOrText": "Voice Recording or Text Comments",
+    "submitCollectionBtn": "SUBMIT COLLECTION",
+    "submittingForm": "Submitting...",
+    "confirmSubmissionTitle": "Submit Collection?",
+    "confirmSubmissionText": "Are you sure you want to submit this collection for:",
+    "okSubmit": "OK, SUBMIT"
   },
   "issues": {
     "title": "Issues",
