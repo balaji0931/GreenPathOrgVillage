@@ -1,0 +1,87 @@
+import { useState } from 'react';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Download, Smartphone, Wifi, WifiOff } from 'lucide-react';
+import { usePWA } from '@/hooks/usePWA';
+import { useTranslation } from 'react-i18next';
+
+export function InstallPWA() {
+  const { isInstallable, isInstalled, isOnline, installApp } = usePWA();
+  const [isInstalling, setIsInstalling] = useState(false);
+  const { t } = useTranslation();
+
+  const handleInstall = async () => {
+    setIsInstalling(true);
+    const success = await installApp();
+    setIsInstalling(false);
+    
+    if (success) {
+      console.log('App installed successfully');
+    }
+  };
+
+  if (isInstalled) {
+    return null; // Don't show install prompt if already installed
+  }
+
+  return (
+    <>
+      {/* Offline Status Banner */}
+      {!isOnline && (
+        <div className="fixed top-0 left-0 right-0 bg-yellow-500 text-white text-center py-2 z-50">
+          <div className="flex items-center justify-center gap-2">
+            <WifiOff className="h-4 w-4" />
+            <span className="text-sm font-medium">You're offline - Some features may be limited</span>
+          </div>
+        </div>
+      )}
+
+      {/* Install Prompt */}
+      {isInstallable && (
+        <div className="fixed bottom-4 left-4 right-4 md:left-auto md:right-4 md:w-80 z-40">
+          <Card className="shadow-lg border-green-200">
+            <CardHeader className="pb-3">
+              <CardTitle className="flex items-center gap-2 text-lg">
+                <Smartphone className="h-5 w-5 text-green-600" />
+                Install GreenPath App
+              </CardTitle>
+              <CardDescription>
+                Install our app for faster access and offline features
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="pt-0">
+              <div className="flex gap-2">
+                <Button
+                  onClick={handleInstall}
+                  disabled={isInstalling}
+                  className="flex-1 bg-green-600 hover:bg-green-700"
+                  size="sm"
+                >
+                  <Download className="h-4 w-4 mr-2" />
+                  {isInstalling ? 'Installing...' : 'Install'}
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    // Hide the install prompt temporarily
+                    window.dispatchEvent(new Event('hideinstallprompt'));
+                  }}
+                >
+                  Later
+                </Button>
+              </div>
+              <div className="mt-3 text-xs text-muted-foreground">
+                <div className="flex items-center gap-1 mb-1">
+                  <Wifi className="h-3 w-3" />
+                  Works offline
+                </div>
+                <div>Fast loading • Push notifications</div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+    </>
+  );
+}
