@@ -18,8 +18,16 @@ export function useAuth() {
 
   // Listen for online/offline changes
   useEffect(() => {
-    const handleOnline = () => setIsOffline(false);
-    const handleOffline = () => setIsOffline(true);
+    const handleOnline = () => {
+      console.log('[Auth] Going online - will refetch user data');
+      setIsOffline(false);
+      // Manual refetch when coming back online
+      setTimeout(() => refetch(), 100);
+    };
+    const handleOffline = () => {
+      console.log('[Auth] Going offline - using cached data');
+      setIsOffline(true);
+    };
 
     window.addEventListener('online', handleOnline);
     window.addEventListener('offline', handleOffline);
@@ -40,7 +48,7 @@ export function useAuth() {
       window.removeEventListener('online', handleOnline);
       window.removeEventListener('offline', handleOffline);
     };
-  }, []);
+  }, [refetch]);
 
   // Only make network request when online
   const { data: networkUser, isLoading, error, refetch } = useQuery({
@@ -63,8 +71,9 @@ export function useAuth() {
     retry: false,
     staleTime: 5 * 60 * 1000,
     refetchOnWindowFocus: false,
-    refetchOnReconnect: true,
+    refetchOnReconnect: false, // Don't auto-refetch on reconnect
     refetchInterval: false,
+    gcTime: 0, // Don't cache the query result
   });
 
   const loginMutation = useMutation({
