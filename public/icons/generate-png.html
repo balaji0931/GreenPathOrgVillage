@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html>
 <head>
@@ -12,67 +13,71 @@
             canvas.height = size;
             const ctx = canvas.getContext('2d');
 
-            // Background circle
-            ctx.fillStyle = '#16a34a';
-            ctx.beginPath();
-            ctx.arc(size / 2, size / 2, size / 2, 0, 2 * Math.PI);
-            ctx.fill();
+            // Green background
+            ctx.fillStyle = '#6ba344';
+            ctx.fillRect(0, 0, size, size);
 
-            // Leaf shape - more detailed and realistic
+            // White leaf shape
             ctx.fillStyle = '#ffffff';
-            ctx.globalAlpha = 0.95;
+            ctx.lineWidth = size * 0.08;
+            ctx.lineJoin = 'round';
+            ctx.lineCap = 'round';
             
             const centerX = size / 2;
             const centerY = size / 2;
-            const leafWidth = size * 0.18;
-            const leafHeight = size * 0.28;
+            const leafSize = size * 0.35;
             
-            // More realistic leaf shape using curves
+            // Create the curved leaf shape similar to your image
             ctx.beginPath();
-            ctx.moveTo(centerX, centerY - leafHeight);
-            // Right side of leaf
-            ctx.quadraticCurveTo(centerX + leafWidth * 0.8, centerY - leafHeight * 0.6, centerX + leafWidth, centerY);
-            ctx.quadraticCurveTo(centerX + leafWidth * 0.7, centerY + leafHeight * 0.3, centerX + leafWidth * 0.3, centerY + leafHeight * 0.7);
-            ctx.quadraticCurveTo(centerX + leafWidth * 0.1, centerY + leafHeight * 0.9, centerX, centerY + leafHeight);
-            // Left side of leaf
-            ctx.quadraticCurveTo(centerX - leafWidth * 0.1, centerY + leafHeight * 0.9, centerX - leafWidth * 0.3, centerY + leafHeight * 0.7);
-            ctx.quadraticCurveTo(centerX - leafWidth * 0.7, centerY + leafHeight * 0.3, centerX - leafWidth, centerY);
-            ctx.quadraticCurveTo(centerX - leafWidth * 0.8, centerY - leafHeight * 0.6, centerX, centerY - leafHeight);
+            
+            // Start from top
+            ctx.moveTo(centerX + leafSize * 0.3, centerY - leafSize * 1.1);
+            
+            // Right curve
+            ctx.quadraticCurveTo(
+                centerX + leafSize * 1.2, centerY - leafSize * 0.8,
+                centerX + leafSize * 1.1, centerY - leafSize * 0.2
+            );
+            
+            ctx.quadraticCurveTo(
+                centerX + leafSize * 1.0, centerY + leafSize * 0.4,
+                centerX + leafSize * 0.6, centerY + leafSize * 0.8
+            );
+            
+            // Bottom curve
+            ctx.quadraticCurveTo(
+                centerX + leafSize * 0.2, centerY + leafSize * 1.0,
+                centerX - leafSize * 0.2, centerY + leafSize * 0.9
+            );
+            
+            // Left curve
+            ctx.quadraticCurveTo(
+                centerX - leafSize * 0.8, centerY + leafSize * 0.6,
+                centerX - leafSize * 0.9, centerY + leafSize * 0.1
+            );
+            
+            ctx.quadraticCurveTo(
+                centerX - leafSize * 0.8, centerY - leafSize * 0.4,
+                centerX - leafSize * 0.4, centerY - leafSize * 0.8
+            );
+            
+            // Back to top
+            ctx.quadraticCurveTo(
+                centerX - leafSize * 0.1, centerY - leafSize * 1.0,
+                centerX + leafSize * 0.3, centerY - leafSize * 1.1
+            );
+            
             ctx.fill();
-
-            // Leaf stem (main vein)
-            ctx.strokeStyle = '#16a34a';
-            ctx.globalAlpha = 0.7;
-            ctx.lineWidth = size * 0.015;
-            ctx.beginPath();
-            ctx.moveTo(centerX, centerY - leafHeight * 0.9);
-            ctx.lineTo(centerX, centerY + leafHeight * 0.9);
-            ctx.stroke();
             
-            // Side veins
-            ctx.lineWidth = size * 0.008;
-            ctx.globalAlpha = 0.5;
-            
-            // Left side veins
+            // Add the inner curved line detail
+            ctx.strokeStyle = '#6ba344';
+            ctx.lineWidth = size * 0.025;
             ctx.beginPath();
-            ctx.moveTo(centerX, centerY - leafHeight * 0.4);
-            ctx.quadraticCurveTo(centerX - leafWidth * 0.3, centerY - leafHeight * 0.2, centerX - leafWidth * 0.6, centerY + leafHeight * 0.1);
-            ctx.stroke();
-            
-            ctx.beginPath();
-            ctx.moveTo(centerX, centerY);
-            ctx.quadraticCurveTo(centerX - leafWidth * 0.2, centerY + leafHeight * 0.1, centerX - leafWidth * 0.4, centerY + leafHeight * 0.4);
-            ctx.stroke();
-            
-            // Right side veins
-            ctx.beginPath();
-            ctx.moveTo(centerX, centerY - leafHeight * 0.4);
-            ctx.quadraticCurveTo(centerX + leafWidth * 0.3, centerY - leafHeight * 0.2, centerX + leafWidth * 0.6, centerY + leafHeight * 0.1);
-            ctx.stroke();
-            
-            ctx.beginPath();
-            ctx.moveTo(centerX, centerY);
-            ctx.quadraticCurveTo(centerX + leafWidth * 0.2, centerY + leafHeight * 0.1, centerX + leafWidth * 0.4, centerY + leafHeight * 0.4);
+            ctx.moveTo(centerX - leafSize * 0.6, centerY - leafSize * 0.1);
+            ctx.quadraticCurveTo(
+                centerX - leafSize * 0.2, centerY + leafSize * 0.1,
+                centerX + leafSize * 0.4, centerY + leafSize * 0.2
+            );
             ctx.stroke();
 
             return canvas.toDataURL('image/png');

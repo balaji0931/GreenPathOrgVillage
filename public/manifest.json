@@ -5,7 +5,7 @@
   "start_url": "/?utm_source=homescreen",
   "display": "standalone",
   "background_color": "#ffffff",
-  "theme_color": "#16a34a",
+  "theme_color": "#6ba344",
   "orientation": "portrait-primary",
   "scope": "/",
   "prefer_related_applications": false,
