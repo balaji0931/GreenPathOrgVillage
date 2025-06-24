@@ -26,8 +26,17 @@ export function usePWA() {
       setIsInstalled(true);
     }
 
+    // Force set installable to true for testing on mobile devices
+    // This ensures the button shows even if beforeinstallprompt hasn't fired yet
+    setTimeout(() => {
+      if (!isInstalled) {
+        setIsInstallable(true);
+      }
+    }, 1000);
+
     // Listen for beforeinstallprompt event
     const handleBeforeInstallPrompt = (e: Event) => {
+      console.log('[PWA] beforeinstallprompt event fired');
       e.preventDefault();
       setDeferredPrompt(e as BeforeInstallPromptEvent);
       setIsInstallable(true);
@@ -59,15 +68,29 @@ export function usePWA() {
 
   const installApp = async () => {
     if (!deferredPrompt) {
-      // Fallback for browsers that don't support beforeinstallprompt
-      console.log('Install prompt not available. Please use browser menu to install.');
+      // Show instructions for manual installation
+      const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+      const isAndroid = /Android/.test(navigator.userAgent);
+      
+      let message = 'To install this app:\n';
+      if (isIOS) {
+        message += '1. Tap the Share button in Safari\n2. Scroll down and tap "Add to Home Screen"\n3. Tap "Add" to confirm';
+      } else if (isAndroid) {
+        message += '1. Tap the menu (⋮) in your browser\n2. Tap "Add to Home screen" or "Install app"\n3. Tap "Add" to confirm';
+      } else {
+        message += '1. Look for an install icon in your browser address bar\n2. Or check your browser menu for "Install" option';
+      }
+      
+      alert(message);
       return false;
     }
 
     try {
+      console.log('[PWA] Prompting for installation');
       await deferredPrompt.prompt();
       const choiceResult = await deferredPrompt.userChoice;
       
+      console.log('[PWA] User choice:', choiceResult.outcome);
       if (choiceResult.outcome === 'accepted') {
         setDeferredPrompt(null);
         setIsInstallable(false);
@@ -93,6 +116,12 @@ export function registerServiceWorker() {
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', async () => {
       try {
+        // Unregister any existing service workers first
+        const registrations = await navigator.serviceWorker.getRegistrations();
+        for (const registration of registrations) {
+          await registration.unregister();
+        }
+
         const registration = await navigator.serviceWorker.register('/sw.js', {
           scope: '/',
           updateViaCache: 'none'

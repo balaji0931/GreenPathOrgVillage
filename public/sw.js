@@ -34,6 +34,7 @@ self.addEventListener('install', event => {
       })
       .then(() => {
         console.log('[Service Worker] Installation complete');
+        // Skip waiting and activate immediately
         return self.skipWaiting();
       })
       .catch(error => {
@@ -42,12 +43,13 @@ self.addEventListener('install', event => {
   );
 });
 
-// Activate event - clean up old caches
+// Activate event - clean up old caches and claim clients
 self.addEventListener('activate', event => {
   console.log('[Service Worker] Activating...');
   event.waitUntil(
-    caches.keys()
-      .then(cacheNames => {
+    Promise.all([
+      // Clean up old caches
+      caches.keys().then(cacheNames => {
         return Promise.all(
           cacheNames.map(cacheName => {
             if (cacheName !== STATIC_CACHE && cacheName !== DYNAMIC_CACHE) {

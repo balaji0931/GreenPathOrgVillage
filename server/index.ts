@@ -40,30 +40,41 @@ app.use((req, res, next) => {
   next();
 });
 
-// PWA routes - must be before registerRoutes to avoid conflicts
+// Import required modules at the top
 import path from 'path';
 import fs from 'fs';
 
+// PWA routes - must be before registerRoutes to avoid conflicts
 app.get("/sw.js", (_req, res) => {
-  res.setHeader("Content-Type", "application/javascript; charset=utf-8");
-  res.setHeader("Service-Worker-Allowed", "/");
-  res.setHeader("Cache-Control", "no-cache");
-  const swPath = path.join(process.cwd(), "public", "sw.js");
-  if (fs.existsSync(swPath)) {
-    res.sendFile(swPath);
-  } else {
-    res.status(404).send("Service worker not found");
+  try {
+    res.setHeader("Content-Type", "application/javascript; charset=utf-8");
+    res.setHeader("Service-Worker-Allowed", "/");
+    res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
+    const swPath = path.join(process.cwd(), "public", "sw.js");
+    if (fs.existsSync(swPath)) {
+      res.sendFile(swPath);
+    } else {
+      res.status(404).send("// Service worker not found");
+    }
+  } catch (error) {
+    console.error("SW route error:", error);
+    res.status(500).send("// Service worker error");
   }
 });
 
 app.get("/manifest.json", (_req, res) => {
-  res.setHeader("Content-Type", "application/manifest+json; charset=utf-8");
-  res.setHeader("Cache-Control", "no-cache");
-  const manifestPath = path.join(process.cwd(), "public", "manifest.json");
-  if (fs.existsSync(manifestPath)) {
-    res.sendFile(manifestPath);
-  } else {
-    res.status(404).send("Manifest not found");
+  try {
+    res.setHeader("Content-Type", "application/manifest+json; charset=utf-8");
+    res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
+    const manifestPath = path.join(process.cwd(), "public", "manifest.json");
+    if (fs.existsSync(manifestPath)) {
+      res.sendFile(manifestPath);
+    } else {
+      res.status(404).json({ error: "Manifest not found" });
+    }
+  } catch (error) {
+    console.error("Manifest route error:", error);
+    res.status(500).json({ error: "Manifest error" });
   }
 });
 
