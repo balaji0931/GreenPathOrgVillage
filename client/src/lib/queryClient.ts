@@ -48,7 +48,13 @@ export const queryClient = new QueryClient({
       refetchInterval: false,
       refetchOnWindowFocus: false,
       staleTime: 5 * 60 * 1000, // 5 minutes
-      retry: false,
+      retry: (failureCount, error: any) => {
+        // Don't retry if offline
+        if (!navigator.onLine) return false;
+        // Don't retry auth errors if we have cached data
+        if (error.message?.includes('401') && localStorage.getItem('greenpath_user')) return false;
+        return failureCount < 2;
+      },
     },
     mutations: {
       retry: false,

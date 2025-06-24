@@ -30,12 +30,17 @@ function Router() {
     );
   }
 
-  // Show offline message if no user and offline
+  // Show offline message if no user and offline but we have cached data
   if (!user) {
-    if (!navigator.onLine && localStorage.getItem('greenpath_user')) {
-      const { OfflineMessage } = require('./components/OfflineMessage');
-      const cachedUser = JSON.parse(localStorage.getItem('greenpath_user') || '{}');
-      return <OfflineMessage userRole={cachedUser.role} userName={cachedUser.name} />;
+    const cachedUserData = localStorage.getItem('greenpath_user');
+    if (!navigator.onLine && cachedUserData) {
+      try {
+        const cachedUser = JSON.parse(cachedUserData);
+        return <OfflineMessage userRole={cachedUser.role} userName={cachedUser.name} />;
+      } catch (error) {
+        console.error('Failed to parse cached user data:', error);
+        localStorage.removeItem('greenpath_user');
+      }
     }
     return <LoginPage />;
   }

@@ -10,7 +10,7 @@ export interface User {
 }
 
 export function useAuth() {
-  const { data: user, isLoading, error } = useQuery({
+  const { data: user, isLoading, error, refetch } = useQuery({
     queryKey: ["/api/auth/user"],
     queryFn: async () => {
       try {
@@ -24,25 +24,32 @@ export function useAuth() {
 
         return userData;
       } catch (error: any) {
-        if (error.message?.includes('Failed to fetch') || !navigator.onLine) {
-          // Return cached user if offline
+        if (error.message?.includes('Failed to fetch') || error.message?.includes('401') || !navigator.onLine) {
+          // Return cached user if offline or unauthorized (but we have cached data)
           const cached = localStorage.getItem('greenpath_user');
           if (cached) {
-            const cachedUser = JSON.parse(cached);
-            console.log('[Auth] Using cached user data for offline mode:', cachedUser);
-            return { ...cachedUser, offline: true };
+            try {
+              const cachedUser = JSON.parse(cached);
+              console.log('[Auth] Using cached user data for offline/unauthorized mode:', cachedUser);
+              return { ...cachedUser, offline: true };
+            } catch (parseError) {
+              console.error('[Auth] Failed to parse cached user data:', parseError);
+              localStorage.removeItem('greenpath_user');
+            }
           }
         }
         throw error;
       }
     },
     retry: (failureCount, error: any) => {
-      // Don't retry if offline
+      // Don't retry if offline or if we have cached data
       if (!navigator.onLine) return false;
-      return failureCount < 3;
+      if (error.message?.includes('401') && localStorage.getItem('greenpath_user')) return false;
+      return failureCount < 2; // Reduce retry attempts
     },
     staleTime: 5 * 60 * 1000, // 5 minutes
     refetchOnWindowFocus: false,
+    refetchOnReconnect: true, // Refetch when back online
   });
 
   const loginMutation = useMutation({

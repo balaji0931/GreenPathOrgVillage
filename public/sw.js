@@ -345,31 +345,13 @@ async function handleApiRequest(request) {
       }
     }
 
-    // Handle auth endpoints when offline - check if user was previously logged in
+    // Handle auth endpoints when offline - return proper error to let client handle cached data
     if (url.pathname === "/api/auth/user") {
-      try {
-        // Try to get cached user data
-        const cache = await caches.open(DYNAMIC_CACHE);
-        const cachedAuth = await cache.match('/api/auth/user');
-        if (cachedAuth && cachedAuth.status === 200) {
-          return cachedAuth;
-        }
-        
-        // If no cached auth, return offline user status
-        return new Response(JSON.stringify({ 
-          message: "Offline", 
-          offline: true,
-          cachedUser: null 
-        }), {
-          status: 200, // Change to 200 to allow app to load
-          headers: { "Content-Type": "application/json" },
-        });
-      } catch (e) {
-        return new Response(JSON.stringify({ message: "Offline" }), {
-          status: 200,
-          headers: { "Content-Type": "application/json" },
-        });
-      }
+      // Return 401 to trigger client-side cached data handling
+      return new Response(JSON.stringify({ message: "Unauthorized" }), {
+        status: 401,
+        headers: { "Content-Type": "application/json" },
+      });
     }
 
     // Return empty arrays for other list endpoints
