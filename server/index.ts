@@ -78,6 +78,33 @@ app.get("/manifest.json", (_req, res) => {
   }
 });
 
+// Serve icon files with correct MIME types
+app.get("/icons/:filename", (req, res) => {
+  try {
+    const filename = req.params.filename;
+    const iconPath = path.join(process.cwd(), "public", "icons", filename);
+    
+    if (!fs.existsSync(iconPath)) {
+      return res.status(404).send("Icon not found");
+    }
+
+    // Set correct MIME type based on file extension
+    if (filename.endsWith('.png')) {
+      res.setHeader("Content-Type", "image/png");
+    } else if (filename.endsWith('.svg')) {
+      res.setHeader("Content-Type", "image/svg+xml");
+    } else if (filename.endsWith('.ico')) {
+      res.setHeader("Content-Type", "image/x-icon");
+    }
+    
+    res.setHeader("Cache-Control", "public, max-age=31536000"); // Cache for 1 year
+    res.sendFile(iconPath);
+  } catch (error) {
+    console.error("Icon route error:", error);
+    res.status(500).send("Icon error");
+  }
+});
+
 (async () => {
   const server = await registerRoutes(app);
 
