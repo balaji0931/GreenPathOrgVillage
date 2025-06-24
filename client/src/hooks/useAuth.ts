@@ -1,4 +1,5 @@
-import { useQuery, useMutation } from "@tanstack/react-query";
+
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useState, useEffect } from "react";
 
@@ -14,34 +15,40 @@ export interface User {
 export function useAuth() {
   const [isOffline, setIsOffline] = useState(!navigator.onLine);
   const [cachedUser, setCachedUser] = useState<User | null>(null);
+  const queryClient = useQueryClient();
 
-  // Listen for online/offline changes
+  // Load cached user on mount
   useEffect(() => {
-    const handleOnline = () => {
-      console.log('[Auth] Going online - will refetch user data');
-      setIsOffline(false);
-      // Manual refetch when coming back online
-      setTimeout(() => refetch(), 100);
-    };
-    const handleOffline = () => {
-      console.log('[Auth] Going offline - using cached data');
-      setIsOffline(true);
-    };
-
-    window.addEventListener('online', handleOnline);
-    window.addEventListener('offline', handleOffline);
-
-    // Load cached user on mount
     const cached = localStorage.getItem('greenpath_user');
     if (cached) {
       try {
         const parsedUser = JSON.parse(cached);
         setCachedUser(parsedUser);
+        console.log('[Auth] Loaded cached user:', parsedUser);
       } catch (error) {
         console.error('[Auth] Failed to parse cached user:', error);
         localStorage.removeItem('greenpath_user');
       }
     }
+
+    // Set initial online/offline state
+    setIsOffline(!navigator.onLine);
+  }, []);
+
+  // Listen for online/offline changes
+  useEffect(() => {
+    const handleOnline = () => {
+      console.log('[Auth] Going online');
+      setIsOffline(false);
+    };
+    
+    const handleOffline = () => {
+      console.log('[Auth] Going offline');
+      setIsOffline(true);
+    };
+
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
 
     return () => {
       window.removeEventListener('online', handleOnline);
@@ -50,11 +57,10 @@ export function useAuth() {
   }, []);
 
   // Only make network request when online
-  const { data: networkUser, isLoading, error, refetch } = useQuery({
+  const { data: networkUser, isLoading, error } = useQuery({
     queryKey: ["/api/auth/user"],
     queryFn: async () => {
       console.log('[Auth] Making network request for user data');
-
       const response = await apiRequest("GET", "/api/auth/user");
       const userData = await response.json();
 
@@ -62,6 +68,7 @@ export function useAuth() {
       if (userData && !userData.message) {
         localStorage.setItem('greenpath_user', JSON.stringify(userData));
         setCachedUser(userData);
+        console.log('[Auth] Cached user data:', userData);
       }
 
       return userData;
@@ -70,9 +77,9 @@ export function useAuth() {
     retry: false,
     staleTime: 5 * 60 * 1000,
     refetchOnWindowFocus: false,
-    refetchOnReconnect: false, // Don't auto-refetch on reconnect
+    refetchOnReconnect: false,
     refetchInterval: false,
-    gcTime: 0, // Don't cache the query result
+    gcTime: 0,
   });
 
   const loginMutation = useMutation({
@@ -81,7 +88,7 @@ export function useAuth() {
       return response.json();
     },
     onSuccess: () => {
-      refetch();
+      queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
     },
   });
 
@@ -92,7 +99,7 @@ export function useAuth() {
     onSuccess: () => {
       localStorage.removeItem('greenpath_user');
       setCachedUser(null);
-      refetch();
+      queryClient.clear();
     },
   });
 
@@ -102,26 +109,25 @@ export function useAuth() {
       return response.json();
     },
     onSuccess: () => {
-      refetch();
+      queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
     },
   });
 
-  // Simple logic: if offline use cached, if online use network
+  // Determine current user and loading state
   let currentUser: User | undefined;
   let currentIsLoading = false;
 
   if (isOffline) {
     // Offline - use cached user if available
-    if (cachedUser) {
-      currentUser = { ...cachedUser, offline: true };
-    }
+    currentUser = cachedUser ? { ...cachedUser, offline: true } : undefined;
+    currentIsLoading = false;
   } else {
-    // Online - use network data or loading state
+    // Online - use network data
     currentUser = networkUser;
     currentIsLoading = isLoading;
   }
 
-  console.log('[Auth] Simple state:', {
+  console.log('[Auth] Current state:', {
     isOffline,
     hasCache: !!cachedUser,
     hasNetwork: !!networkUser,
