@@ -1,10 +1,16 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1"
+    />
     <title>GreenPath Org - Waste Management</title>
-    <meta name="description" content="Comprehensive waste management system for villages with real-time tracking, multilingual support, and offline capabilities." />
+    <meta
+      name="description"
+      content="Comprehensive waste management system for villages with real-time tracking, multilingual support, and offline capabilities."
+    />
 
     <!-- PWA Meta Tags -->
     <meta name="theme-color" content="#16a34a" />
@@ -22,31 +28,93 @@
     <link rel="manifest" href="/manifest.json" />
 
     <!-- Icons -->
-    <link rel="icon" type="image/png" sizes="32x32" href="/icons/icon-96x96.png" />
-    <link rel="icon" type="image/png" sizes="16x16" href="/icons/icon-72x72.png" />
+    <link
+      rel="icon"
+      type="image/png"
+      sizes="32x32"
+      href="/icons/icon-96x96.png"
+    />
+    <link
+      rel="icon"
+      type="image/png"
+      sizes="16x16"
+      href="/icons/icon-72x72.png"
+    />
     <link rel="apple-touch-icon" href="/icons/icon-152x152.png" />
     <link rel="apple-touch-icon" sizes="72x72" href="/icons/icon-72x72.png" />
     <link rel="apple-touch-icon" sizes="96x96" href="/icons/icon-96x96.png" />
-    <link rel="apple-touch-icon" sizes="128x128" href="/icons/icon-128x128.png" />
-    <link rel="apple-touch-icon" sizes="144x144" href="/icons/icon-144x144.png" />
-    <link rel="apple-touch-icon" sizes="152x152" href="/icons/icon-152x152.png" />
-    <link rel="apple-touch-icon" sizes="192x192" href="/icons/icon-192x192.png" />
-    <link rel="apple-touch-icon" sizes="384x384" href="/icons/icon-384x384.png" />
-    <link rel="apple-touch-icon" sizes="512x512" href="/icons/icon-512x512.png" />
+    <link
+      rel="apple-touch-icon"
+      sizes="128x128"
+      href="/icons/icon-128x128.png"
+    />
+    <link
+      rel="apple-touch-icon"
+      sizes="144x144"
+      href="/icons/icon-144x144.png"
+    />
+    <link
+      rel="apple-touch-icon"
+      sizes="152x152"
+      href="/icons/icon-152x152.png"
+    />
+    <link
+      rel="apple-touch-icon"
+      sizes="192x192"
+      href="/icons/icon-192x192.png"
+    />
+    <link
+      rel="apple-touch-icon"
+      sizes="384x384"
+      href="/icons/icon-384x384.png"
+    />
+    <link
+      rel="apple-touch-icon"
+      sizes="512x512"
+      href="/icons/icon-512x512.png"
+    />
 
     <!-- Microsoft Tiles -->
     <meta name="msapplication-TileImage" content="/icons/icon-144x144.png" />
-    <meta name="msapplication-square70x70logo" content="/icons/icon-72x72.png" />
-    <meta name="msapplication-square150x150logo" content="/icons/icon-152x152.png" />
-    <meta name="msapplication-wide310x150logo" content="/icons/icon-384x384.png" />
-    <meta name="msapplication-square310x310logo" content="/icons/icon-512x512.png" />
-  
+    <meta
+      name="msapplication-square70x70logo"
+      content="/icons/icon-72x72.png"
+    />
+    <meta
+      name="msapplication-square150x150logo"
+      content="/icons/icon-152x152.png"
+    />
+    <meta
+      name="msapplication-wide310x150logo"
+      content="/icons/icon-384x384.png"
+    />
+    <meta
+      name="msapplication-square310x310logo"
+      content="/icons/icon-512x512.png"
+    />
+
     <link rel="icon" type="image/x-icon" href="/favicon.ico" />
   </head>
   <body>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
     <!-- This is a replit script which adds a banner on the top of the page when opened in development mode outside the replit environment -->
-    <script type="text/javascript" src="https://replit.com/public/js/replit-dev-banner.js"></script>
+    <script>
+      if ("serviceWorker" in navigator) {
+        window.addEventListener("load", function () {
+          navigator.serviceWorker
+            .register("/sw.js")
+            .then(function (registration) {
+              console.log(
+                "✅ Service Worker registered with scope:",
+                registration.scope,
+              );
+            })
+            .catch(function (error) {
+              console.error("❌ Service Worker registration failed:", error);
+            });
+        });
+      }
+    </script>
   </body>
 </html>

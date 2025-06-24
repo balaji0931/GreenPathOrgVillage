@@ -1,0 +1,27 @@
+Manifest /manifest.json
+Errors and warnings
+Richer PWA Install Ul won't be available on desktop. Please add at least one screenshot with the form_factor set to wide.
+Richer PWA Install Ul won't be available on mobile. Please add at least one screenshot for which form_factor is not set or set to a value other than wide.
+Icon https://ccf52ddd-0a76-4997-99ce-404985e15a8c-00-2zivmnxzzqaaf.pike.replit.dev/icons/icon-72x72.png failed to load
+Icon https://ccf52ddd-0a76-4997-99ce-404985e15a8c-00-2zivmnxzzqaaf.pike.replit.dev/icons/icon-96x96.png failed to load
+Icon https://ccf52ddd-0a76-4997-99ce-404985e15a8c-00-2zivmnxzzqaaf.pike.replit.dev/icons/icon-128x128.png failed to load
+Icon https://ccf52ddd-0a76-4997-99ce-404985e15a8c-00-2zivmnxzzqaaf.pike.replit.dev/icons/icon-144x144.png failed to load
+Icon https://ccf52ddd-0a76-4997-99ce-404985e15a8c-00-2zivmnxzzqaaf.pike.replit.dev/icons/icon-152x152.png failed to load
+Icon https://ccf52ddd-0a76-4997-99ce-404985e15a8c-00-2zivmnxzzqaaf.pike.replit.dev/icons/icon-192x192.png failed to load
+Icon https://ccf52ddd-0a76-4997-99ce-404985e15a8c-00-2zivmnxzzqaaf.pike.replit.dev/icons/icon-384x384.png failed to load
+Actual size (336x336)px of Icon https://ccf52ddd-0a76-4997-99ce-404985e15a8c-00-2zivmnxzzqaaf.pike.replit.dev/icons/icon-512x512.png does not match specified size
+(512x512px)
+Icon https://ccf52ddd-0a76-4997-99ce-404985e15a8c-00-2zivmnxzzqaaf.pike.replit.dev/icons/icon-192x192.png failed to load
+Actual size (336x336)px of Icon https://ccf52ddd-0a76-4997-99ce-404985e15a8c-00-2zivmnxzzqaaf.pike.replit.dev/icons/icon-512x512.png does not match specified size
+(512x512px)
+Installability
+No supplied icon is at least 144 pixels square in PNG, SVG, or WebP format, with the purpose attribute unset or set to 'any'.
+Identity
+Name
+Short name
+Description
+Computed App ID
+GreenPath Org - Waste Management
+GreenPath
+Comprehensive waste management system for villages
+https://ccf52ddd-0a76-4997-99ce-404985e15a8c-00-2zivmnxzzqaaf.pike.replit.dev/® Learn more
