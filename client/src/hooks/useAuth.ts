@@ -10,9 +10,27 @@ export interface User {
 }
 
 export function useAuth() {
+  // Check if we should use cached data instead of making network requests
+  const shouldUseCachedData = !navigator.onLine && localStorage.getItem('greenpath_user');
+  
   const { data: user, isLoading, error, refetch } = useQuery({
     queryKey: ["/api/auth/user"],
     queryFn: async () => {
+      // If offline and we have cached data, return it immediately
+      if (!navigator.onLine) {
+        const cached = localStorage.getItem('greenpath_user');
+        if (cached) {
+          try {
+            const cachedUser = JSON.parse(cached);
+            console.log('[Auth] Using cached user data for offline mode:', cachedUser);
+            return { ...cachedUser, offline: true };
+          } catch (parseError) {
+            console.error('[Auth] Failed to parse cached user data:', parseError);
+            localStorage.removeItem('greenpath_user');
+          }
+        }
+      }
+
       try {
         const response = await apiRequest("GET", "/api/auth/user");
         const userData = await response.json();
@@ -30,7 +48,7 @@ export function useAuth() {
           if (cached) {
             try {
               const cachedUser = JSON.parse(cached);
-              console.log('[Auth] Using cached user data for offline/unauthorized mode:', cachedUser);
+              console.log('[Auth] Using cached user data for error fallback:', cachedUser);
               return { ...cachedUser, offline: true };
             } catch (parseError) {
               console.error('[Auth] Failed to parse cached user data:', parseError);
@@ -41,15 +59,18 @@ export function useAuth() {
         throw error;
       }
     },
+    enabled: !shouldUseCachedData, // Disable query if we should use cached data
     retry: (failureCount, error: any) => {
-      // Don't retry if offline or if we have cached data
+      // Don't retry if offline
       if (!navigator.onLine) return false;
+      // Don't retry auth errors if we have cached data
       if (error.message?.includes('401') && localStorage.getItem('greenpath_user')) return false;
-      return failureCount < 2; // Reduce retry attempts
+      return failureCount < 1; // Reduce retry attempts further
     },
     staleTime: 5 * 60 * 1000, // 5 minutes
     refetchOnWindowFocus: false,
     refetchOnReconnect: true, // Refetch when back online
+    refetchInterval: false, // Disable automatic refetching
   });
 
   const loginMutation = useMutation({
@@ -81,10 +102,28 @@ export function useAuth() {
     },
   });
 
+  // If we're using cached data (offline), get it manually
+  let currentUser = user;
+  let currentIsLoading = isLoading;
+  
+  if (shouldUseCachedData && !user && !isLoading) {
+    const cached = localStorage.getItem('greenpath_user');
+    if (cached) {
+      try {
+        const cachedUser = JSON.parse(cached);
+        currentUser = { ...cachedUser, offline: true };
+        currentIsLoading = false;
+      } catch (parseError) {
+        console.error('[Auth] Failed to parse cached user data in return:', parseError);
+        localStorage.removeItem('greenpath_user');
+      }
+    }
+  }
+
   return {
-    user: user as User | undefined,
-    isLoading,
-    isAuthenticated: !!user,
+    user: currentUser as User | undefined,
+    isLoading: currentIsLoading,
+    isAuthenticated: !!currentUser,
     login: loginMutation.mutateAsync,
     logout: logoutMutation.mutateAsync,
     changePassword: changePasswordMutation.mutateAsync,
