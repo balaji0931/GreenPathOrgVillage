@@ -1,3 +1,4 @@
+
 const CACHE_NAME = "greenpath-v1.0.0";
 const STATIC_CACHE = "greenpath-static-v1.0.0";
 const DYNAMIC_CACHE = "greenpath-dynamic-v1.0.0";
@@ -7,8 +8,14 @@ const STATIC_ASSETS = [
   "/",
   "/manifest.json",
   "/index.html",
+  "/icons/icon-72x72.png",
+  "/icons/icon-96x96.png",
+  "/icons/icon-128x128.png",
+  "/icons/icon-144x144.png",
+  "/icons/icon-152x152.png",
   "/icons/icon-192x192.png",
-  "/icons/icon-512x512.png",
+  "/icons/icon-384x384.png",
+  "/icons/icon-512x512.png"
 ];
 
 // API endpoints to cache
@@ -41,7 +48,7 @@ self.addEventListener("install", (event) => {
       })
       .catch((error) => {
         console.error("[Service Worker] Installation failed:", error);
-      }),
+      })
   );
 });
 
@@ -58,13 +65,13 @@ self.addEventListener("activate", (event) => {
               console.log("[Service Worker] Deleting old cache:", cacheName);
               return caches.delete(cacheName);
             }
-          }),
+          })
         );
       }),
     ]).then(() => {
       console.log("[Service Worker] Activation complete");
       return self.clients.claim();
-    }),
+    })
   );
 });
 
@@ -117,7 +124,7 @@ async function handleApiRequest(request) {
     return networkResponse;
   } catch (error) {
     console.log(
-      "[Service Worker] Network failed for API request, trying cache",
+      "[Service Worker] Network failed for API request, trying cache"
     );
 
     // Try cache if network fails
@@ -219,7 +226,7 @@ async function syncOfflineActions() {
         console.log(
           "[Service Worker] Failed to sync action:",
           action.id,
-          error,
+          error
         );
       }
     }
@@ -268,18 +275,3 @@ self.addEventListener("notificationclick", (event) => {
     event.waitUntil(self.clients.openWindow("/"));
   }
 });
-
-const urlsToCache = [
-  '/',
-  '/manifest.json',
-  '/static/js/bundle.js',
-  '/static/css/main.css',
-  '/icons/icon-72x72.png',
-  '/icons/icon-96x96.png',
-  '/icons/icon-128x128.png',
-  '/icons/icon-144x144.png',
-  '/icons/icon-152x152.png',
-  '/icons/icon-192x192.png',
-  '/icons/icon-384x384.png',
-  '/icons/icon-512x512.png'
-];

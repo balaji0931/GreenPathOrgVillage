@@ -1,3 +1,4 @@
+
 {
   "name": "GreenPath Org - Waste Management",
   "short_name": "GreenPath",
@@ -5,7 +6,7 @@
   "start_url": "/?utm_source=homescreen",
   "display": "standalone",
   "background_color": "#ffffff",
-  "theme_color": "#6ba344",
+  "theme_color": "#16a34a",
   "orientation": "portrait-primary",
   "scope": "/",
   "prefer_related_applications": false,
@@ -15,18 +16,18 @@
   "dir": "ltr",
   "screenshots": [
     {
-      "src": "/icons/icon-512x512.png",
-      "sizes": "512x512",
+      "src": "/icons/icon-384x384.png",
+      "sizes": "384x384",
       "type": "image/png",
       "form_factor": "narrow",
-      "label": "GreenPath mobile view"
+      "label": "GreenPath mobile dashboard"
     },
     {
       "src": "/icons/icon-512x512.png", 
       "sizes": "512x512",
       "type": "image/png",
       "form_factor": "wide",
-      "label": "GreenPath desktop view"
+      "label": "GreenPath desktop dashboard"
     }
   ],
   "icons": [

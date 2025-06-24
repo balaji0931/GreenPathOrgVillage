@@ -1276,16 +1276,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const iconBuffer = readFileSync(iconPath);
       res.setHeader("Content-Type", "image/png");
-      res.setHeader("Cache-Control", "public, max-age=31536000");
+      res.setHeader("Cache-Control", "public, max-age=31536000, immutable");
+      res.setHeader("Content-Length", iconBuffer.length.toString());
+      res.setHeader("Access-Control-Allow-Origin", "*");
       res.send(iconBuffer);
     } catch (error) {
       console.error(`Icon not found: ${iconPath}`);
-      res.status(404).send("Icon not found");
+      res.status(404).json({ error: "Icon not found" });
     }
   });
 
   // Serve uploaded files
   app.use('/uploads', express.static('uploads'));
+
+  // Serve static files from public directory
+  app.use(express.static('public', {
+    maxAge: '1y',
+    etag: true,
+    lastModified: true
+  }));
 
   const httpServer = createServer(app);
   return httpServer;
