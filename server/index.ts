@@ -65,6 +65,26 @@ app.get("/sw.js", (_req, res) => {
   }
 });
 
+// Digital Asset Links route for Android app verification
+app.get("/.well-known/assetlinks.json", (_req, res) => {
+  try {
+    res.setHeader("Content-Type", "application/json; charset=utf-8");
+    res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
+    res.setHeader("Access-Control-Allow-Origin", "*");
+    const assetLinksPath = path.join(process.cwd(), "public", ".well-known", "assetlinks.json");
+    if (fs.existsSync(assetLinksPath)) {
+      console.log("Serving assetlinks.json from:", assetLinksPath);
+      res.sendFile(assetLinksPath);
+    } else {
+      console.error("assetlinks.json not found at:", assetLinksPath);
+      res.status(404).json({ error: "assetlinks.json not found" });
+    }
+  } catch (error) {
+    console.error("assetlinks.json route error:", error);
+    res.status(500).json({ error: "assetlinks.json error" });
+  }
+});
+
 app.get("/manifest.json", (_req, res) => {
   try {
     res.setHeader("Content-Type", "application/manifest+json; charset=utf-8");
