@@ -14,7 +14,7 @@ import ManagerDashboard from "./pages/manager-dashboard";
 import CollectorDashboard from "./pages/collector-dashboard";
 import GeneratorDashboard from "./pages/generator-dashboard";
 import NotFound from "./pages/not-found";
-import InstallPWA from "./components/InstallPWA";
+import { InstallPWA } from "./components/InstallPWA";
 import { I18nextProvider } from 'react-i18next';
 import i18n from './i18n';
 
