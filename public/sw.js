@@ -1,3 +1,4 @@
+
 const CACHE_NAME = 'greenpath-v1.0.0';
 const STATIC_CACHE = 'greenpath-static-v1.0.0';
 const DYNAMIC_CACHE = 'greenpath-dynamic-v1.0.0';
@@ -59,10 +60,11 @@ self.addEventListener('activate', event => {
           })
         );
       })
-      .then(() => {
-        console.log('[Service Worker] Activation complete');
-        return self.clients.claim();
-      })
+    ])
+    .then(() => {
+      console.log('[Service Worker] Activation complete');
+      return self.clients.claim();
+    })
   );
 });
 
