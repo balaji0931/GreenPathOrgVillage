@@ -1,4 +1,3 @@
-
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useState, useEffect } from "react";
@@ -48,14 +47,14 @@ export function useAuth() {
       window.removeEventListener('online', handleOnline);
       window.removeEventListener('offline', handleOffline);
     };
-  }, [refetch]);
+  }, []);
 
   // Only make network request when online
   const { data: networkUser, isLoading, error, refetch } = useQuery({
     queryKey: ["/api/auth/user"],
     queryFn: async () => {
       console.log('[Auth] Making network request for user data');
-      
+
       const response = await apiRequest("GET", "/api/auth/user");
       const userData = await response.json();
 
