@@ -1,7 +1,9 @@
 
-const CACHE_NAME = "greenpath-v1.0.0";
-const STATIC_CACHE = "greenpath-static-v1.0.0";
-const DYNAMIC_CACHE = "greenpath-dynamic-v1.0.0";
+const CACHE_NAME = "greenpath-v1.1.0";
+const STATIC_CACHE = "greenpath-static-v1.1.0";
+const DYNAMIC_CACHE = "greenpath-dynamic-v1.1.0";
+const OFFLINE_DB_NAME = "greenpath-offline";
+const OFFLINE_DB_VERSION = 1;
 
 // Assets to cache immediately
 const STATIC_ASSETS = [
@@ -27,28 +29,221 @@ const API_CACHE_PATTERNS = [
   "/api/announcements",
 ];
 
-// Install event - cache static assets
+// Initialize IndexedDB for offline storage
+let offlineDB = null;
+
+function initOfflineDB() {
+  return new Promise((resolve, reject) => {
+    const request = indexedDB.open(OFFLINE_DB_NAME, OFFLINE_DB_VERSION);
+    
+    request.onerror = () => reject(request.error);
+    request.onsuccess = () => {
+      offlineDB = request.result;
+      resolve(offlineDB);
+    };
+    
+    request.onupgradeneeded = (event) => {
+      const db = event.target.result;
+      
+      // Create stores for offline data
+      if (!db.objectStoreNames.contains('collections')) {
+        const collectionsStore = db.createObjectStore('collections', { keyPath: 'id', autoIncrement: true });
+        collectionsStore.createIndex('status', 'status', { unique: false });
+        collectionsStore.createIndex('timestamp', 'timestamp', { unique: false });
+      }
+      
+      if (!db.objectStoreNames.contains('files')) {
+        const filesStore = db.createObjectStore('files', { keyPath: 'id', autoIncrement: true });
+        filesStore.createIndex('type', 'type', { unique: false });
+      }
+      
+      if (!db.objectStoreNames.contains('households')) {
+        db.createObjectStore('households', { keyPath: 'id' });
+      }
+    };
+  });
+}
+
+// Store offline collection data
+async function storeOfflineCollection(data) {
+  if (!offlineDB) await initOfflineDB();
+  
+  const transaction = offlineDB.transaction(['collections'], 'readwrite');
+  const store = transaction.objectStore('collections');
+  
+  const collectionData = {
+    ...data,
+    status: 'pending_sync',
+    timestamp: Date.now(),
+    id: `offline_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+  };
+  
+  return new Promise((resolve, reject) => {
+    const request = store.add(collectionData);
+    request.onsuccess = () => resolve(collectionData);
+    request.onerror = () => reject(request.error);
+  });
+}
+
+// Store offline files (photos/voice)
+async function storeOfflineFile(file, type) {
+  if (!offlineDB) await initOfflineDB();
+  
+  // Convert file to base64 for storage
+  const base64 = await fileToBase64(file);
+  
+  const transaction = offlineDB.transaction(['files'], 'readwrite');
+  const store = transaction.objectStore('files');
+  
+  const fileData = {
+    type,
+    name: file.name,
+    size: file.size,
+    mimeType: file.type,
+    data: base64,
+    timestamp: Date.now(),
+    id: `file_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+  };
+  
+  return new Promise((resolve, reject) => {
+    const request = store.add(fileData);
+    request.onsuccess = () => resolve(fileData.id);
+    request.onerror = () => reject(request.error);
+  });
+}
+
+// Get pending offline collections
+async function getPendingCollections() {
+  if (!offlineDB) await initOfflineDB();
+  
+  const transaction = offlineDB.transaction(['collections'], 'readonly');
+  const store = transaction.objectStore('collections');
+  const index = store.index('status');
+  
+  return new Promise((resolve, reject) => {
+    const request = index.getAll('pending_sync');
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject(request.error);
+  });
+}
+
+// Get offline file
+async function getOfflineFile(fileId) {
+  if (!offlineDB) await initOfflineDB();
+  
+  const transaction = offlineDB.transaction(['files'], 'readonly');
+  const store = transaction.objectStore('files');
+  
+  return new Promise((resolve, reject) => {
+    const request = store.get(fileId);
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject(request.error);
+  });
+}
+
+// Convert file to base64
+function fileToBase64(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = error => reject(error);
+  });
+}
+
+// Convert base64 to blob
+function base64ToBlob(base64, mimeType) {
+  const byteCharacters = atob(base64.split(',')[1]);
+  const byteNumbers = new Array(byteCharacters.length);
+  for (let i = 0; i < byteCharacters.length; i++) {
+    byteNumbers[i] = byteCharacters.charCodeAt(i);
+  }
+  const byteArray = new Uint8Array(byteNumbers);
+  return new Blob([byteArray], { type: mimeType });
+}
+
+// Remove synced collection
+async function removeOfflineCollection(id) {
+  if (!offlineDB) await initOfflineDB();
+  
+  const transaction = offlineDB.transaction(['collections'], 'readwrite');
+  const store = transaction.objectStore('collections');
+  
+  return new Promise((resolve, reject) => {
+    const request = store.delete(id);
+    request.onsuccess = () => resolve();
+    request.onerror = () => reject(request.error);
+  });
+}
+
+// Remove synced file
+async function removeOfflineFile(id) {
+  if (!offlineDB) await initOfflineDB();
+  
+  const transaction = offlineDB.transaction(['files'], 'readwrite');
+  const store = transaction.objectStore('files');
+  
+  return new Promise((resolve, reject) => {
+    const request = store.delete(id);
+    request.onsuccess = () => resolve();
+    request.onerror = () => reject(request.error);
+  });
+}
+
+// Store households data for offline access
+async function storeHouseholdsData(households) {
+  if (!offlineDB) await initOfflineDB();
+  
+  const transaction = offlineDB.transaction(['households'], 'readwrite');
+  const store = transaction.objectStore('households');
+  
+  // Clear existing data and store new
+  await new Promise(resolve => {
+    const clearRequest = store.clear();
+    clearRequest.onsuccess = () => resolve();
+  });
+  
+  for (const household of households) {
+    await new Promise(resolve => {
+      const request = store.add(household);
+      request.onsuccess = () => resolve();
+    });
+  }
+}
+
+// Get offline households data
+async function getOfflineHouseholds() {
+  if (!offlineDB) await initOfflineDB();
+  
+  const transaction = offlineDB.transaction(['households'], 'readonly');
+  const store = transaction.objectStore('households');
+  
+  return new Promise((resolve, reject) => {
+    const request = store.getAll();
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject(request.error);
+  });
+}
+
+// Install event - cache static assets and initialize DB
 self.addEventListener("install", (event) => {
   console.log("[Service Worker] Installing...");
   event.waitUntil(
-    caches
-      .open(STATIC_CACHE)
-      .then((cache) => {
+    Promise.all([
+      caches.open(STATIC_CACHE).then((cache) => {
         console.log("[Service Worker] Caching static assets");
         return cache.addAll(STATIC_ASSETS).catch((error) => {
           console.warn("[Service Worker] Failed to cache some assets:", error);
-          // Don't fail the entire installation if some assets can't be cached
           return Promise.resolve();
         });
-      })
-      .then(() => {
-        console.log("[Service Worker] Installation complete");
-        // Skip waiting and activate immediately
-        return self.skipWaiting();
-      })
-      .catch((error) => {
-        console.error("[Service Worker] Installation failed:", error);
-      })
+      }),
+      initOfflineDB()
+    ]).then(() => {
+      console.log("[Service Worker] Installation complete");
+      return self.skipWaiting();
+    }).catch((error) => {
+      console.error("[Service Worker] Installation failed:", error);
+    })
   );
 });
 
@@ -57,7 +252,6 @@ self.addEventListener("activate", (event) => {
   console.log("[Service Worker] Activating...");
   event.waitUntil(
     Promise.all([
-      // Clean up old caches
       caches.keys().then((cacheNames) => {
         return Promise.all(
           cacheNames.map((cacheName) => {
@@ -68,6 +262,7 @@ self.addEventListener("activate", (event) => {
           })
         );
       }),
+      initOfflineDB()
     ]).then(() => {
       console.log("[Service Worker] Activation complete");
       return self.clients.claim();
@@ -75,7 +270,7 @@ self.addEventListener("activate", (event) => {
   );
 });
 
-// Fetch event - implement caching strategies
+// Fetch event - implement caching strategies and offline handling
 self.addEventListener("fetch", (event) => {
   const { request } = event;
   const url = new URL(request.url);
@@ -107,7 +302,7 @@ self.addEventListener("fetch", (event) => {
   event.respondWith(fetch(request));
 });
 
-// Handle API requests with network-first strategy
+// Handle API requests with network-first strategy and offline support
 async function handleApiRequest(request) {
   const url = new URL(request.url);
 
@@ -119,13 +314,17 @@ async function handleApiRequest(request) {
     if (networkResponse.ok && shouldCacheApiResponse(url.pathname)) {
       const cache = await caches.open(DYNAMIC_CACHE);
       cache.put(request, networkResponse.clone());
+      
+      // Store households data for offline access
+      if (url.pathname === "/api/households") {
+        const responseData = await networkResponse.clone().json();
+        await storeHouseholdsData(responseData);
+      }
     }
 
     return networkResponse;
   } catch (error) {
-    console.log(
-      "[Service Worker] Network failed for API request, trying cache"
-    );
+    console.log("[Service Worker] Network failed for API request, trying cache");
 
     // Try cache if network fails
     const cachedResponse = await caches.match(request);
@@ -133,10 +332,31 @@ async function handleApiRequest(request) {
       return cachedResponse;
     }
 
+    // Special offline handling for specific endpoints
+    if (url.pathname === "/api/households") {
+      try {
+        const offlineHouseholds = await getOfflineHouseholds();
+        return new Response(JSON.stringify(offlineHouseholds), {
+          status: 200,
+          headers: { "Content-Type": "application/json" },
+        });
+      } catch (dbError) {
+        console.error("[Service Worker] Failed to get offline households:", dbError);
+      }
+    }
+
     // Return offline response for auth endpoints
     if (url.pathname === "/api/auth/user") {
       return new Response(JSON.stringify({ message: "Offline" }), {
         status: 401,
+        headers: { "Content-Type": "application/json" },
+      });
+    }
+
+    // Return empty arrays for other list endpoints
+    if (url.pathname.includes("/api/")) {
+      return new Response(JSON.stringify([]), {
+        status: 200,
         headers: { "Content-Type": "application/json" },
       });
     }
@@ -196,55 +416,165 @@ function shouldCacheApiResponse(pathname) {
 
 // Background sync for offline actions
 self.addEventListener("sync", (event) => {
-  console.log("[Service Worker] Background sync:", event.tag);
+  console.log("[Service Worker] Background sync triggered:", event.tag);
 
-  if (event.tag === "sync-offline-actions") {
-    event.waitUntil(syncOfflineActions());
+  if (event.tag === "sync-offline-collections") {
+    event.waitUntil(syncOfflineCollections());
   }
 });
 
-async function syncOfflineActions() {
-  // Handle offline actions stored in IndexedDB
-  console.log("[Service Worker] Syncing offline actions...");
+// Sync offline collections when back online
+async function syncOfflineCollections() {
+  console.log("[Service Worker] Starting offline collections sync...");
 
   try {
-    // Get offline actions from IndexedDB
-    const offlineActions = await getOfflineActions();
+    const pendingCollections = await getPendingCollections();
+    console.log(`[Service Worker] Found ${pendingCollections.length} pending collections`);
 
-    for (const action of offlineActions) {
+    for (const collection of pendingCollections) {
       try {
-        await fetch(action.url, {
-          method: action.method,
-          headers: action.headers,
-          body: action.body,
+        // Upload files first if they exist
+        let photoUrl = null;
+        let voiceUrl = null;
+
+        if (collection.photoFileId) {
+          const photoFile = await getOfflineFile(collection.photoFileId);
+          if (photoFile) {
+            photoUrl = await uploadOfflineFile(photoFile, 'photo');
+            if (photoUrl) {
+              await removeOfflineFile(collection.photoFileId);
+            }
+          }
+        }
+
+        if (collection.voiceFileId) {
+          const voiceFile = await getOfflineFile(collection.voiceFileId);
+          if (voiceFile) {
+            voiceUrl = await uploadOfflineFile(voiceFile, 'voice');
+            if (voiceUrl) {
+              await removeOfflineFile(collection.voiceFileId);
+            }
+          }
+        }
+
+        // Sync collection data
+        const syncData = {
+          ...collection,
+          photoUrl,
+          voiceUrl
+        };
+
+        // Remove offline-specific fields
+        delete syncData.id;
+        delete syncData.status;
+        delete syncData.timestamp;
+        delete syncData.photoFileId;
+        delete syncData.voiceFileId;
+
+        const response = await fetch('/api/waste-collections', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          credentials: 'include',
+          body: JSON.stringify(syncData),
         });
 
-        // Remove successful action from offline storage
-        await removeOfflineAction(action.id);
-        console.log("[Service Worker] Synced offline action:", action.id);
+        if (response.ok) {
+          await removeOfflineCollection(collection.id);
+          console.log(`[Service Worker] Synced collection: ${collection.id}`);
+          
+          // Notify all clients about successful sync
+          const clients = await self.clients.matchAll();
+          clients.forEach(client => {
+            client.postMessage({
+              type: 'COLLECTION_SYNCED',
+              data: { collectionId: collection.id, success: true }
+            });
+          });
+        } else {
+          console.error(`[Service Worker] Failed to sync collection: ${collection.id}`, response.status);
+        }
+
       } catch (error) {
-        console.log(
-          "[Service Worker] Failed to sync action:",
-          action.id,
-          error
-        );
+        console.error(`[Service Worker] Error syncing collection ${collection.id}:`, error);
       }
     }
+
+    console.log("[Service Worker] Offline collections sync completed");
   } catch (error) {
     console.error("[Service Worker] Background sync failed:", error);
   }
 }
 
-// IndexedDB helpers (simplified)
-async function getOfflineActions() {
-  // Implementation would use IndexedDB to retrieve stored offline actions
-  return [];
+// Upload offline file
+async function uploadOfflineFile(fileData, type) {
+  try {
+    const blob = base64ToBlob(fileData.data, fileData.mimeType);
+    const formData = new FormData();
+    formData.append('file', blob, fileData.name);
+
+    const endpoint = type === 'photo' ? '/api/upload/photo' : '/api/upload/voice';
+    const response = await fetch(endpoint, {
+      method: 'POST',
+      body: formData,
+      credentials: 'include'
+    });
+
+    if (response.ok) {
+      const result = await response.json();
+      return result.url;
+    } else {
+      throw new Error(`Upload failed with status: ${response.status}`);
+    }
+  } catch (error) {
+    console.error(`[Service Worker] Failed to upload ${type}:`, error);
+    return null;
+  }
 }
 
-async function removeOfflineAction(id) {
-  // Implementation would remove the action from IndexedDB
-  console.log("[Service Worker] Removing offline action:", id);
-}
+// Message handler for communication with main thread
+self.addEventListener('message', async (event) => {
+  const { type, data } = event.data;
+
+  switch (type) {
+    case 'STORE_OFFLINE_COLLECTION':
+      try {
+        const result = await storeOfflineCollection(data);
+        event.ports[0].postMessage({ success: true, data: result });
+      } catch (error) {
+        event.ports[0].postMessage({ success: false, error: error.message });
+      }
+      break;
+
+    case 'STORE_OFFLINE_FILE':
+      try {
+        const fileId = await storeOfflineFile(data.file, data.type);
+        event.ports[0].postMessage({ success: true, fileId });
+      } catch (error) {
+        event.ports[0].postMessage({ success: false, error: error.message });
+      }
+      break;
+
+    case 'GET_PENDING_COLLECTIONS':
+      try {
+        const collections = await getPendingCollections();
+        event.ports[0].postMessage({ success: true, data: collections });
+      } catch (error) {
+        event.ports[0].postMessage({ success: false, error: error.message });
+      }
+      break;
+
+    case 'FORCE_SYNC':
+      try {
+        await syncOfflineCollections();
+        event.ports[0].postMessage({ success: true });
+      } catch (error) {
+        event.ports[0].postMessage({ success: false, error: error.message });
+      }
+      break;
+  }
+});
 
 // Push notification handler
 self.addEventListener("push", (event) => {
@@ -268,10 +598,8 @@ self.addEventListener("notificationclick", (event) => {
   event.notification.close();
 
   if (event.action) {
-    // Handle action buttons
     console.log("[Service Worker] Notification action clicked:", event.action);
   } else {
-    // Handle notification body click
     event.waitUntil(self.clients.openWindow("/"));
   }
 });

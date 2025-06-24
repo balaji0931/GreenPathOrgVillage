@@ -16,6 +16,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { QRScanner } from "@/components/qr-scanner";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
+import { useOfflineStorage } from "@/lib/offline-storage";
 import { 
   Home, 
   QrCode, 
@@ -88,6 +89,7 @@ export default function CollectorDashboard() {
   const { user, logout } = useAuth();
   const { toast } = useToast();
   const { t } = useTranslation();
+  const { isOnline, pendingCount, storeCollectionOffline, storeFileOffline, syncPendingData } = useOfflineStorage();
   
   const [showScanner, setShowScanner] = useState(false);
   const [showCollectionModal, setShowCollectionModal] = useState(false);
@@ -479,47 +481,6 @@ export default function CollectorDashboard() {
     if (!scannedHousehold) return;
 
     try {
-      let photoUrl = null;
-      let voiceUrl = null;
-
-      // Upload photo to Cloudinary if present
-      if (collectionForm.photoFile) {
-        const photoFormData = new FormData();
-        photoFormData.append('file', collectionForm.photoFile);
-        
-        const photoResponse = await fetch('/api/upload/photo', {
-          method: 'POST',
-          body: photoFormData,
-          credentials: 'include'
-        });
-        
-        if (!photoResponse.ok) {
-          throw new Error('Photo upload failed');
-        }
-        
-        const photoResult = await photoResponse.json();
-        photoUrl = photoResult.url;
-      }
-
-      // Upload voice recording to Cloudinary if present
-      if (collectionForm.voiceRecording) {
-        const voiceFormData = new FormData();
-        voiceFormData.append('file', collectionForm.voiceRecording);
-        
-        const voiceResponse = await fetch('/api/upload/voice', {
-          method: 'POST',
-          body: voiceFormData,
-          credentials: 'include'
-        });
-        
-        if (!voiceResponse.ok) {
-          throw new Error('Voice upload failed');
-        }
-        
-        const voiceResult = await voiceResponse.json();
-        voiceUrl = voiceResult.url;
-      }
-
       const collectionData = {
         householdUid: scannedHousehold.uid,
         status: collectionForm.wasteAccepted ? 'collected' : 'missed',
@@ -527,19 +488,130 @@ export default function CollectorDashboard() {
         plasticRating: collectionForm.cleanlinessRating,
         observations: collectionForm.observations,
         remarks: collectionForm.remarks,
-        photoUrl,
-        voiceUrl,
         missedReason: collectionForm.wasteAccepted ? null : collectionForm.notCollectedReason,
         collectionDate: new Date().toISOString(),
         collectionTime: new Date().toLocaleTimeString(),
       };
 
-      createCollectionMutation.mutate(collectionData);
+      if (isOnline) {
+        // Online mode - try to upload files and submit immediately
+        try {
+          let photoUrl = null;
+          let voiceUrl = null;
+
+          // Upload photo to Cloudinary if present
+          if (collectionForm.photoFile) {
+            const photoFormData = new FormData();
+            photoFormData.append('file', collectionForm.photoFile);
+            
+            const photoResponse = await fetch('/api/upload/photo', {
+              method: 'POST',
+              body: photoFormData,
+              credentials: 'include'
+            });
+            
+            if (!photoResponse.ok) {
+              throw new Error('Photo upload failed');
+            }
+            
+            const photoResult = await photoResponse.json();
+            photoUrl = photoResult.url;
+          }
+
+          // Upload voice recording to Cloudinary if present
+          if (collectionForm.voiceRecording) {
+            const voiceFormData = new FormData();
+            voiceFormData.append('file', collectionForm.voiceRecording);
+            
+            const voiceResponse = await fetch('/api/upload/voice', {
+              method: 'POST',
+              body: voiceFormData,
+              credentials: 'include'
+            });
+            
+            if (!voiceResponse.ok) {
+              throw new Error('Voice upload failed');
+            }
+            
+            const voiceResult = await voiceResponse.json();
+            voiceUrl = voiceResult.url;
+          }
+
+          const finalCollectionData = {
+            ...collectionData,
+            photoUrl,
+            voiceUrl,
+          };
+
+          createCollectionMutation.mutate(finalCollectionData);
+        } catch (uploadError) {
+          // If upload fails but we're online, store offline as fallback
+          toast({
+            title: "Upload Failed",
+            description: "Storing data offline for later sync.",
+            variant: "default",
+          });
+          await handleOfflineSubmission(collectionData);
+        }
+      } else {
+        // Offline mode - store data locally
+        await handleOfflineSubmission(collectionData);
+      }
+
       setShowConfirmSubmit(false);
     } catch (error) {
       toast({
-        title: "Upload Error",
-        description: "Failed to upload photo or voice recording. Please try again.",
+        title: "Error",
+        description: "Failed to submit collection. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleOfflineSubmission = async (collectionData: any) => {
+    try {
+      let photoFileId = null;
+      let voiceFileId = null;
+
+      // Store files offline if present
+      if (collectionForm.photoFile) {
+        const photoResult = await storeFileOffline(collectionForm.photoFile, 'photo');
+        if (photoResult.success) {
+          photoFileId = photoResult.fileId;
+        }
+      }
+
+      if (collectionForm.voiceRecording) {
+        const voiceResult = await storeFileOffline(collectionForm.voiceRecording, 'voice');
+        if (voiceResult.success) {
+          voiceFileId = voiceResult.fileId;
+        }
+      }
+
+      // Store collection data offline
+      const offlineCollectionData = {
+        ...collectionData,
+        photoFileId,
+        voiceFileId,
+      };
+
+      const result = await storeCollectionOffline(offlineCollectionData);
+
+      if (result.success) {
+        toast({
+          title: "✅ Saved Offline",
+          description: "Collection saved offline. Will sync when online.",
+          variant: "default",
+        });
+        resetForm();
+        setRefreshTrigger(prev => prev + 1);
+      } else {
+        throw new Error(result.error || 'Failed to store offline');
+      }
+    } catch (error) {
+      toast({
+        title: "Offline Storage Failed",
+        description: "Could not save data offline. Please try again.",
         variant: "destructive",
       });
     }
@@ -654,7 +726,19 @@ export default function CollectorDashboard() {
             <Package className="mr-3" size={24} />
             <div>
               <h1 className="font-bold text-lg">{t('app.title')}</h1>
-              <p className="text-xs opacity-90">{t('roles.collector')}</p>
+              <div className="flex items-center space-x-2">
+                <p className="text-xs opacity-90">{t('roles.collector')}</p>
+                <div className={`flex items-center text-xs px-2 py-1 rounded-full ${
+                  isOnline ? 'bg-green-500' : 'bg-red-500'
+                }`}>
+                  {isOnline ? '🟢 Online' : '🔴 Offline'}
+                </div>
+                {pendingCount > 0 && (
+                  <div className="bg-orange-500 text-white text-xs px-2 py-1 rounded-full">
+                    {pendingCount} pending
+                  </div>
+                )}
+              </div>
             </div>
           </div>
           <div className="flex items-center space-x-2">
@@ -684,6 +768,57 @@ export default function CollectorDashboard() {
                 <div className="text-xs text-orange-700">{t('app.pending')}</div>
               </div>
             </div>
+
+            {/* Offline Status and Sync */}
+            {!isOnline && (
+              <div className="bg-red-50 border border-red-200 rounded-lg p-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center">
+                    <div className="w-2 h-2 bg-red-500 rounded-full mr-2"></div>
+                    <span className="text-sm font-medium text-red-700">Working Offline</span>
+                  </div>
+                  {pendingCount > 0 && (
+                    <Badge variant="destructive" className="text-xs">
+                      {pendingCount} pending sync
+                    </Badge>
+                  )}
+                </div>
+                <p className="text-xs text-red-600 mt-1">
+                  Your collections are being saved offline and will sync when you're back online.
+                </p>
+              </div>
+            )}
+
+            {isOnline && pendingCount > 0 && (
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <div className="flex items-center">
+                      <div className="w-2 h-2 bg-blue-500 rounded-full mr-2"></div>
+                      <span className="text-sm font-medium text-blue-700">Pending Sync</span>
+                    </div>
+                    <p className="text-xs text-blue-600 mt-1">
+                      {pendingCount} collections waiting to sync
+                    </p>
+                  </div>
+                  <Button
+                    size="sm"
+                    onClick={async () => {
+                      const result = await syncPendingData();
+                      if (result.success) {
+                        toast({
+                          title: "Sync Complete",
+                          description: "All offline data has been synced.",
+                        });
+                      }
+                    }}
+                    className="bg-blue-600 hover:bg-blue-700 text-xs"
+                  >
+                    Sync Now
+                  </Button>
+                </div>
+              </div>
+            )}
 
             {/* Sliding Announcements */}
             <Card>
@@ -1494,7 +1629,9 @@ export default function CollectorDashboard() {
                 collectionForm.photoFile && 
                 collectionForm.wasteAccepted !== null &&
                 (collectionForm.wasteAccepted || collectionForm.notCollectedReason)
-                  ? 'bg-green-600 hover:bg-green-700 text-white'
+                  ? isOnline 
+                    ? 'bg-green-600 hover:bg-green-700 text-white'
+                    : 'bg-blue-600 hover:bg-blue-700 text-white'
                   : 'bg-gray-400 text-gray-600 cursor-not-allowed'
               }`}
               onClick={() => setShowConfirmSubmit(true)}
@@ -1510,11 +1647,11 @@ export default function CollectorDashboard() {
               {createCollectionMutation.isPending ? (
                 <>
                   <div className="animate-spin rounded-full h-6 w-6 border-2 border-white border-t-transparent mr-3" />
-                  Submitting...
+                  {isOnline ? 'Submitting...' : 'Saving Offline...'}
                 </>
               ) : (
                 <>
-                  ✅ SUBMIT COLLECTION
+                  {isOnline ? '✅ SUBMIT COLLECTION' : '💾 SAVE OFFLINE'}
                 </>
               )}
             </Button>
