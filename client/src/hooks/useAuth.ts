@@ -42,28 +42,24 @@ export function useAuth() {
     };
   }, []);
 
+  // Only make network request when online
   const { data: networkUser, isLoading, error, refetch } = useQuery({
     queryKey: ["/api/auth/user"],
     queryFn: async () => {
       console.log('[Auth] Making network request for user data');
       
-      try {
-        const response = await apiRequest("GET", "/api/auth/user");
-        const userData = await response.json();
+      const response = await apiRequest("GET", "/api/auth/user");
+      const userData = await response.json();
 
-        // Cache user data for offline use
-        if (userData && !userData.message) {
-          localStorage.setItem('greenpath_user', JSON.stringify(userData));
-          setCachedUser(userData);
-        }
-
-        return userData;
-      } catch (error: any) {
-        console.error('[Auth] Network request failed:', error);
-        throw error;
+      // Cache user data for offline use
+      if (userData && !userData.message) {
+        localStorage.setItem('greenpath_user', JSON.stringify(userData));
+        setCachedUser(userData);
       }
+
+      return userData;
     },
-    enabled: !isOffline || !cachedUser, // Only query when online OR no cached data
+    enabled: !isOffline, // Only query when online
     retry: false,
     staleTime: 5 * 60 * 1000,
     refetchOnWindowFocus: false,
@@ -102,29 +98,27 @@ export function useAuth() {
     },
   });
 
-  // Determine current user and loading state
+  // Simple logic: if offline use cached, if online use network
   let currentUser: User | undefined;
-  let currentIsLoading = isLoading;
+  let currentIsLoading = false;
 
-  if (isOffline && cachedUser) {
-    // Offline with cached data - use cached user
-    currentUser = { ...cachedUser, offline: true };
-    currentIsLoading = false;
-  } else if (!isOffline && networkUser) {
-    // Online with network data
+  if (isOffline) {
+    // Offline - use cached user if available
+    if (cachedUser) {
+      currentUser = { ...cachedUser, offline: true };
+    }
+  } else {
+    // Online - use network data or loading state
     currentUser = networkUser;
-  } else if (!isOffline && !networkUser && cachedUser) {
-    // Online but no network data yet, but have cached - use cached
-    currentUser = { ...cachedUser, offline: false };
+    currentIsLoading = isLoading;
   }
 
-  console.log('[Auth] Current state:', {
+  console.log('[Auth] Simple state:', {
     isOffline,
-    cachedUser: !!cachedUser,
-    networkUser: !!networkUser,
+    hasCache: !!cachedUser,
+    hasNetwork: !!networkUser,
     currentUser: !!currentUser,
-    isLoading: currentIsLoading,
-    queryEnabled: !isOffline || !cachedUser
+    isLoading: currentIsLoading
   });
 
   return {

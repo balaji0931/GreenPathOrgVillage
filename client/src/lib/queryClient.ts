@@ -30,21 +30,6 @@ export const getQueryFn: <T>(options: {
 }) => QueryFunction<T> =
   ({ on401: unauthorizedBehavior }) =>
   async ({ queryKey }) => {
-    // Special handling for auth endpoint when offline
-    if (queryKey[0] === "/api/auth/user" && !navigator.onLine) {
-      const cached = localStorage.getItem('greenpath_user');
-      if (cached) {
-        try {
-          const cachedUser = JSON.parse(cached);
-          return { ...cachedUser, offline: true };
-        } catch (parseError) {
-          console.error('[QueryClient] Failed to parse cached user data:', parseError);
-          localStorage.removeItem('greenpath_user');
-        }
-      }
-      return null;
-    }
-
     const res = await fetch(queryKey[0] as string, {
       credentials: "include",
     });
