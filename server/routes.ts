@@ -7,6 +7,8 @@ import multer from "multer";
 import session from "express-session";
 import { insertUserSchema, insertVillageSchema, insertHouseholdSchema, insertCollectorSchema, insertWasteCollectionSchema, insertIssueSchema, insertAnnouncementSchema, insertAttendanceSchema, insertFeedbackSchema } from "@shared/schema";
 import { z } from "zod";
+import path from "path";
+import { readFileSync } from "fs";
 
 // Configure multer for file uploads
 const upload = multer({
@@ -212,7 +214,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const existingHouseholds = await storage.getHouseholdsByVillage(villageId);
       let uid;
       let counter = 1;
-      
+
       // Keep trying until we find a unique UID
       do {
         uid = `${villageId}-H${String(counter).padStart(3, '0')}`;
@@ -220,7 +222,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         if (!existing) break;
         counter++;
       } while (counter <= 999);
-      
+
       if (counter > 999) {
         return res.status(400).json({ message: "Maximum households reached for this village" });
       }
@@ -327,7 +329,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           const existingHouseholds = await storage.getHouseholdsByVillage(villageId);
           let uid;
           let counter = existingHouseholds.length + createdHouseholds.length + 1;
-          
+
           // Keep trying until we find a unique UID
           do {
             uid = `${villageId}-H${String(counter).padStart(3, '0')}`;
@@ -335,7 +337,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             if (!existing) break;
             counter++;
           } while (counter <= 999);
-          
+
           if (counter > 999) {
             console.error(`Maximum households reached for village ${villageId}`);
             continue; // Skip this household
@@ -1095,13 +1097,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/attendance/detailed/:villageId/:date', requireAuth, requireRole(['manager']), async (req, res) => {
     try {
       const { villageId, date } = req.params;
-      
+
       // Parse date more safely
       const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
       if (!dateRegex.test(date)) {
         return res.status(400).json({ message: "Invalid date format. Use YYYY-MM-DD" });
       }
-      
+
       const parsedDate = new Date(date + 'T00:00:00.000Z');
 
       // Validate date
@@ -1157,13 +1159,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const villageId = req.session.villageId!;
       const { date, householdId } = req.query;
-      
+
       const collections = await storage.getCollectionsByVillageWithDetails(
         villageId,
         date as string,
         householdId ? parseInt(householdId as string) : undefined
       );
-      
+
       res.json(collections);
     } catch (error) {
       console.error("Get village collections error:", error);
@@ -1175,7 +1177,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { id } = req.params;
       const { status, managerReply } = req.body;
-      
+
       const updatedIssue = await storage.updateIssue(parseInt(id), {
         status,
         managerReply,
@@ -1251,12 +1253,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const villageId = req.session.villageId!;
       const { date } = req.query;
-      
+
       const feedback = await storage.getFeedbackByVillageWithFilters(villageId, date as string);
       res.json(feedback);
     } catch (error) {
       console.error("Get village feedback error:", error);
       res.status(500).json({ message: "Failed to get village feedback" });
+    }
+  });
+
+  // Serve manifest.json
+  app.get("/manifest.json", (req, res) => {
+    res.setHeader("Content-Type", "application/manifest+json");
+    res.sendFile(path.resolve("public/manifest.json"));
+  });
+
+  // Serve PWA icons
+  app.get("/icons/:iconName", (req, res) => {
+    const iconName = req.params.iconName;
+    const iconPath = path.resolve(`public/icons/${iconName}`);
+
+    try {
+      const iconBuffer = readFileSync(iconPath);
+      res.setHeader("Content-Type", "image/png");
+      res.setHeader("Cache-Control", "public, max-age=31536000");
+      res.send(iconBuffer);
+    } catch (error) {
+      console.error(`Icon not found: ${iconPath}`);
+      res.status(404).send("Icon not found");
     }
   });
 

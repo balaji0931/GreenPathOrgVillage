@@ -13,6 +13,22 @@
   "categories": ["productivity", "utilities", "environmental"],
   "lang": "en",
   "dir": "ltr",
+  "screenshots": [
+    {
+      "src": "/icons/icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "GreenPath mobile view"
+    },
+    {
+      "src": "/icons/icon-512x512.png", 
+      "sizes": "512x512",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "GreenPath desktop view"
+    }
+  ],
   "icons": [
     {
       "src": "/icons/icon-72x72.png",
