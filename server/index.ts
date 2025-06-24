@@ -50,10 +50,13 @@ app.get("/sw.js", (_req, res) => {
     res.setHeader("Content-Type", "application/javascript; charset=utf-8");
     res.setHeader("Service-Worker-Allowed", "/");
     res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
+    res.setHeader("Access-Control-Allow-Origin", "*");
     const swPath = path.join(process.cwd(), "public", "sw.js");
     if (fs.existsSync(swPath)) {
+      console.log("Serving service worker from:", swPath);
       res.sendFile(swPath);
     } else {
+      console.error("Service worker not found at:", swPath);
       res.status(404).send("// Service worker not found");
     }
   } catch (error) {
