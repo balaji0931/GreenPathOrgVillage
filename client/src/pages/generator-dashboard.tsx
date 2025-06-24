@@ -68,9 +68,52 @@ const ISSUE_CATEGORIES = [
   "Other",
 ];
 
+const WASTE_MANAGEMENT_QUOTES = [
+  "Waste is only waste if we waste it.",
+  "There is no such thing as 'away'. When we throw anything away it must go somewhere.",
+  "The greatest threat to our planet is the belief that someone else will save it.",
+  "We do not inherit the earth from our ancestors, we borrow it from our children.",
+  "Earth provides enough to satisfy every man's needs, but not every man's greed.",
+];
+
+function OfflineMessage({ userRole, userName }: { userRole: string; userName: string }) {
+  const { t } = useTranslation();
+  const quote = WASTE_MANAGEMENT_QUOTES[Math.floor(Math.random() * WASTE_MANAGEMENT_QUOTES.length)];
+
+  return (
+    <div className="min-h-screen bg-gray-100 flex flex-col items-center justify-center p-4">
+      <h1 className="text-2xl font-bold text-gray-800 mb-4">
+        {t('app.offline')}
+      </h1>
+      <p className="text-gray-600 mb-6">
+        {t('app.offlineMessage')}
+      </p>
+      <div className="p-4 bg-white rounded-lg shadow-md">
+        <h2 className="text-xl font-semibold text-green-600 mb-2">
+          {t('app.quote')}
+        </h2>
+        <p className="text-gray-700 italic text-center">"{quote}"</p>
+      </div>
+      <p className="mt-6 text-sm text-gray-500">
+        {t('app.loggedInAs')} {userName} ({userRole})
+      </p>
+    </div>
+  );
+}
+
 export default function GeneratorDashboard() {
   const { user, logout } = useAuth();
   const { toast } = useToast();
+
+  // Handle offline state
+  if (!navigator.onLine && user?.offline) {
+    return (
+      <OfflineMessage 
+        userRole={user.role} 
+        userName={user.name} 
+      />
+    );
+  }
   const { t } = useTranslation();
 
   const [activeTab, setActiveTab] = useState("home");
