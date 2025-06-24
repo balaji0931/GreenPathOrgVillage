@@ -1,9 +1,12 @@
-
-[{
-  "relation": ["delegate_permission/common.handle_all_urls"],
-  "target": {
-    "namespace": "android_app",
-    "package_name": "com.yourpackage.greenpath",
-    "sha256_cert_fingerprints": ["YOUR_SHA256_FINGERPRINT_HERE"]
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "dev.replit.pike.ccf52ddd_0a76_4997_99ce_404985e15a8c_00_2zivmnxzzqaaf.twa",
+      "sha256_cert_fingerprints": [
+        "80:15:0F:33:C7:3A:39:13:95:8A:47:2E:8A:1F:AD:BE:4F:41:3D:A8:41:40:D9:A1:92:2B:11:DB:52:26:11:39"
+      ]
+    }
   }
-}]
+]
