@@ -922,84 +922,177 @@ export default function ManagerDashboard() {
     );
   };
 
-  // Bulk household creation component
-  const BulkHouseholdCreation = React.memo(() => {
-    const [households, setHouseholds] = useState([
-      { headName: "", houseNumber: "", phone: "", address: "" },
-    ]);
+  // State for bulk household creation
+  const [bulkHouseholds, setBulkHouseholds] = useState([
+    { headName: "", houseNumber: "", phone: "", address: "" },
+  ]);
 
-    const createHouseholdsMutation = useMutation({
-      mutationFn: (householdsData: any[]) =>
-        apiRequest("POST", "/api/households/bulk", {
-          households: householdsData,
-        }),
-      onSuccess: (response: any) => {
-        const successCount = Array.isArray(response) ? response.length : 0;
-        toast({
-          title: "Success",
-          description: `${successCount} households created successfully with QR codes!`,
-        });
-        queryClient.invalidateQueries({ queryKey: ["/api/households"] });
-        queryClient.invalidateQueries({ queryKey: ["/api/manager/stats"] });
-        setHouseholds([
-          { headName: "", houseNumber: "", phone: "", address: "" },
-        ]);
-      },
-      onError: (error: any) => {
-        toast({
-          title: "Error",
-          description: error.message || "Failed to create households",
-          variant: "destructive",
-        });
-      },
-    });
+  // State for QR code generation
+  const [selectedQRHouseholds, setSelectedQRHouseholds] = useState<number[]>([]);
 
-    const addHousehold = () => {
-      setHouseholds([
-        ...households,
+  // State for QR code download
+  const [selectedDownloadHouseholds, setSelectedDownloadHouseholds] = useState<number[]>([]);
+
+  // Bulk household creation mutation
+  const createBulkHouseholdsMutation = useMutation({
+    mutationFn: (householdsData: any[]) =>
+      apiRequest("POST", "/api/households/bulk", {
+        households: householdsData,
+      }),
+    onSuccess: (response: any) => {
+      const successCount = Array.isArray(response) ? response.length : 0;
+      toast({
+        title: "Success",
+        description: `${successCount} households created successfully with QR codes!`,
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/households"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/manager/stats"] });
+      setBulkHouseholds([
         { headName: "", houseNumber: "", phone: "", address: "" },
       ]);
-    };
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to create households",
+        variant: "destructive",
+      });
+    },
+  });
 
-    const removeHousehold = (index: number) => {
-      if (households.length > 1) {
-        setHouseholds(households.filter((_, i) => i !== index));
+  // QR generation mutation
+  const generateQRMutation = useMutation({
+    mutationFn: (householdIds: number[]) =>
+      apiRequest("POST", "/api/qr-codes/generate", { householdIds }),
+    onSuccess: () => {
+      toast({
+        title: "Success",
+        description: "QR codes generated successfully!",
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/households"] });
+      setSelectedQRHouseholds([]);
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to generate QR codes",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // QR download mutation
+  const downloadPDFMutation = useMutation({
+    mutationFn: async (householdIds: number[]) => {
+      const response = await fetch("/api/qr-codes/download-pdf", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ householdIds }),
+        credentials: "include",
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to download PDF");
       }
-    };
 
-    const updateHousehold = (index: number, field: string, value: string) => {
-      const updated = [...households];
-      updated[index] = { ...updated[index], [field]: value };
-      setHouseholds(updated);
-    };
+      return response.blob();
+    },
+    onSuccess: (blob: Blob) => {
+      // Create blob URL and download
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `household-qr-codes-${new Date().toISOString().split("T")[0]}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+      toast({ title: "Success", description: "QR codes PDF downloaded!" });
+      setSelectedDownloadHouseholds([]);
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to download QR codes",
+        variant: "destructive",
+      });
+    },
+  });
 
-    const handleSubmit = () => {
-      const validHouseholds = households.filter(
-        (h) => h.headName && h.houseNumber && h.phone,
-      );
-      if (validHouseholds.length === 0) {
-        toast({
-          title: "Error",
-          description: "Please fill required fields for at least one household",
-          variant: "destructive",
-        });
-        return;
-      }
-      createHouseholdsMutation.mutate(validHouseholds);
-    };
+  // Bulk household functions
+  const addBulkHousehold = () => {
+    setBulkHouseholds([
+      ...bulkHouseholds,
+      { headName: "", houseNumber: "", phone: "", address: "" },
+    ]);
+  };
 
+  const removeBulkHousehold = (index: number) => {
+    if (bulkHouseholds.length > 1) {
+      setBulkHouseholds(bulkHouseholds.filter((_, i) => i !== index));
+    }
+  };
+
+  const updateBulkHousehold = (index: number, field: string, value: string) => {
+    const updated = [...bulkHouseholds];
+    updated[index] = { ...updated[index], [field]: value };
+    setBulkHouseholds(updated);
+  };
+
+  const handleBulkSubmit = () => {
+    const validHouseholds = bulkHouseholds.filter(
+      (h) => h.headName && h.houseNumber && h.phone,
+    );
+    if (validHouseholds.length === 0) {
+      toast({
+        title: "Error",
+        description: "Please fill required fields for at least one household",
+        variant: "destructive",
+      });
+      return;
+    }
+    createBulkHouseholdsMutation.mutate(validHouseholds);
+  };
+
+  // QR generation functions
+  const toggleQRHousehold = (id: number) => {
+    setSelectedQRHouseholds((prev) =>
+      prev.includes(id) ? prev.filter((hId) => hId !== id) : [...prev, id],
+    );
+  };
+
+  const selectAllQR = () => {
+    const householdsWithoutQR = households.filter((h) => !h.qrCodeUrl);
+    setSelectedQRHouseholds(householdsWithoutQR.map((h) => h.id));
+  };
+
+  // QR download functions
+  const toggleDownloadHousehold = (id: number) => {
+    setSelectedDownloadHouseholds((prev) =>
+      prev.includes(id) ? prev.filter((hId) => hId !== id) : [...prev, id],
+    );
+  };
+
+  const selectAllDownload = () => {
+    setSelectedDownloadHouseholds(households.map((h) => h.id));
+  };
+
+  // Bulk household creation component
+  const BulkHouseholdCreation = React.memo(() => {
     return (
       <div className="space-y-4">
-        {households.map((household, index) => (
+        {bulkHouseholds.map((household, index) => (
           <Card key={index}>
             <CardContent className="p-4">
               <div className="flex justify-between items-center mb-4">
                 <h4 className="font-medium">Household {index + 1}</h4>
-                {households.length > 1 && (
+                {bulkHouseholds.length > 1 && (
                   <Button
                     size="sm"
                     variant="outline"
-                    onClick={() => removeHousehold(index)}
+                    onClick={() => removeBulkHousehold(index)}
                   >
                     <Trash2 className="h-4 w-4" />
                   </Button>
@@ -1011,7 +1104,7 @@ export default function ManagerDashboard() {
                   <Input
                     value={household.headName}
                     onChange={(e) =>
-                      updateHousehold(index, "headName", e.target.value)
+                      updateBulkHousehold(index, "headName", e.target.value)
                     }
                     placeholder="Enter head name"
                     autoComplete="off"
@@ -1022,7 +1115,7 @@ export default function ManagerDashboard() {
                   <Input
                     value={household.houseNumber}
                     onChange={(e) =>
-                      updateHousehold(index, "houseNumber", e.target.value)
+                      updateBulkHousehold(index, "houseNumber", e.target.value)
                     }
                     placeholder="Enter house number"
                     autoComplete="off"
@@ -1033,7 +1126,7 @@ export default function ManagerDashboard() {
                   <Input
                     value={household.phone}
                     onChange={(e) =>
-                      updateHousehold(index, "phone", e.target.value)
+                      updateBulkHousehold(index, "phone", e.target.value)
                     }
                     placeholder="Enter phone number"
                     autoComplete="off"
@@ -1044,7 +1137,7 @@ export default function ManagerDashboard() {
                   <Input
                     value={household.address}
                     onChange={(e) =>
-                      updateHousehold(index, "address", e.target.value)
+                      updateBulkHousehold(index, "address", e.target.value)
                     }
                     placeholder="Enter address"
                     autoComplete="off"
@@ -1056,15 +1149,15 @@ export default function ManagerDashboard() {
         ))}
 
         <div className="flex gap-2">
-          <Button onClick={addHousehold} variant="outline">
+          <Button onClick={addBulkHousehold} variant="outline">
             <Plus className="h-4 w-4 mr-2" />
             Add Another Household
           </Button>
           <Button
-            onClick={handleSubmit}
-            disabled={createHouseholdsMutation.isPending}
+            onClick={handleBulkSubmit}
+            disabled={createBulkHouseholdsMutation.isPending}
           >
-            {createHouseholdsMutation.isPending
+            {createBulkHouseholdsMutation.isPending
               ? "Creating..."
               : "Create Households with QR Codes"}
           </Button>
@@ -1074,40 +1167,7 @@ export default function ManagerDashboard() {
   });
 
   // QR Code generation panel
-  function QRCodeGenerationPanel({ households }: { households: Household[] }) {
-    const [selectedHouseholds, setSelectedHouseholds] = useState<number[]>([]);
-
-    const generateQRMutation = useMutation({
-      mutationFn: (householdIds: number[]) =>
-        apiRequest("POST", "/api/qr-codes/generate", { householdIds }),
-      onSuccess: () => {
-        toast({
-          title: "Success",
-          description: "QR codes generated successfully!",
-        });
-        queryClient.invalidateQueries({ queryKey: ["/api/households"] });
-        setSelectedHouseholds([]);
-      },
-      onError: (error: any) => {
-        toast({
-          title: "Error",
-          description: error.message || "Failed to generate QR codes",
-          variant: "destructive",
-        });
-      },
-    });
-
-    const toggleHousehold = (id: number) => {
-      setSelectedHouseholds((prev) =>
-        prev.includes(id) ? prev.filter((hId) => hId !== id) : [...prev, id],
-      );
-    };
-
-    const selectAll = () => {
-      const householdsWithoutQR = households.filter((h) => !h.qrCodeUrl);
-      setSelectedHouseholds(householdsWithoutQR.map((h) => h.id));
-    };
-
+  const QRCodeGenerationPanel = React.memo(({ households }: { households: Household[] }) => {
     const householdsWithoutQR = households.filter((h) => !h.qrCodeUrl);
 
     return (
@@ -1123,20 +1183,20 @@ export default function ManagerDashboard() {
                 {householdsWithoutQR.length} households without QR codes
               </p>
               <div className="flex gap-2">
-                <Button size="sm" variant="outline" onClick={selectAll}>
+                <Button size="sm" variant="outline" onClick={selectAllQR}>
                   Select All
                 </Button>
                 <Button
                   size="sm"
-                  onClick={() => generateQRMutation.mutate(selectedHouseholds)}
+                  onClick={() => generateQRMutation.mutate(selectedQRHouseholds)}
                   disabled={
-                    selectedHouseholds.length === 0 ||
+                    selectedQRHouseholds.length === 0 ||
                     generateQRMutation.isPending
                   }
                 >
                   {generateQRMutation.isPending
                     ? "Generating..."
-                    : `Generate QR (${selectedHouseholds.length})`}
+                    : `Generate QR (${selectedQRHouseholds.length})`}
                 </Button>
               </div>
             </div>
@@ -1146,7 +1206,7 @@ export default function ManagerDashboard() {
                 <Card
                   key={household.id}
                   className="cursor-pointer hover:bg-gray-50"
-                  onClick={() => toggleHousehold(household.id)}
+                  onClick={() => toggleQRHousehold(household.id)}
                 >
                   <CardContent className="p-4">
                     <div className="flex items-center justify-between">
@@ -1158,8 +1218,11 @@ export default function ManagerDashboard() {
                       </div>
                       <input
                         type="checkbox"
-                        checked={selectedHouseholds.includes(household.id)}
-                        onChange={() => toggleHousehold(household.id)}
+                        checked={selectedQRHouseholds.includes(household.id)}
+                        onChange={(e) => {
+                          e.stopPropagation();
+                          toggleQRHousehold(household.id);
+                        }}
                         className="h-4 w-4"
                       />
                     </div>
@@ -1171,60 +1234,10 @@ export default function ManagerDashboard() {
         )}
       </div>
     );
-  }
+  });
 
   // QR Code download panel
-  function QRCodeDownloadPanel({ households }: { households: Household[] }) {
-    const [selectedHouseholds, setSelectedHouseholds] = useState<number[]>([]);
-
-    const downloadPDFMutation = useMutation({
-      mutationFn: async (householdIds: number[]) => {
-        const response = await fetch("/api/qr-codes/download-pdf", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ householdIds }),
-          credentials: "include",
-        });
-
-        if (!response.ok) {
-          throw new Error("Failed to download PDF");
-        }
-
-        return response.blob();
-      },
-      onSuccess: (blob: Blob) => {
-        // Create blob URL and download
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = `household-qr-codes-${new Date().toISOString().split("T")[0]}.pdf`;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        window.URL.revokeObjectURL(url);
-        toast({ title: "Success", description: "QR codes PDF downloaded!" });
-      },
-      onError: (error: any) => {
-        toast({
-          title: "Error",
-          description: error.message || "Failed to download QR codes",
-          variant: "destructive",
-        });
-      },
-    });
-
-    const toggleHousehold = (id: number) => {
-      setSelectedHouseholds((prev) =>
-        prev.includes(id) ? prev.filter((hId) => hId !== id) : [...prev, id],
-      );
-    };
-
-    const selectAll = () => {
-      setSelectedHouseholds(households.map((h) => h.id));
-    };
-
+  const QRCodeDownloadPanel = React.memo(({ households }: { households: Household[] }) => {
     return (
       <div className="space-y-4">
         {households.length === 0 ? (
@@ -1238,21 +1251,21 @@ export default function ManagerDashboard() {
                 {households.length} households with QR codes
               </p>
               <div className="flex gap-2">
-                <Button size="sm" variant="outline" onClick={selectAll}>
+                <Button size="sm" variant="outline" onClick={selectAllDownload}>
                   Select All
                 </Button>
                 <Button
                   size="sm"
-                  onClick={() => downloadPDFMutation.mutate(selectedHouseholds)}
+                  onClick={() => downloadPDFMutation.mutate(selectedDownloadHouseholds)}
                   disabled={
-                    selectedHouseholds.length === 0 ||
+                    selectedDownloadHouseholds.length === 0 ||
                     downloadPDFMutation.isPending
                   }
                 >
                   <Download className="h-4 w-4 mr-2" />
                   {downloadPDFMutation.isPending
                     ? "Downloading..."
-                    : `Download PDF (${selectedHouseholds.length})`}
+                    : `Download PDF (${selectedDownloadHouseholds.length})`}
                 </Button>
               </div>
             </div>
@@ -1262,7 +1275,7 @@ export default function ManagerDashboard() {
                 <Card
                   key={household.id}
                   className="cursor-pointer hover:bg-gray-50"
-                  onClick={() => toggleHousehold(household.id)}
+                  onClick={() => toggleDownloadHousehold(household.id)}
                 >
                   <CardContent className="p-4">
                     <div className="flex items-center justify-between">
@@ -1283,8 +1296,11 @@ export default function ManagerDashboard() {
                       </div>
                       <input
                         type="checkbox"
-                        checked={selectedHouseholds.includes(household.id)}
-                        onChange={() => toggleHousehold(household.id)}
+                        checked={selectedDownloadHouseholds.includes(household.id)}
+                        onChange={(e) => {
+                          e.stopPropagation();
+                          toggleDownloadHousehold(household.id);
+                        }}
                         className="h-4 w-4"
                       />
                     </div>
@@ -1296,7 +1312,7 @@ export default function ManagerDashboard() {
         )}
       </div>
     );
-  }
+  });
 
   return (
     <>
