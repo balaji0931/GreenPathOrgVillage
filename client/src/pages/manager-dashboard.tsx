@@ -169,6 +169,262 @@ interface Issue {
   updatedAt?: string;
 }
 
+// Isolated dialog components to prevent state reset issues
+const CreateCollectorDialog = React.memo(({ villageId }: { villageId: string }) => {
+  const [open, setOpen] = useState(false);
+  const [formData, setFormData] = useState({ name: "", phone: "" });
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  const collectorMutation = useMutation({
+    mutationFn: (data: { name: string; phone: string }) =>
+      apiRequest("POST", "/api/collectors", {
+        ...data,
+        villageId,
+      }),
+    onSuccess: () => {
+      toast({ title: "Collector created successfully" });
+      queryClient.invalidateQueries({ queryKey: ["/api/collectors"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/manager/stats"] });
+      setFormData({ name: "", phone: "" });
+      setOpen(false);
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Failed to create collector",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+
+    const name = formData.name.trim();
+    const phone = formData.phone.trim();
+
+    if (!name || !phone) {
+      toast({
+        title: "Please fill all required fields",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    collectorMutation.mutate({ name, phone });
+  };
+
+  const handleOpenChange = (newOpen: boolean) => {
+    setOpen(newOpen);
+    if (!newOpen) {
+      setFormData({ name: "", phone: "" });
+    }
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={handleOpenChange}>
+      <DialogTrigger asChild>
+        <Button>
+          <Plus className="h-4 w-4 mr-2" />
+          Add Collector
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="sm:max-w-[425px]">
+        <DialogHeader>
+          <DialogTitle>Add New Collector</DialogTitle>
+        </DialogHeader>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <Label htmlFor="collector-name">Name *</Label>
+            <Input
+              id="collector-name"
+              value={formData.name}
+              onChange={(e) =>
+                setFormData((prev) => ({ ...prev, name: e.target.value }))
+              }
+              placeholder="Enter collector name"
+              required
+              autoComplete="off"
+            />
+          </div>
+          <div>
+            <Label htmlFor="collector-phone">Phone *</Label>
+            <Input
+              id="collector-phone"
+              type="tel"
+              value={formData.phone}
+              onChange={(e) =>
+                setFormData((prev) => ({ ...prev, phone: e.target.value }))
+              }
+              placeholder="Enter phone number"
+              required
+              autoComplete="off"
+            />
+          </div>
+          <div className="flex gap-2 pt-4">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => handleOpenChange(false)}
+              className="flex-1"
+            >
+              Cancel
+            </Button>
+            <Button
+              type="submit"
+              disabled={collectorMutation.isPending}
+              className="flex-1"
+            >
+              {collectorMutation.isPending ? "Adding..." : "Add Collector"}
+            </Button>
+          </div>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+});
+
+const CreateHouseholdDialog = React.memo(({ villageId }: { villageId: string }) => {
+  const [open, setOpen] = useState(false);
+  const [formData, setFormData] = useState({
+    headName: "",
+    houseNumber: "",
+    phone: "",
+  });
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  const householdMutation = useMutation({
+    mutationFn: (data: {
+      headName: string;
+      houseNumber: string;
+      phone: string;
+    }) =>
+      apiRequest("POST", "/api/households", {
+        ...data,
+        villageId,
+      }),
+    onSuccess: () => {
+      toast({ title: "Household created successfully" });
+      queryClient.invalidateQueries({ queryKey: ["/api/households"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/manager/stats"] });
+      setFormData({ headName: "", houseNumber: "", phone: "" });
+      setOpen(false);
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Failed to create household",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+
+    const headName = formData.headName.trim();
+    const houseNumber = formData.houseNumber.trim();
+    const phone = formData.phone.trim();
+
+    if (!headName || !houseNumber || !phone) {
+      toast({
+        title: "Please fill all required fields",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    householdMutation.mutate({ headName, houseNumber, phone });
+  };
+
+  const handleOpenChange = (newOpen: boolean) => {
+    setOpen(newOpen);
+    if (!newOpen) {
+      setFormData({ headName: "", houseNumber: "", phone: "" });
+    }
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={handleOpenChange}>
+      <DialogTrigger asChild>
+        <Button>
+          <Plus className="h-4 w-4 mr-2" />
+          Add Household
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="sm:max-w-[425px]">
+        <DialogHeader>
+          <DialogTitle>Add New Household</DialogTitle>
+        </DialogHeader>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <Label htmlFor="household-headName">Head of Household *</Label>
+            <Input
+              id="household-headName"
+              value={formData.headName}
+              onChange={(e) =>
+                setFormData((prev) => ({ ...prev, headName: e.target.value }))
+              }
+              placeholder="Enter head of household name"
+              required
+              autoComplete="off"
+            />
+          </div>
+          <div>
+            <Label htmlFor="household-houseNumber">House Number *</Label>
+            <Input
+              id="household-houseNumber"
+              value={formData.houseNumber}
+              onChange={(e) =>
+                setFormData((prev) => ({
+                  ...prev,
+                  houseNumber: e.target.value,
+                }))
+              }
+              placeholder="Enter house number"
+              required
+              autoComplete="off"
+            />
+          </div>
+          <div>
+            <Label htmlFor="household-phone">Phone *</Label>
+            <Input
+              id="household-phone"
+              type="tel"
+              value={formData.phone}
+              onChange={(e) =>
+                setFormData((prev) => ({ ...prev, phone: e.target.value }))
+              }
+              placeholder="Enter phone number"
+              required
+              autoComplete="off"
+            />
+          </div>
+          <div className="flex gap-2 pt-4">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => handleOpenChange(false)}
+              className="flex-1"
+            >
+              Cancel
+            </Button>
+            <Button
+              type="submit"
+              disabled={householdMutation.isPending}
+              className="flex-1"
+            >
+              {householdMutation.isPending ? "Adding..." : "Add Household"}
+            </Button>
+          </div>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+});
+
 export default function ManagerDashboard() {
   const { user } = useAuth();
   const { toast } = useToast();
@@ -393,266 +649,7 @@ export default function ManagerDashboard() {
     </Card>
   );
 
-  // Create collector dialog component with isolated state - moved outside
-  const CreateCollectorDialog = React.memo(() => {
-    const [open, setOpen] = useState(false);
-    const [formData, setFormData] = useState({ name: "", phone: "" });
-
-    const collectorMutation = useMutation({
-      mutationFn: (data: { name: string; phone: string }) =>
-        apiRequest("POST", "/api/collectors", {
-          ...data,
-          villageId: user?.villageId,
-        }),
-      onSuccess: () => {
-        toast({ title: "Collector created successfully" });
-        queryClient.invalidateQueries({ queryKey: ["/api/collectors"] });
-        queryClient.invalidateQueries({ queryKey: ["/api/manager/stats"] });
-        setFormData({ name: "", phone: "" });
-        setOpen(false);
-      },
-      onError: (error: any) => {
-        toast({
-          title: "Failed to create collector",
-          description: error.message,
-          variant: "destructive",
-        });
-      },
-    });
-
-    const handleSubmit = (e: React.FormEvent) => {
-      e.preventDefault();
-
-      const name = formData.name.trim();
-      const phone = formData.phone.trim();
-
-      if (!name || !phone) {
-        toast({
-          title: "Please fill all required fields",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      collectorMutation.mutate({ name, phone });
-    };
-
-    const handleOpenChange = (newOpen: boolean) => {
-      setOpen(newOpen);
-      if (!newOpen) {
-        setFormData({ name: "", phone: "" });
-      }
-    };
-
-    return (
-      <Dialog open={open} onOpenChange={handleOpenChange}>
-        <DialogTrigger asChild>
-          <Button>
-            <Plus className="h-4 w-4 mr-2" />
-            Add Collector
-          </Button>
-        </DialogTrigger>
-        <DialogContent
-          className="sm:max-w-[425px]"
-          onPointerDownOutside={(e) => e.preventDefault()}
-          onInteractOutside={(e) => e.preventDefault()}
-        >
-          <DialogHeader>
-            <DialogTitle>Add New Collector</DialogTitle>
-          </DialogHeader>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <Label htmlFor="collector-name">Name *</Label>
-              <Input
-                id="collector-name"
-                value={formData.name}
-                onChange={(e) =>
-                  setFormData((prev) => ({ ...prev, name: e.target.value }))
-                }
-                placeholder="Enter collector name"
-                required
-                autoComplete="off"
-              />
-            </div>
-            <div>
-              <Label htmlFor="collector-phone">Phone *</Label>
-              <Input
-                id="collector-phone"
-                type="tel"
-                value={formData.phone}
-                onChange={(e) =>
-                  setFormData((prev) => ({ ...prev, phone: e.target.value }))
-                }
-                placeholder="Enter phone number"
-                required
-                autoComplete="off"
-              />
-            </div>
-            <div className="flex gap-2 pt-4">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => handleOpenChange(false)}
-                className="flex-1"
-              >
-                Cancel
-              </Button>
-              <Button
-                type="submit"
-                disabled={collectorMutation.isPending}
-                className="flex-1"
-              >
-                {collectorMutation.isPending ? "Adding..." : "Add Collector"}
-              </Button>
-            </div>
-          </form>
-        </DialogContent>
-      </Dialog>
-    );
-  });
-
-  // Create household dialog component with isolated state - moved outside
-  const CreateHouseholdDialog = React.memo(() => {
-    const [open, setOpen] = useState(false);
-    const [formData, setFormData] = useState({
-      headName: "",
-      houseNumber: "",
-      phone: "",
-    });
-
-    const householdMutation = useMutation({
-      mutationFn: (data: {
-        headName: string;
-        houseNumber: string;
-        phone: string;
-      }) =>
-        apiRequest("POST", "/api/households", {
-          ...data,
-          villageId: user?.villageId,
-        }),
-      onSuccess: () => {
-        toast({ title: "Household created successfully" });
-        queryClient.invalidateQueries({ queryKey: ["/api/households"] });
-        queryClient.invalidateQueries({ queryKey: ["/api/manager/stats"] });
-        setFormData({ headName: "", houseNumber: "", phone: "" });
-        setOpen(false);
-      },
-      onError: (error: any) => {
-        toast({
-          title: "Failed to create household",
-          description: error.message,
-          variant: "destructive",
-        });
-      },
-    });
-
-    const handleSubmit = (e: React.FormEvent) => {
-      e.preventDefault();
-
-      const headName = formData.headName.trim();
-      const houseNumber = formData.houseNumber.trim();
-      const phone = formData.phone.trim();
-
-      if (!headName || !houseNumber || !phone) {
-        toast({
-          title: "Please fill all required fields",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      householdMutation.mutate({ headName, houseNumber, phone });
-    };
-
-    const handleOpenChange = (newOpen: boolean) => {
-      setOpen(newOpen);
-      if (!newOpen) {
-        setFormData({ headName: "", houseNumber: "", phone: "" });
-      }
-    };
-
-    return (
-      <Dialog open={open} onOpenChange={handleOpenChange}>
-        <DialogTrigger asChild>
-          <Button>
-            <Plus className="h-4 w-4 mr-2" />
-            Add Household
-          </Button>
-        </DialogTrigger>
-        <DialogContent
-          className="sm:max-w-[425px]"
-          onPointerDownOutside={(e) => e.preventDefault()}
-          onInteractOutside={(e) => e.preventDefault()}
-        >
-          <DialogHeader>
-            <DialogTitle>Add New Household</DialogTitle>
-          </DialogHeader>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <Label htmlFor="household-headName">Head of Household *</Label>
-              <Input
-                id="household-headName"
-                value={formData.headName}
-                onChange={(e) =>
-                  setFormData((prev) => ({ ...prev, headName: e.target.value }))
-                }
-                placeholder="Enter head of household name"
-                required
-                autoComplete="off"
-              />
-            </div>
-            <div>
-              <Label htmlFor="household-houseNumber">House Number *</Label>
-              <Input
-                id="household-houseNumber"
-                value={formData.houseNumber}
-                onChange={(e) =>
-                  setFormData((prev) => ({
-                    ...prev,
-                    houseNumber: e.target.value,
-                  }))
-                }
-                placeholder="Enter house number"
-                required
-                autoComplete="off"
-              />
-            </div>
-            <div>
-              <Label htmlFor="household-phone">Phone *</Label>
-              <Input
-                id="household-phone"
-                type="tel"
-                value={formData.phone}
-                onChange={(e) =>
-                  setFormData((prev) => ({ ...prev, phone: e.target.value }))
-                }
-                placeholder="Enter phone number"
-                required
-                autoComplete="off"
-              />
-            </div>
-            <div className="flex gap-2 pt-4">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => handleOpenChange(false)}
-                className="flex-1"
-              >
-                Cancel
-              </Button>
-              <Button
-                type="submit"
-                disabled={householdMutation.isPending}
-                className="flex-1"
-              >
-                {householdMutation.isPending ? "Adding..." : "Add Household"}
-              </Button>
-            </div>
-          </form>
-        </DialogContent>
-      </Dialog>
-    );
-  });
+  
 
   const CollectorDetailsDialog = ({ collector }: { collector: Collector }) => {
     const [open, setOpen] = useState(false);
@@ -1628,7 +1625,7 @@ export default function ManagerDashboard() {
                     </p>
                   </div>
                   <div className="flex gap-2">
-                    <CreateCollectorDialog />
+                    <CreateCollectorDialog villageId={user?.villageId || ""} />
                     <ComplaintManagementDialog />
                   </div>
                 </div>
@@ -2801,17 +2798,27 @@ export default function ManagerDashboard() {
                 )}
 
                 {householdSubTab === "add" && (
-                  <Card>
-                    <CardHeader>
-                      <CardTitle>Add New Household</CardTitle>
-                      <CardDescription>
-                        Create a new household with QR code generation
-                      </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                      <BulkHouseholdCreation />
-                    </CardContent>
-                  </Card>
+                  <div className="space-y-4">
+                    <div className="flex justify-between items-center">
+                      <div>
+                        <h3 className="text-lg font-semibold">Add New Household</h3>
+                        <p className="text-muted-foreground">Create individual or bulk households</p>
+                      </div>
+                      <CreateHouseholdDialog villageId={user?.villageId || ""} />
+                    </div>
+                    
+                    <Card>
+                      <CardHeader>
+                        <CardTitle>Bulk Household Creation</CardTitle>
+                        <CardDescription>
+                          Create multiple households with QR code generation
+                        </CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        <BulkHouseholdCreation />
+                      </CardContent>
+                    </Card>
+                  </div>
                 )}
 
                 {householdSubTab === "qr-create" && (
