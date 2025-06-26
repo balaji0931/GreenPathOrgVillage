@@ -392,15 +392,16 @@ export default function ManagerDashboard() {
     </Card>
   );
 
-  const CreateCollectorDialog = () => {
-    const [open, setOpen] = useState(false);
-    const [formData, setFormData] = useState({ name: "", phone: "" });
+  // Create collector form state - moved outside component to prevent resets
+  const [collectorDialogOpen, setCollectorDialogOpen] = useState(false);
+  const [collectorFormData, setCollectorFormData] = useState({ name: "", phone: "" });
 
+  const CreateCollectorDialog = () => {
     const handleSubmit = (e: React.FormEvent) => {
       e.preventDefault();
       
-      const name = formData.name.trim();
-      const phone = formData.phone.trim();
+      const name = collectorFormData.name.trim();
+      const phone = collectorFormData.phone.trim();
       
       if (!name || !phone) {
         toast({ title: "Please fill all required fields", variant: "destructive" });
@@ -412,8 +413,10 @@ export default function ManagerDashboard() {
         {
           onSuccess: () => {
             toast({ title: "Collector created successfully" });
-            setFormData({ name: "", phone: "" });
-            setOpen(false);
+            queryClient.invalidateQueries({ queryKey: ["/api/collectors"] });
+            queryClient.invalidateQueries({ queryKey: ["/api/manager/stats"] });
+            setCollectorFormData({ name: "", phone: "" });
+            setCollectorDialogOpen(false);
           },
           onError: (error: any) => {
             toast({ 
@@ -426,23 +429,15 @@ export default function ManagerDashboard() {
       );
     };
 
-    const handleOpenChange = (newOpen: boolean) => {
-      setOpen(newOpen);
-      if (!newOpen) {
-        // Reset form when dialog closes
-        setFormData({ name: "", phone: "" });
-      }
-    };
-
     return (
-      <Dialog open={open} onOpenChange={handleOpenChange}>
+      <Dialog open={collectorDialogOpen} onOpenChange={setCollectorDialogOpen}>
         <DialogTrigger asChild>
           <Button>
             <Plus className="h-4 w-4 mr-2" />
             Add Collector
           </Button>
         </DialogTrigger>
-        <DialogContent onClick={(e) => e.stopPropagation()}>
+        <DialogContent>
           <DialogHeader>
             <DialogTitle>Add New Collector</DialogTitle>
           </DialogHeader>
@@ -451,8 +446,8 @@ export default function ManagerDashboard() {
               <Label htmlFor="collector-name">Name</Label>
               <Input
                 id="collector-name"
-                value={formData.name}
-                onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+                value={collectorFormData.name}
+                onChange={(e) => setCollectorFormData(prev => ({ ...prev, name: e.target.value }))}
                 placeholder="Enter collector name"
                 required
                 autoComplete="off"
@@ -463,8 +458,8 @@ export default function ManagerDashboard() {
               <Input
                 id="collector-phone"
                 type="tel"
-                value={formData.phone}
-                onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
+                value={collectorFormData.phone}
+                onChange={(e) => setCollectorFormData(prev => ({ ...prev, phone: e.target.value }))}
                 placeholder="Enter phone number"
                 required
                 autoComplete="off"
@@ -474,7 +469,10 @@ export default function ManagerDashboard() {
               <Button 
                 type="button" 
                 variant="outline" 
-                onClick={() => setOpen(false)}
+                onClick={() => {
+                  setCollectorFormData({ name: "", phone: "" });
+                  setCollectorDialogOpen(false);
+                }}
                 className="flex-1"
               >
                 Cancel
@@ -493,16 +491,17 @@ export default function ManagerDashboard() {
     );
   };
 
-  const CreateHouseholdDialog = () => {
-    const [open, setOpen] = useState(false);
-    const [formData, setFormData] = useState({ headName: "", houseNumber: "", phone: "" });
+  // Create household form state - moved outside component to prevent resets
+  const [householdDialogOpen, setHouseholdDialogOpen] = useState(false);
+  const [householdFormData, setHouseholdFormData] = useState({ headName: "", houseNumber: "", phone: "" });
 
+  const CreateHouseholdDialog = () => {
     const handleSubmit = (e: React.FormEvent) => {
       e.preventDefault();
       
-      const headName = formData.headName.trim();
-      const houseNumber = formData.houseNumber.trim();
-      const phone = formData.phone.trim();
+      const headName = householdFormData.headName.trim();
+      const houseNumber = householdFormData.houseNumber.trim();
+      const phone = householdFormData.phone.trim();
       
       if (!headName || !houseNumber || !phone) {
         toast({ title: "Please fill all required fields", variant: "destructive" });
@@ -514,8 +513,10 @@ export default function ManagerDashboard() {
         {
           onSuccess: () => {
             toast({ title: "Household created successfully" });
-            setFormData({ headName: "", houseNumber: "", phone: "" });
-            setOpen(false);
+            queryClient.invalidateQueries({ queryKey: ["/api/households"] });
+            queryClient.invalidateQueries({ queryKey: ["/api/manager/stats"] });
+            setHouseholdFormData({ headName: "", houseNumber: "", phone: "" });
+            setHouseholdDialogOpen(false);
           },
           onError: (error: any) => {
             toast({ 
@@ -528,23 +529,15 @@ export default function ManagerDashboard() {
       );
     };
 
-    const handleOpenChange = (newOpen: boolean) => {
-      setOpen(newOpen);
-      if (!newOpen) {
-        // Reset form when dialog closes
-        setFormData({ headName: "", houseNumber: "", phone: "" });
-      }
-    };
-
     return (
-      <Dialog open={open} onOpenChange={handleOpenChange}>
+      <Dialog open={householdDialogOpen} onOpenChange={setHouseholdDialogOpen}>
         <DialogTrigger asChild>
           <Button>
             <Plus className="h-4 w-4 mr-2" />
             Add Household
           </Button>
         </DialogTrigger>
-        <DialogContent onClick={(e) => e.stopPropagation()}>
+        <DialogContent>
           <DialogHeader>
             <DialogTitle>Add New Household</DialogTitle>
           </DialogHeader>
@@ -553,8 +546,8 @@ export default function ManagerDashboard() {
               <Label htmlFor="household-headName">Head of Household</Label>
               <Input
                 id="household-headName"
-                value={formData.headName}
-                onChange={(e) => setFormData(prev => ({ ...prev, headName: e.target.value }))}
+                value={householdFormData.headName}
+                onChange={(e) => setHouseholdFormData(prev => ({ ...prev, headName: e.target.value }))}
                 placeholder="Enter head of household name"
                 required
                 autoComplete="off"
@@ -564,8 +557,8 @@ export default function ManagerDashboard() {
               <Label htmlFor="household-houseNumber">House Number</Label>
               <Input
                 id="household-houseNumber"
-                value={formData.houseNumber}
-                onChange={(e) => setFormData(prev => ({ ...prev, houseNumber: e.target.value }))}
+                value={householdFormData.houseNumber}
+                onChange={(e) => setHouseholdFormData(prev => ({ ...prev, houseNumber: e.target.value }))}
                 placeholder="Enter house number"
                 required
                 autoComplete="off"
@@ -576,8 +569,8 @@ export default function ManagerDashboard() {
               <Input
                 id="household-phone"
                 type="tel"
-                value={formData.phone}
-                onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
+                value={householdFormData.phone}
+                onChange={(e) => setHouseholdFormData(prev => ({ ...prev, phone: e.target.value }))}
                 placeholder="Enter phone number"
                 required
                 autoComplete="off"
@@ -587,7 +580,10 @@ export default function ManagerDashboard() {
               <Button 
                 type="button" 
                 variant="outline" 
-                onClick={() => setOpen(false)}
+                onClick={() => {
+                  setHouseholdFormData({ headName: "", houseNumber: "", phone: "" });
+                  setHouseholdDialogOpen(false);
+                }}
                 className="flex-1"
               >
                 Cancel
