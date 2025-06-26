@@ -1079,20 +1079,28 @@ export default function ManagerDashboard() {
     setSelectedDownloadHouseholds(households.map((h) => h.id));
   }, [households]);
 
-  // Individual household form component to prevent re-rendering issues
+  // Individual household form component with stable keys and proper focus management
   const HouseholdFormRow = React.memo(({ 
     household, 
     index, 
     onUpdate, 
     onRemove, 
-    canRemove 
+    canRemove,
+    uniqueKey
   }: {
     household: any;
     index: number;
     onUpdate: (index: number, field: string, value: string) => void;
     onRemove: (index: number) => void;
     canRemove: boolean;
+    uniqueKey: string;
   }) => {
+    // Use stable IDs for inputs to prevent focus loss
+    const headNameId = `head-name-${uniqueKey}`;
+    const houseNumberId = `house-number-${uniqueKey}`;
+    const phoneId = `phone-${uniqueKey}`;
+    const addressId = `address-${uniqueKey}`;
+
     return (
       <Card className="border">
         <CardContent className="p-4">
@@ -1111,8 +1119,10 @@ export default function ManagerDashboard() {
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <Label>Head Name *</Label>
+              <Label htmlFor={headNameId}>Head Name *</Label>
               <Input
+                id={headNameId}
+                key={headNameId}
                 value={household.headName || ""}
                 onChange={(e) => onUpdate(index, "headName", e.target.value)}
                 placeholder="Enter head name"
@@ -1120,8 +1130,10 @@ export default function ManagerDashboard() {
               />
             </div>
             <div>
-              <Label>House Number *</Label>
+              <Label htmlFor={houseNumberId}>House Number *</Label>
               <Input
+                id={houseNumberId}
+                key={houseNumberId}
                 value={household.houseNumber || ""}
                 onChange={(e) => onUpdate(index, "houseNumber", e.target.value)}
                 placeholder="Enter house number"
@@ -1129,8 +1141,10 @@ export default function ManagerDashboard() {
               />
             </div>
             <div>
-              <Label>Phone Number *</Label>
+              <Label htmlFor={phoneId}>Phone Number *</Label>
               <Input
+                id={phoneId}
+                key={phoneId}
                 type="tel"
                 value={household.phone || ""}
                 onChange={(e) => onUpdate(index, "phone", e.target.value)}
@@ -1139,8 +1153,10 @@ export default function ManagerDashboard() {
               />
             </div>
             <div>
-              <Label>Address</Label>
+              <Label htmlFor={addressId}>Address</Label>
               <Input
+                id={addressId}
+                key={addressId}
                 value={household.address || ""}
                 onChange={(e) => onUpdate(index, "address", e.target.value)}
                 placeholder="Enter address"
@@ -1153,8 +1169,26 @@ export default function ManagerDashboard() {
     );
   });
 
-  // Bulk household creation component with stable form management
+  // Bulk household creation component with stable form management and unique keys
   const BulkHouseholdCreation = React.memo(() => {
+    // Create stable unique keys for each household form
+    const [householdKeys, setHouseholdKeys] = React.useState(() => 
+      bulkHouseholds.map((_, index) => `household-${Date.now()}-${index}`)
+    );
+
+    // Update keys when households are added or removed
+    React.useEffect(() => {
+      if (householdKeys.length !== bulkHouseholds.length) {
+        setHouseholdKeys(prev => {
+          const newKeys = [...prev];
+          while (newKeys.length < bulkHouseholds.length) {
+            newKeys.push(`household-${Date.now()}-${newKeys.length}`);
+          }
+          return newKeys.slice(0, bulkHouseholds.length);
+        });
+      }
+    }, [bulkHouseholds.length, householdKeys.length]);
+
     const handleUpdateHousehold = React.useCallback((index: number, field: string, value: string) => {
       setBulkHouseholds(prev => {
         const updated = [...prev];
@@ -1164,12 +1198,15 @@ export default function ManagerDashboard() {
     }, []);
 
     const handleAddHousehold = React.useCallback(() => {
+      const newKey = `household-${Date.now()}-${bulkHouseholds.length}`;
       setBulkHouseholds(prev => [...prev, { headName: "", houseNumber: "", phone: "", address: "" }]);
-    }, []);
+      setHouseholdKeys(prev => [...prev, newKey]);
+    }, [bulkHouseholds.length]);
 
     const handleRemoveHousehold = React.useCallback((index: number) => {
       if (bulkHouseholds.length > 1) {
         setBulkHouseholds(prev => prev.filter((_, i) => i !== index));
+        setHouseholdKeys(prev => prev.filter((_, i) => i !== index));
       }
     }, [bulkHouseholds.length]);
 
@@ -1192,12 +1229,13 @@ export default function ManagerDashboard() {
       <div className="space-y-4">
         {bulkHouseholds.map((household, index) => (
           <HouseholdFormRow
-            key={index}
+            key={householdKeys[index] || `fallback-${index}`}
             household={household}
             index={index}
             onUpdate={handleUpdateHousehold}
             onRemove={handleRemoveHousehold}
             canRemove={bulkHouseholds.length > 1}
+            uniqueKey={householdKeys[index] || `fallback-${index}`}
           />
         ))}
 
