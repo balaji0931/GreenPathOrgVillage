@@ -353,6 +353,7 @@ export default function ManagerDashboard() {
   });
 
   // QR management state
+  const [selectedQRHouseholds, setSelectedQRHouseholds] = useState<number[]>([]);
   const [selectedDownloadHouseholds, setSelectedDownloadHouseholds] = useState<number[]>([]);
   const [bulkHouseholds, setBulkHouseholds] = useState([
     { headName: "", houseNumber: "", phone: "", address: "" }
@@ -473,6 +474,23 @@ export default function ManagerDashboard() {
   });
 
   // QR Code mutations
+  const generateQRMutation = useMutation({
+    mutationFn: (householdIds: number[]) =>
+      apiRequest("POST", "/api/qr-codes/generate", { householdIds }),
+    onSuccess: () => {
+      toast({ title: "QR codes generated successfully!" });
+      queryClient.invalidateQueries({ queryKey: ["/api/households"] });
+      setSelectedQRHouseholds([]);
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to generate QR codes",
+        variant: "destructive",
+      });
+    },
+  });
+
   const downloadPDFMutation = useMutation({
     mutationFn: async (householdIds: number[]) => {
       const response = await fetch("/api/qr-codes/download-pdf", {
@@ -551,12 +569,12 @@ export default function ManagerDashboard() {
     const [selectedComplaint, setSelectedComplaint] =
       useState<Complaint | null>(null);
     const [managerResponse, setManagerResponse] = useState("");
-
+  
     const handleResolve = (complaint: Complaint) => {
       setSelectedComplaint(complaint);
       setOpen(true);
     };
-
+  
     const submitResolution = () => {
       if (selectedComplaint && managerResponse) {
         resolveComplaintMutation.mutate({
@@ -568,7 +586,7 @@ export default function ManagerDashboard() {
         setSelectedComplaint(null);
       }
     };
-
+  
     return (
       <>
         <Dialog open={open} onOpenChange={setOpen}>
@@ -583,7 +601,7 @@ export default function ManagerDashboard() {
             <DialogHeader>
               <DialogTitle>Collector Complaints Management</DialogTitle>
             </DialogHeader>
-
+  
             <div className="space-y-4 max-h-96 overflow-y-auto">
               {complaints.map((complaint) => (
                 <Card key={complaint.id}>
@@ -638,7 +656,7 @@ export default function ManagerDashboard() {
                 </p>
               )}
             </div>
-
+  
             <div>
               {selectedComplaint && (
                 <div className="mt-4">
@@ -919,7 +937,6 @@ export default function ManagerDashboard() {
                                 </div>
                                 <div>
                                   <div className="text-lg font-bold">
-```text
                                     {stats?.complaintsCount || 0}
                                   </div>
                                   <div className="text-xs text-muted-foreground">Complaints</div>
@@ -954,10 +971,11 @@ export default function ManagerDashboard() {
                 </div>
 
                 <Tabs value={householdSubTab} onValueChange={setHouseholdSubTab} className="w-full">
-                  <TabsList className="grid w-full grid-cols-3">
+                  <TabsList className="grid w-full grid-cols-4">
                     <TabsTrigger value="list">View All</TabsTrigger>
                     <TabsTrigger value="add">Add New</TabsTrigger>
-                    <TabsTrigger value="bulk">Bulk Add</TabsTrigger>
+                    <TabsTrigger value="qr-generate">Generate QR</TabsTrigger>
+                    <TabsTrigger value="qr-download">Download QR</TabsTrigger>
                   </TabsList>
 
                   <TabsContent value="list" className="space-y-4">
@@ -974,24 +992,13 @@ export default function ManagerDashboard() {
                                 {household.qrCodeUrl && (
                                   <Badge variant="secondary" className="mt-2">
                                     <QrCode className="h-3 w-3 mr-1" />
-                                    QR Code Ready
+                                    QR Code Available
                                   </Badge>
                                 )}
                               </div>
-                              <div className="flex gap-2">
-                                {household.qrCodeUrl && (
-                                  <Button
-                                    size="sm"
-                                    variant="outline"
-                                    onClick={() => window.open(household.qrCodeUrl, "_blank")}
-                                  >
-                                    <Eye className="h-4 w-4" />
-                                  </Button>
-                                )}
-                                <Button size="sm" variant="outline">
-                                  <Edit className="h-4 w-4" />
-                                </Button>
-                              </div>
+                              <Button size="sm" variant="outline">
+                                <Edit className="h-4 w-4" />
+                              </Button>
                             </div>
                           </CardContent>
                         </Card>
@@ -1003,205 +1010,135 @@ export default function ManagerDashboard() {
                     <CreateHouseholdDialog villageId={user?.villageId || ""} />
                   </TabsContent>
 
-                  <TabsContent value="bulk" className="space-y-4">
+                  <TabsContent value="qr-generate" className="space-y-4">
                     <Card>
                       <CardHeader>
-                        <CardTitle>Bulk Add Households</CardTitle>
-                        <CardDescription>Add multiple households at once with automatic QR code generation</CardDescription>
+                        <CardTitle>Generate QR Codes</CardTitle>
+                        <CardDescription>Create QR codes for households</CardDescription>
                       </CardHeader>
                       <CardContent>
                         <div className="space-y-4">
                           <div className="flex justify-between items-center">
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => setBulkHouseholds([...bulkHouseholds, { headName: "", houseNumber: "", phone: "", address: "" }])}
+                            <Button 
+                              size="sm" 
+                              variant="outline" 
+                              onClick={() => setSelectedQRHouseholds(households.filter(h => !h.qrCodeUrl).map(h => h.id))}
                             >
-                              <Plus className="h-4 w-4 mr-2" />
-                              Add Row
+                              Select All
                             </Button>
                             <Button
-                              onClick={() => {
-                                const validHouseholds = bulkHouseholds.filter(h => h.headName.trim() && h.houseNumber.trim() && h.phone.trim());
-                                if (validHouseholds.length === 0) {
-                                  toast({ title: "Please fill at least one complete household", variant: "destructive" });
-                                  return;
-                                }
-                                createBulkHouseholdsMutation.mutate(validHouseholds);
-                              }}
-                              disabled={createBulkHouseholdsMutation.isPending}
+                              onClick={() => generateQRMutation.mutate(selectedQRHouseholds)}
+                              disabled={selectedQRHouseholds.length === 0 || generateQRMutation.isPending}
                             >
-                              {createBulkHouseholdsMutation.isPending ? "Creating..." : `Create ${bulkHouseholds.filter(h => h.headName.trim() && h.houseNumber.trim() && h.phone.trim()).length} Households`}
+                              Generate QR ({selectedQRHouseholds.length})
                             </Button>
                           </div>
-
-                          <div className="space-y-3 max-h-96 overflow-y-auto">
-                            {bulkHouseholds.map((household, index) => (
-                              <Card key={index} className="p-4">
-                                <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
-                                  <div>
-                                    <Label htmlFor={`headName-${index}`}>Head Name *</Label>
-                                    <Input
-                                      id={`headName-${index}`}
-                                      value={household.headName}
-                                      onChange={(e) => {
-                                        const updated = [...bulkHouseholds];
-                                        updated[index].headName = e.target.value;
-                                        setBulkHouseholds(updated);
-                                      }}
-                                      placeholder="Enter head name"
-                                    />
-                                  </div>
-                                  <div>
-                                    <Label htmlFor={`houseNumber-${index}`}>House Number *</Label>
-                                    <Input
-                                      id={`houseNumber-${index}`}
-                                      value={household.houseNumber}
-                                      onChange={(e) => {
-                                        const updated = [...bulkHouseholds];
-                                        updated[index].houseNumber = e.target.value;
-                                        setBulkHouseholds(updated);
-                                      }}
-                                      placeholder="House number"
-                                    />
-                                  </div>
-                                  <div>
-                                    <Label htmlFor={`phone-${index}`}>Phone *</Label>
-                                    <Input
-                                      id={`phone-${index}`}
-                                      value={household.phone}
-                                      onChange={(e) => {
-                                        const updated = [...bulkHouseholds];
-                                        updated[index].phone = e.target.value;
-                                        setBulkHouseholds(updated);
-                                      }}
-                                      placeholder="Phone number"
-                                    />
-                                  </div>
-                                  <div className="flex items-end gap-2">
-                                    <div className="flex-1">
-                                      <Label htmlFor={`address-${index}`}>Address</Label>
-                                      <Input
-                                        id={`address-${index}`}
-                                        value={household.address}
-                                        onChange={(e) => {
-                                          const updated = [...bulkHouseholds];
-                                          updated[index].address = e.target.value;
-                                          setBulkHouseholds(updated);
-                                        }}
-                                        placeholder="Address (optional)"
-                                      />
+                          <div className="space-y-2">
+                            {households.filter(h => !h.qrCodeUrl).map((household) => (
+                              <Card
+                                key={household.id}
+                                className="cursor-pointer hover:bg-gray-50"
+                                onClick={() => {
+                                  setSelectedQRHouseholds(prev => 
+                                    prev.includes(household.id) 
+                                      ? prev.filter(id => id !== household.id)
+                                      : [...prev, household.id]
+                                  );
+                                }}
+                              >
+                                <CardContent className="p-4">
+                                  <div className="flex items-center justify-between">
+                                    <div>
+                                      <h4 className="font-medium">{household.headName}</h4>
+                                      <p className="text-sm text-muted-foreground">
+                                        House: {household.houseNumber} | ID: {household.uid}
+                                      </p>
                                     </div>
-                                    <Button
-                                      size="sm"
-                                      variant="destructive"
-                                      onClick={() => {
-                                        if (bulkHouseholds.length > 1) {
-                                          setBulkHouseholds(bulkHouseholds.filter((_, i) => i !== index));
-                                        }
-                                      }}
-                                      disabled={bulkHouseholds.length === 1}
-                                    >
-                                      <Trash2 className="h-4 w-4" />
-                                    </Button>
+                                    <input
+                                      type="checkbox"
+                                      checked={selectedQRHouseholds.includes(household.id)}
+                                      onChange={() => {}}
+                                      className="h-4 w-4"
+                                    />
                                   </div>
-                                </div>
+                                </CardContent>
                               </Card>
                             ))}
                           </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </TabsContent>
 
-                          <div className="text-sm text-muted-foreground p-3 bg-blue-50 rounded-lg">
-                            <p className="font-medium mb-1">📋 Bulk Creation Notes:</p>
-                            <ul className="list-disc list-inside space-y-1 text-xs">
-                              <li>QR codes will be automatically generated for each household</li>
-                              <li>Generator accounts will be created automatically</li>
-                              <li>Only complete households (with name, house number, and phone) will be created</li>
-                              <li>Download QR codes after creation from the "View All" tab</li>
-                            </ul>
+                  <TabsContent value="qr-download" className="space-y-4">
+                    <Card>
+                      <CardHeader>
+                        <CardTitle>Download QR Codes</CardTitle>
+                        <CardDescription>Download QR codes as PDF</CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="space-y-4">
+                          <div className="flex justify-between items-center">
+                            <Button 
+                              size="sm" 
+                              variant="outline" 
+                              onClick={() => setSelectedDownloadHouseholds(households.filter(h => h.qrCodeUrl).map(h => h.id))}
+                            >
+                              Select All
+                            </Button>
+                            <Button
+                              onClick={() => downloadPDFMutation.mutate(selectedDownloadHouseholds)}
+                              disabled={selectedDownloadHouseholds.length === 0 || downloadPDFMutation.isPending}
+                            >
+                              <Download className="h-4 w-4 mr-2" />
+                              Download PDF ({selectedDownloadHouseholds.length})
+                            </Button>
+                          </div>
+                          <div className="space-y-2">
+                            {households.filter(h => h.qrCodeUrl).map((household) => (
+                              <Card
+                                key={household.id}
+                                className="cursor-pointer hover:bg-gray-50"
+                                onClick={() => {
+                                  setSelectedDownloadHouseholds(prev => 
+                                    prev.includes(household.id) 
+                                      ? prev.filter(id => id !== household.id)
+                                      : [...prev, household.id]
+                                  );
+                                }}
+                              >
+                                <CardContent className="p-4">
+                                  <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-3">
+                                      <img
+                                        src={household.qrCodeUrl}
+                                        alt="QR Code"
+                                        className="h-12 w-12 rounded border"
+                                      />
+                                      <div>
+                                        <h4 className="font-medium">{household.headName}</h4>
+                                        <p className="text-sm text-muted-foreground">
+                                          House: {household.houseNumber} | ID: {household.uid}
+                                        </p>
+                                      </div>
+                                    </div>
+                                    <input
+                                      type="checkbox"
+                                      checked={selectedDownloadHouseholds.includes(household.id)}
+                                      onChange={() => {}}
+                                      className="h-4 w-4"
+                                    />
+                                  </div>
+                                </CardContent>
+                              </Card>
+                            ))}
                           </div>
                         </div>
                       </CardContent>
                     </Card>
                   </TabsContent>
                 </Tabs>
-
-                {/* QR Download Section */}
-                <Card className="mt-6">
-                  <CardHeader>
-                    <CardTitle>Download QR Codes</CardTitle>
-                    <CardDescription>Download QR codes as PDF for printing</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-4">
-                      <div className="flex justify-between items-center">
-                        <Button 
-                          size="sm" 
-                          variant="outline" 
-                          onClick={() => setSelectedDownloadHouseholds(households.filter(h => h.qrCodeUrl).map(h => h.id))}
-                        >
-                          Select All ({households.filter(h => h.qrCodeUrl).length})
-                        </Button>
-                        <Button
-                          onClick={() => downloadPDFMutation.mutate(selectedDownloadHouseholds)}
-                          disabled={selectedDownloadHouseholds.length === 0 || downloadPDFMutation.isPending}
-                        >
-                          <Download className="h-4 w-4 mr-2" />
-                          Download PDF ({selectedDownloadHouseholds.length})
-                        </Button>
-                      </div>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 max-h-64 overflow-y-auto">
-                        {households.filter(h => h.qrCodeUrl).map((household) => (
-                          <Card
-                            key={household.id}
-                            className={cn(
-                              "cursor-pointer transition-colors",
-                              selectedDownloadHouseholds.includes(household.id) 
-                                ? "ring-2 ring-blue-500 bg-blue-50" 
-                                : "hover:bg-gray-50"
-                            )}
-                            onClick={() => {
-                              setSelectedDownloadHouseholds(prev => 
-                                prev.includes(household.id) 
-                                  ? prev.filter(id => id !== household.id)
-                                  : [...prev, household.id]
-                              );
-                            }}
-                          >
-                            <CardContent className="p-3">
-                              <div className="flex items-center gap-3">
-                                <img
-                                  src={household.qrCodeUrl}
-                                  alt="QR Code"
-                                  className="h-12 w-12 rounded border"
-                                />
-                                <div className="flex-1 min-w-0">
-                                  <h4 className="font-medium text-sm truncate">{household.headName}</h4>
-                                  <p className="text-xs text-muted-foreground truncate">
-                                    {household.uid} • {household.houseNumber}
-                                  </p>
-                                </div>
-                                <input
-                                  type="checkbox"
-                                  checked={selectedDownloadHouseholds.includes(household.id)}
-                                  onChange={() => {}}
-                                  className="h-4 w-4"
-                                />
-                              </div>
-                            </CardContent>
-                          </Card>
-                        ))}
-                      </div>
-                      {households.filter(h => h.qrCodeUrl).length === 0 && (
-                        <div className="text-center py-8">
-                          <QrCode className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-                          <p className="text-muted-foreground">No QR codes available</p>
-                          <p className="text-sm text-muted-foreground">Add households to generate QR codes automatically</p>
-                        </div>
-                      )}
-                    </CardContent>
-                  </Card>
-                </TabsContent>
-              </Tabs>
+              </div>
             )}
 
             {/* Collections Tab */}
