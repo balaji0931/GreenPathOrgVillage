@@ -402,7 +402,7 @@ export default function ManagerDashboard() {
     </Card>
   );
 
-  const CreateCollectorDialog = () => {
+  const CreateCollectorDialog = React.memo(() => {
     const [name, setName] = useState("");
     const [phone, setPhone] = useState("");
     const [open, setOpen] = useState(false);
@@ -418,10 +418,11 @@ export default function ManagerDashboard() {
         { name: name.trim(), phone: phone.trim() },
         {
           onSuccess: () => {
+            toast({ title: "Collector created successfully" });
+            // Clear form and close dialog only on success
             setName("");
             setPhone("");
             setOpen(false);
-            toast({ title: "Collector created successfully" });
           },
           onError: (error: any) => {
             toast({ 
@@ -434,23 +435,33 @@ export default function ManagerDashboard() {
       );
     };
 
-    const handleDialogChange = (newOpen: boolean) => {
+    const handleOpenChange = (newOpen: boolean) => {
       setOpen(newOpen);
-      // Only clear form when dialog is being closed by user, not when opening
+      // Only clear form when dialog is manually closed (not on success)
       if (!newOpen && !createCollectorMutation.isPending) {
-        // Don't clear immediately, give user a chance to reopen if needed
+        // Give a brief delay to prevent accidental clearing
+        setTimeout(() => {
+          if (!open) {
+            setName("");
+            setPhone("");
+          }
+        }, 100);
       }
     };
 
     return (
-      <Dialog open={open} onOpenChange={handleDialogChange}>
+      <Dialog open={open} onOpenChange={handleOpenChange}>
         <DialogTrigger asChild>
-          <Button>
+          <Button onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            setOpen(true);
+          }}>
             <Plus className="h-4 w-4 mr-2" />
             Add Collector
           </Button>
         </DialogTrigger>
-        <DialogContent>
+        <DialogContent onClick={(e) => e.stopPropagation()}>
           <DialogHeader>
             <DialogTitle>Add New Collector</DialogTitle>
           </DialogHeader>
@@ -464,6 +475,7 @@ export default function ManagerDashboard() {
                 placeholder="Enter collector name"
                 required
                 autoComplete="off"
+                autoFocus
               />
             </div>
             <div>
@@ -482,7 +494,10 @@ export default function ManagerDashboard() {
               <Button 
                 type="button" 
                 variant="outline" 
-                onClick={() => setOpen(false)}
+                onClick={(e) => {
+                  e.preventDefault();
+                  setOpen(false);
+                }}
                 className="flex-1"
               >
                 Cancel
@@ -499,9 +514,9 @@ export default function ManagerDashboard() {
         </DialogContent>
       </Dialog>
     );
-  };
+  });
 
-  const CreateHouseholdDialog = () => {
+  const CreateHouseholdDialog = React.memo(() => {
     const [headName, setHeadName] = useState("");
     const [houseNumber, setHouseNumber] = useState("");
     const [phone, setPhone] = useState("");
@@ -522,11 +537,12 @@ export default function ManagerDashboard() {
         },
         {
           onSuccess: () => {
+            toast({ title: "Household created successfully" });
+            // Clear form and close dialog only on success
             setHeadName("");
             setHouseNumber("");
             setPhone("");
             setOpen(false);
-            toast({ title: "Household created successfully" });
           },
           onError: (error: any) => {
             toast({ 
@@ -539,23 +555,34 @@ export default function ManagerDashboard() {
       );
     };
 
-    const handleDialogChange = (newOpen: boolean) => {
+    const handleOpenChange = (newOpen: boolean) => {
       setOpen(newOpen);
-      // Only clear form when dialog is being closed by user, not when opening
+      // Only clear form when dialog is manually closed (not on success)
       if (!newOpen && !createHouseholdMutation.isPending) {
-        // Don't clear immediately, give user a chance to reopen if needed
+        // Give a brief delay to prevent accidental clearing
+        setTimeout(() => {
+          if (!open) {
+            setHeadName("");
+            setHouseNumber("");
+            setPhone("");
+          }
+        }, 100);
       }
     };
 
     return (
-      <Dialog open={open} onOpenChange={handleDialogChange}>
+      <Dialog open={open} onOpenChange={handleOpenChange}>
         <DialogTrigger asChild>
-          <Button>
+          <Button onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            setOpen(true);
+          }}>
             <Plus className="h-4 w-4 mr-2" />
             Add Household
           </Button>
         </DialogTrigger>
-        <DialogContent>
+        <DialogContent onClick={(e) => e.stopPropagation()}>
           <DialogHeader>
             <DialogTitle>Add New Household</DialogTitle>
           </DialogHeader>
@@ -569,6 +596,7 @@ export default function ManagerDashboard() {
                 placeholder="Enter head of household name"
                 required
                 autoComplete="off"
+                autoFocus
               />
             </div>
             <div>
@@ -598,7 +626,10 @@ export default function ManagerDashboard() {
               <Button 
                 type="button" 
                 variant="outline" 
-                onClick={() => setOpen(false)}
+                onClick={(e) => {
+                  e.preventDefault();
+                  setOpen(false);
+                }}
                 className="flex-1"
               >
                 Cancel
@@ -615,7 +646,7 @@ export default function ManagerDashboard() {
         </DialogContent>
       </Dialog>
     );
-  };
+  });
 
   const CollectorDetailsDialog = ({ collector }: { collector: Collector }) => {
     const [open, setOpen] = useState(false);
@@ -889,7 +920,7 @@ export default function ManagerDashboard() {
   };
 
   // Bulk household creation component
-  function BulkHouseholdCreation() {
+  const BulkHouseholdCreation = React.memo(() => {
     const [households, setHouseholds] = useState([
       { headName: "", houseNumber: "", phone: "", address: "" },
     ]);
@@ -906,6 +937,7 @@ export default function ManagerDashboard() {
           description: `${successCount} households created successfully with QR codes!`,
         });
         queryClient.invalidateQueries({ queryKey: ["/api/households"] });
+        queryClient.invalidateQueries({ queryKey: ["/api/manager/stats"] });
         setHouseholds([
           { headName: "", houseNumber: "", phone: "", address: "" },
         ]);
@@ -979,6 +1011,7 @@ export default function ManagerDashboard() {
                       updateHousehold(index, "headName", e.target.value)
                     }
                     placeholder="Enter head name"
+                    autoComplete="off"
                   />
                 </div>
                 <div>
@@ -989,6 +1022,7 @@ export default function ManagerDashboard() {
                       updateHousehold(index, "houseNumber", e.target.value)
                     }
                     placeholder="Enter house number"
+                    autoComplete="off"
                   />
                 </div>
                 <div>
@@ -999,6 +1033,7 @@ export default function ManagerDashboard() {
                       updateHousehold(index, "phone", e.target.value)
                     }
                     placeholder="Enter phone number"
+                    autoComplete="off"
                   />
                 </div>
                 <div>
@@ -1009,6 +1044,7 @@ export default function ManagerDashboard() {
                       updateHousehold(index, "address", e.target.value)
                     }
                     placeholder="Enter address"
+                    autoComplete="off"
                   />
                 </div>
               </div>
@@ -1032,7 +1068,7 @@ export default function ManagerDashboard() {
         </div>
       </div>
     );
-  }
+  });
 
   // QR Code generation panel
   function QRCodeGenerationPanel({ households }: { households: Household[] }) {
