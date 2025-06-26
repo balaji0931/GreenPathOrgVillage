@@ -1200,6 +1200,8 @@ export default function ManagerDashboard() {
                       )}
                     </CardContent>
                 </Card>
+                  </TabsContent>
+                </Tabs>
               </div>
             )}
 
