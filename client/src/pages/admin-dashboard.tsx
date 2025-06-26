@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -12,8 +13,6 @@ import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import { LanguageSwitcher } from "@/components/LanguageSwitcher";
-import { OfflineMessage } from "@/components/OfflineMessage";
 import { 
   Leaf, Users, AlertTriangle, TrendingUp, Plus, Megaphone, BarChart3, 
   LogOut, Settings, Copy, Download, Eye, Trash2, RotateCcw, Filter, 
@@ -26,17 +25,6 @@ import { cn } from "@/lib/utils";
 export default function AdminDashboard() {
   const { user, logout } = useAuth();
   const { toast } = useToast();
-  const [selectedTab, setSelectedTab] = useState('overview');
-
-  // Handle offline state
-  if (!navigator.onLine && user?.offline) {
-    return (
-      <OfflineMessage 
-        userRole={user.role} 
-        userName={user.name} 
-      />
-    );
-  }
 
   const [activeTab, setActiveTab] = useState("overview");
   const [selectedVillage, setSelectedVillage] = useState("");

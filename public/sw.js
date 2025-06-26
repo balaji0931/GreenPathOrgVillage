@@ -345,10 +345,9 @@ async function handleApiRequest(request) {
       }
     }
 
-    // Handle auth endpoints when offline - return proper error to let client handle cached data
+    // Return offline response for auth endpoints
     if (url.pathname === "/api/auth/user") {
-      // Return 401 to trigger client-side cached data handling
-      return new Response(JSON.stringify({ message: "Unauthorized" }), {
+      return new Response(JSON.stringify({ message: "Offline" }), {
         status: 401,
         headers: { "Content-Type": "application/json" },
       });

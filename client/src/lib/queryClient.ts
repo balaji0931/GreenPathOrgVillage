@@ -1,4 +1,3 @@
-
 import { QueryClient, QueryFunction } from "@tanstack/react-query";
 
 async function throwIfResNotOk(res: Response) {
@@ -49,13 +48,7 @@ export const queryClient = new QueryClient({
       refetchInterval: false,
       refetchOnWindowFocus: false,
       staleTime: 5 * 60 * 1000, // 5 minutes
-      retry: (failureCount, error: any) => {
-        // Don't retry if offline
-        if (!navigator.onLine) return false;
-        // Don't retry auth errors
-        if (error.message?.includes('401')) return false;
-        return failureCount < 1;
-      },
+      retry: false,
     },
     mutations: {
       retry: false,

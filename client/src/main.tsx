@@ -15,7 +15,6 @@ import CollectorDashboard from "./pages/collector-dashboard";
 import GeneratorDashboard from "./pages/generator-dashboard";
 import NotFound from "./pages/not-found";
 import { InstallPWA } from "./components/InstallPWA";
-import { OfflineMessage } from "./components/OfflineMessage";
 import { I18nextProvider } from 'react-i18next';
 import i18n from './i18n';
 
@@ -30,18 +29,7 @@ function Router() {
     );
   }
 
-  // Show offline message if no user and offline but we have cached data
   if (!user) {
-    const cachedUserData = localStorage.getItem('greenpath_user');
-    if (!navigator.onLine && cachedUserData) {
-      try {
-        const cachedUser = JSON.parse(cachedUserData);
-        return <OfflineMessage userRole={cachedUser.role} userName={cachedUser.name} />;
-      } catch (error) {
-        console.error('Failed to parse cached user data:', error);
-        localStorage.removeItem('greenpath_user');
-      }
-    }
     return <LoginPage />;
   }
 
