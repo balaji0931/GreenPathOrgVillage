@@ -392,10 +392,32 @@ export default function ManagerDashboard() {
     </Card>
   );
 
-  // Create collector dialog component with isolated state
-  const CreateCollectorDialog = () => {
+  // Create collector dialog component with isolated state - moved outside
+  const CreateCollectorDialog = React.memo(() => {
     const [open, setOpen] = useState(false);
     const [formData, setFormData] = useState({ name: "", phone: "" });
+
+    const collectorMutation = useMutation({
+      mutationFn: (data: { name: string; phone: string }) =>
+        apiRequest("POST", "/api/collectors", {
+          ...data,
+          villageId: user?.villageId,
+        }),
+      onSuccess: () => {
+        toast({ title: "Collector created successfully" });
+        queryClient.invalidateQueries({ queryKey: ["/api/collectors"] });
+        queryClient.invalidateQueries({ queryKey: ["/api/manager/stats"] });
+        setFormData({ name: "", phone: "" });
+        setOpen(false);
+      },
+      onError: (error: any) => {
+        toast({ 
+          title: "Failed to create collector", 
+          description: error.message,
+          variant: "destructive" 
+        });
+      }
+    });
 
     const handleSubmit = (e: React.FormEvent) => {
       e.preventDefault();
@@ -408,25 +430,7 @@ export default function ManagerDashboard() {
         return;
       }
       
-      createCollectorMutation.mutate(
-        { name, phone },
-        {
-          onSuccess: () => {
-            toast({ title: "Collector created successfully" });
-            queryClient.invalidateQueries({ queryKey: ["/api/collectors"] });
-            queryClient.invalidateQueries({ queryKey: ["/api/manager/stats"] });
-            setFormData({ name: "", phone: "" });
-            setOpen(false);
-          },
-          onError: (error: any) => {
-            toast({ 
-              title: "Failed to create collector", 
-              description: error.message,
-              variant: "destructive" 
-            });
-          }
-        }
-      );
+      collectorMutation.mutate({ name, phone });
     };
 
     const handleOpenChange = (newOpen: boolean) => {
@@ -444,7 +448,11 @@ export default function ManagerDashboard() {
             Add Collector
           </Button>
         </DialogTrigger>
-        <DialogContent className="sm:max-w-[425px]" onPointerDownOutside={(e) => e.preventDefault()}>
+        <DialogContent 
+          className="sm:max-w-[425px]" 
+          onPointerDownOutside={(e) => e.preventDefault()}
+          onInteractOutside={(e) => e.preventDefault()}
+        >
           <DialogHeader>
             <DialogTitle>Add New Collector</DialogTitle>
           </DialogHeader>
@@ -483,22 +491,48 @@ export default function ManagerDashboard() {
               </Button>
               <Button 
                 type="submit" 
-                disabled={createCollectorMutation.isPending}
+                disabled={collectorMutation.isPending}
                 className="flex-1"
               >
-                {createCollectorMutation.isPending ? "Adding..." : "Add Collector"}
+                {collectorMutation.isPending ? "Adding..." : "Add Collector"}
               </Button>
             </div>
           </form>
         </DialogContent>
       </Dialog>
     );
-  };
+  });
 
-  // Create household dialog component with isolated state
-  const CreateHouseholdDialog = () => {
+  // Create household dialog component with isolated state - moved outside
+  const CreateHouseholdDialog = React.memo(() => {
     const [open, setOpen] = useState(false);
     const [formData, setFormData] = useState({ headName: "", houseNumber: "", phone: "" });
+
+    const householdMutation = useMutation({
+      mutationFn: (data: {
+        headName: string;
+        houseNumber: string;
+        phone: string;
+      }) =>
+        apiRequest("POST", "/api/households", {
+          ...data,
+          villageId: user?.villageId,
+        }),
+      onSuccess: () => {
+        toast({ title: "Household created successfully" });
+        queryClient.invalidateQueries({ queryKey: ["/api/households"] });
+        queryClient.invalidateQueries({ queryKey: ["/api/manager/stats"] });
+        setFormData({ headName: "", houseNumber: "", phone: "" });
+        setOpen(false);
+      },
+      onError: (error: any) => {
+        toast({ 
+          title: "Failed to create household", 
+          description: error.message,
+          variant: "destructive" 
+        });
+      }
+    });
 
     const handleSubmit = (e: React.FormEvent) => {
       e.preventDefault();
@@ -512,25 +546,7 @@ export default function ManagerDashboard() {
         return;
       }
       
-      createHouseholdMutation.mutate(
-        { headName, houseNumber, phone },
-        {
-          onSuccess: () => {
-            toast({ title: "Household created successfully" });
-            queryClient.invalidateQueries({ queryKey: ["/api/households"] });
-            queryClient.invalidateQueries({ queryKey: ["/api/manager/stats"] });
-            setFormData({ headName: "", houseNumber: "", phone: "" });
-            setOpen(false);
-          },
-          onError: (error: any) => {
-            toast({ 
-              title: "Failed to create household", 
-              description: error.message,
-              variant: "destructive" 
-            });
-          }
-        }
-      );
+      householdMutation.mutate({ headName, houseNumber, phone });
     };
 
     const handleOpenChange = (newOpen: boolean) => {
@@ -548,7 +564,11 @@ export default function ManagerDashboard() {
             Add Household
           </Button>
         </DialogTrigger>
-        <DialogContent className="sm:max-w-[425px]" onPointerDownOutside={(e) => e.preventDefault()}>
+        <DialogContent 
+          className="sm:max-w-[425px]" 
+          onPointerDownOutside={(e) => e.preventDefault()}
+          onInteractOutside={(e) => e.preventDefault()}
+        >
           <DialogHeader>
             <DialogTitle>Add New Household</DialogTitle>
           </DialogHeader>
@@ -598,17 +618,17 @@ export default function ManagerDashboard() {
               </Button>
               <Button 
                 type="submit" 
-                disabled={createHouseholdMutation.isPending}
+                disabled={householdMutation.isPending}
                 className="flex-1"
               >
-                {createHouseholdMutation.isPending ? "Adding..." : "Add Household"}
+                {householdMutation.isPending ? "Adding..." : "Add Household"}
               </Button>
             </div>
           </form>
         </DialogContent>
       </Dialog>
     );
-  };
+  });
 
   const CollectorDetailsDialog = ({ collector }: { collector: Collector }) => {
     const [open, setOpen] = useState(false);
