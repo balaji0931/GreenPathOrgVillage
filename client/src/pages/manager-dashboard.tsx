@@ -1631,74 +1631,759 @@ export default function ManagerDashboard() {
               <div className="space-y-6">
                 <div>
                   <h2 className="text-2xl font-bold">Reports & Analytics</h2>
-                  <p className="text-muted-foreground">Performance insights</p>
+                  <p className="text-muted-foreground">Comprehensive performance insights and trends</p>
                 </div>
 
-                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                  <Card className="bg-gradient-to-r from-blue-50 to-blue-100 border-blue-200">
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                      <CardTitle className="text-sm font-medium text-blue-800">Collection Efficiency</CardTitle>
-                      <TrendingUp className="h-4 w-4 text-blue-600" />
-                    </CardHeader>
-                    <CardContent>
-                      <div className="text-2xl font-bold text-blue-900">
-                        {stats && stats.totalHouseholds > 0
-                          ? Math.round((stats.collectionsToday / stats.totalHouseholds) * 100)
-                          : 0}%
-                      </div>
-                      <p className="text-xs text-blue-700">
-                        {stats?.collectionsToday || 0} of {stats?.totalHouseholds || 0} households
-                      </p>
-                    </CardContent>
-                  </Card>
+                <Tabs defaultValue="overall" className="w-full">
+                  <TabsList className="grid w-full grid-cols-2">
+                    <TabsTrigger value="overall">Overall Reports</TabsTrigger>
+                    <TabsTrigger value="daily">Daily Reports</TabsTrigger>
+                  </TabsList>
 
-                  <Card className="bg-gradient-to-r from-green-50 to-green-100 border-green-200">
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                      <CardTitle className="text-sm font-medium text-green-800">Segregation Quality</CardTitle>
-                      <Award className="h-4 w-4 text-green-600" />
-                    </CardHeader>
-                    <CardContent>
-                      <div className="text-2xl font-bold text-green-900">
-                        {allCollections.length > 0
-                          ? Math.round((allCollections.filter(c => c.wasteSegregated).length / allCollections.length) * 100)
-                          : 0}%
-                      </div>
-                      <p className="text-xs text-green-700">
-                        {allCollections.filter(c => c.wasteSegregated).length} properly segregated
-                      </p>
-                    </CardContent>
-                  </Card>
+                  {/* Overall Reports Tab */}
+                  <TabsContent value="overall" className="space-y-6">
+                    {/* Date Filter for Overall Reports */}
+                    <Card>
+                      <CardHeader>
+                        <CardTitle>Filter Overall Reports</CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="flex gap-4 items-center">
+                          <div className="flex-1">
+                            <Label htmlFor="overall-date">Select Date (Default: Today)</Label>
+                            <Input
+                              id="overall-date"
+                              type="date"
+                              value={filters.date || new Date().toISOString().split('T')[0]}
+                              onChange={(e) => updateFilter("date", e.target.value)}
+                            />
+                          </div>
+                          <Button variant="outline" onClick={() => updateFilter("date", new Date().toISOString().split('T')[0])}>
+                            Today
+                          </Button>
+                          <Button variant="outline" onClick={() => updateFilter("date", "")}>
+                            All Time
+                          </Button>
+                        </div>
+                      </CardContent>
+                    </Card>
 
-                  <Card className="bg-gradient-to-r from-yellow-50 to-yellow-100 border-yellow-200">
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                      <CardTitle className="text-sm font-medium text-yellow-800">Average Rating</CardTitle>
-                      <Star className="h-4 w-4 text-yellow-600" />
-                    </CardHeader>
-                    <CardContent>
-                      <div className="text-2xl font-bold text-yellow-900">
-                        {allCollections.length > 0
-                          ? (allCollections.reduce((sum, c) => sum + (c.segregationRating || 0), 0) / allCollections.length).toFixed(1)
-                          : "0.0"}
-                      </div>
-                      <p className="text-xs text-yellow-700">Out of 5.0 stars</p>
-                    </CardContent>
-                  </Card>
+                    {/* Top KPI Cards */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <Card className="bg-gradient-to-r from-blue-50 to-blue-100 border-blue-200">
+                        <CardHeader className="pb-2">
+                          <CardTitle className="text-sm font-medium text-blue-800 flex items-center gap-2">
+                            <TrendingUp className="h-4 w-4" />
+                            Collection Efficiency
+                          </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <div className="text-3xl font-bold text-blue-900">
+                            {(() => {
+                              const targetDate = filters.date || new Date().toISOString().split('T')[0];
+                              const todayCollections = allCollections.filter(c => 
+                                new Date(c.collectionDate).toDateString() === new Date(targetDate).toDateString()
+                              ).length;
+                              return stats && stats.totalHouseholds > 0
+                                ? Math.round((todayCollections / stats.totalHouseholds) * 100)
+                                : 0;
+                            })()}%
+                          </div>
+                          <p className="text-xs text-blue-700 mt-1">
+                            {(() => {
+                              const targetDate = filters.date || new Date().toISOString().split('T')[0];
+                              const todayCollections = allCollections.filter(c => 
+                                new Date(c.collectionDate).toDateString() === new Date(targetDate).toDateString()
+                              ).length;
+                              return `${todayCollections} of ${stats?.totalHouseholds || 0} households`;
+                            })()}
+                          </p>
+                        </CardContent>
+                      </Card>
 
-                  <Card className="bg-gradient-to-r from-red-50 to-red-100 border-red-200">
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                      <CardTitle className="text-sm font-medium text-red-800">Open Issues</CardTitle>
-                      <AlertTriangle className="h-4 w-4 text-red-600" />
-                    </CardHeader>
-                    <CardContent>
-                      <div className="text-2xl font-bold text-red-900">
-                        {allIssues.filter(i => i.status === "open").length}
-                      </div>
-                      <p className="text-xs text-red-700">
-                        {allIssues.length} total issues
-                      </p>
-                    </CardContent>
-                  </Card>
-                </div>
+                      <Card className="bg-gradient-to-r from-yellow-50 to-yellow-100 border-yellow-200">
+                        <CardHeader className="pb-2">
+                          <CardTitle className="text-sm font-medium text-yellow-800 flex items-center gap-2">
+                            <Star className="h-4 w-4" />
+                            Average Segregation Rating
+                          </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <div className="text-3xl font-bold text-yellow-900">
+                            {(() => {
+                              let filteredCollections = allCollections;
+                              if (filters.date) {
+                                filteredCollections = allCollections.filter(c => 
+                                  new Date(c.collectionDate).toDateString() === new Date(filters.date).toDateString()
+                                );
+                              }
+                              return filteredCollections.length > 0
+                                ? (filteredCollections.reduce((sum, c) => sum + (c.segregationRating || 0), 0) / filteredCollections.length).toFixed(1)
+                                : "0.0";
+                            })()}
+                          </div>
+                          <p className="text-xs text-yellow-700 mt-1">
+                            Out of 5.0 stars ({(() => {
+                              let filteredCollections = allCollections;
+                              if (filters.date) {
+                                filteredCollections = allCollections.filter(c => 
+                                  new Date(c.collectionDate).toDateString() === new Date(filters.date).toDateString()
+                                );
+                              }
+                              return filteredCollections.length;
+                            })()} collections)
+                          </p>
+                        </CardContent>
+                      </Card>
+                    </div>
+
+                    {/* 6 Analytics Cards */}
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                      {/* 1. Daily Collection Trend (Last 7 Days) */}
+                      <Card>
+                        <CardHeader>
+                          <CardTitle className="flex items-center gap-2">
+                            <BarChart3 className="h-5 w-5 text-blue-600" />
+                            Daily Collection Trend (Last 7 Days)
+                          </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <div className="space-y-3">
+                            {Array.from({ length: 7 }).map((_, i) => {
+                              const date = new Date();
+                              date.setDate(date.getDate() - (6 - i));
+                              const dateStr = date.toDateString();
+                              const collectionsForDay = allCollections.filter(c => 
+                                new Date(c.collectionDate).toDateString() === dateStr
+                              ).length;
+                              const percentage = stats?.totalHouseholds > 0 
+                                ? (collectionsForDay / stats.totalHouseholds) * 100 
+                                : 0;
+                              
+                              return (
+                                <div key={i} className="flex items-center gap-3">
+                                  <div className="w-16 text-xs text-muted-foreground">
+                                    {date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                                  </div>
+                                  <div className="flex-1 bg-gray-200 rounded-full h-4 relative">
+                                    <div 
+                                      className="bg-blue-500 h-4 rounded-full transition-all" 
+                                      style={{ width: `${Math.min(percentage, 100)}%` }}
+                                    />
+                                    <span className="absolute inset-0 flex items-center justify-center text-xs font-medium text-white">
+                                      {collectionsForDay}
+                                    </span>
+                                  </div>
+                                  <div className="w-12 text-xs text-right">
+                                    {Math.round(percentage)}%
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </CardContent>
+                      </Card>
+
+                      {/* 2. Segregation Rating Trends (Last 7 Days) */}
+                      <Card>
+                        <CardHeader>
+                          <CardTitle className="flex items-center gap-2">
+                            <TrendingUp className="h-5 w-5 text-green-600" />
+                            Segregation Rating Trends (Last 7 Days)
+                          </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <div className="space-y-3">
+                            {Array.from({ length: 7 }).map((_, i) => {
+                              const date = new Date();
+                              date.setDate(date.getDate() - (6 - i));
+                              const dateStr = date.toDateString();
+                              const dayCollections = allCollections.filter(c => 
+                                new Date(c.collectionDate).toDateString() === dateStr
+                              );
+                              const avgRating = dayCollections.length > 0
+                                ? dayCollections.reduce((sum, c) => sum + (c.segregationRating || 0), 0) / dayCollections.length
+                                : 0;
+                              
+                              return (
+                                <div key={i} className="flex items-center gap-3">
+                                  <div className="w-16 text-xs text-muted-foreground">
+                                    {date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                                  </div>
+                                  <div className="flex-1 bg-gray-200 rounded-full h-4 relative">
+                                    <div 
+                                      className={`h-4 rounded-full transition-all ${
+                                        avgRating >= 4 ? 'bg-green-500' : 
+                                        avgRating >= 3 ? 'bg-yellow-500' : 'bg-red-500'
+                                      }`}
+                                      style={{ width: `${(avgRating / 5) * 100}%` }}
+                                    />
+                                  </div>
+                                  <div className="w-12 text-xs text-right font-medium">
+                                    {avgRating.toFixed(1)}
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </CardContent>
+                      </Card>
+
+                      {/* 3. Overall Segregation Rate Pie Chart */}
+                      <Card>
+                        <CardHeader>
+                          <CardTitle className="flex items-center gap-2">
+                            <Award className="h-5 w-5 text-purple-600" />
+                            Overall Segregation Rate
+                          </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <div className="flex items-center justify-center">
+                            {(() => {
+                              let filteredCollections = allCollections;
+                              if (filters.date) {
+                                filteredCollections = allCollections.filter(c => 
+                                  new Date(c.collectionDate).toDateString() === new Date(filters.date).toDateString()
+                                );
+                              }
+                              
+                              const excellent = filteredCollections.filter(c => (c.segregationRating || 0) >= 4).length;
+                              const good = filteredCollections.filter(c => (c.segregationRating || 0) >= 3 && (c.segregationRating || 0) < 4).length;
+                              const poor = filteredCollections.filter(c => (c.segregationRating || 0) < 3).length;
+                              const total = filteredCollections.length;
+                              
+                              return (
+                                <div className="w-48 h-48 relative">
+                                  <svg viewBox="0 0 100 100" className="w-full h-full transform -rotate-90">
+                                    <circle cx="50" cy="50" r="40" fill="none" stroke="#f3f4f6" strokeWidth="20"/>
+                                    {total > 0 && (
+                                      <>
+                                        <circle 
+                                          cx="50" cy="50" r="40" fill="none" 
+                                          stroke="#ef4444" strokeWidth="20"
+                                          strokeDasharray={`${(poor/total) * 251.3} 251.3`}
+                                          strokeDashoffset="0"
+                                        />
+                                        <circle 
+                                          cx="50" cy="50" r="40" fill="none" 
+                                          stroke="#eab308" strokeWidth="20"
+                                          strokeDasharray={`${(good/total) * 251.3} 251.3`}
+                                          strokeDashoffset={`-${(poor/total) * 251.3}`}
+                                        />
+                                        <circle 
+                                          cx="50" cy="50" r="40" fill="none" 
+                                          stroke="#22c55e" strokeWidth="20"
+                                          strokeDasharray={`${(excellent/total) * 251.3} 251.3`}
+                                          strokeDashoffset={`-${((poor + good)/total) * 251.3}`}
+                                        />
+                                      </>
+                                    )}
+                                  </svg>
+                                  <div className="absolute inset-0 flex items-center justify-center">
+                                    <div className="text-center">
+                                      <div className="text-2xl font-bold">
+                                        {total > 0 ? Math.round((excellent / total) * 100) : 0}%
+                                      </div>
+                                      <div className="text-xs text-muted-foreground">Excellent</div>
+                                    </div>
+                                  </div>
+                                </div>
+                              );
+                            })()}
+                          </div>
+                          <div className="grid grid-cols-3 gap-2 mt-4">
+                            <div className="text-center">
+                              <div className="w-4 h-4 bg-green-500 rounded mx-auto mb-1"></div>
+                              <div className="text-xs">Excellent (4-5★)</div>
+                            </div>
+                            <div className="text-center">
+                              <div className="w-4 h-4 bg-yellow-500 rounded mx-auto mb-1"></div>
+                              <div className="text-xs">Good (3-4★)</div>
+                            </div>
+                            <div className="text-center">
+                              <div className="w-4 h-4 bg-red-500 rounded mx-auto mb-1"></div>
+                              <div className="text-xs">Poor (0-3★)</div>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+
+                      {/* 4. Last 7 Days Segregation Rates Graph */}
+                      <Card>
+                        <CardHeader>
+                          <CardTitle className="flex items-center gap-2">
+                            <TrendingUp className="h-5 w-5 text-indigo-600" />
+                            7-Day Segregation Performance
+                          </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <div className="space-y-2">
+                            {Array.from({ length: 7 }).map((_, i) => {
+                              const date = new Date();
+                              date.setDate(date.getDate() - (6 - i));
+                              const dateStr = date.toDateString();
+                              const dayCollections = allCollections.filter(c => 
+                                new Date(c.collectionDate).toDateString() === dateStr
+                              );
+                              
+                              const excellent = dayCollections.filter(c => (c.segregationRating || 0) >= 4).length;
+                              const good = dayCollections.filter(c => (c.segregationRating || 0) >= 3 && (c.segregationRating || 0) < 4).length;
+                              const poor = dayCollections.filter(c => (c.segregationRating || 0) < 3).length;
+                              const total = dayCollections.length;
+                              
+                              return (
+                                <div key={i} className="space-y-1">
+                                  <div className="flex justify-between text-xs">
+                                    <span>{date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>
+                                    <span>{total} collections</span>
+                                  </div>
+                                  <div className="flex h-6 bg-gray-200 rounded overflow-hidden">
+                                    {total > 0 ? (
+                                      <>
+                                        <div 
+                                          className="bg-green-500" 
+                                          style={{ width: `${(excellent / total) * 100}%` }}
+                                          title={`Excellent: ${excellent}`}
+                                        />
+                                        <div 
+                                          className="bg-yellow-500" 
+                                          style={{ width: `${(good / total) * 100}%` }}
+                                          title={`Good: ${good}`}
+                                        />
+                                        <div 
+                                          className="bg-red-500" 
+                                          style={{ width: `${(poor / total) * 100}%` }}
+                                          title={`Poor: ${poor}`}
+                                        />
+                                      </>
+                                    ) : (
+                                      <div className="w-full bg-gray-300" />
+                                    )}
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </CardContent>
+                      </Card>
+
+                      {/* 5. Home Composting Pie Chart */}
+                      <Card>
+                        <CardHeader>
+                          <CardTitle className="flex items-center gap-2">
+                            <Package className="h-5 w-5 text-green-600" />
+                            Home Composting Rate
+                          </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <div className="flex items-center justify-center">
+                            {(() => {
+                              let filteredCollections = allCollections;
+                              if (filters.date) {
+                                filteredCollections = allCollections.filter(c => 
+                                  new Date(c.collectionDate).toDateString() === new Date(filters.date).toDateString()
+                                );
+                              }
+                              
+                              // Assuming we have wetWasteComposting field in collections
+                              const composting = filteredCollections.filter(c => c.wasteSegregated === true).length;
+                              const notComposting = filteredCollections.length - composting;
+                              const total = filteredCollections.length;
+                              
+                              return (
+                                <div className="w-40 h-40 relative">
+                                  <svg viewBox="0 0 100 100" className="w-full h-full transform -rotate-90">
+                                    <circle cx="50" cy="50" r="35" fill="none" stroke="#f3f4f6" strokeWidth="25"/>
+                                    {total > 0 && (
+                                      <>
+                                        <circle 
+                                          cx="50" cy="50" r="35" fill="none" 
+                                          stroke="#22c55e" strokeWidth="25"
+                                          strokeDasharray={`${(composting/total) * 219.9} 219.9`}
+                                          strokeDashoffset="0"
+                                        />
+                                      </>
+                                    )}
+                                  </svg>
+                                  <div className="absolute inset-0 flex items-center justify-center">
+                                    <div className="text-center">
+                                      <div className="text-xl font-bold text-green-600">
+                                        {total > 0 ? Math.round((composting / total) * 100) : 0}%
+                                      </div>
+                                      <div className="text-xs text-muted-foreground">Segregated</div>
+                                    </div>
+                                  </div>
+                                </div>
+                              );
+                            })()}
+                          </div>
+                          <div className="grid grid-cols-2 gap-2 mt-4">
+                            <div className="text-center">
+                              <div className="w-4 h-4 bg-green-500 rounded mx-auto mb-1"></div>
+                              <div className="text-xs">Segregated</div>
+                            </div>
+                            <div className="text-center">
+                              <div className="w-4 h-4 bg-gray-300 rounded mx-auto mb-1"></div>
+                              <div className="text-xs">Not Segregated</div>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+
+                      {/* 6. Collection Performance Metrics */}
+                      <Card>
+                        <CardHeader>
+                          <CardTitle className="flex items-center gap-2">
+                            <BarChart3 className="h-5 w-5 text-purple-600" />
+                            Collection Performance Metrics
+                          </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <div className="space-y-4">
+                            {collectors.map(collector => {
+                              let collectorCollections = allCollections.filter(c => c.collectorId === collector.id);
+                              if (filters.date) {
+                                collectorCollections = collectorCollections.filter(c => 
+                                  new Date(c.collectionDate).toDateString() === new Date(filters.date).toDateString()
+                                );
+                              }
+                              
+                              const avgRating = collectorCollections.length > 0
+                                ? (collectorCollections.reduce((sum, c) => sum + (c.segregationRating || 0), 0) / collectorCollections.length)
+                                : 0;
+                              
+                              return (
+                                <div key={collector.id} className="flex items-center gap-3">
+                                  <div className="w-24 text-xs font-medium truncate">
+                                    {collector.name}
+                                  </div>
+                                  <div className="flex-1 bg-gray-200 rounded-full h-3">
+                                    <div 
+                                      className={`h-3 rounded-full transition-all ${
+                                        avgRating >= 4 ? 'bg-green-500' : 
+                                        avgRating >= 3 ? 'bg-yellow-500' : 'bg-red-500'
+                                      }`}
+                                      style={{ width: `${(avgRating / 5) * 100}%` }}
+                                    />
+                                  </div>
+                                  <div className="w-16 text-xs text-right">
+                                    {avgRating.toFixed(1)} ({collectorCollections.length})
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </CardContent>
+                      </Card>
+                    </div>
+                  </TabsContent>
+
+                  {/* Daily Reports Tab */}
+                  <TabsContent value="daily" className="space-y-6">
+                    {/* Date Filter for Daily Reports */}
+                    <Card>
+                      <CardHeader>
+                        <CardTitle>Select Date for Daily Report</CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="flex gap-4 items-center">
+                          <div className="flex-1">
+                            <Label htmlFor="daily-date">Select Date</Label>
+                            <Input
+                              id="daily-date"
+                              type="date"
+                              value={filters.date || new Date().toISOString().split('T')[0]}
+                              onChange={(e) => updateFilter("date", e.target.value)}
+                            />
+                          </div>
+                          <Button variant="outline" onClick={() => updateFilter("date", new Date().toISOString().split('T')[0])}>
+                            Today
+                          </Button>
+                        </div>
+                      </CardContent>
+                    </Card>
+
+                    {/* Daily KPI Cards */}
+                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                      {(() => {
+                        const targetDate = filters.date || new Date().toISOString().split('T')[0];
+                        const dayCollections = allCollections.filter(c => 
+                          new Date(c.collectionDate).toDateString() === new Date(targetDate).toDateString()
+                        );
+                        const avgSegregationRating = dayCollections.length > 0
+                          ? (dayCollections.reduce((sum, c) => sum + (c.segregationRating || 0), 0) / dayCollections.length)
+                          : 0;
+                        const totalHouses = stats?.totalHouseholds || 0;
+                        const collected = dayCollections.length;
+                        const remaining = totalHouses - collected;
+
+                        return (
+                          <>
+                            <Card className="bg-gradient-to-r from-yellow-50 to-yellow-100 border-yellow-200">
+                              <CardHeader className="pb-2">
+                                <CardTitle className="text-sm font-medium text-yellow-800">Avg Segregation Rating</CardTitle>
+                              </CardHeader>
+                              <CardContent>
+                                <div className="text-2xl font-bold text-yellow-900">
+                                  {avgSegregationRating.toFixed(1)}
+                                </div>
+                                <p className="text-xs text-yellow-700">Out of 5.0 stars</p>
+                              </CardContent>
+                            </Card>
+
+                            <Card className="bg-gradient-to-r from-blue-50 to-blue-100 border-blue-200">
+                              <CardHeader className="pb-2">
+                                <CardTitle className="text-sm font-medium text-blue-800">Total Houses</CardTitle>
+                              </CardHeader>
+                              <CardContent>
+                                <div className="text-2xl font-bold text-blue-900">
+                                  {totalHouses}
+                                </div>
+                                <p className="text-xs text-blue-700">Registered households</p>
+                              </CardContent>
+                            </Card>
+
+                            <Card className="bg-gradient-to-r from-green-50 to-green-100 border-green-200">
+                              <CardHeader className="pb-2">
+                                <CardTitle className="text-sm font-medium text-green-800">Collected</CardTitle>
+                              </CardHeader>
+                              <CardContent>
+                                <div className="text-2xl font-bold text-green-900">
+                                  {collected}
+                                </div>
+                                <p className="text-xs text-green-700">Collections completed</p>
+                              </CardContent>
+                            </Card>
+
+                            <Card className="bg-gradient-to-r from-red-50 to-red-100 border-red-200">
+                              <CardHeader className="pb-2">
+                                <CardTitle className="text-sm font-medium text-red-800">Remaining</CardTitle>
+                              </CardHeader>
+                              <CardContent>
+                                <div className="text-2xl font-bold text-red-900">
+                                  {remaining}
+                                </div>
+                                <p className="text-xs text-red-700">Yet to collect</p>
+                              </CardContent>
+                            </Card>
+                          </>
+                        );
+                      })()}
+                    </div>
+
+                    {/* 4 Analytics Cards for Daily Reports */}
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                      {/* 1. Collection Status Pie Chart */}
+                      <Card>
+                        <CardHeader>
+                          <CardTitle className="flex items-center gap-2">
+                            <Package className="h-5 w-5 text-blue-600" />
+                            Collection Status Overview
+                          </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <div className="flex items-center justify-center">
+                            {(() => {
+                              const targetDate = filters.date || new Date().toISOString().split('T')[0];
+                              const collected = allCollections.filter(c => 
+                                new Date(c.collectionDate).toDateString() === new Date(targetDate).toDateString()
+                              ).length;
+                              const total = stats?.totalHouseholds || 0;
+                              const notCollected = total - collected;
+                              
+                              return (
+                                <div className="w-48 h-48 relative">
+                                  <svg viewBox="0 0 100 100" className="w-full h-full transform -rotate-90">
+                                    <circle cx="50" cy="50" r="40" fill="none" stroke="#f3f4f6" strokeWidth="20"/>
+                                    {total > 0 && (
+                                      <>
+                                        <circle 
+                                          cx="50" cy="50" r="40" fill="none" 
+                                          stroke="#22c55e" strokeWidth="20"
+                                          strokeDasharray={`${(collected/total) * 251.3} 251.3`}
+                                          strokeDashoffset="0"
+                                        />
+                                        <circle 
+                                          cx="50" cy="50" r="40" fill="none" 
+                                          stroke="#ef4444" strokeWidth="20"
+                                          strokeDasharray={`${(notCollected/total) * 251.3} 251.3`}
+                                          strokeDashoffset={`-${(collected/total) * 251.3}`}
+                                        />
+                                      </>
+                                    )}
+                                  </svg>
+                                  <div className="absolute inset-0 flex items-center justify-center">
+                                    <div className="text-center">
+                                      <div className="text-2xl font-bold">
+                                        {total > 0 ? Math.round((collected / total) * 100) : 0}%
+                                      </div>
+                                      <div className="text-xs text-muted-foreground">Collected</div>
+                                    </div>
+                                  </div>
+                                </div>
+                              );
+                            })()}
+                          </div>
+                          <div className="grid grid-cols-2 gap-2 mt-4">
+                            <div className="text-center">
+                              <div className="w-4 h-4 bg-green-500 rounded mx-auto mb-1"></div>
+                              <div className="text-xs">Collected</div>
+                            </div>
+                            <div className="text-center">
+                              <div className="w-4 h-4 bg-red-500 rounded mx-auto mb-1"></div>
+                              <div className="text-xs">Not Collected</div>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+
+                      {/* 2. Star Rating Distribution */}
+                      <Card>
+                        <CardHeader>
+                          <CardTitle className="flex items-center gap-2">
+                            <Star className="h-5 w-5 text-yellow-600" />
+                            Segregation Rating Distribution
+                          </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <div className="space-y-3">
+                            {[5, 4, 3, 2, 1].map(stars => {
+                              const targetDate = filters.date || new Date().toISOString().split('T')[0];
+                              const dayCollections = allCollections.filter(c => 
+                                new Date(c.collectionDate).toDateString() === new Date(targetDate).toDateString()
+                              );
+                              const starCount = dayCollections.filter(c => (c.segregationRating || 0) === stars).length;
+                              const total = dayCollections.length;
+                              const percentage = total > 0 ? (starCount / total) * 100 : 0;
+                              
+                              return (
+                                <div key={stars} className="flex items-center gap-3">
+                                  <div className="flex items-center gap-1 w-16">
+                                    <span className="text-sm font-medium">{stars}</span>
+                                    <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
+                                  </div>
+                                  <div className="flex-1 bg-gray-200 rounded-full h-4 relative">
+                                    <div 
+                                      className="bg-yellow-500 h-4 rounded-full transition-all" 
+                                      style={{ width: `${percentage}%` }}
+                                    />
+                                    <span className="absolute inset-0 flex items-center justify-center text-xs font-medium text-white">
+                                      {starCount}
+                                    </span>
+                                  </div>
+                                  <div className="w-12 text-xs text-right">
+                                    {Math.round(percentage)}%
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </CardContent>
+                      </Card>
+
+                      {/* 3. Collector Performance for the Day */}
+                      <Card>
+                        <CardHeader>
+                          <CardTitle className="flex items-center gap-2">
+                            <Users className="h-5 w-5 text-purple-600" />
+                            Collector Performance Today
+                          </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <div className="space-y-3">
+                            {collectors.map(collector => {
+                              const targetDate = filters.date || new Date().toISOString().split('T')[0];
+                              const collectorCollections = allCollections.filter(c => 
+                                c.collectorId === collector.id &&
+                                new Date(c.collectionDate).toDateString() === new Date(targetDate).toDateString()
+                              );
+                              const avgRating = collectorCollections.length > 0
+                                ? (collectorCollections.reduce((sum, c) => sum + (c.segregationRating || 0), 0) / collectorCollections.length)
+                                : 0;
+                              
+                              return (
+                                <div key={collector.id} className="p-3 bg-gray-50 rounded-lg">
+                                  <div className="flex items-center justify-between mb-2">
+                                    <h4 className="font-medium">{collector.name}</h4>
+                                    <Badge variant="outline">{collectorCollections.length} collections</Badge>
+                                  </div>
+                                  <div className="flex items-center gap-2">
+                                    <div className="flex-1 bg-gray-200 rounded-full h-2">
+                                      <div 
+                                        className={`h-2 rounded-full ${
+                                          avgRating >= 4 ? 'bg-green-500' : 
+                                          avgRating >= 3 ? 'bg-yellow-500' : 'bg-red-500'
+                                        }`}
+                                        style={{ width: `${(avgRating / 5) * 100}%` }}
+                                      />
+                                    </div>
+                                    <span className="text-sm font-medium">{avgRating.toFixed(1)}</span>
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </CardContent>
+                      </Card>
+
+                      {/* 4. Collection Timeline */}
+                      <Card>
+                        <CardHeader>
+                          <CardTitle className="flex items-center gap-2">
+                            <BarChart3 className="h-5 w-5 text-indigo-600" />
+                            Collection Timeline
+                          </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <div className="space-y-2">
+                            {Array.from({ length: 12 }).map((_, i) => {
+                              const hour = i + 8; // Start from 8 AM
+                              const targetDate = filters.date || new Date().toISOString().split('T')[0];
+                              const hourCollections = allCollections.filter(c => {
+                                const collectionDate = new Date(c.collectionDate);
+                                return collectionDate.toDateString() === new Date(targetDate).toDateString() &&
+                                       collectionDate.getHours() === hour;
+                              }).length;
+                              
+                              const maxCollections = Math.max(...Array.from({ length: 12 }).map((_, j) => {
+                                const h = j + 8;
+                                return allCollections.filter(c => {
+                                  const collectionDate = new Date(c.collectionDate);
+                                  return collectionDate.toDateString() === new Date(targetDate).toDateString() &&
+                                         collectionDate.getHours() === h;
+                                }).length;
+                              }));
+                              
+                              const percentage = maxCollections > 0 ? (hourCollections / maxCollections) * 100 : 0;
+                              
+                              return (
+                                <div key={i} className="flex items-center gap-3">
+                                  <div className="w-16 text-xs text-muted-foreground">
+                                    {hour}:00
+                                  </div>
+                                  <div className="flex-1 bg-gray-200 rounded-full h-3 relative">
+                                    <div 
+                                      className="bg-indigo-500 h-3 rounded-full transition-all" 
+                                      style={{ width: `${percentage}%` }}
+                                    />
+                                    {hourCollections > 0 && (
+                                      <span className="absolute inset-0 flex items-center justify-center text-xs font-medium text-white">
+                                        {hourCollections}
+                                      </span>
+                                    )}
+                                  </div>
+                                  <div className="w-8 text-xs text-right">
+                                    {hourCollections}
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </CardContent>
+                      </Card>
+                    </div>
+                  </TabsContent>
+                </Tabs>
               </div>
             )}
 
