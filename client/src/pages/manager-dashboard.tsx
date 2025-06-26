@@ -1079,27 +1079,31 @@ export default function ManagerDashboard() {
     setSelectedDownloadHouseholds(households.map((h) => h.id));
   }, [households]);
 
-  // Bulk household creation component - simplified
-  const BulkHouseholdCreation = () => {
-    const handleUpdateHousehold = (index: number, field: string, value: string) => {
+  // Bulk household creation component - optimized to prevent focus loss
+  const BulkHouseholdCreation = React.memo(() => {
+    const handleUpdateHousehold = React.useCallback((index: number, field: string, value: string) => {
       setBulkHouseholds(prev => {
+        // Create a new array only if the value actually changed
+        const current = prev[index]?.[field as keyof typeof prev[0]];
+        if (current === value) return prev;
+        
         const updated = [...prev];
         updated[index] = { ...updated[index], [field]: value };
         return updated;
       });
-    };
+    }, []);
 
-    const handleAddHousehold = () => {
+    const handleAddHousehold = React.useCallback(() => {
       setBulkHouseholds(prev => [...prev, { headName: "", houseNumber: "", phone: "", address: "" }]);
-    };
+    }, []);
 
-    const handleRemoveHousehold = (index: number) => {
+    const handleRemoveHousehold = React.useCallback((index: number) => {
       if (bulkHouseholds.length > 1) {
         setBulkHouseholds(prev => prev.filter((_, i) => i !== index));
       }
-    };
+    }, [bulkHouseholds.length]);
 
-    const handleBulkSubmit = () => {
+    const handleBulkSubmit = React.useCallback(() => {
       const validHouseholds = bulkHouseholds.filter(
         (h) => h.headName && h.houseNumber && h.phone,
       );
@@ -1112,12 +1116,12 @@ export default function ManagerDashboard() {
         return;
       }
       createBulkHouseholdsMutation.mutate(validHouseholds);
-    };
+    }, [bulkHouseholds, createBulkHouseholdsMutation, toast]);
 
     return (
       <div className="space-y-4">
         {bulkHouseholds.map((household, index) => (
-          <Card key={`household-${index}`} className="border">
+          <Card key={index} className="border">
             <CardContent className="p-4">
               <div className="flex justify-between items-center mb-4">
                 <h4 className="font-medium">Household {index + 1}</h4>
@@ -1188,7 +1192,7 @@ export default function ManagerDashboard() {
         </div>
       </div>
     );
-  };
+  });
 
   // QR Code generation panel
   const QRCodeGenerationPanel = React.memo(({ households }: { households: Household[] }) => {
