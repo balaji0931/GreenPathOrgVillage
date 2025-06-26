@@ -551,12 +551,12 @@ export default function ManagerDashboard() {
     const [selectedComplaint, setSelectedComplaint] =
       useState<Complaint | null>(null);
     const [managerResponse, setManagerResponse] = useState("");
-  
+
     const handleResolve = (complaint: Complaint) => {
       setSelectedComplaint(complaint);
       setOpen(true);
     };
-  
+
     const submitResolution = () => {
       if (selectedComplaint && managerResponse) {
         resolveComplaintMutation.mutate({
@@ -568,7 +568,7 @@ export default function ManagerDashboard() {
         setSelectedComplaint(null);
       }
     };
-  
+
     return (
       <>
         <Dialog open={open} onOpenChange={setOpen}>
@@ -583,7 +583,7 @@ export default function ManagerDashboard() {
             <DialogHeader>
               <DialogTitle>Collector Complaints Management</DialogTitle>
             </DialogHeader>
-  
+
             <div className="space-y-4 max-h-96 overflow-y-auto">
               {complaints.map((complaint) => (
                 <Card key={complaint.id}>
@@ -638,7 +638,7 @@ export default function ManagerDashboard() {
                 </p>
               )}
             </div>
-  
+
             <div>
               {selectedComplaint && (
                 <div className="mt-4">
@@ -919,6 +919,7 @@ export default function ManagerDashboard() {
                                 </div>
                                 <div>
                                   <div className="text-lg font-bold">
+```text
                                     {stats?.complaintsCount || 0}
                                   </div>
                                   <div className="text-xs text-muted-foreground">Complaints</div>
@@ -1033,7 +1034,7 @@ export default function ManagerDashboard() {
                               {createBulkHouseholdsMutation.isPending ? "Creating..." : `Create ${bulkHouseholds.filter(h => h.headName.trim() && h.houseNumber.trim() && h.phone.trim()).length} Households`}
                             </Button>
                           </div>
-                          
+
                           <div className="space-y-3 max-h-96 overflow-y-auto">
                             {bulkHouseholds.map((household, index) => (
                               <Card key={index} className="p-4">
@@ -1108,7 +1109,7 @@ export default function ManagerDashboard() {
                               </Card>
                             ))}
                           </div>
-                          
+
                           <div className="text-sm text-muted-foreground p-3 bg-blue-50 rounded-lg">
                             <p className="font-medium mb-1">📋 Bulk Creation Notes:</p>
                             <ul className="list-disc list-inside space-y-1 text-xs">
@@ -1199,8 +1200,6 @@ export default function ManagerDashboard() {
                       )}
                     </CardContent>
                 </Card>
-                  </TabsContent>
-                </Tabs>
               </div>
             )}
 
