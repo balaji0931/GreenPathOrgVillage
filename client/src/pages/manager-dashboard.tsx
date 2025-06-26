@@ -689,21 +689,25 @@ export default function ManagerDashboard() {
   }) => {
     const [feedbackDateFilter, setFeedbackDateFilter] = useState("");
 
-    // Get collections for this collector
-    const collectorCollections = allCollections.filter(c => c.collectorId === collector.id);
+    // Get feedbacks for this collector
+    const collectorFeedbacks = feedbacks.filter(feedback => feedback.toCollectorId === collector.id);
     
-    // Filter collections by date if selected
+    // Filter feedbacks by date if selected
+    const filteredFeedbacks = collectorFeedbacks.filter(feedback => {
+      if (!feedbackDateFilter) return true;
+      const feedbackDate = new Date(feedback.createdAt).toDateString();
+      const filterDate = new Date(feedbackDateFilter).toDateString();
+      return feedbackDate === filterDate;
+    });
+
+    // Get collections count for this collector
+    const collectorCollections = allCollections.filter(c => c.collectorId === collector.id);
     const filteredCollections = collectorCollections.filter(collection => {
       if (!feedbackDateFilter) return true;
       const collectionDate = new Date(collection.collectionDate).toDateString();
       const filterDate = new Date(feedbackDateFilter).toDateString();
       return collectionDate === filterDate;
     });
-
-    // Get feedbacks for filtered collections
-    const collectorFeedbacks = feedbacks.filter(feedback => 
-      filteredCollections.some(collection => collection.id === feedback.collectionId)
-    );
 
     return (
       <div className="space-y-6">
@@ -726,15 +730,15 @@ export default function ManagerDashboard() {
                 </div>
                 <div>
                   <div className="text-lg font-bold text-blue-900">
-                    {filteredCollections.length > 0 
-                      ? (filteredCollections.reduce((sum, c) => sum + (c.segregationRating || 0), 0) / filteredCollections.length).toFixed(1)
+                    {filteredFeedbacks.length > 0 
+                      ? (filteredFeedbacks.reduce((sum, f) => sum + (f.rating || 0), 0) / filteredFeedbacks.length).toFixed(1)
                       : "0.0"}
                   </div>
                   <div className="text-xs text-blue-700">Avg Rating</div>
                 </div>
                 <div>
                   <div className="text-lg font-bold text-blue-900">
-                    {collectorFeedbacks.length}
+                    {filteredFeedbacks.length}
                   </div>
                   <div className="text-xs text-blue-700">Feedbacks</div>
                 </div>
@@ -772,121 +776,70 @@ export default function ManagerDashboard() {
           </CardContent>
         </Card>
 
-        {/* Feedbacks List */}
+        {/* Generator Feedbacks List */}
         <Card>
           <CardHeader>
-            <CardTitle>Collection Feedbacks ({filteredCollections.length} collections)</CardTitle>
+            <CardTitle>Generator Feedbacks ({filteredFeedbacks.length} feedbacks)</CardTitle>
           </CardHeader>
           <CardContent>
-            {filteredCollections.length > 0 ? (
+            {filteredFeedbacks.length > 0 ? (
               <div className="space-y-4 max-h-96 overflow-y-auto">
-                {filteredCollections
-                  .sort((a, b) => new Date(b.collectionDate).getTime() - new Date(a.collectionDate).getTime())
-                  .map((collection) => (
-                    <Card key={collection.id} className="border-l-4 border-l-green-400">
+                {filteredFeedbacks
+                  .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+                  .map((feedback) => (
+                    <Card key={feedback.id} className="border-l-4 border-l-purple-400">
                       <CardContent className="p-4">
                         <div className="space-y-3">
                           <div className="flex items-center justify-between">
                             <div>
-                              <h4 className="font-medium">{collection.headName}</h4>
+                              <h4 className="font-medium">{feedback.headName}</h4>
                               <p className="text-sm text-muted-foreground">
-                                House: {collection.houseNumber} | UID: {collection.householdUid}
+                                House: {feedback.houseNumber} | UID: {feedback.householdUid}
                               </p>
                             </div>
                             <div className="flex items-center gap-2">
                               <Badge variant="outline">
-                                {new Date(collection.collectionDate).toLocaleDateString()}
+                                {new Date(feedback.createdAt).toLocaleDateString()}
                               </Badge>
-                              <Badge variant={collection.status === "collected" ? "default" : "destructive"}>
-                                {collection.status || "collected"}
+                              <Badge variant="secondary">
+                                Feedback
                               </Badge>
                             </div>
                           </div>
 
-                          <div className="grid grid-cols-2 gap-4">
-                            <div className="space-y-2">
-                              <div className="flex items-center justify-between p-2 bg-yellow-50 rounded">
-                                <span className="text-sm font-medium">Segregation Rating:</span>
-                                <div className="flex items-center gap-1">
-                                  {Array.from({ length: 5 }).map((_, i) => (
-                                    <Star
-                                      key={i}
-                                      className={`h-4 w-4 ${i < (collection.segregationRating || 0) ? "fill-yellow-400 text-yellow-400" : "text-gray-300"}`}
-                                    />
-                                  ))}
-                                  <span className="ml-2 text-sm font-bold">
-                                    ({collection.segregationRating || 0}/5)
-                                  </span>
-                                </div>
-                              </div>
-
-                              {collection.plasticRating && (
-                                <div className="flex items-center justify-between p-2 bg-blue-50 rounded">
-                                  <span className="text-sm font-medium">Plastic Rating:</span>
-                                  <div className="flex items-center gap-1">
-                                    {Array.from({ length: 5 }).map((_, i) => (
-                                      <Star
-                                        key={i}
-                                        className={`h-4 w-4 ${i < (collection.plasticRating || 0) ? "fill-blue-400 text-blue-400" : "text-gray-300"}`}
-                                      />
-                                    ))}
-                                    <span className="ml-2 text-sm font-bold">
-                                      ({collection.plasticRating}/5)
-                                    </span>
-                                  </div>
-                                </div>
-                              )}
-                            </div>
-
-                            <div className="space-y-2">
-                              <div className="p-2 bg-gray-50 rounded">
-                                <span className="text-sm font-medium block">Waste Segregated:</span>
-                                <span className="text-sm">{collection.wasteSegregated ? "✅ Yes" : "❌ No"}</span>
-                              </div>
-                              <div className="p-2 bg-gray-50 rounded">
-                                <span className="text-sm font-medium block">Bin Cleaned:</span>
-                                <span className="text-sm">{collection.binCleaned ? "✅ Yes" : "❌ No"}</span>
+                          {/* Generator's Rating */}
+                          <div className="p-3 bg-purple-50 rounded-lg">
+                            <div className="flex items-center justify-between mb-2">
+                              <span className="text-sm font-medium">Generator's Service Rating:</span>
+                              <div className="flex items-center gap-1">
+                                {Array.from({ length: 5 }).map((_, i) => (
+                                  <Star
+                                    key={i}
+                                    className={`h-4 w-4 ${i < (feedback.rating || 0) ? "fill-purple-400 text-purple-400" : "text-gray-300"}`}
+                                  />
+                                ))}
+                                <span className="ml-2 text-sm font-bold">
+                                  ({feedback.rating || 0}/5)
+                                </span>
                               </div>
                             </div>
+                            
+                            {feedback.remarks && (
+                              <div className="mt-2">
+                                <span className="text-sm font-medium block mb-1">Generator's Comments:</span>
+                                <p className="text-sm text-gray-700 italic">"{feedback.remarks}"</p>
+                              </div>
+                            )}
                           </div>
 
-                          {collection.observations && (
-                            <div className="p-3 bg-blue-50 rounded-lg">
-                              <span className="text-sm font-medium block mb-1">Observations:</span>
-                              <p className="text-sm text-gray-700">"{collection.observations}"</p>
+                          {/* Additional Info */}
+                          <div className="flex justify-between items-center pt-2 border-t">
+                            <div className="text-xs text-muted-foreground">
+                              Feedback submitted: {new Date(feedback.createdAt).toLocaleDateString()} at {new Date(feedback.createdAt).toLocaleTimeString()}
                             </div>
-                          )}
-
-                          {collection.remarks && (
-                            <div className="p-3 bg-green-50 rounded-lg">
-                              <span className="text-sm font-medium block mb-1">Remarks:</span>
-                              <p className="text-sm text-gray-700">"{collection.remarks}"</p>
-                            </div>
-                          )}
-
-                          <div className="flex gap-2 pt-2 border-t">
-                            {collection.photo && (
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => window.open(collection.photo, "_blank")}
-                              >
-                                <Camera className="h-4 w-4 mr-1" />
-                                View Photo
-                              </Button>
-                            )}
-                            {collection.voiceUrl && (
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => window.open(collection.voiceUrl, "_blank")}
-                              >
-                                <Mic className="h-4 w-4 mr-1" />
-                                Play Voice
-                              </Button>
-                            )}
-                            <div className="ml-auto text-xs text-muted-foreground">
-                              {new Date(collection.collectionDate).toLocaleTimeString()}
+                            <div className="flex items-center gap-1">
+                              <MessageSquare className="h-4 w-4 text-purple-500" />
+                              <span className="text-xs text-purple-600">Generator Feedback</span>
                             </div>
                           </div>
                         </div>
@@ -896,9 +849,12 @@ export default function ManagerDashboard() {
               </div>
             ) : (
               <div className="text-center py-8">
-                <Package className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+                <MessageSquare className="w-12 h-12 text-gray-300 mx-auto mb-3" />
                 <p className="text-muted-foreground">
-                  {feedbackDateFilter ? "No collections found for selected date" : "No collections recorded"}
+                  {feedbackDateFilter ? "No generator feedbacks found for selected date" : "No generator feedbacks received yet"}
+                </p>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Generators can provide feedback after waste collection
                 </p>
               </div>
             )}
