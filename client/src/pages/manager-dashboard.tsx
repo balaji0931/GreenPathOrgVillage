@@ -682,6 +682,232 @@ export default function ManagerDashboard() {
     );
   };
 
+  const CollectorFeedbackModal = ({ collector, allCollections, feedbacks }: {
+    collector: Collector;
+    allCollections: WasteCollection[];
+    feedbacks: any[];
+  }) => {
+    const [feedbackDateFilter, setFeedbackDateFilter] = useState("");
+
+    // Get collections for this collector
+    const collectorCollections = allCollections.filter(c => c.collectorId === collector.id);
+    
+    // Filter collections by date if selected
+    const filteredCollections = collectorCollections.filter(collection => {
+      if (!feedbackDateFilter) return true;
+      const collectionDate = new Date(collection.collectionDate).toDateString();
+      const filterDate = new Date(feedbackDateFilter).toDateString();
+      return collectionDate === filterDate;
+    });
+
+    // Get feedbacks for filtered collections
+    const collectorFeedbacks = feedbacks.filter(feedback => 
+      filteredCollections.some(collection => collection.id === feedback.collectionId)
+    );
+
+    return (
+      <div className="space-y-6">
+        {/* Collector Info Card */}
+        <Card className="bg-blue-50 border-blue-200">
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-lg font-semibold text-blue-900">{collector.name}</h3>
+                <p className="text-sm text-blue-700">
+                  ID: {collector.uid} | Phone: {collector.phone}
+                </p>
+              </div>
+              <div className="grid grid-cols-3 gap-4 text-center">
+                <div>
+                  <div className="text-lg font-bold text-blue-900">
+                    {filteredCollections.length}
+                  </div>
+                  <div className="text-xs text-blue-700">Collections</div>
+                </div>
+                <div>
+                  <div className="text-lg font-bold text-blue-900">
+                    {filteredCollections.length > 0 
+                      ? (filteredCollections.reduce((sum, c) => sum + (c.segregationRating || 0), 0) / filteredCollections.length).toFixed(1)
+                      : "0.0"}
+                  </div>
+                  <div className="text-xs text-blue-700">Avg Rating</div>
+                </div>
+                <div>
+                  <div className="text-lg font-bold text-blue-900">
+                    {collectorFeedbacks.length}
+                  </div>
+                  <div className="text-xs text-blue-700">Feedbacks</div>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Date Filter for Feedbacks */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Filter Feedbacks</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex gap-4 items-center">
+              <div className="flex-1">
+                <Label htmlFor="feedback-date">Filter by Date</Label>
+                <Input
+                  id="feedback-date"
+                  type="date"
+                  value={feedbackDateFilter}
+                  onChange={(e) => setFeedbackDateFilter(e.target.value)}
+                  placeholder="Select date to filter feedbacks"
+                />
+              </div>
+              <Button variant="outline" onClick={() => setFeedbackDateFilter("")}>
+                Clear Filter
+              </Button>
+            </div>
+            <p className="text-xs text-muted-foreground mt-2">
+              {feedbackDateFilter 
+                ? `Showing feedbacks for ${new Date(feedbackDateFilter).toLocaleDateString()}` 
+                : "Showing all feedbacks"}
+            </p>
+          </CardContent>
+        </Card>
+
+        {/* Feedbacks List */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Collection Feedbacks ({filteredCollections.length} collections)</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {filteredCollections.length > 0 ? (
+              <div className="space-y-4 max-h-96 overflow-y-auto">
+                {filteredCollections
+                  .sort((a, b) => new Date(b.collectionDate).getTime() - new Date(a.collectionDate).getTime())
+                  .map((collection) => (
+                    <Card key={collection.id} className="border-l-4 border-l-green-400">
+                      <CardContent className="p-4">
+                        <div className="space-y-3">
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <h4 className="font-medium">{collection.headName}</h4>
+                              <p className="text-sm text-muted-foreground">
+                                House: {collection.houseNumber} | UID: {collection.householdUid}
+                              </p>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <Badge variant="outline">
+                                {new Date(collection.collectionDate).toLocaleDateString()}
+                              </Badge>
+                              <Badge variant={collection.status === "collected" ? "default" : "destructive"}>
+                                {collection.status || "collected"}
+                              </Badge>
+                            </div>
+                          </div>
+
+                          <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                              <div className="flex items-center justify-between p-2 bg-yellow-50 rounded">
+                                <span className="text-sm font-medium">Segregation Rating:</span>
+                                <div className="flex items-center gap-1">
+                                  {Array.from({ length: 5 }).map((_, i) => (
+                                    <Star
+                                      key={i}
+                                      className={`h-4 w-4 ${i < (collection.segregationRating || 0) ? "fill-yellow-400 text-yellow-400" : "text-gray-300"}`}
+                                    />
+                                  ))}
+                                  <span className="ml-2 text-sm font-bold">
+                                    ({collection.segregationRating || 0}/5)
+                                  </span>
+                                </div>
+                              </div>
+
+                              {collection.plasticRating && (
+                                <div className="flex items-center justify-between p-2 bg-blue-50 rounded">
+                                  <span className="text-sm font-medium">Plastic Rating:</span>
+                                  <div className="flex items-center gap-1">
+                                    {Array.from({ length: 5 }).map((_, i) => (
+                                      <Star
+                                        key={i}
+                                        className={`h-4 w-4 ${i < (collection.plasticRating || 0) ? "fill-blue-400 text-blue-400" : "text-gray-300"}`}
+                                      />
+                                    ))}
+                                    <span className="ml-2 text-sm font-bold">
+                                      ({collection.plasticRating}/5)
+                                    </span>
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+
+                            <div className="space-y-2">
+                              <div className="p-2 bg-gray-50 rounded">
+                                <span className="text-sm font-medium block">Waste Segregated:</span>
+                                <span className="text-sm">{collection.wasteSegregated ? "✅ Yes" : "❌ No"}</span>
+                              </div>
+                              <div className="p-2 bg-gray-50 rounded">
+                                <span className="text-sm font-medium block">Bin Cleaned:</span>
+                                <span className="text-sm">{collection.binCleaned ? "✅ Yes" : "❌ No"}</span>
+                              </div>
+                            </div>
+                          </div>
+
+                          {collection.observations && (
+                            <div className="p-3 bg-blue-50 rounded-lg">
+                              <span className="text-sm font-medium block mb-1">Observations:</span>
+                              <p className="text-sm text-gray-700">"{collection.observations}"</p>
+                            </div>
+                          )}
+
+                          {collection.remarks && (
+                            <div className="p-3 bg-green-50 rounded-lg">
+                              <span className="text-sm font-medium block mb-1">Remarks:</span>
+                              <p className="text-sm text-gray-700">"{collection.remarks}"</p>
+                            </div>
+                          )}
+
+                          <div className="flex gap-2 pt-2 border-t">
+                            {collection.photo && (
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => window.open(collection.photo, "_blank")}
+                              >
+                                <Camera className="h-4 w-4 mr-1" />
+                                View Photo
+                              </Button>
+                            )}
+                            {collection.voiceUrl && (
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => window.open(collection.voiceUrl, "_blank")}
+                              >
+                                <Mic className="h-4 w-4 mr-1" />
+                                Play Voice
+                              </Button>
+                            )}
+                            <div className="ml-auto text-xs text-muted-foreground">
+                              {new Date(collection.collectionDate).toLocaleTimeString()}
+                            </div>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+              </div>
+            ) : (
+              <div className="text-center py-8">
+                <Package className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+                <p className="text-muted-foreground">
+                  {feedbackDateFilter ? "No collections found for selected date" : "No collections recorded"}
+                </p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+    );
+  };
+
   return (
     <>
       <div className="min-h-screen flex flex-col bg-gray-50">
@@ -867,93 +1093,115 @@ export default function ManagerDashboard() {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
-                  <Card>
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                      <CardTitle className="text-sm font-medium">Total Collections</CardTitle>
-                      <TrendingUp className="h-4 w-4 text-muted-foreground" />
-                    </CardHeader>
-                    <CardContent>
-                      <div className="text-2xl font-bold">
-                        {collectorStats.reduce((sum, stats) => sum + stats.totalCollections, 0)}
+                {/* Date Filter */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Filter Analytics</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="flex gap-4 items-center">
+                      <div className="flex-1">
+                        <Label htmlFor="analytics-date">Filter by Date</Label>
+                        <Input
+                          id="analytics-date"
+                          type="date"
+                          value={filters.date}
+                          onChange={(e) => updateFilter("date", e.target.value)}
+                          placeholder="Select date to filter analytics"
+                        />
                       </div>
-                      <p className="text-xs text-muted-foreground">This month</p>
-                    </CardContent>
-                  </Card>
-
-                  <Card>
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                      <CardTitle className="text-sm font-medium">Average Rating</CardTitle>
-                      <Star className="h-4 w-4 text-muted-foreground" />
-                    </CardHeader>
-                    <CardContent>
-                      <div className="text-2xl font-bold">
-                        {collectorStats.length > 0
-                          ? (collectorStats.reduce((sum, stats) => sum + stats.averageRating, 0) / collectorStats.length).toFixed(1)
-                          : "0.0"}
-                      </div>
-                      <p className="text-xs text-muted-foreground">Out of 5.0</p>
-                    </CardContent>
-                  </Card>
-
-                  <Card>
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                      <CardTitle className="text-sm font-medium">Open Complaints</CardTitle>
-                      <AlertCircle className="h-4 w-4 text-muted-foreground" />
-                    </CardHeader>
-                    <CardContent>
-                      <div className="text-2xl font-bold">
-                        {complaints.filter(c => c.status === "open").length}
-                      </div>
-                      <p className="text-xs text-muted-foreground">Need attention</p>
-                    </CardContent>
-                  </Card>
-                </div>
+                      <Button variant="outline" onClick={clearFilters}>
+                        Clear Filter
+                      </Button>
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-2">
+                      {filters.date ? `Showing analytics for ${new Date(filters.date).toLocaleDateString()}` : "Showing overall analytics"}
+                    </p>
+                  </CardContent>
+                </Card>
 
                 <div className="space-y-4">
                   {collectors.map((collector) => {
-                    const stats = collectorStats.find(s => s.id === collector.id);
+                    // Filter collections by date if selected
+                    const filteredCollections = allCollections.filter(c => {
+                      const collectionMatches = c.collectorId === collector.id;
+                      if (!filters.date) return collectionMatches;
+                      const collectionDate = new Date(c.collectionDate).toDateString();
+                      const filterDate = new Date(filters.date).toDateString();
+                      return collectionMatches && collectionDate === filterDate;
+                    });
+
+                    // Calculate real-time stats based on filtered data
+                    const totalCollections = filteredCollections.length;
+                    const averageRating = filteredCollections.length > 0 
+                      ? (filteredCollections.reduce((sum, c) => sum + (c.segregationRating || 0), 0) / filteredCollections.length).toFixed(1)
+                      : "0.0";
+                    
+                    // Filter complaints by date
+                    const filteredComplaints = complaints.filter(c => {
+                      const complaintMatches = c.collectorId === collector.id;
+                      if (!filters.date) return complaintMatches;
+                      const complaintDate = new Date(c.createdAt).toDateString();
+                      const filterDate = new Date(filters.date).toDateString();
+                      return complaintMatches && complaintDate === filterDate;
+                    });
+
                     return (
-                      <Card key={collector.id}>
-                        <CardContent className="p-4">
-                          <div className="flex items-center justify-between">
-                            <div className="flex-1">
-                              <h3 className="font-semibold">{collector.name}</h3>
-                              <p className="text-sm text-muted-foreground">
-                                ID: {collector.uid} | Phone: {collector.phone}
-                              </p>
-                              <div className="grid grid-cols-3 gap-4 text-center mt-3">
-                                <div>
-                                  <div className="text-lg font-bold">
-                                    {stats?.totalCollections || 0}
+                      <Dialog key={collector.id}>
+                        <DialogTrigger asChild>
+                          <Card className="cursor-pointer hover:shadow-md transition-shadow">
+                            <CardContent className="p-4">
+                              <div className="flex items-center justify-between">
+                                <div className="flex-1">
+                                  <h3 className="font-semibold">{collector.name}</h3>
+                                  <p className="text-sm text-muted-foreground">
+                                    ID: {collector.uid} | Phone: {collector.phone}
+                                  </p>
+                                  <div className="grid grid-cols-3 gap-4 text-center mt-3">
+                                    <div>
+                                      <div className="text-lg font-bold">
+                                        {totalCollections}
+                                      </div>
+                                      <div className="text-xs text-muted-foreground">Collections</div>
+                                    </div>
+                                    <div>
+                                      <div className="text-lg font-bold">
+                                        {averageRating}
+                                      </div>
+                                      <div className="text-xs text-muted-foreground">Avg Rating</div>
+                                    </div>
+                                    <div>
+                                      <div className="text-lg font-bold">
+                                        {filteredComplaints.length}
+                                      </div>
+                                      <div className="text-xs text-muted-foreground">Complaints</div>
+                                    </div>
                                   </div>
-                                  <div className="text-xs text-muted-foreground">Collections</div>
                                 </div>
-                                <div>
-                                  <div className="text-lg font-bold">
-                                    {stats?.averageRating?.toFixed(1) || "0.0"}
-                                  </div>
-                                  <div className="text-xs text-muted-foreground">Avg Rating</div>
-                                </div>
-                                <div>
-                                  <div className="text-lg font-bold">
-                                    {stats?.complaintsCount || 0}
-                                  </div>
-                                  <div className="text-xs text-muted-foreground">Complaints</div>
+                                <div className="flex items-center gap-2">
+                                  <Badge className="text-xs">
+                                    Click to view feedbacks
+                                  </Badge>
                                 </div>
                               </div>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <Badge variant={collector.isActive ? "default" : "secondary"}>
-                                {collector.isActive ? "Active" : "Inactive"}
-                              </Badge>
-                              <Button size="sm" variant="outline">
-                                <Edit className="h-4 w-4" />
-                              </Button>
-                            </div>
-                          </div>
-                        </CardContent>
-                      </Card>
+                            </CardContent>
+                          </Card>
+                        </DialogTrigger>
+
+                        <DialogContent className="max-w-6xl max-h-[80vh] overflow-y-auto">
+                          <DialogHeader>
+                            <DialogTitle className="flex items-center justify-between">
+                              <span>Collector Feedbacks - {collector.name}</span>
+                            </DialogTitle>
+                          </DialogHeader>
+                          
+                          <CollectorFeedbackModal 
+                            collector={collector}
+                            allCollections={allCollections}
+                            feedbacks={feedbacks}
+                          />
+                        </DialogContent>
+                      </Dialog>
                     );
                   })}
                 </div>
