@@ -973,8 +973,7 @@ export default function ManagerDashboard() {
                 <Tabs value={householdSubTab} onValueChange={setHouseholdSubTab} className="w-full">
                   <TabsList className="grid w-full grid-cols-4">
                     <TabsTrigger value="list">View All</TabsTrigger>
-                    <TabsTrigger value="add">Add Single</TabsTrigger>
-                    <TabsTrigger value="bulk">Add Multiple</TabsTrigger>
+                    <TabsTrigger value="bulk">Add HouseHold</TabsTrigger>
                     <TabsTrigger value="qr-download">Download QR</TabsTrigger>
                   </TabsList>
 
@@ -1004,18 +1003,6 @@ export default function ManagerDashboard() {
                         </Card>
                       ))}
                     </div>
-                  </TabsContent>
-
-                  <TabsContent value="add" className="space-y-4">
-                    <Card>
-                      <CardHeader>
-                        <CardTitle>Add Single Household</CardTitle>
-                        <CardDescription>Create one household with automatic QR code generation</CardDescription>
-                      </CardHeader>
-                      <CardContent>
-                        <CreateHouseholdDialog villageId={user?.villageId || ""} />
-                      </CardContent>
-                    </Card>
                   </TabsContent>
 
                   <TabsContent value="bulk" className="space-y-4">
