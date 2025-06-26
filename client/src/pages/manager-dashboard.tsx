@@ -3,7 +3,7 @@ import React from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
-import { useTranslation } from 'react-i18next';
+import { useTranslation } from "react-i18next";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import {
   Card,
@@ -205,7 +205,8 @@ export default function ManagerDashboard() {
   const [announcementTarget, setAnnouncementTarget] = useState("generators");
 
   // Initialize filters with proper default values
-  const [selectedHouseholdFilter, setSelectedHouseholdFilter] = useState<string>("all");
+  const [selectedHouseholdFilter, setSelectedHouseholdFilter] =
+    useState<string>("all");
   const [statusFilter, setStatusFilter] = useState<string>("all");
 
   // Fetch announcements
@@ -411,25 +412,28 @@ export default function ManagerDashboard() {
         setOpen(false);
       },
       onError: (error: any) => {
-        toast({ 
-          title: "Failed to create collector", 
+        toast({
+          title: "Failed to create collector",
           description: error.message,
-          variant: "destructive" 
+          variant: "destructive",
         });
-      }
+      },
     });
 
     const handleSubmit = (e: React.FormEvent) => {
       e.preventDefault();
-      
+
       const name = formData.name.trim();
       const phone = formData.phone.trim();
-      
+
       if (!name || !phone) {
-        toast({ title: "Please fill all required fields", variant: "destructive" });
+        toast({
+          title: "Please fill all required fields",
+          variant: "destructive",
+        });
         return;
       }
-      
+
       collectorMutation.mutate({ name, phone });
     };
 
@@ -448,8 +452,8 @@ export default function ManagerDashboard() {
             Add Collector
           </Button>
         </DialogTrigger>
-        <DialogContent 
-          className="sm:max-w-[425px]" 
+        <DialogContent
+          className="sm:max-w-[425px]"
           onPointerDownOutside={(e) => e.preventDefault()}
           onInteractOutside={(e) => e.preventDefault()}
         >
@@ -462,7 +466,9 @@ export default function ManagerDashboard() {
               <Input
                 id="collector-name"
                 value={formData.name}
-                onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+                onChange={(e) =>
+                  setFormData((prev) => ({ ...prev, name: e.target.value }))
+                }
                 placeholder="Enter collector name"
                 required
                 autoComplete="off"
@@ -474,23 +480,25 @@ export default function ManagerDashboard() {
                 id="collector-phone"
                 type="tel"
                 value={formData.phone}
-                onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
+                onChange={(e) =>
+                  setFormData((prev) => ({ ...prev, phone: e.target.value }))
+                }
                 placeholder="Enter phone number"
                 required
                 autoComplete="off"
               />
             </div>
             <div className="flex gap-2 pt-4">
-              <Button 
-                type="button" 
-                variant="outline" 
+              <Button
+                type="button"
+                variant="outline"
                 onClick={() => handleOpenChange(false)}
                 className="flex-1"
               >
                 Cancel
               </Button>
-              <Button 
-                type="submit" 
+              <Button
+                type="submit"
                 disabled={collectorMutation.isPending}
                 className="flex-1"
               >
@@ -506,7 +514,11 @@ export default function ManagerDashboard() {
   // Create household dialog component with isolated state - moved outside
   const CreateHouseholdDialog = React.memo(() => {
     const [open, setOpen] = useState(false);
-    const [formData, setFormData] = useState({ headName: "", houseNumber: "", phone: "" });
+    const [formData, setFormData] = useState({
+      headName: "",
+      houseNumber: "",
+      phone: "",
+    });
 
     const householdMutation = useMutation({
       mutationFn: (data: {
@@ -526,26 +538,29 @@ export default function ManagerDashboard() {
         setOpen(false);
       },
       onError: (error: any) => {
-        toast({ 
-          title: "Failed to create household", 
+        toast({
+          title: "Failed to create household",
           description: error.message,
-          variant: "destructive" 
+          variant: "destructive",
         });
-      }
+      },
     });
 
     const handleSubmit = (e: React.FormEvent) => {
       e.preventDefault();
-      
+
       const headName = formData.headName.trim();
       const houseNumber = formData.houseNumber.trim();
       const phone = formData.phone.trim();
-      
+
       if (!headName || !houseNumber || !phone) {
-        toast({ title: "Please fill all required fields", variant: "destructive" });
+        toast({
+          title: "Please fill all required fields",
+          variant: "destructive",
+        });
         return;
       }
-      
+
       householdMutation.mutate({ headName, houseNumber, phone });
     };
 
@@ -564,8 +579,8 @@ export default function ManagerDashboard() {
             Add Household
           </Button>
         </DialogTrigger>
-        <DialogContent 
-          className="sm:max-w-[425px]" 
+        <DialogContent
+          className="sm:max-w-[425px]"
           onPointerDownOutside={(e) => e.preventDefault()}
           onInteractOutside={(e) => e.preventDefault()}
         >
@@ -578,7 +593,9 @@ export default function ManagerDashboard() {
               <Input
                 id="household-headName"
                 value={formData.headName}
-                onChange={(e) => setFormData(prev => ({ ...prev, headName: e.target.value }))}
+                onChange={(e) =>
+                  setFormData((prev) => ({ ...prev, headName: e.target.value }))
+                }
                 placeholder="Enter head of household name"
                 required
                 autoComplete="off"
@@ -589,7 +606,12 @@ export default function ManagerDashboard() {
               <Input
                 id="household-houseNumber"
                 value={formData.houseNumber}
-                onChange={(e) => setFormData(prev => ({ ...prev, houseNumber: e.target.value }))}
+                onChange={(e) =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    houseNumber: e.target.value,
+                  }))
+                }
                 placeholder="Enter house number"
                 required
                 autoComplete="off"
@@ -601,23 +623,25 @@ export default function ManagerDashboard() {
                 id="household-phone"
                 type="tel"
                 value={formData.phone}
-                onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
+                onChange={(e) =>
+                  setFormData((prev) => ({ ...prev, phone: e.target.value }))
+                }
                 placeholder="Enter phone number"
                 required
                 autoComplete="off"
               />
             </div>
             <div className="flex gap-2 pt-4">
-              <Button 
-                type="button" 
-                variant="outline" 
+              <Button
+                type="button"
+                variant="outline"
                 onClick={() => handleOpenChange(false)}
                 className="flex-1"
               >
                 Cancel
               </Button>
-              <Button 
-                type="submit" 
+              <Button
+                type="submit"
                 disabled={householdMutation.isPending}
                 className="flex-1"
               >
@@ -1285,7 +1309,7 @@ export default function ManagerDashboard() {
           <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 sm:gap-4">
             <div className="flex-1 min-w-0">
               <h1 className="text-lg sm:text-xl font-semibold truncate">
-                {t('navigation.dashboard')}
+                {t("navigation.dashboard")}
               </h1>
               <p className="text-xs sm:text-sm text-muted-foreground truncate">
                 Village: {user?.villageId} | Manager: {user?.name}
@@ -1310,7 +1334,7 @@ export default function ManagerDashboard() {
                 className="flex-1 sm:flex-none text-xs sm:text-sm"
               >
                 <LogOut className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
-                {t('auth.logout')}
+                {t("auth.logout")}
               </Button>
             </div>
           </div>
@@ -1360,7 +1384,7 @@ export default function ManagerDashboard() {
                   )}
                 >
                   <LayoutDashboard className="h-5 w-5" />
-                  {t('dashboard.overview')}
+                  {t("dashboard.overview")}
                 </button>
                 <button
                   onClick={() => setActiveTab("collectors")}
@@ -1372,7 +1396,7 @@ export default function ManagerDashboard() {
                   )}
                 >
                   <Users className="h-5 w-5" />
-                  {t('navigation.collectors')}
+                  {t("navigation.collectors")}
                 </button>
                 <button
                   onClick={() => setActiveTab("households")}
@@ -1384,7 +1408,7 @@ export default function ManagerDashboard() {
                   )}
                 >
                   <Home className="h-5 w-5" />
-                  {t('navigation.households')}
+                  {t("navigation.households")}
                 </button>
                 <button
                   onClick={() => setActiveTab("collections")}
@@ -1396,7 +1420,7 @@ export default function ManagerDashboard() {
                   )}
                 >
                   <Package className="h-5 w-5" />
-                  {t('navigation.collections')}
+                  {t("navigation.collections")}
                 </button>
                 <button
                   onClick={() => setActiveTab("issues")}
@@ -1408,7 +1432,7 @@ export default function ManagerDashboard() {
                   )}
                 >
                   <AlertTriangle className="h-5 w-5" />
-                  {t('navigation.issues')}
+                  {t("navigation.issues")}
                 </button>
                 <button
                   onClick={() => setActiveTab("reports")}
@@ -1420,7 +1444,7 @@ export default function ManagerDashboard() {
                   )}
                 >
                   <BarChart3 className="h-5 w-5" />
-                  {t('navigation.reports')}
+                  {t("navigation.reports")}
                 </button>
                 <button
                   onClick={() => setActiveTab("feedback")}
@@ -1432,7 +1456,7 @@ export default function ManagerDashboard() {
                   )}
                 >
                   <MessageSquare className="h-5 w-5" />
-                  {t('navigation.feedback')}
+                  {t("navigation.feedback")}
                 </button>
                 <button
                   onClick={() => setActiveTab("announcements")}
@@ -1444,7 +1468,7 @@ export default function ManagerDashboard() {
                   )}
                 >
                   <Bell className="h-5 w-5" />
-                  {t('navigation.announcements')}
+                  {t("navigation.announcements")}
                 </button>
               </nav>
             </div>
@@ -1455,9 +1479,11 @@ export default function ManagerDashboard() {
             {activeTab === "overview" && (
               <div className="space-y-6">
                 <div>
-                  <h2 className="text-2xl font-bold mb-2">{t('dashboard.overview')}</h2>
+                  <h2 className="text-2xl font-bold mb-2">
+                    {t("dashboard.overview")}
+                  </h2>
                   <p className="text-muted-foreground">
-                    {t('dashboard.stats')}
+                    {t("dashboard.stats")}
                   </p>
                 </div>
 
@@ -1584,10 +1610,7 @@ export default function ManagerDashboard() {
                     </CardDescription>
                   </CardHeader>
                   <CardContent className="p-3 sm:p-6 pt-0">
-                    <div className="flex flex-col sm:flex-row gap-3">
-                      <CreateCollectorDialog />
-                      <CreateHouseholdDialog />
-                    </div>
+                    <div className="flex flex-col sm:flex-row gap-3"></div>
                   </CardContent>
                 </Card>
               </div>
