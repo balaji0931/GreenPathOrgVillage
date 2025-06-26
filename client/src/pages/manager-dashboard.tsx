@@ -1079,7 +1079,81 @@ export default function ManagerDashboard() {
     setSelectedDownloadHouseholds(households.map((h) => h.id));
   }, [households]);
 
-  // Bulk household creation component with proper input focus management
+  // Individual household form component to prevent re-rendering issues
+  const HouseholdFormRow = React.memo(({ 
+    household, 
+    index, 
+    onUpdate, 
+    onRemove, 
+    canRemove 
+  }: {
+    household: any;
+    index: number;
+    onUpdate: (index: number, field: string, value: string) => void;
+    onRemove: (index: number) => void;
+    canRemove: boolean;
+  }) => {
+    return (
+      <Card className="border">
+        <CardContent className="p-4">
+          <div className="flex justify-between items-center mb-4">
+            <h4 className="font-medium">Household {index + 1}</h4>
+            {canRemove && (
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => onRemove(index)}
+                type="button"
+              >
+                <Trash2 className="h-4 w-4" />
+              </Button>
+            )}
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <Label>Head Name *</Label>
+              <Input
+                value={household.headName || ""}
+                onChange={(e) => onUpdate(index, "headName", e.target.value)}
+                placeholder="Enter head name"
+                autoComplete="off"
+              />
+            </div>
+            <div>
+              <Label>House Number *</Label>
+              <Input
+                value={household.houseNumber || ""}
+                onChange={(e) => onUpdate(index, "houseNumber", e.target.value)}
+                placeholder="Enter house number"
+                autoComplete="off"
+              />
+            </div>
+            <div>
+              <Label>Phone Number *</Label>
+              <Input
+                type="tel"
+                value={household.phone || ""}
+                onChange={(e) => onUpdate(index, "phone", e.target.value)}
+                placeholder="Enter phone number"
+                autoComplete="off"
+              />
+            </div>
+            <div>
+              <Label>Address</Label>
+              <Input
+                value={household.address || ""}
+                onChange={(e) => onUpdate(index, "address", e.target.value)}
+                placeholder="Enter address"
+                autoComplete="off"
+              />
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  });
+
+  // Bulk household creation component with stable form management
   const BulkHouseholdCreation = React.memo(() => {
     const handleUpdateHousehold = React.useCallback((index: number, field: string, value: string) => {
       setBulkHouseholds(prev => {
@@ -1090,8 +1164,7 @@ export default function ManagerDashboard() {
     }, []);
 
     const handleAddHousehold = React.useCallback(() => {
-      const newHousehold = { headName: "", houseNumber: "", phone: "", address: "" };
-      setBulkHouseholds(prev => [...prev, newHousehold]);
+      setBulkHouseholds(prev => [...prev, { headName: "", houseNumber: "", phone: "", address: "" }]);
     }, []);
 
     const handleRemoveHousehold = React.useCallback((index: number) => {
@@ -1100,7 +1173,7 @@ export default function ManagerDashboard() {
       }
     }, [bulkHouseholds.length]);
 
-    const handleBulkSubmitLocal = React.useCallback(() => {
+    const handleBulkSubmit = React.useCallback(() => {
       const validHouseholds = bulkHouseholds.filter(
         (h) => h.headName && h.houseNumber && h.phone,
       );
@@ -1118,81 +1191,14 @@ export default function ManagerDashboard() {
     return (
       <div className="space-y-4">
         {bulkHouseholds.map((household, index) => (
-          <Card key={`household-form-${index}`} className="border">
-            <CardContent className="p-4">
-              <div className="flex justify-between items-center mb-4">
-                <h4 className="font-medium">Household {index + 1}</h4>
-                {bulkHouseholds.length > 1 && (
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => handleRemoveHousehold(index)}
-                    type="button"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                )}
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor={`headName-${index}`}>Head Name *</Label>
-                  <Input
-                    id={`headName-${index}`}
-                    name={`headName-${index}`}
-                    value={household.headName || ""}
-                    onChange={(e) =>
-                      handleUpdateHousehold(index, "headName", e.target.value)
-                    }
-                    placeholder="Enter head name"
-                    autoComplete="off"
-                    type="text"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor={`houseNumber-${index}`}>House Number *</Label>
-                  <Input
-                    id={`houseNumber-${index}`}
-                    name={`houseNumber-${index}`}
-                    value={household.houseNumber || ""}
-                    onChange={(e) =>
-                      handleUpdateHousehold(index, "houseNumber", e.target.value)
-                    }
-                    placeholder="Enter house number"
-                    autoComplete="off"
-                    type="text"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor={`phone-${index}`}>Phone Number *</Label>
-                  <Input
-                    id={`phone-${index}`}
-                    name={`phone-${index}`}
-                    value={household.phone || ""}
-                    onChange={(e) =>
-                      handleUpdateHousehold(index, "phone", e.target.value)
-                    }
-                    placeholder="Enter phone number"
-                    autoComplete="off"
-                    type="tel"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor={`address-${index}`}>Address</Label>
-                  <Input
-                    id={`address-${index}`}
-                    name={`address-${index}`}
-                    value={household.address || ""}
-                    onChange={(e) =>
-                      handleUpdateHousehold(index, "address", e.target.value)
-                    }
-                    placeholder="Enter address"
-                    autoComplete="off"
-                    type="text"
-                  />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+          <HouseholdFormRow
+            key={index}
+            household={household}
+            index={index}
+            onUpdate={handleUpdateHousehold}
+            onRemove={handleRemoveHousehold}
+            canRemove={bulkHouseholds.length > 1}
+          />
         ))}
 
         <div className="flex gap-2">
@@ -1201,7 +1207,7 @@ export default function ManagerDashboard() {
             Add Another Household
           </Button>
           <Button
-            onClick={handleBulkSubmitLocal}
+            onClick={handleBulkSubmit}
             disabled={createBulkHouseholdsMutation.isPending}
             type="button"
           >
