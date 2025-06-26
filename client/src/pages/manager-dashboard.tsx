@@ -1197,8 +1197,7 @@ export default function ManagerDashboard() {
                           <p className="text-sm text-muted-foreground">Add households to generate QR codes automatically</p>
                         </div>
                       )}
-                    </div>
-                  </CardContent>
+                    </CardContent>
                 </Card>
                   </TabsContent>
                 </Tabs>
