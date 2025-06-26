@@ -403,26 +403,32 @@ export default function ManagerDashboard() {
   );
 
   const CreateCollectorDialog = React.memo(() => {
-    const [name, setName] = useState("");
-    const [phone, setPhone] = useState("");
+    // Use useRef to persist form data across re-renders
+    const formDataRef = React.useRef({ name: "", phone: "" });
+    const [, forceUpdate] = React.useReducer(x => x + 1, 0);
     const [open, setOpen] = useState(false);
 
     const handleSubmit = (e: React.FormEvent) => {
       e.preventDefault();
-      if (!name.trim() || !phone.trim()) {
+      e.stopPropagation();
+      
+      const name = formDataRef.current.name.trim();
+      const phone = formDataRef.current.phone.trim();
+      
+      if (!name || !phone) {
         toast({ title: "Please fill all required fields", variant: "destructive" });
         return;
       }
       
       createCollectorMutation.mutate(
-        { name: name.trim(), phone: phone.trim() },
+        { name, phone },
         {
           onSuccess: () => {
             toast({ title: "Collector created successfully" });
             // Clear form and close dialog only on success
-            setName("");
-            setPhone("");
+            formDataRef.current = { name: "", phone: "" };
             setOpen(false);
+            forceUpdate();
           },
           onError: (error: any) => {
             toast({ 
@@ -435,33 +441,20 @@ export default function ManagerDashboard() {
       );
     };
 
-    const handleOpenChange = (newOpen: boolean) => {
-      setOpen(newOpen);
-      // Only clear form when dialog is manually closed (not on success)
-      if (!newOpen && !createCollectorMutation.isPending) {
-        // Give a brief delay to prevent accidental clearing
-        setTimeout(() => {
-          if (!open) {
-            setName("");
-            setPhone("");
-          }
-        }, 100);
-      }
+    const handleInputChange = (field: 'name' | 'phone', value: string) => {
+      formDataRef.current[field] = value;
+      forceUpdate();
     };
 
     return (
-      <Dialog open={open} onOpenChange={handleOpenChange}>
+      <Dialog open={open} onOpenChange={setOpen}>
         <DialogTrigger asChild>
-          <Button onClick={(e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            setOpen(true);
-          }}>
+          <Button>
             <Plus className="h-4 w-4 mr-2" />
             Add Collector
           </Button>
         </DialogTrigger>
-        <DialogContent onClick={(e) => e.stopPropagation()}>
+        <DialogContent>
           <DialogHeader>
             <DialogTitle>Add New Collector</DialogTitle>
           </DialogHeader>
@@ -470,8 +463,8 @@ export default function ManagerDashboard() {
               <Label htmlFor="collector-name">Name</Label>
               <Input
                 id="collector-name"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
+                value={formDataRef.current.name}
+                onChange={(e) => handleInputChange('name', e.target.value)}
                 placeholder="Enter collector name"
                 required
                 autoComplete="off"
@@ -483,8 +476,8 @@ export default function ManagerDashboard() {
               <Input
                 id="collector-phone"
                 type="tel"
-                value={phone}
-                onChange={(e) => setPhone(e.target.value)}
+                value={formDataRef.current.phone}
+                onChange={(e) => handleInputChange('phone', e.target.value)}
                 placeholder="Enter phone number"
                 required
                 autoComplete="off"
@@ -494,17 +487,14 @@ export default function ManagerDashboard() {
               <Button 
                 type="button" 
                 variant="outline" 
-                onClick={(e) => {
-                  e.preventDefault();
-                  setOpen(false);
-                }}
+                onClick={() => setOpen(false)}
                 className="flex-1"
               >
                 Cancel
               </Button>
               <Button 
                 type="submit" 
-                disabled={createCollectorMutation.isPending || !name.trim() || !phone.trim()}
+                disabled={createCollectorMutation.isPending}
                 className="flex-1"
               >
                 {createCollectorMutation.isPending ? "Adding..." : "Add Collector"}
@@ -517,32 +507,33 @@ export default function ManagerDashboard() {
   });
 
   const CreateHouseholdDialog = React.memo(() => {
-    const [headName, setHeadName] = useState("");
-    const [houseNumber, setHouseNumber] = useState("");
-    const [phone, setPhone] = useState("");
+    // Use useRef to persist form data across re-renders
+    const formDataRef = React.useRef({ headName: "", houseNumber: "", phone: "" });
+    const [, forceUpdate] = React.useReducer(x => x + 1, 0);
     const [open, setOpen] = useState(false);
 
     const handleSubmit = (e: React.FormEvent) => {
       e.preventDefault();
-      if (!headName.trim() || !houseNumber.trim() || !phone.trim()) {
+      e.stopPropagation();
+      
+      const headName = formDataRef.current.headName.trim();
+      const houseNumber = formDataRef.current.houseNumber.trim();
+      const phone = formDataRef.current.phone.trim();
+      
+      if (!headName || !houseNumber || !phone) {
         toast({ title: "Please fill all required fields", variant: "destructive" });
         return;
       }
       
       createHouseholdMutation.mutate(
-        { 
-          headName: headName.trim(), 
-          houseNumber: houseNumber.trim(), 
-          phone: phone.trim() 
-        },
+        { headName, houseNumber, phone },
         {
           onSuccess: () => {
             toast({ title: "Household created successfully" });
             // Clear form and close dialog only on success
-            setHeadName("");
-            setHouseNumber("");
-            setPhone("");
+            formDataRef.current = { headName: "", houseNumber: "", phone: "" };
             setOpen(false);
+            forceUpdate();
           },
           onError: (error: any) => {
             toast({ 
@@ -555,34 +546,20 @@ export default function ManagerDashboard() {
       );
     };
 
-    const handleOpenChange = (newOpen: boolean) => {
-      setOpen(newOpen);
-      // Only clear form when dialog is manually closed (not on success)
-      if (!newOpen && !createHouseholdMutation.isPending) {
-        // Give a brief delay to prevent accidental clearing
-        setTimeout(() => {
-          if (!open) {
-            setHeadName("");
-            setHouseNumber("");
-            setPhone("");
-          }
-        }, 100);
-      }
+    const handleInputChange = (field: 'headName' | 'houseNumber' | 'phone', value: string) => {
+      formDataRef.current[field] = value;
+      forceUpdate();
     };
 
     return (
-      <Dialog open={open} onOpenChange={handleOpenChange}>
+      <Dialog open={open} onOpenChange={setOpen}>
         <DialogTrigger asChild>
-          <Button onClick={(e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            setOpen(true);
-          }}>
+          <Button>
             <Plus className="h-4 w-4 mr-2" />
             Add Household
           </Button>
         </DialogTrigger>
-        <DialogContent onClick={(e) => e.stopPropagation()}>
+        <DialogContent>
           <DialogHeader>
             <DialogTitle>Add New Household</DialogTitle>
           </DialogHeader>
@@ -591,8 +568,8 @@ export default function ManagerDashboard() {
               <Label htmlFor="household-headName">Head of Household</Label>
               <Input
                 id="household-headName"
-                value={headName}
-                onChange={(e) => setHeadName(e.target.value)}
+                value={formDataRef.current.headName}
+                onChange={(e) => handleInputChange('headName', e.target.value)}
                 placeholder="Enter head of household name"
                 required
                 autoComplete="off"
@@ -603,8 +580,8 @@ export default function ManagerDashboard() {
               <Label htmlFor="household-houseNumber">House Number</Label>
               <Input
                 id="household-houseNumber"
-                value={houseNumber}
-                onChange={(e) => setHouseNumber(e.target.value)}
+                value={formDataRef.current.houseNumber}
+                onChange={(e) => handleInputChange('houseNumber', e.target.value)}
                 placeholder="Enter house number"
                 required
                 autoComplete="off"
@@ -615,8 +592,8 @@ export default function ManagerDashboard() {
               <Input
                 id="household-phone"
                 type="tel"
-                value={phone}
-                onChange={(e) => setPhone(e.target.value)}
+                value={formDataRef.current.phone}
+                onChange={(e) => handleInputChange('phone', e.target.value)}
                 placeholder="Enter phone number"
                 required
                 autoComplete="off"
@@ -626,17 +603,14 @@ export default function ManagerDashboard() {
               <Button 
                 type="button" 
                 variant="outline" 
-                onClick={(e) => {
-                  e.preventDefault();
-                  setOpen(false);
-                }}
+                onClick={() => setOpen(false)}
                 className="flex-1"
               >
                 Cancel
               </Button>
               <Button 
                 type="submit" 
-                disabled={createHouseholdMutation.isPending || !headName.trim() || !houseNumber.trim() || !phone.trim()}
+                disabled={createHouseholdMutation.isPending}
                 className="flex-1"
               >
                 {createHouseholdMutation.isPending ? "Adding..." : "Add Household"}
