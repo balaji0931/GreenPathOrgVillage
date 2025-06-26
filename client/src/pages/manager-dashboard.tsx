@@ -1079,7 +1079,7 @@ export default function ManagerDashboard() {
     setSelectedDownloadHouseholds(households.map((h) => h.id));
   }, [households]);
 
-  // Bulk household creation component with stable state management
+  // Bulk household creation component with proper input focus management
   const BulkHouseholdCreation = React.memo(() => {
     const handleUpdateHousehold = React.useCallback((index: number, field: string, value: string) => {
       setBulkHouseholds(prev => {
@@ -1118,7 +1118,7 @@ export default function ManagerDashboard() {
     return (
       <div className="space-y-4">
         {bulkHouseholds.map((household, index) => (
-          <Card key={index}>
+          <Card key={`household-form-${index}`} className="border">
             <CardContent className="p-4">
               <div className="flex justify-between items-center mb-4">
                 <h4 className="font-medium">Household {index + 1}</h4>
@@ -1127,6 +1127,7 @@ export default function ManagerDashboard() {
                     size="sm"
                     variant="outline"
                     onClick={() => handleRemoveHousehold(index)}
+                    type="button"
                   >
                     <Trash2 className="h-4 w-4" />
                   </Button>
@@ -1134,47 +1135,59 @@ export default function ManagerDashboard() {
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <Label>Head Name *</Label>
+                  <Label htmlFor={`headName-${index}`}>Head Name *</Label>
                   <Input
-                    value={household.headName}
+                    id={`headName-${index}`}
+                    name={`headName-${index}`}
+                    value={household.headName || ""}
                     onChange={(e) =>
                       handleUpdateHousehold(index, "headName", e.target.value)
                     }
                     placeholder="Enter head name"
                     autoComplete="off"
+                    type="text"
                   />
                 </div>
                 <div>
-                  <Label>House Number *</Label>
+                  <Label htmlFor={`houseNumber-${index}`}>House Number *</Label>
                   <Input
-                    value={household.houseNumber}
+                    id={`houseNumber-${index}`}
+                    name={`houseNumber-${index}`}
+                    value={household.houseNumber || ""}
                     onChange={(e) =>
                       handleUpdateHousehold(index, "houseNumber", e.target.value)
                     }
                     placeholder="Enter house number"
                     autoComplete="off"
+                    type="text"
                   />
                 </div>
                 <div>
-                  <Label>Phone Number *</Label>
+                  <Label htmlFor={`phone-${index}`}>Phone Number *</Label>
                   <Input
-                    value={household.phone}
+                    id={`phone-${index}`}
+                    name={`phone-${index}`}
+                    value={household.phone || ""}
                     onChange={(e) =>
                       handleUpdateHousehold(index, "phone", e.target.value)
                     }
                     placeholder="Enter phone number"
                     autoComplete="off"
+                    type="tel"
                   />
                 </div>
                 <div>
-                  <Label>Address</Label>
+                  <Label htmlFor={`address-${index}`}>Address</Label>
                   <Input
-                    value={household.address}
+                    id={`address-${index}`}
+                    name={`address-${index}`}
+                    value={household.address || ""}
                     onChange={(e) =>
                       handleUpdateHousehold(index, "address", e.target.value)
                     }
                     placeholder="Enter address"
                     autoComplete="off"
+                    type="text"
                   />
                 </div>
               </div>
@@ -1183,13 +1196,14 @@ export default function ManagerDashboard() {
         ))}
 
         <div className="flex gap-2">
-          <Button onClick={handleAddHousehold} variant="outline">
+          <Button onClick={handleAddHousehold} variant="outline" type="button">
             <Plus className="h-4 w-4 mr-2" />
             Add Another Household
           </Button>
           <Button
             onClick={handleBulkSubmitLocal}
             disabled={createBulkHouseholdsMutation.isPending}
+            type="button"
           >
             {createBulkHouseholdsMutation.isPending
               ? "Creating..."
