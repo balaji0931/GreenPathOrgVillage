@@ -325,11 +325,6 @@ export default function ManagerDashboard() {
         ...data,
         villageId: user?.villageId,
       }),
-    onSuccess: () => {
-      // Query invalidation is handled in the component's onSuccess callback
-      queryClient.invalidateQueries({ queryKey: ["/api/collectors"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/manager/stats"] });
-    },
     onError: (error) => {
       console.error("Failed to create collector:", error);
     },
@@ -346,11 +341,6 @@ export default function ManagerDashboard() {
         ...data,
         villageId: user?.villageId,
       }),
-    onSuccess: () => {
-      // Query invalidation is handled in the component's onSuccess callback
-      queryClient.invalidateQueries({ queryKey: ["/api/households"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/manager/stats"] });
-    },
     onError: (error) => {
       console.error("Failed to create household:", error);
     },
@@ -402,18 +392,15 @@ export default function ManagerDashboard() {
     </Card>
   );
 
-  const CreateCollectorDialog = React.memo(() => {
-    // Use useRef to persist form data across re-renders
-    const formDataRef = React.useRef({ name: "", phone: "" });
-    const [, forceUpdate] = React.useReducer(x => x + 1, 0);
+  const CreateCollectorDialog = () => {
     const [open, setOpen] = useState(false);
+    const [formData, setFormData] = useState({ name: "", phone: "" });
 
     const handleSubmit = (e: React.FormEvent) => {
       e.preventDefault();
-      e.stopPropagation();
       
-      const name = formDataRef.current.name.trim();
-      const phone = formDataRef.current.phone.trim();
+      const name = formData.name.trim();
+      const phone = formData.phone.trim();
       
       if (!name || !phone) {
         toast({ title: "Please fill all required fields", variant: "destructive" });
@@ -425,10 +412,8 @@ export default function ManagerDashboard() {
         {
           onSuccess: () => {
             toast({ title: "Collector created successfully" });
-            // Clear form and close dialog only on success
-            formDataRef.current = { name: "", phone: "" };
+            setFormData({ name: "", phone: "" });
             setOpen(false);
-            forceUpdate();
           },
           onError: (error: any) => {
             toast({ 
@@ -441,20 +426,23 @@ export default function ManagerDashboard() {
       );
     };
 
-    const handleInputChange = (field: 'name' | 'phone', value: string) => {
-      formDataRef.current[field] = value;
-      forceUpdate();
+    const handleOpenChange = (newOpen: boolean) => {
+      setOpen(newOpen);
+      if (!newOpen) {
+        // Reset form when dialog closes
+        setFormData({ name: "", phone: "" });
+      }
     };
 
     return (
-      <Dialog open={open} onOpenChange={setOpen}>
+      <Dialog open={open} onOpenChange={handleOpenChange}>
         <DialogTrigger asChild>
           <Button>
             <Plus className="h-4 w-4 mr-2" />
             Add Collector
           </Button>
         </DialogTrigger>
-        <DialogContent>
+        <DialogContent onClick={(e) => e.stopPropagation()}>
           <DialogHeader>
             <DialogTitle>Add New Collector</DialogTitle>
           </DialogHeader>
@@ -463,12 +451,11 @@ export default function ManagerDashboard() {
               <Label htmlFor="collector-name">Name</Label>
               <Input
                 id="collector-name"
-                value={formDataRef.current.name}
-                onChange={(e) => handleInputChange('name', e.target.value)}
+                value={formData.name}
+                onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
                 placeholder="Enter collector name"
                 required
                 autoComplete="off"
-                autoFocus
               />
             </div>
             <div>
@@ -476,8 +463,8 @@ export default function ManagerDashboard() {
               <Input
                 id="collector-phone"
                 type="tel"
-                value={formDataRef.current.phone}
-                onChange={(e) => handleInputChange('phone', e.target.value)}
+                value={formData.phone}
+                onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
                 placeholder="Enter phone number"
                 required
                 autoComplete="off"
@@ -504,21 +491,18 @@ export default function ManagerDashboard() {
         </DialogContent>
       </Dialog>
     );
-  });
+  };
 
-  const CreateHouseholdDialog = React.memo(() => {
-    // Use useRef to persist form data across re-renders
-    const formDataRef = React.useRef({ headName: "", houseNumber: "", phone: "" });
-    const [, forceUpdate] = React.useReducer(x => x + 1, 0);
+  const CreateHouseholdDialog = () => {
     const [open, setOpen] = useState(false);
+    const [formData, setFormData] = useState({ headName: "", houseNumber: "", phone: "" });
 
     const handleSubmit = (e: React.FormEvent) => {
       e.preventDefault();
-      e.stopPropagation();
       
-      const headName = formDataRef.current.headName.trim();
-      const houseNumber = formDataRef.current.houseNumber.trim();
-      const phone = formDataRef.current.phone.trim();
+      const headName = formData.headName.trim();
+      const houseNumber = formData.houseNumber.trim();
+      const phone = formData.phone.trim();
       
       if (!headName || !houseNumber || !phone) {
         toast({ title: "Please fill all required fields", variant: "destructive" });
@@ -530,10 +514,8 @@ export default function ManagerDashboard() {
         {
           onSuccess: () => {
             toast({ title: "Household created successfully" });
-            // Clear form and close dialog only on success
-            formDataRef.current = { headName: "", houseNumber: "", phone: "" };
+            setFormData({ headName: "", houseNumber: "", phone: "" });
             setOpen(false);
-            forceUpdate();
           },
           onError: (error: any) => {
             toast({ 
@@ -546,20 +528,23 @@ export default function ManagerDashboard() {
       );
     };
 
-    const handleInputChange = (field: 'headName' | 'houseNumber' | 'phone', value: string) => {
-      formDataRef.current[field] = value;
-      forceUpdate();
+    const handleOpenChange = (newOpen: boolean) => {
+      setOpen(newOpen);
+      if (!newOpen) {
+        // Reset form when dialog closes
+        setFormData({ headName: "", houseNumber: "", phone: "" });
+      }
     };
 
     return (
-      <Dialog open={open} onOpenChange={setOpen}>
+      <Dialog open={open} onOpenChange={handleOpenChange}>
         <DialogTrigger asChild>
           <Button>
             <Plus className="h-4 w-4 mr-2" />
             Add Household
           </Button>
         </DialogTrigger>
-        <DialogContent>
+        <DialogContent onClick={(e) => e.stopPropagation()}>
           <DialogHeader>
             <DialogTitle>Add New Household</DialogTitle>
           </DialogHeader>
@@ -568,20 +553,19 @@ export default function ManagerDashboard() {
               <Label htmlFor="household-headName">Head of Household</Label>
               <Input
                 id="household-headName"
-                value={formDataRef.current.headName}
-                onChange={(e) => handleInputChange('headName', e.target.value)}
+                value={formData.headName}
+                onChange={(e) => setFormData(prev => ({ ...prev, headName: e.target.value }))}
                 placeholder="Enter head of household name"
                 required
                 autoComplete="off"
-                autoFocus
               />
             </div>
             <div>
               <Label htmlFor="household-houseNumber">House Number</Label>
               <Input
                 id="household-houseNumber"
-                value={formDataRef.current.houseNumber}
-                onChange={(e) => handleInputChange('houseNumber', e.target.value)}
+                value={formData.houseNumber}
+                onChange={(e) => setFormData(prev => ({ ...prev, houseNumber: e.target.value }))}
                 placeholder="Enter house number"
                 required
                 autoComplete="off"
@@ -592,8 +576,8 @@ export default function ManagerDashboard() {
               <Input
                 id="household-phone"
                 type="tel"
-                value={formDataRef.current.phone}
-                onChange={(e) => handleInputChange('phone', e.target.value)}
+                value={formData.phone}
+                onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
                 placeholder="Enter phone number"
                 required
                 autoComplete="off"
@@ -620,7 +604,7 @@ export default function ManagerDashboard() {
         </DialogContent>
       </Dialog>
     );
-  });
+  };
 
   const CollectorDetailsDialog = ({ collector }: { collector: Collector }) => {
     const [open, setOpen] = useState(false);
