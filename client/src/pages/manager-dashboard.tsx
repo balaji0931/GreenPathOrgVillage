@@ -1199,10 +1199,9 @@ export default function ManagerDashboard() {
                         </div>
                       )}
                     </CardContent>
-                </Card>
-                  </TabsContent>
-                </Tabs>
-              </div>
+                  </Card>
+                </TabsContent>
+              </Tabs>
             )}
 
             {/* Collections Tab */}
