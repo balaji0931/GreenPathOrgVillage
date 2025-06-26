@@ -1079,14 +1079,38 @@ export default function ManagerDashboard() {
     setSelectedDownloadHouseholds(households.map((h) => h.id));
   }, [households]);
 
+  // Individual Input Component to maintain focus
+  const HouseholdInput = React.memo(({ 
+    value, 
+    onChange, 
+    placeholder, 
+    type = "text",
+    index,
+    field 
+  }: {
+    value: string;
+    onChange: (value: string) => void;
+    placeholder: string;
+    type?: string;
+    index: number;
+    field: string;
+  }) => {
+    return (
+      <Input
+        key={`${index}-${field}`}
+        type={type}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder={placeholder}
+        autoComplete="off"
+      />
+    );
+  });
+
   // Bulk household creation component - optimized to prevent focus loss
   const BulkHouseholdCreation = React.memo(() => {
     const handleUpdateHousehold = React.useCallback((index: number, field: string, value: string) => {
       setBulkHouseholds(prev => {
-        // Create a new array only if the value actually changed
-        const current = prev[index]?.[field as keyof typeof prev[0]];
-        if (current === value) return prev;
-        
         const updated = [...prev];
         updated[index] = { ...updated[index], [field]: value };
         return updated;
@@ -1120,60 +1144,73 @@ export default function ManagerDashboard() {
 
     return (
       <div className="space-y-4">
-        {bulkHouseholds.map((household, index) => (
-          <Card key={index} className="border">
-            <CardContent className="p-4">
-              <div className="flex justify-between items-center mb-4">
-                <h4 className="font-medium">Household {index + 1}</h4>
-                {bulkHouseholds.length > 1 && (
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => handleRemoveHousehold(index)}
-                    type="button"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                )}
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label>Head Name *</Label>
-                  <Input
-                    value={household.headName || ""}
-                    onChange={(e) => handleUpdateHousehold(index, "headName", e.target.value)}
-                    placeholder="Enter head name"
-                  />
+        {bulkHouseholds.map((household, index) => {
+          // Create stable unique keys for each household
+          const cardKey = `household-${index}-${bulkHouseholds.length}`;
+          
+          return (
+            <Card key={cardKey} className="border">
+              <CardContent className="p-4">
+                <div className="flex justify-between items-center mb-4">
+                  <h4 className="font-medium">Household {index + 1}</h4>
+                  {bulkHouseholds.length > 1 && (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => handleRemoveHousehold(index)}
+                      type="button"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  )}
                 </div>
-                <div>
-                  <Label>House Number *</Label>
-                  <Input
-                    value={household.houseNumber || ""}
-                    onChange={(e) => handleUpdateHousehold(index, "houseNumber", e.target.value)}
-                    placeholder="Enter house number"
-                  />
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label>Head Name *</Label>
+                    <HouseholdInput
+                      value={household.headName || ""}
+                      onChange={(value) => handleUpdateHousehold(index, "headName", value)}
+                      placeholder="Enter head name"
+                      index={index}
+                      field="headName"
+                    />
+                  </div>
+                  <div>
+                    <Label>House Number *</Label>
+                    <HouseholdInput
+                      value={household.houseNumber || ""}
+                      onChange={(value) => handleUpdateHousehold(index, "houseNumber", value)}
+                      placeholder="Enter house number"
+                      index={index}
+                      field="houseNumber"
+                    />
+                  </div>
+                  <div>
+                    <Label>Phone Number *</Label>
+                    <HouseholdInput
+                      type="tel"
+                      value={household.phone || ""}
+                      onChange={(value) => handleUpdateHousehold(index, "phone", value)}
+                      placeholder="Enter phone number"
+                      index={index}
+                      field="phone"
+                    />
+                  </div>
+                  <div>
+                    <Label>Address</Label>
+                    <HouseholdInput
+                      value={household.address || ""}
+                      onChange={(value) => handleUpdateHousehold(index, "address", value)}
+                      placeholder="Enter address"
+                      index={index}
+                      field="address"
+                    />
+                  </div>
                 </div>
-                <div>
-                  <Label>Phone Number *</Label>
-                  <Input
-                    type="tel"
-                    value={household.phone || ""}
-                    onChange={(e) => handleUpdateHousehold(index, "phone", e.target.value)}
-                    placeholder="Enter phone number"
-                  />
-                </div>
-                <div>
-                  <Label>Address</Label>
-                  <Input
-                    value={household.address || ""}
-                    onChange={(e) => handleUpdateHousehold(index, "address", e.target.value)}
-                    placeholder="Enter address"
-                  />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
+              </CardContent>
+            </Card>
+          );
+        })}
 
         <div className="flex gap-2">
           <Button onClick={handleAddHousehold} variant="outline" type="button">
