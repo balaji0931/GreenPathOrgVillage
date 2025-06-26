@@ -1081,51 +1081,27 @@ export default function ManagerDashboard() {
 
   // Bulk household creation component with stable state management
   const BulkHouseholdCreation = React.memo(() => {
-    // Use local state for better performance
-    const [localBulkHouseholds, setLocalBulkHouseholds] = useState(bulkHouseholds);
-
-    // Sync with parent state when needed
-    React.useEffect(() => {
-      setLocalBulkHouseholds(bulkHouseholds);
-    }, [bulkHouseholds.length]); // Only sync when length changes, not content
-
     const handleUpdateHousehold = React.useCallback((index: number, field: string, value: string) => {
-      setLocalBulkHouseholds(prev => {
+      setBulkHouseholds(prev => {
         const updated = [...prev];
         updated[index] = { ...updated[index], [field]: value };
         return updated;
       });
-      
-      // Update parent state with debounce
-      const timeoutId = setTimeout(() => {
-        setBulkHouseholds(prev => {
-          const updated = [...prev];
-          updated[index] = { ...updated[index], [field]: value };
-          return updated;
-        });
-      }, 100);
-
-      return () => clearTimeout(timeoutId);
     }, []);
 
     const handleAddHousehold = React.useCallback(() => {
       const newHousehold = { headName: "", houseNumber: "", phone: "", address: "" };
-      setLocalBulkHouseholds(prev => [...prev, newHousehold]);
       setBulkHouseholds(prev => [...prev, newHousehold]);
     }, []);
 
     const handleRemoveHousehold = React.useCallback((index: number) => {
-      if (localBulkHouseholds.length > 1) {
-        setLocalBulkHouseholds(prev => prev.filter((_, i) => i !== index));
+      if (bulkHouseholds.length > 1) {
         setBulkHouseholds(prev => prev.filter((_, i) => i !== index));
       }
-    }, [localBulkHouseholds.length]);
+    }, [bulkHouseholds.length]);
 
     const handleBulkSubmitLocal = React.useCallback(() => {
-      // Sync local state to parent before submit
-      setBulkHouseholds(localBulkHouseholds);
-      
-      const validHouseholds = localBulkHouseholds.filter(
+      const validHouseholds = bulkHouseholds.filter(
         (h) => h.headName && h.houseNumber && h.phone,
       );
       if (validHouseholds.length === 0) {
@@ -1137,16 +1113,16 @@ export default function ManagerDashboard() {
         return;
       }
       createBulkHouseholdsMutation.mutate(validHouseholds);
-    }, [localBulkHouseholds, createBulkHouseholdsMutation, toast]);
+    }, [bulkHouseholds, createBulkHouseholdsMutation, toast]);
 
     return (
       <div className="space-y-4">
-        {localBulkHouseholds.map((household, index) => (
-          <Card key={`bulk-household-${index}`}>
+        {bulkHouseholds.map((household, index) => (
+          <Card key={index}>
             <CardContent className="p-4">
               <div className="flex justify-between items-center mb-4">
                 <h4 className="font-medium">Household {index + 1}</h4>
-                {localBulkHouseholds.length > 1 && (
+                {bulkHouseholds.length > 1 && (
                   <Button
                     size="sm"
                     variant="outline"
