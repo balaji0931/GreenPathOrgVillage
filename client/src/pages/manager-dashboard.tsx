@@ -1056,43 +1056,101 @@ export default function ManagerDashboard() {
     createBulkHouseholdsMutation.mutate(validHouseholds);
   };
 
-  // QR generation functions
-  const toggleQRHousehold = (id: number) => {
+  // QR generation functions with stable state management
+  const toggleQRHousehold = React.useCallback((id: number) => {
     setSelectedQRHouseholds((prev) =>
       prev.includes(id) ? prev.filter((hId) => hId !== id) : [...prev, id],
     );
-  };
+  }, []);
 
-  const selectAllQR = () => {
+  const selectAllQR = React.useCallback(() => {
     const householdsWithoutQR = households.filter((h) => !h.qrCodeUrl);
     setSelectedQRHouseholds(householdsWithoutQR.map((h) => h.id));
-  };
+  }, [households]);
 
-  // QR download functions
-  const toggleDownloadHousehold = (id: number) => {
+  // QR download functions with stable state management
+  const toggleDownloadHousehold = React.useCallback((id: number) => {
     setSelectedDownloadHouseholds((prev) =>
       prev.includes(id) ? prev.filter((hId) => hId !== id) : [...prev, id],
     );
-  };
+  }, []);
 
-  const selectAllDownload = () => {
+  const selectAllDownload = React.useCallback(() => {
     setSelectedDownloadHouseholds(households.map((h) => h.id));
-  };
+  }, [households]);
 
-  // Bulk household creation component
+  // Bulk household creation component with stable state management
   const BulkHouseholdCreation = React.memo(() => {
+    // Use local state for better performance
+    const [localBulkHouseholds, setLocalBulkHouseholds] = useState(bulkHouseholds);
+
+    // Sync with parent state when needed
+    React.useEffect(() => {
+      setLocalBulkHouseholds(bulkHouseholds);
+    }, [bulkHouseholds.length]); // Only sync when length changes, not content
+
+    const handleUpdateHousehold = React.useCallback((index: number, field: string, value: string) => {
+      setLocalBulkHouseholds(prev => {
+        const updated = [...prev];
+        updated[index] = { ...updated[index], [field]: value };
+        return updated;
+      });
+      
+      // Update parent state with debounce
+      const timeoutId = setTimeout(() => {
+        setBulkHouseholds(prev => {
+          const updated = [...prev];
+          updated[index] = { ...updated[index], [field]: value };
+          return updated;
+        });
+      }, 100);
+
+      return () => clearTimeout(timeoutId);
+    }, []);
+
+    const handleAddHousehold = React.useCallback(() => {
+      const newHousehold = { headName: "", houseNumber: "", phone: "", address: "" };
+      setLocalBulkHouseholds(prev => [...prev, newHousehold]);
+      setBulkHouseholds(prev => [...prev, newHousehold]);
+    }, []);
+
+    const handleRemoveHousehold = React.useCallback((index: number) => {
+      if (localBulkHouseholds.length > 1) {
+        setLocalBulkHouseholds(prev => prev.filter((_, i) => i !== index));
+        setBulkHouseholds(prev => prev.filter((_, i) => i !== index));
+      }
+    }, [localBulkHouseholds.length]);
+
+    const handleBulkSubmitLocal = React.useCallback(() => {
+      // Sync local state to parent before submit
+      setBulkHouseholds(localBulkHouseholds);
+      
+      const validHouseholds = localBulkHouseholds.filter(
+        (h) => h.headName && h.houseNumber && h.phone,
+      );
+      if (validHouseholds.length === 0) {
+        toast({
+          title: "Error",
+          description: "Please fill required fields for at least one household",
+          variant: "destructive",
+        });
+        return;
+      }
+      createBulkHouseholdsMutation.mutate(validHouseholds);
+    }, [localBulkHouseholds, createBulkHouseholdsMutation, toast]);
+
     return (
       <div className="space-y-4">
-        {bulkHouseholds.map((household, index) => (
-          <Card key={index}>
+        {localBulkHouseholds.map((household, index) => (
+          <Card key={`bulk-household-${index}`}>
             <CardContent className="p-4">
               <div className="flex justify-between items-center mb-4">
                 <h4 className="font-medium">Household {index + 1}</h4>
-                {bulkHouseholds.length > 1 && (
+                {localBulkHouseholds.length > 1 && (
                   <Button
                     size="sm"
                     variant="outline"
-                    onClick={() => removeBulkHousehold(index)}
+                    onClick={() => handleRemoveHousehold(index)}
                   >
                     <Trash2 className="h-4 w-4" />
                   </Button>
@@ -1104,7 +1162,7 @@ export default function ManagerDashboard() {
                   <Input
                     value={household.headName}
                     onChange={(e) =>
-                      updateBulkHousehold(index, "headName", e.target.value)
+                      handleUpdateHousehold(index, "headName", e.target.value)
                     }
                     placeholder="Enter head name"
                     autoComplete="off"
@@ -1115,7 +1173,7 @@ export default function ManagerDashboard() {
                   <Input
                     value={household.houseNumber}
                     onChange={(e) =>
-                      updateBulkHousehold(index, "houseNumber", e.target.value)
+                      handleUpdateHousehold(index, "houseNumber", e.target.value)
                     }
                     placeholder="Enter house number"
                     autoComplete="off"
@@ -1126,7 +1184,7 @@ export default function ManagerDashboard() {
                   <Input
                     value={household.phone}
                     onChange={(e) =>
-                      updateBulkHousehold(index, "phone", e.target.value)
+                      handleUpdateHousehold(index, "phone", e.target.value)
                     }
                     placeholder="Enter phone number"
                     autoComplete="off"
@@ -1137,7 +1195,7 @@ export default function ManagerDashboard() {
                   <Input
                     value={household.address}
                     onChange={(e) =>
-                      updateBulkHousehold(index, "address", e.target.value)
+                      handleUpdateHousehold(index, "address", e.target.value)
                     }
                     placeholder="Enter address"
                     autoComplete="off"
@@ -1149,12 +1207,12 @@ export default function ManagerDashboard() {
         ))}
 
         <div className="flex gap-2">
-          <Button onClick={addBulkHousehold} variant="outline">
+          <Button onClick={handleAddHousehold} variant="outline">
             <Plus className="h-4 w-4 mr-2" />
             Add Another Household
           </Button>
           <Button
-            onClick={handleBulkSubmit}
+            onClick={handleBulkSubmitLocal}
             disabled={createBulkHouseholdsMutation.isPending}
           >
             {createBulkHouseholdsMutation.isPending
