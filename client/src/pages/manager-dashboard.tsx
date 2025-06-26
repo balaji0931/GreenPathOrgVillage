@@ -88,26 +88,6 @@ interface VillageStats {
   collectionsToday: number;
 }
 
-interface CollectorStats {
-  id: number;
-  name: string;
-  totalCollections: number;
-  averageRating: number;
-  complaintsCount: number;
-}
-
-interface Complaint {
-  id: number;
-  collectorId: number;
-  householdId: number;
-  complaint: string;
-  managerResponse?: string;
-  status: "open" | "resolved";
-  createdAt: string;
-  collectorName: string;
-  householdUid: string;
-}
-
 interface WasteCollection {
   id: number;
   householdId: number;
@@ -388,11 +368,6 @@ export default function ManagerDashboard() {
     enabled: !!user?.villageId,
   });
 
-  const { data: complaints = [] } = useQuery<Complaint[]>({
-    queryKey: ["/api/complaints", user?.villageId],
-    enabled: !!user?.villageId,
-  });
-
   const { data: allCollections = [] } = useQuery<WasteCollection[]>({
     queryKey: ["/api/waste-collections/village", user?.villageId],
     enabled: !!user?.villageId,
@@ -427,17 +402,6 @@ export default function ManagerDashboard() {
     },
     onError: () => {
       toast({ title: "Failed to update issue", variant: "destructive" });
-    },
-  });
-
-  const resolveComplaintMutation = useMutation({
-    mutationFn: (data: { complaintId: number; managerResponse: string }) =>
-      apiRequest("PUT", `/api/complaints/${data.complaintId}/resolve`, {
-        managerResponse: data.managerResponse,
-      }),
-    onSuccess: () => {
-      toast({ title: "Complaint resolved successfully" });
-      queryClient.invalidateQueries({ queryKey: ["/api/complaints"] });
     },
   });
 
@@ -563,125 +527,7 @@ export default function ManagerDashboard() {
       </CardContent>
     </Card>
   );
-
-  const ComplaintManagementDialog = () => {
-    const [open, setOpen] = useState(false);
-    const [selectedComplaint, setSelectedComplaint] =
-      useState<Complaint | null>(null);
-    const [managerResponse, setManagerResponse] = useState("");
   
-    const handleResolve = (complaint: Complaint) => {
-      setSelectedComplaint(complaint);
-      setOpen(true);
-    };
-  
-    const submitResolution = () => {
-      if (selectedComplaint && managerResponse) {
-        resolveComplaintMutation.mutate({
-          complaintId: selectedComplaint.id,
-          managerResponse,
-        });
-        setOpen(false);
-        setManagerResponse("");
-        setSelectedComplaint(null);
-      }
-    };
-  
-    return (
-      <>
-        <Dialog open={open} onOpenChange={setOpen}>
-          <DialogTrigger asChild>
-            <Button variant="outline">
-              <MessageSquare className="h-4 w-4 mr-2" />
-              Manage Complaints (
-              {complaints.filter((c) => c.status === "open").length})
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-4xl">
-            <DialogHeader>
-              <DialogTitle>Collector Complaints Management</DialogTitle>
-            </DialogHeader>
-  
-            <div className="space-y-4 max-h-96 overflow-y-auto">
-              {complaints.map((complaint) => (
-                <Card key={complaint.id}>
-                  <CardContent className="p-4">
-                    <div className="flex justify-between items-start">
-                      <div className="space-y-2">
-                        <div className="flex items-center gap-2">
-                          <Badge
-                            variant={
-                              complaint.status === "open"
-                                ? "destructive"
-                                : "default"
-                            }
-                          >
-                            {complaint.status}
-                          </Badge>
-                          <span className="font-medium">
-                            {complaint.collectorName}
-                          </span>
-                          <span className="text-sm text-muted-foreground">
-                            Household: {complaint.householdUid}
-                          </span>
-                        </div>
-                        <p className="text-sm">{complaint.complaint}</p>
-                        {complaint.managerResponse && (
-                          <div className="mt-2 p-2 bg-muted rounded">
-                            <p className="text-sm">
-                              <strong>Manager Response:</strong>{" "}
-                              {complaint.managerResponse}
-                            </p>
-                          </div>
-                        )}
-                        <p className="text-xs text-muted-foreground">
-                          {new Date(complaint.createdAt).toLocaleDateString()}
-                        </p>
-                      </div>
-                      {complaint.status === "open" && (
-                        <Button
-                          size="sm"
-                          onClick={() => handleResolve(complaint)}
-                        >
-                          Resolve
-                        </Button>
-                      )}
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-              {complaints.length === 0 && (
-                <p className="text-center text-muted-foreground">
-                  No complaints found.
-                </p>
-              )}
-            </div>
-  
-            <div>
-              {selectedComplaint && (
-                <div className="mt-4">
-                  <Textarea
-                    value={managerResponse}
-                    onChange={(e) => setManagerResponse(e.target.value)}
-                    placeholder="Enter your response to resolve this complaint..."
-                    rows={4}
-                  />
-                  <Button
-                    onClick={submitResolution}
-                    disabled={!managerResponse}
-                    className="w-full mt-2"
-                  >
-                    Resolve Complaint
-                  </Button>
-                </div>
-              )}
-            </div>
-          </DialogContent>
-        </Dialog>
-      </>
-    );
-  };
-
   const CollectorFeedbackModal = ({ collector, allCollections, feedbacks }: {
     collector: Collector;
     allCollections: WasteCollection[];
@@ -689,25 +535,21 @@ export default function ManagerDashboard() {
   }) => {
     const [feedbackDateFilter, setFeedbackDateFilter] = useState("");
 
-    // Get feedbacks for this collector
-    const collectorFeedbacks = feedbacks.filter(feedback => feedback.toCollectorId === collector.id);
-    
-    // Filter feedbacks by date if selected
-    const filteredFeedbacks = collectorFeedbacks.filter(feedback => {
-      if (!feedbackDateFilter) return true;
-      const feedbackDate = new Date(feedback.createdAt).toDateString();
-      const filterDate = new Date(feedbackDateFilter).toDateString();
-      return feedbackDate === filterDate;
-    });
-
-    // Get collections count for this collector
+    // Get collections for this collector
     const collectorCollections = allCollections.filter(c => c.collectorId === collector.id);
+    
+    // Filter collections by date if selected
     const filteredCollections = collectorCollections.filter(collection => {
       if (!feedbackDateFilter) return true;
       const collectionDate = new Date(collection.collectionDate).toDateString();
       const filterDate = new Date(feedbackDateFilter).toDateString();
       return collectionDate === filterDate;
     });
+
+    // Get feedbacks for filtered collections
+    const collectorFeedbacks = feedbacks.filter(feedback => 
+      filteredCollections.some(collection => collection.id === feedback.collectionId)
+    );
 
     return (
       <div className="space-y-6">
@@ -730,15 +572,15 @@ export default function ManagerDashboard() {
                 </div>
                 <div>
                   <div className="text-lg font-bold text-blue-900">
-                    {filteredFeedbacks.length > 0 
-                      ? (filteredFeedbacks.reduce((sum, f) => sum + (f.rating || 0), 0) / filteredFeedbacks.length).toFixed(1)
+                    {filteredCollections.length > 0 
+                      ? (filteredCollections.reduce((sum, c) => sum + (c.segregationRating || 0), 0) / filteredCollections.length).toFixed(1)
                       : "0.0"}
                   </div>
                   <div className="text-xs text-blue-700">Avg Rating</div>
                 </div>
                 <div>
                   <div className="text-lg font-bold text-blue-900">
-                    {filteredFeedbacks.length}
+                    {collectorFeedbacks.length}
                   </div>
                   <div className="text-xs text-blue-700">Feedbacks</div>
                 </div>
@@ -776,70 +618,121 @@ export default function ManagerDashboard() {
           </CardContent>
         </Card>
 
-        {/* Generator Feedbacks List */}
+        {/* Feedbacks List */}
         <Card>
           <CardHeader>
-            <CardTitle>Generator Feedbacks ({filteredFeedbacks.length} feedbacks)</CardTitle>
+            <CardTitle>Collection Feedbacks ({filteredCollections.length} collections)</CardTitle>
           </CardHeader>
           <CardContent>
-            {filteredFeedbacks.length > 0 ? (
+            {filteredCollections.length > 0 ? (
               <div className="space-y-4 max-h-96 overflow-y-auto">
-                {filteredFeedbacks
-                  .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
-                  .map((feedback) => (
-                    <Card key={feedback.id} className="border-l-4 border-l-purple-400">
+                {filteredCollections
+                  .sort((a, b) => new Date(b.collectionDate).getTime() - new Date(a.collectionDate).getTime())
+                  .map((collection) => (
+                    <Card key={collection.id} className="border-l-4 border-l-green-400">
                       <CardContent className="p-4">
                         <div className="space-y-3">
                           <div className="flex items-center justify-between">
                             <div>
-                              <h4 className="font-medium">{feedback.headName}</h4>
+                              <h4 className="font-medium">{collection.headName}</h4>
                               <p className="text-sm text-muted-foreground">
-                                House: {feedback.houseNumber} | UID: {feedback.householdUid}
+                                House: {collection.houseNumber} | UID: {collection.householdUid}
                               </p>
                             </div>
                             <div className="flex items-center gap-2">
                               <Badge variant="outline">
-                                {new Date(feedback.createdAt).toLocaleDateString()}
+                                {new Date(collection.collectionDate).toLocaleDateString()}
                               </Badge>
-                              <Badge variant="secondary">
-                                Feedback
+                              <Badge variant={collection.status === "collected" ? "default" : "destructive"}>
+                                {collection.status || "collected"}
                               </Badge>
                             </div>
                           </div>
 
-                          {/* Generator's Rating */}
-                          <div className="p-3 bg-purple-50 rounded-lg">
-                            <div className="flex items-center justify-between mb-2">
-                              <span className="text-sm font-medium">Generator's Service Rating:</span>
-                              <div className="flex items-center gap-1">
-                                {Array.from({ length: 5 }).map((_, i) => (
-                                  <Star
-                                    key={i}
-                                    className={`h-4 w-4 ${i < (feedback.rating || 0) ? "fill-purple-400 text-purple-400" : "text-gray-300"}`}
-                                  />
-                                ))}
-                                <span className="ml-2 text-sm font-bold">
-                                  ({feedback.rating || 0}/5)
-                                </span>
+                          <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                              <div className="flex items-center justify-between p-2 bg-yellow-50 rounded">
+                                <span className="text-sm font-medium">Segregation Rating:</span>
+                                <div className="flex items-center gap-1">
+                                  {Array.from({ length: 5 }).map((_, i) => (
+                                    <Star
+                                      key={i}
+                                      className={`h-4 w-4 ${i < (collection.segregationRating || 0) ? "fill-yellow-400 text-yellow-400" : "text-gray-300"}`}
+                                    />
+                                  ))}
+                                  <span className="ml-2 text-sm font-bold">
+                                    ({collection.segregationRating || 0}/5)
+                                  </span>
+                                </div>
+                              </div>
+
+                              {collection.plasticRating && (
+                                <div className="flex items-center justify-between p-2 bg-blue-50 rounded">
+                                  <span className="text-sm font-medium">Plastic Rating:</span>
+                                  <div className="flex items-center gap-1">
+                                    {Array.from({ length: 5 }).map((_, i) => (
+                                      <Star
+                                        key={i}
+                                        className={`h-4 w-4 ${i < (collection.plasticRating || 0) ? "fill-blue-400 text-blue-400" : "text-gray-300"}`}
+                                      />
+                                    ))}
+                                    <span className="ml-2 text-sm font-bold">
+                                      ({collection.plasticRating}/5)
+                                    </span>
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+
+                            <div className="space-y-2">
+                              <div className="p-2 bg-gray-50 rounded">
+                                <span className="text-sm font-medium block">Waste Segregated:</span>
+                                <span className="text-sm">{collection.wasteSegregated ? "✅ Yes" : "❌ No"}</span>
+                              </div>
+                              <div className="p-2 bg-gray-50 rounded">
+                                <span className="text-sm font-medium block">Bin Cleaned:</span>
+                                <span className="text-sm">{collection.binCleaned ? "✅ Yes" : "❌ No"}</span>
                               </div>
                             </div>
-                            
-                            {feedback.remarks && (
-                              <div className="mt-2">
-                                <span className="text-sm font-medium block mb-1">Generator's Comments:</span>
-                                <p className="text-sm text-gray-700 italic">"{feedback.remarks}"</p>
-                              </div>
+                          </div>
+
+                          {collection.observations && (
+                            <div className="p-3 bg-blue-50 rounded-lg">
+                              <span className="text-sm font-medium block mb-1">Observations:</span>
+                              <p className="text-sm text-gray-700">"{collection.observations}"</p>
+                            </div>
+                          )}
+
+                          {collection.remarks && (
+                            <div className="p-3 bg-green-50 rounded-lg">
+                              <span className="text-sm font-medium block mb-1">Remarks:</span>
+                              <p className="text-sm text-gray-700">"{collection.remarks}"</p>
+                            </div>
+                          )}
+
+                          <div className="flex gap-2 pt-2 border-t">
+                            {collection.photo && (
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => window.open(collection.photo, "_blank")}
+                              >
+                                <Camera className="h-4 w-4 mr-1" />
+                                View Photo
+                              </Button>
                             )}
-                          </div>
-
-                          {/* Additional Info */}
-                          <div className="flex justify-between items-center pt-2 border-t">
-                            <div className="text-xs text-muted-foreground">
-                              Feedback submitted: {new Date(feedback.createdAt).toLocaleDateString()} at {new Date(feedback.createdAt).toLocaleTimeString()}
-                            </div>
-                            <div className="flex items-center gap-1">
-                              <MessageSquare className="h-4 w-4 text-purple-500" />
-                              <span className="text-xs text-purple-600">Generator Feedback</span>
+                            {collection.voiceUrl && (
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => window.open(collection.voiceUrl, "_blank")}
+                              >
+                                <Mic className="h-4 w-4 mr-1" />
+                                Play Voice
+                              </Button>
+                            )}
+                            <div className="ml-auto text-xs text-muted-foreground">
+                              {new Date(collection.collectionDate).toLocaleTimeString()}
                             </div>
                           </div>
                         </div>
@@ -849,12 +742,9 @@ export default function ManagerDashboard() {
               </div>
             ) : (
               <div className="text-center py-8">
-                <MessageSquare className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+                <Package className="w-12 h-12 text-gray-300 mx-auto mb-3" />
                 <p className="text-muted-foreground">
-                  {feedbackDateFilter ? "No generator feedbacks found for selected date" : "No generator feedbacks received yet"}
-                </p>
-                <p className="text-sm text-muted-foreground mt-1">
-                  Generators can provide feedback after waste collection
+                  {feedbackDateFilter ? "No collections found for selected date" : "No collections recorded"}
                 </p>
               </div>
             )}
@@ -1045,7 +935,6 @@ export default function ManagerDashboard() {
                   </div>
                   <div className="flex gap-2">
                     <CreateCollectorDialog villageId={user?.villageId || ""} />
-                    <ComplaintManagementDialog />
                   </div>
                 </div>
 
@@ -1092,15 +981,6 @@ export default function ManagerDashboard() {
                     const averageRating = filteredCollections.length > 0 
                       ? (filteredCollections.reduce((sum, c) => sum + (c.segregationRating || 0), 0) / filteredCollections.length).toFixed(1)
                       : "0.0";
-                    
-                    // Filter complaints by date
-                    const filteredComplaints = complaints.filter(c => {
-                      const complaintMatches = c.collectorId === collector.id;
-                      if (!filters.date) return complaintMatches;
-                      const complaintDate = new Date(c.createdAt).toDateString();
-                      const filterDate = new Date(filters.date).toDateString();
-                      return complaintMatches && complaintDate === filterDate;
-                    });
 
                     return (
                       <Dialog key={collector.id}>
@@ -1125,12 +1005,6 @@ export default function ManagerDashboard() {
                                         {averageRating}
                                       </div>
                                       <div className="text-xs text-muted-foreground">Avg Rating</div>
-                                    </div>
-                                    <div>
-                                      <div className="text-lg font-bold">
-                                        {filteredComplaints.length}
-                                      </div>
-                                      <div className="text-xs text-muted-foreground">Complaints</div>
                                     </div>
                                   </div>
                                 </div>
@@ -1175,7 +1049,7 @@ export default function ManagerDashboard() {
                 </div>
 
                 <Tabs value={householdSubTab} onValueChange={setHouseholdSubTab} className="w-full">
-                  <TabsList className="grid w-full grid-cols-4">
+                  <TabsList className="grid w-full grid-cols-3">
                     <TabsTrigger value="list">View All</TabsTrigger>
                     <TabsTrigger value="bulk">Add HouseHold</TabsTrigger>
                     <TabsTrigger value="qr-download">Download QR</TabsTrigger>
@@ -1199,9 +1073,6 @@ export default function ManagerDashboard() {
                                   </Badge>
                                 )}
                               </div>
-                              <Button size="sm" variant="outline">
-                                <Edit className="h-4 w-4" />
-                              </Button>
                             </div>
                           </CardContent>
                         </Card>
