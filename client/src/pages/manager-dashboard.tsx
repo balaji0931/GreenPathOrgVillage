@@ -186,7 +186,6 @@ export default function ManagerDashboard() {
   const [collectionsSearch, setCollectionsSearch] = useState("");
   const [segregationFilter, setSegregationFilter] = useState("");
   const [plasticFilter, setPlasticFilter] = useState("");
-  const [statusFilter, setStatusFilter] = useState("");
 
   // Feedback filters
   const [feedbackDate, setFeedbackDate] = useState("");
