@@ -206,14 +206,8 @@ export default function ManagerDashboard() {
   const [announcementTarget, setAnnouncementTarget] = useState("generators");
 
   // Initialize filters with proper default values
-  React.useEffect(() => {
-    if (!selectedHouseholdFilter) {
-      setSelectedHouseholdFilter("all");
-    }
-    if (!statusFilter) {
-      setStatusFilter("all");
-    }
-  }, []);
+  const [selectedHouseholdFilter, setSelectedHouseholdFilter] = useState<string>("all");
+  const [statusFilter, setStatusFilter] = useState<string>("all");
 
   // Fetch announcements
   const { data: announcements = [], isLoading: announcementsLoading } =
@@ -295,8 +289,6 @@ export default function ManagerDashboard() {
 
   // Fetch collections with filters
   const [collectionsDate, setCollectionsDate] = useState<string>("");
-  const [selectedHouseholdFilter, setSelectedHouseholdFilter] =
-    useState<string>("");
   const { data: villageCollections = [] } = useQuery({
     queryKey: [
       "/api/waste-collections/village",
@@ -335,8 +327,12 @@ export default function ManagerDashboard() {
         villageId: user?.villageId,
       }),
     onSuccess: () => {
-      toast({ title: "Collector created successfully" });
+      // Query invalidation is handled in the component's onSuccess callback
       queryClient.invalidateQueries({ queryKey: ["/api/collectors"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/manager/stats"] });
+    },
+    onError: (error) => {
+      console.error("Failed to create collector:", error);
     },
   });
 
@@ -352,8 +348,12 @@ export default function ManagerDashboard() {
         villageId: user?.villageId,
       }),
     onSuccess: () => {
-      toast({ title: "Household created successfully" });
+      // Query invalidation is handled in the component's onSuccess callback
       queryClient.invalidateQueries({ queryKey: ["/api/households"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/manager/stats"] });
+    },
+    onError: (error) => {
+      console.error("Failed to create household:", error);
     },
   });
 
@@ -410,14 +410,41 @@ export default function ManagerDashboard() {
 
     const handleSubmit = (e: React.FormEvent) => {
       e.preventDefault();
-      createCollectorMutation.mutate({ name, phone });
-      setName("");
-      setPhone("");
-      setOpen(false);
+      if (!name.trim() || !phone.trim()) {
+        toast({ title: "Please fill all required fields", variant: "destructive" });
+        return;
+      }
+      
+      createCollectorMutation.mutate(
+        { name: name.trim(), phone: phone.trim() },
+        {
+          onSuccess: () => {
+            setName("");
+            setPhone("");
+            setOpen(false);
+            toast({ title: "Collector created successfully" });
+          },
+          onError: (error: any) => {
+            toast({ 
+              title: "Failed to create collector", 
+              description: error.message,
+              variant: "destructive" 
+            });
+          }
+        }
+      );
+    };
+
+    const handleDialogChange = (newOpen: boolean) => {
+      setOpen(newOpen);
+      // Only clear form when dialog is being closed by user, not when opening
+      if (!newOpen && !createCollectorMutation.isPending) {
+        // Don't clear immediately, give user a chance to reopen if needed
+      }
     };
 
     return (
-      <Dialog open={open} onOpenChange={setOpen}>
+      <Dialog open={open} onOpenChange={handleDialogChange}>
         <DialogTrigger asChild>
           <Button>
             <Plus className="h-4 w-4 mr-2" />
@@ -430,28 +457,45 @@ export default function ManagerDashboard() {
           </DialogHeader>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <Label htmlFor="name">Name</Label>
+              <Label htmlFor="collector-name">Name</Label>
               <Input
-                id="name"
+                id="collector-name"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
+                placeholder="Enter collector name"
                 required
+                autoComplete="off"
               />
             </div>
             <div>
-              <Label htmlFor="phone">Phone</Label>
+              <Label htmlFor="collector-phone">Phone</Label>
               <Input
-                id="phone"
+                id="collector-phone"
+                type="tel"
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
+                placeholder="Enter phone number"
                 required
+                autoComplete="off"
               />
             </div>
-            <Button type="submit" disabled={createCollectorMutation.isPending}>
-              {createCollectorMutation.isPending
-                ? "Adding..."
-                : "Add Collector"}
-            </Button>
+            <div className="flex gap-2">
+              <Button 
+                type="button" 
+                variant="outline" 
+                onClick={() => setOpen(false)}
+                className="flex-1"
+              >
+                Cancel
+              </Button>
+              <Button 
+                type="submit" 
+                disabled={createCollectorMutation.isPending || !name.trim() || !phone.trim()}
+                className="flex-1"
+              >
+                {createCollectorMutation.isPending ? "Adding..." : "Add Collector"}
+              </Button>
+            </div>
           </form>
         </DialogContent>
       </Dialog>
@@ -466,15 +510,46 @@ export default function ManagerDashboard() {
 
     const handleSubmit = (e: React.FormEvent) => {
       e.preventDefault();
-      createHouseholdMutation.mutate({ headName, houseNumber, phone });
-      setHeadName("");
-      setHouseNumber("");
-      setPhone("");
-      setOpen(false);
+      if (!headName.trim() || !houseNumber.trim() || !phone.trim()) {
+        toast({ title: "Please fill all required fields", variant: "destructive" });
+        return;
+      }
+      
+      createHouseholdMutation.mutate(
+        { 
+          headName: headName.trim(), 
+          houseNumber: houseNumber.trim(), 
+          phone: phone.trim() 
+        },
+        {
+          onSuccess: () => {
+            setHeadName("");
+            setHouseNumber("");
+            setPhone("");
+            setOpen(false);
+            toast({ title: "Household created successfully" });
+          },
+          onError: (error: any) => {
+            toast({ 
+              title: "Failed to create household", 
+              description: error.message,
+              variant: "destructive" 
+            });
+          }
+        }
+      );
+    };
+
+    const handleDialogChange = (newOpen: boolean) => {
+      setOpen(newOpen);
+      // Only clear form when dialog is being closed by user, not when opening
+      if (!newOpen && !createHouseholdMutation.isPending) {
+        // Don't clear immediately, give user a chance to reopen if needed
+      }
     };
 
     return (
-      <Dialog open={open} onOpenChange={setOpen}>
+      <Dialog open={open} onOpenChange={handleDialogChange}>
         <DialogTrigger asChild>
           <Button>
             <Plus className="h-4 w-4 mr-2" />
@@ -487,37 +562,56 @@ export default function ManagerDashboard() {
           </DialogHeader>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <Label htmlFor="headName">Head of Household</Label>
+              <Label htmlFor="household-headName">Head of Household</Label>
               <Input
-                id="headName"
+                id="household-headName"
                 value={headName}
                 onChange={(e) => setHeadName(e.target.value)}
+                placeholder="Enter head of household name"
                 required
+                autoComplete="off"
               />
             </div>
             <div>
-              <Label htmlFor="houseNumber">House Number</Label>
+              <Label htmlFor="household-houseNumber">House Number</Label>
               <Input
-                id="houseNumber"
+                id="household-houseNumber"
                 value={houseNumber}
                 onChange={(e) => setHouseNumber(e.target.value)}
+                placeholder="Enter house number"
                 required
+                autoComplete="off"
               />
             </div>
             <div>
-              <Label htmlFor="phone">Phone</Label>
+              <Label htmlFor="household-phone">Phone</Label>
               <Input
-                id="phone"
+                id="household-phone"
+                type="tel"
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
+                placeholder="Enter phone number"
                 required
+                autoComplete="off"
               />
             </div>
-            <Button type="submit" disabled={createHouseholdMutation.isPending}>
-              {createHouseholdMutation.isPending
-                ? "Adding..."
-                : "Add Household"}
-            </Button>
+            <div className="flex gap-2">
+              <Button 
+                type="button" 
+                variant="outline" 
+                onClick={() => setOpen(false)}
+                className="flex-1"
+              >
+                Cancel
+              </Button>
+              <Button 
+                type="submit" 
+                disabled={createHouseholdMutation.isPending || !headName.trim() || !houseNumber.trim() || !phone.trim()}
+                className="flex-1"
+              >
+                {createHouseholdMutation.isPending ? "Adding..." : "Add Household"}
+              </Button>
+            </div>
           </form>
         </DialogContent>
       </Dialog>
