@@ -1642,32 +1642,6 @@ export default function ManagerDashboard() {
 
                   {/* Overall Reports Tab */}
                   <TabsContent value="overall" className="space-y-6">
-                    {/* Date Filter for Overall Reports */}
-                    <Card>
-                      <CardHeader>
-                        <CardTitle>Filter Overall Reports</CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        <div className="flex gap-4 items-center">
-                          <div className="flex-1">
-                            <Label htmlFor="overall-date">Select Date (Default: Today)</Label>
-                            <Input
-                              id="overall-date"
-                              type="date"
-                              value={filters.date || new Date().toISOString().split('T')[0]}
-                              onChange={(e) => updateFilter("date", e.target.value)}
-                            />
-                          </div>
-                          <Button variant="outline" onClick={() => updateFilter("date", new Date().toISOString().split('T')[0])}>
-                            Today
-                          </Button>
-                          <Button variant="outline" onClick={() => updateFilter("date", "")}>
-                            All Time
-                          </Button>
-                        </div>
-                      </CardContent>
-                    </Card>
-
                     {/* Top KPI Cards */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <Card className="bg-gradient-to-r from-blue-50 to-blue-100 border-blue-200">
