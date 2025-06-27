@@ -1147,7 +1147,7 @@ export default function AdminDashboard() {
                     const dayData = systemAnalytics?.collectionTrends?.find((trend: any) => 
                       trend.date === dateStr || trend.collectionDate === dateStr
                     );
-                    const collectionsForDay = dayData?.collections || 0;
+                    const collectionsForDay = Number(dayData?.collections) || 0;
 
                     // Calculate total households and collection percentage
                     const totalHouseholds = reportFilters.village === "all" 
@@ -1156,7 +1156,7 @@ export default function AdminDashboard() {
 
                     const dailyTotalHouseholds = Math.max(totalHouseholds, 1);
                     const collectionPercentage = (collectionsForDay / dailyTotalHouseholds) * 100;
-                    const uncollected = dailyTotalHouseholds - collectionsForDay;
+                    const uncollected = Math.max(0, dailyTotalHouseholds - collectionsForDay);
 
                     return (
                       <div key={i} className="space-y-1">
@@ -1188,6 +1188,9 @@ export default function AdminDashboard() {
                     );
                   })}
                 </div>
+                {(!systemAnalytics?.collectionTrends || systemAnalytics.collectionTrends.length === 0) && (
+                  <p className="text-center text-muted-foreground py-4">No collection trend data available</p>
+                )}
               </CardContent>
             </Card>
 
@@ -1753,11 +1756,11 @@ export default function AdminDashboard() {
                   {Array.from({ length: 12 }).map((_, i) => {
                     const hour = i + 8; // Start from 8 AM
                     const timelineData = dailyAnalytics?.collectionTimeline || [];
-                    const hourData = timelineData.find((t: any) => t.hour === hour);
+                    const hourData = timelineData.find((t: any) => Number(t.hour) === hour);
                     const hourCollections = hourData?.collections || 0;
                     const maxCollections = Math.max(
-                      ...timelineData.map((t: any) => t.collections), 
-                      25
+                      ...timelineData.map((t: any) => Number(t.collections) || 0), 
+                      1
                     );
                     const percentage = maxCollections > 0 ? (hourCollections / maxCollections) * 100 : 0;
 
@@ -1783,6 +1786,74 @@ export default function AdminDashboard() {
                       </div>
                     );
                   })}
+                </div>
+                {timelineData.length === 0 && (
+                  <p className="text-center text-muted-foreground py-4">No collection data available for selected date</p>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* 5. Home Composting Rate */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Leaf className="h-5 w-5 text-green-600" />
+                  Home Composting Rate
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="flex items-center justify-center">
+                  {(() => {
+                    const compostingData = dailyAnalytics?.compostingData || { composting: 0, notComposting: 0, total: 0 };
+                    const composting = Number(compostingData.composting) || 0;
+                    const notComposting = Number(compostingData.notComposting) || 0;
+                    const total = composting + notComposting || 1;
+                    const compostingPercentage = (composting / total) * 100;
+
+                    return (
+                      <div className="w-48 h-48 relative">
+                        <svg viewBox="0 0 100 100" className="w-full h-full transform -rotate-90">
+                          <circle cx="50" cy="50" r="40" fill="none" stroke="#f3f4f6" strokeWidth="20"/>
+                          <circle 
+                            cx="50" cy="50" r="40" fill="none" 
+                            stroke="#22c55e" strokeWidth="20"
+                            strokeDasharray={`${(composting/total) * 251.3} 251.3`}
+                            strokeDashoffset="0"
+                          />
+                          <circle 
+                            cx="50" cy="50" r="40" fill="none" 
+                            stroke="#ef4444" strokeWidth="20"
+                            strokeDasharray={`${(notComposting/total) * 251.3} 251.3`}
+                            strokeDashoffset={`-${(composting/total) * 251.3}`}
+                          />
+                        </svg>
+                        <div className="absolute inset-0 flex items-center justify-center">
+                          <div className="text-center">
+                            <div className="text-2xl font-bold text-green-600">
+                              {Math.round(compostingPercentage)}%
+                            </div>
+                            <div className="text-xs text-muted-foreground">Composting</div>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })()}
+                </div>
+                <div className="grid grid-cols-2 gap-2 mt-4">
+                  <div className="text-center">
+                    <div className="w-4 h-4 bg-green-500 rounded mx-auto mb-1"></div>
+                    <div className="text-xs">Composting</div>
+                    <div className="text-xs font-medium">
+                      {dailyAnalytics?.compostingData?.composting || 0}
+                    </div>
+                  </div>
+                  <div className="text-center">
+                    <div className="w-4 h-4 bg-red-500 rounded mx-auto mb-1"></div>
+                    <div className="text-xs">Not Composting</div>
+                    <div className="text-xs font-medium">
+                      {dailyAnalytics?.compostingData?.notComposting || 0}
+                    </div>
+                  </div>
                 </div>
               </CardContent>
             </Card>

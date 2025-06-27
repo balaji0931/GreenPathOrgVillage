@@ -1225,6 +1225,22 @@ export class DatabaseStorage implements IStorage {
       .groupBy(sql`EXTRACT(HOUR FROM ${wasteCollections.collectionDate})`)
       .orderBy(sql`EXTRACT(HOUR FROM ${wasteCollections.collectionDate})`);
 
+    // Composting data (assuming we have waste segregation data)
+    const compostingStats = await db
+      .select({
+        composting: count(sql`CASE WHEN ${wasteCollections.segregationRating} >= 4 THEN 1 END`),
+        notComposting: count(sql`CASE WHEN ${wasteCollections.segregationRating} < 4 OR ${wasteCollections.segregationRating} IS NULL THEN 1 END`),
+        total: count()
+      })
+      .from(wasteCollections)
+      .innerJoin(households, eq(wasteCollections.householdId, households.id))
+      .where(
+        and(
+          sql`${wasteCollections.collectionDate} >= ${targetDate} AND ${wasteCollections.collectionDate} < ${nextDay}`,
+          villageId && villageId !== 'all' ? eq(households.villageId, villageId) : sql`1=1`
+        )
+      );
+
     // Village/Collector performance
     let performanceQuery;
     if (villageId && villageId !== 'all') {
@@ -1280,6 +1296,7 @@ export class DatabaseStorage implements IStorage {
         ...p,
         avgRating: parseFloat((Number(p.avgRating) || 0).toFixed(2))
       })),
+      compostingData: compostingStats[0] || { composting: 0, notComposting: 0, total: 0 },
     };
   }
 
