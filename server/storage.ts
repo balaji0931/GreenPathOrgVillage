@@ -236,6 +236,15 @@ export interface IStorage {
   getDetailedAttendanceByVillageAndDate(villageId: string, date: Date): Promise<DetailedAttendance[]>;
   getHouseholdByGeneratorUserId(generatorUserId: string): Promise<Household | undefined>;
   getComplaintsByVillage(villageId: string): Promise<any[]>;
+
+  // Moderator operations
+  createModerator(moderator: InsertModerator): Promise<Moderator>;
+  getModeratorsList(): Promise<Moderator[]>;
+  updateModerator(moderatorId: string, updates: Partial<Moderator>): Promise<Moderator>;
+  deleteModerator(moderatorId: string): Promise<void>;
+  assignVillageToModerator(assignment: InsertModeratorVillageAssignment): Promise<ModeratorVillageAssignment>;
+  removeVillageFromModerator(moderatorId: string, villageId: string): Promise<void>;
+  getModeratorVillages(moderatorId: string): Promise<any[]>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -1304,6 +1313,82 @@ export class DatabaseStorage implements IStorage {
       })),
       compostingData: compostingStats[0] || { composting: 0, notComposting: 0, total: 0 },
     };
+  }
+
+  // Moderator operations
+  async createModerator(insertModerator: InsertModerator): Promise<Moderator> {
+    const [moderator] = await db
+      .insert(moderators)
+      .values(insertModerator)
+      .returning();
+    
+    // Create user account for moderator
+    const hashedPassword = await bcrypt.hash(insertModerator.moderatorId, 10);
+    await db
+      .insert(users)
+      .values({
+        userId: insertModerator.moderatorId,
+        password: hashedPassword,
+        role: 'moderator',
+        name: insertModerator.name,
+        phone: insertModerator.phone,
+        villageId: null,
+      });
+    
+    return moderator;
+  }
+
+  async getModeratorsList(): Promise<Moderator[]> {
+    return await db.select().from(moderators);
+  }
+
+  async updateModerator(moderatorId: string, updates: Partial<Moderator>): Promise<Moderator> {
+    const [moderator] = await db
+      .update(moderators)
+      .set(updates)
+      .where(eq(moderators.moderatorId, moderatorId))
+      .returning();
+    return moderator;
+  }
+
+  async deleteModerator(moderatorId: string): Promise<void> {
+    // Delete moderator village assignments first
+    await db.delete(moderatorVillageAssignments).where(eq(moderatorVillageAssignments.moderatorId, moderatorId));
+    
+    // Delete user account
+    await db.delete(users).where(eq(users.userId, moderatorId));
+    
+    // Delete moderator
+    await db.delete(moderators).where(eq(moderators.moderatorId, moderatorId));
+  }
+
+  async assignVillageToModerator(assignment: InsertModeratorVillageAssignment): Promise<ModeratorVillageAssignment> {
+    const [villageAssignment] = await db
+      .insert(moderatorVillageAssignments)
+      .values(assignment)
+      .returning();
+    return villageAssignment;
+  }
+
+  async removeVillageFromModerator(moderatorId: string, villageId: string): Promise<void> {
+    await db.delete(moderatorVillageAssignments).where(
+      and(
+        eq(moderatorVillageAssignments.moderatorId, moderatorId),
+        eq(moderatorVillageAssignments.villageId, villageId)
+      )
+    );
+  }
+
+  async getModeratorVillages(moderatorId: string): Promise<any[]> {
+    return await db
+      .select({
+        villageId: villages.villageId,
+        name: villages.name,
+        assignedAt: moderatorVillageAssignments.assignedAt,
+      })
+      .from(moderatorVillageAssignments)
+      .innerJoin(villages, eq(moderatorVillageAssignments.villageId, villages.villageId))
+      .where(eq(moderatorVillageAssignments.moderatorId, moderatorId));
   }
 
   async getSystemAnalytics(villageFilter?: string): Promise<{
