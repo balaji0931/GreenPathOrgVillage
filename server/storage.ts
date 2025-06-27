@@ -1258,16 +1258,19 @@ export class DatabaseStorage implements IStorage {
 
     const performance = await performanceQuery;
 
+    // Safely convert avgRating to number
+    const dailyAvgRating = Number(avgRating.avg) || 0;
+
     return {
       totalHouses: householdsCount.count,
       collected: collectionsCount.count,
       remaining: householdsCount.count - collectionsCount.count,
-      avgSegregationRating: parseFloat(((avgRating.avg ?? 0) as number).toFixed(2)),
+      avgSegregationRating: parseFloat(dailyAvgRating.toFixed(2)),
       ratingDistribution,
       collectionTimeline: timeline,
       villagePerformance: performance.map(p => ({
         ...p,
-        avgRating: parseFloat(((p.avgRating ?? 0) as number).toFixed(2))
+        avgRating: parseFloat((Number(p.avgRating) || 0).toFixed(2))
       })),
     };
   }
@@ -1332,8 +1335,9 @@ export class DatabaseStorage implements IStorage {
       .limit(5);
 
     const collectionTrends = await db.select({
-        collectionDate: sql<string>`DATE(${wasteCollections.collectionDate})`,
-        collections: count(wasteCollections.id)
+        date: sql<string>`DATE(${wasteCollections.collectionDate})`,
+        collections: count(wasteCollections.id),
+        avgRating: sql<number>`COALESCE(AVG(CAST(${wasteCollections.segregationRating} AS DECIMAL(3,2))), 0)`
       })
       .from(wasteCollections)
       .groupBy(sql`DATE(${wasteCollections.collectionDate})`)
@@ -1344,9 +1348,12 @@ export class DatabaseStorage implements IStorage {
         count: count()
       })
       .from(wasteCollections)
+      .where(sql`${wasteCollections.segregationRating} IS NOT NULL`)
       .groupBy(wasteCollections.segregationRating)
       .orderBy(wasteCollections.segregationRating);
     
+    // Safely convert avgSegregation to number
+    const avgRating = Number(avgSegregation.avg) || 0;
 
     return {
       totalVillages: villagesCount.count,
@@ -1354,9 +1361,15 @@ export class DatabaseStorage implements IStorage {
       totalCollectors: collectorsCount.count,
       totalCollectionsToday: collectionsToday.count,
       totalCollectionsThisWeek: collectionsThisWeek.count,
-      averageSegregationRating: parseFloat(((avgSegregation.avg ?? 0) as number).toFixed(2)),
-      topPerformingVillages: topVillages.map(v => ({...v, avgRating: parseFloat((v.avgRating as number).toFixed(2))})),
-      collectionTrends: collectionTrends,
+      averageSegregationRating: parseFloat(avgRating.toFixed(2)),
+      topPerformingVillages: topVillages.map(v => ({
+        ...v, 
+        avgRating: parseFloat((Number(v.avgRating) || 0).toFixed(2))
+      })),
+      collectionTrends: collectionTrends.map(t => ({
+        ...t,
+        avgRating: parseFloat((Number(t.avgRating) || 0).toFixed(2))
+      })),
       segregationRateDistribution: segregationDistribution,
     };
   }

@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -745,7 +744,7 @@ export default function AdminDashboard() {
               <Card>
                 <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 p-3 sm:p-6">
                   <CardTitle className="text-lg sm:text-xl">Managers</CardTitle>
-                  <Dialog>
+                  <Dialog                >
                     <DialogTrigger asChild>
                       <Button size="sm" className="w-full sm:w-auto">
                         <UserPlus className="h-4 w-4 mr-2" />
@@ -1116,18 +1115,18 @@ export default function AdminDashboard() {
                     const date = new Date();
                     date.setDate(date.getDate() - (6 - i));
                     const dateStr = date.toISOString().split('T')[0];
-                    
+
                     // Find real data for this date
-                    const dayData = systemAnalytics?.collectionTrends?.find((trend: any) => 
-                      trend.date === dateStr
-                    );
-                    const collectionsForDay = dayData?.collections || 0;
-                    const maxCollections = Math.max(
-                      ...(systemAnalytics?.collectionTrends?.map((t: any) => t.collections) || [50]), 
-                      50
-                    );
+                              const dayData = systemAnalytics?.collectionTrends?.find((trend: any) => 
+                                trend.date === dateStr || trend.collectionDate === dateStr
+                              );
+                              const collectionsForDay = dayData?.collections || 0;
+                              const maxCollections = Math.max(
+                                ...(systemAnalytics?.collectionTrends?.map((t: any) => t.collections) || [50]), 
+                                50
+                              );
                     const percentage = maxCollections > 0 ? (collectionsForDay / maxCollections) * 100 : 0;
-                    
+
                     return (
                       <div key={i} className="flex items-center gap-3">
                         <div className="w-16 text-xs text-muted-foreground">
@@ -1168,13 +1167,13 @@ export default function AdminDashboard() {
                     const date = new Date();
                     date.setDate(date.getDate() - (6 - i));
                     const dateStr = date.toISOString().split('T')[0];
-                    
+
                     // Find real data for this date
-                    const dayData = systemAnalytics?.collectionTrends?.find((trend: any) => 
-                      trend.date === dateStr
-                    );
-                    const avgRating = dayData?.avgRating || 0;
-                    
+                              const dayData = systemAnalytics?.collectionTrends?.find((trend: any) => 
+                                trend.date === dateStr || trend.collectionDate === dateStr
+                              );
+                              const avgRating = dayData?.avgRating || 0;
+
                     return (
                       <div key={i} className="flex items-center gap-3">
                         <div className="w-16 text-xs text-muted-foreground">
@@ -1217,7 +1216,7 @@ export default function AdminDashboard() {
                     const good = distribution.filter((d: any) => d.rating >= 3 && d.rating < 4).reduce((sum: number, d: any) => sum + d.count, 0);
                     const poor = distribution.filter((d: any) => d.rating < 3 && d.rating > 0).reduce((sum: number, d: any) => sum + d.count, 0);
                     const total = excellent + good + poor || 1;
-                    
+
                     return (
                       <div className="w-48 h-48 relative">
                         <svg viewBox="0 0 100 100" className="w-full h-full transform -rotate-90">
@@ -1283,7 +1282,7 @@ export default function AdminDashboard() {
                   {(systemAnalytics?.topPerformingVillages || reportData?.collections || []).slice(0, 6).map((village: any, index: number) => {
                     const avgRating = parseFloat(village.avgRating || village.avgSegregationRating) || 0;
                     const collections = parseInt(village.collections) || 0;
-                    
+
                     return (
                       <div key={index} className="space-y-1">
                         <div className="flex justify-between text-xs">
@@ -1328,7 +1327,7 @@ export default function AdminDashboard() {
                     // Mock data for composting
                     const composting = 78;
                     const notComposting = 22;
-                    
+
                     return (
                       <div className="w-40 h-40 relative">
                         <svg viewBox="0 0 100 100" className="w-full h-full transform -rotate-90">
@@ -1384,7 +1383,7 @@ export default function AdminDashboard() {
                       {systemAnalytics?.totalVillages || villages?.length || 0}
                     </div>
                   </div>
-                  
+
                   <div className="flex items-center justify-between p-3 bg-green-50 rounded-lg">
                     <div>
                       <p className="text-sm font-medium">Total Households</p>
@@ -1394,7 +1393,7 @@ export default function AdminDashboard() {
                       {systemAnalytics?.totalHouseholds || 0}
                     </div>
                   </div>
-                  
+
                   <div className="flex items-center justify-between p-3 bg-yellow-50 rounded-lg">
                     <div>
                       <p className="text-sm font-medium">Total Collectors</p>
@@ -1531,7 +1530,7 @@ export default function AdminDashboard() {
                     const collected = dailyAnalytics?.collected || 0;
                     const total = dailyAnalytics?.totalHouses || 1;
                     const notCollected = total - collected;
-                    
+
                     return (
                       <div className="w-48 h-48 relative">
                         <svg viewBox="0 0 100 100" className="w-full h-full transform -rotate-90">
@@ -1590,7 +1589,7 @@ export default function AdminDashboard() {
                     const starCount = ratingData.find((r: any) => r.rating === stars)?.count || 0;
                     const total = ratingData.reduce((sum: number, r: any) => sum + r.count, 0) || 1;
                     const percentage = total > 0 ? (starCount / total) * 100 : 0;
-                    
+
                     return (
                       <div key={stars} className="flex items-center gap-3">
                         <div className="flex items-center gap-1 w-16">
@@ -1630,7 +1629,7 @@ export default function AdminDashboard() {
                     dailyAnalytics.villagePerformance.slice(0, 5).map((performer: any, index: number) => {
                       const collections = performer.collections || 0;
                       const avgRating = performer.avgRating || 0;
-                      
+
                       return (
                         <div key={index} className="p-3 bg-gray-50 rounded-lg">
                           <div className="flex items-center justify-between mb-2">
@@ -1682,7 +1681,7 @@ export default function AdminDashboard() {
                       25
                     );
                     const percentage = maxCollections > 0 ? (hourCollections / maxCollections) * 100 : 0;
-                    
+
                     return (
                       <div key={i} className="flex items-center gap-3">
                         <div className="w-16 text-xs text-muted-foreground">
