@@ -1000,7 +1000,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get('/api/analytics/system', requireAuth, requireRole(['admin']), async (req, res) => {
     try {
-      const analytics = await storage.getSystemAnalytics();
+      const { village } = req.query;
+      const analytics = await storage.getSystemAnalytics(village as string);
       res.json(analytics);
     } catch (error) {
       console.error("Get system analytics error:", error);

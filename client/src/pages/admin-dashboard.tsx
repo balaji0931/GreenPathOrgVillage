@@ -75,18 +75,43 @@ export default function AdminDashboard() {
   const { data: reportData, isLoading: reportLoading } = useQuery({
     queryKey: ["/api/reports", reportFilters],
     enabled: activeTab === "reports",
+    queryFn: async () => {
+      const params = new URLSearchParams();
+      if (reportFilters.village !== "all") params.set("village", reportFilters.village);
+      if (reportFilters.role !== "all") params.set("role", reportFilters.role);
+      if (reportFilters.startDate) params.set("startDate", reportFilters.startDate);
+      if (reportFilters.endDate) params.set("endDate", reportFilters.endDate);
+      
+      const response = await apiRequest("GET", `/api/reports?${params.toString()}`);
+      return response.json();
+    },
   });
 
-  // Fetch system analytics
+  // Fetch system analytics with village filter
   const { data: systemAnalytics, isLoading: analyticsLoading } = useQuery({
-    queryKey: ["/api/analytics/system"],
+    queryKey: ["/api/analytics/system", reportFilters.village],
     enabled: activeTab === "reports",
+    queryFn: async () => {
+      const params = new URLSearchParams();
+      if (reportFilters.village !== "all") params.set("village", reportFilters.village);
+      
+      const response = await apiRequest("GET", `/api/analytics/system?${params.toString()}`);
+      return response.json();
+    },
   });
 
-  // Fetch daily analytics
+  // Fetch daily analytics with proper filters
   const { data: dailyAnalytics, isLoading: dailyLoading } = useQuery({
-    queryKey: ["/api/analytics/daily", reportFilters.village, reportFilters.startDate],
+    queryKey: ["/api/analytics/daily", reportFilters.village, reportFilters.startDate || new Date().toISOString().split('T')[0]],
     enabled: activeTab === "reports",
+    queryFn: async () => {
+      const params = new URLSearchParams();
+      if (reportFilters.village !== "all") params.set("village", reportFilters.village);
+      params.set("date", reportFilters.startDate || new Date().toISOString().split('T')[0]);
+      
+      const response = await apiRequest("GET", `/api/analytics/daily?${params.toString()}`);
+      return response.json();
+    },
   });
 
   // Village details query
@@ -1059,16 +1084,17 @@ export default function AdminDashboard() {
               <CardContent>
                 <div className="text-3xl font-bold text-blue-900">
                   {(() => {
-                    if (!reportData?.collections) return systemAnalytics?.totalCollectionsThisWeek || 0;
-                    const filteredCollections = reportFilters.village === "all" 
-                      ? reportData.collections 
-                      : reportData.collections.filter((c: any) => c.villageId === reportFilters.village);
-                    const totalCollections = filteredCollections.reduce((sum: number, item: any) => sum + parseInt(item.collections || 0), 0);
-                    return totalCollections;
+                    if (reportFilters.village === "all") {
+                      return systemAnalytics?.totalCollectionsThisWeek || 0;
+                    } else {
+                      // Show collections for selected village
+                      const villageCollections = reportData?.collections?.find((c: any) => c.villageId === reportFilters.village);
+                      return villageCollections?.collections || 0;
+                    }
                   })()}
                 </div>
                 <p className="text-xs text-blue-700 mt-1">
-                  Total collections completed
+                  {reportFilters.village === "all" ? "Total collections this week" : `Collections for ${villages?.find(v => v.villageId === reportFilters.village)?.name || "selected village"}`}
                 </p>
               </CardContent>
             </Card>
@@ -1083,17 +1109,17 @@ export default function AdminDashboard() {
               <CardContent>
                 <div className="text-3xl font-bold text-yellow-900">
                   {(() => {
-                    if (!reportData?.collections) return systemAnalytics?.averageSegregationRating?.toFixed(1) || "0.0";
-                    const filteredCollections = reportFilters.village === "all" 
-                      ? reportData.collections 
-                      : reportData.collections.filter((c: any) => c.villageId === reportFilters.village);
-                    return filteredCollections.length > 0
-                      ? (filteredCollections.reduce((sum: number, item: any) => sum + (parseFloat(item.avgSegregationRating) || 0), 0) / filteredCollections.length).toFixed(1)
-                      : "0.0";
+                    if (reportFilters.village === "all") {
+                      return systemAnalytics?.averageSegregationRating?.toFixed(1) || "0.0";
+                    } else {
+                      // Show rating for selected village
+                      const villageData = reportData?.collections?.find((c: any) => c.villageId === reportFilters.village);
+                      return villageData?.avgSegregationRating?.toFixed(1) || "0.0";
+                    }
                   })()}
                 </div>
                 <p className="text-xs text-yellow-700 mt-1">
-                  Out of 5.0 stars
+                  {reportFilters.village === "all" ? "Overall rating" : `Rating for ${villages?.find(v => v.villageId === reportFilters.village)?.name || "selected village"}`}
                 </p>
               </CardContent>
             </Card>
@@ -1117,34 +1143,45 @@ export default function AdminDashboard() {
                     const dateStr = date.toISOString().split('T')[0];
 
                     // Find real data for this date
-                              const dayData = systemAnalytics?.collectionTrends?.find((trend: any) => 
-                                trend.date === dateStr || trend.collectionDate === dateStr
-                              );
-                              const collectionsForDay = dayData?.collections || 0;
-                              const maxCollections = Math.max(
-                                ...(systemAnalytics?.collectionTrends?.map((t: any) => t.collections) || [50]), 
-                                50
-                              );
-                    const percentage = maxCollections > 0 ? (collectionsForDay / maxCollections) * 100 : 0;
+                    const dayData = systemAnalytics?.collectionTrends?.find((trend: any) => 
+                      trend.date === dateStr || trend.collectionDate === dateStr
+                    );
+                    const collectionsForDay = dayData?.collections || 0;
+                    
+                    // Calculate total households and collection percentage
+                    const totalHouseholds = reportFilters.village === "all" 
+                      ? systemAnalytics?.totalHouseholds || 0 
+                      : villages?.find(v => v.villageId === reportFilters.village)?.totalHouseholds || 0;
+                    
+                    const dailyTotalHouseholds = Math.max(totalHouseholds, 1);
+                    const collectionPercentage = (collectionsForDay / dailyTotalHouseholds) * 100;
+                    const uncollected = dailyTotalHouseholds - collectionsForDay;
 
                     return (
-                      <div key={i} className="flex items-center gap-3">
-                        <div className="w-16 text-xs text-muted-foreground">
-                          {date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                      <div key={i} className="space-y-1">
+                        <div className="flex items-center justify-between text-xs">
+                          <span className="text-muted-foreground">
+                            {date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                          </span>
+                          <span className="font-medium">
+                            {collectionsForDay}/{dailyTotalHouseholds}
+                          </span>
                         </div>
-                        <div className="flex-1 bg-gray-200 rounded-full h-4 relative">
+                        <div className="flex h-4 bg-gray-200 rounded overflow-hidden">
                           <div 
-                            className="bg-blue-500 h-4 rounded-full transition-all" 
-                            style={{ width: `${Math.min(percentage, 100)}%` }}
+                            className="bg-green-500 transition-all" 
+                            style={{ width: `${Math.min(collectionPercentage, 100)}%` }}
+                            title={`Collected: ${collectionsForDay}`}
                           />
-                          {collectionsForDay > 0 && (
-                            <span className="absolute inset-0 flex items-center justify-center text-xs font-medium text-white">
-                              {collectionsForDay}
-                            </span>
-                          )}
+                          <div 
+                            className="bg-red-500 transition-all" 
+                            style={{ width: `${Math.min(100 - collectionPercentage, 100)}%` }}
+                            title={`Not collected: ${uncollected}`}
+                          />
                         </div>
-                        <div className="w-12 text-xs text-right">
-                          {Math.round(percentage)}%
+                        <div className="flex justify-between text-xs text-muted-foreground">
+                          <span className="text-green-600">Collected: {collectionsForDay}</span>
+                          <span className="text-red-600">Remaining: {uncollected}</span>
                         </div>
                       </div>
                     );
@@ -1204,14 +1241,21 @@ export default function AdminDashboard() {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Award className="h-5 w-5 text-purple-600" />
-                  Overall Segregation Rate
+                  {reportFilters.village === "all" ? "Overall Segregation Rate" : `Segregation Rate - ${villages?.find(v => v.villageId === reportFilters.village)?.name || "Village"}`}
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="flex items-center justify-center">
                   {(() => {
-                    // Calculate segregation rates from real data
-                    const distribution = systemAnalytics?.segregationRateDistribution || [];
+                    // Get appropriate distribution data based on filter
+                    let distribution = [];
+                    if (reportFilters.village === "all") {
+                      distribution = systemAnalytics?.segregationRateDistribution || [];
+                    } else {
+                      // For village-specific data, we need to fetch from daily analytics or calculate from collections
+                      distribution = dailyAnalytics?.ratingDistribution || [];
+                    }
+                    
                     const excellent = distribution.filter((d: any) => d.rating >= 4).reduce((sum: number, d: any) => sum + d.count, 0);
                     const good = distribution.filter((d: any) => d.rating >= 3 && d.rating < 4).reduce((sum: number, d: any) => sum + d.count, 0);
                     const poor = distribution.filter((d: any) => d.rating < 3 && d.rating > 0).reduce((sum: number, d: any) => sum + d.count, 0);
@@ -1243,7 +1287,7 @@ export default function AdminDashboard() {
                         <div className="absolute inset-0 flex items-center justify-center">
                           <div className="text-center">
                             <div className="text-2xl font-bold">
-                              {Math.round((excellent / total) * 100)}%
+                              {total > 1 ? Math.round((excellent / total) * 100) : 0}%
                             </div>
                             <div className="text-xs text-muted-foreground">Excellent</div>
                           </div>
@@ -1274,59 +1318,85 @@ export default function AdminDashboard() {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <TrendingUp className="h-5 w-5 text-indigo-600" />
-                  Village Performance Comparison
+                  {reportFilters.village === "all" ? "Village Performance Comparison" : `Performance Details - ${villages?.find(v => v.villageId === reportFilters.village)?.name || "Village"}`}
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
-                  {(systemAnalytics?.topPerformingVillages || reportData?.collections || []).slice(0, 6).map((village: any, index: number) => {
-                    const avgRating = parseFloat(village.avgRating || village.avgSegregationRating) || 0;
-                    const collections = parseInt(village.collections) || 0;
+                  {(() => {
+                    let performanceData = [];
+                    
+                    if (reportFilters.village === "all") {
+                      performanceData = systemAnalytics?.topPerformingVillages || reportData?.collections || [];
+                    } else {
+                      // Show single village performance or collectors within that village
+                      const villageData = reportData?.collections?.find((c: any) => c.villageId === reportFilters.village);
+                      if (villageData) {
+                        performanceData = [villageData];
+                      } else {
+                        // Show from village performance in daily analytics
+                        performanceData = dailyAnalytics?.villagePerformance || [];
+                      }
+                    }
 
-                    return (
-                      <div key={index} className="space-y-1">
-                        <div className="flex justify-between text-xs">
-                          <span className="font-medium truncate">{village.villageName || village.name}</span>
-                          <span>{collections} collections</span>
+                    return performanceData.slice(0, 6).map((item: any, index: number) => {
+                      const avgRating = parseFloat(item.avgRating || item.avgSegregationRating) || 0;
+                      const collections = parseInt(item.collections) || 0;
+                      const name = item.villageName || item.name || `Performer ${index + 1}`;
+
+                      return (
+                        <div key={index} className="space-y-1">
+                          <div className="flex justify-between text-xs">
+                            <span className="font-medium truncate">{name}</span>
+                            <span>{collections} collections</span>
+                          </div>
+                          <div className="flex h-6 bg-gray-200 rounded overflow-hidden">
+                            <div 
+                              className={`transition-all ${
+                                avgRating >= 4 ? 'bg-green-500' : 
+                                avgRating >= 3 ? 'bg-yellow-500' : 
+                                avgRating > 0 ? 'bg-red-500' : 'bg-gray-300'
+                              }`}
+                              style={{ width: `${avgRating > 0 ? (avgRating / 5) * 100 : 0}%` }}
+                              title={`Rating: ${avgRating.toFixed(1)}`}
+                            />
+                          </div>
+                          <div className="text-xs text-muted-foreground text-right">
+                            {avgRating > 0 ? avgRating.toFixed(1) : 'N/A'}/5.0
+                          </div>
                         </div>
-                        <div className="flex h-6 bg-gray-200 rounded overflow-hidden">
-                          <div 
-                            className={`transition-all ${
-                              avgRating >= 4 ? 'bg-green-500' : 
-                              avgRating >= 3 ? 'bg-yellow-500' : 
-                              avgRating > 0 ? 'bg-red-500' : 'bg-gray-300'
-                            }`}
-                            style={{ width: `${avgRating > 0 ? (avgRating / 5) * 100 : 0}%` }}
-                            title={`Rating: ${avgRating.toFixed(1)}`}
-                          />
-                        </div>
-                        <div className="text-xs text-muted-foreground text-right">
-                          {avgRating > 0 ? avgRating.toFixed(1) : 'N/A'}/5.0
-                        </div>
-                      </div>
-                    );
-                  })}
-                  {(!systemAnalytics?.topPerformingVillages && !reportData?.collections) && (
-                    <p className="text-center text-muted-foreground py-4">No village data available</p>
+                      );
+                    });
+                  })()}
+                  {(!systemAnalytics?.topPerformingVillages && !reportData?.collections && !dailyAnalytics?.villagePerformance) && (
+                    <p className="text-center text-muted-foreground py-4">No performance data available</p>
                   )}
                 </div>
               </CardContent>
             </Card>
 
-            {/* 5. Home Composting Rate */}
+            {/* 5. Household Collection Status */}
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Package className="h-5 w-5 text-green-600" />
-                  Home Composting Rate
+                  Household Collection Status
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="flex items-center justify-center">
                   {(() => {
-                    // Mock data for composting
-                    const composting = 78;
-                    const notComposting = 22;
+                    // Calculate real household collection status
+                    const totalHouseholds = reportFilters.village === "all" 
+                      ? systemAnalytics?.totalHouseholds || 0
+                      : villages?.find(v => v.villageId === reportFilters.village)?.totalHouseholds || 0;
+                    
+                    const collectedToday = reportFilters.village === "all"
+                      ? systemAnalytics?.totalCollectionsToday || 0
+                      : dailyAnalytics?.collected || 0;
+                    
+                    const collectionRate = totalHouseholds > 0 ? (collectedToday / totalHouseholds) * 100 : 0;
+                    const notCollectedRate = 100 - collectionRate;
 
                     return (
                       <div className="w-40 h-40 relative">
@@ -1335,16 +1405,16 @@ export default function AdminDashboard() {
                           <circle 
                             cx="50" cy="50" r="35" fill="none" 
                             stroke="#22c55e" strokeWidth="25"
-                            strokeDasharray={`${(composting/100) * 219.9} 219.9`}
+                            strokeDasharray={`${(collectionRate/100) * 219.9} 219.9`}
                             strokeDashoffset="0"
                           />
                         </svg>
                         <div className="absolute inset-0 flex items-center justify-center">
                           <div className="text-center">
                             <div className="text-xl font-bold text-green-600">
-                              {composting}%
+                              {Math.round(collectionRate)}%
                             </div>
-                            <div className="text-xs text-muted-foreground">Composting</div>
+                            <div className="text-xs text-muted-foreground">Collected Today</div>
                           </div>
                         </div>
                       </div>
@@ -1354,11 +1424,19 @@ export default function AdminDashboard() {
                 <div className="grid grid-cols-2 gap-2 mt-4">
                   <div className="text-center">
                     <div className="w-4 h-4 bg-green-500 rounded mx-auto mb-1"></div>
-                    <div className="text-xs">Composting</div>
+                    <div className="text-xs">Collected</div>
+                    <div className="text-xs font-medium">
+                      {reportFilters.village === "all" ? systemAnalytics?.totalCollectionsToday || 0 : dailyAnalytics?.collected || 0}
+                    </div>
                   </div>
                   <div className="text-center">
                     <div className="w-4 h-4 bg-gray-300 rounded mx-auto mb-1"></div>
-                    <div className="text-xs">Not Composting</div>
+                    <div className="text-xs">Remaining</div>
+                    <div className="text-xs font-medium">
+                      {reportFilters.village === "all" 
+                        ? (systemAnalytics?.totalHouseholds || 0) - (systemAnalytics?.totalCollectionsToday || 0)
+                        : dailyAnalytics?.remaining || 0}
+                    </div>
                   </div>
                 </div>
               </CardContent>

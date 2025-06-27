@@ -1275,7 +1275,7 @@ export class DatabaseStorage implements IStorage {
     };
   }
 
-  async getSystemAnalytics(): Promise<{
+  async getSystemAnalytics(villageFilter?: string): Promise<{
     totalVillages: number;
     totalHouseholds: number;
     totalCollectors: number;
@@ -1291,23 +1291,34 @@ export class DatabaseStorage implements IStorage {
     const tomorrow = new Date(today);
     tomorrow.setDate(tomorrow.getDate() + 1);
 
+    // Apply village filter where needed
+    const villageCondition = villageFilter ? eq(households.villageId, villageFilter) : sql`1=1`;
+    const collectorVillageCondition = villageFilter ? eq(collectors.villageId, villageFilter) : sql`1=1`;
+
     const [villagesCount] = await db
       .select({ count: count() })
-      .from(villages);
+      .from(villages)
+      .where(villageFilter ? eq(villages.villageId, villageFilter) : sql`1=1`);
 
     const [householdsCount] = await db
       .select({ count: count() })
-      .from(households);
+      .from(households)
+      .where(villageCondition);
 
     const [collectorsCount] = await db
       .select({ count: count() })
-      .from(collectors);
+      .from(collectors)
+      .where(collectorVillageCondition);
 
     const [collectionsToday] = await db
       .select({ count: count() })
       .from(wasteCollections)
+      .innerJoin(households, eq(wasteCollections.householdId, households.id))
       .where(
-        sql`${wasteCollections.collectionDate} >= ${today} AND ${wasteCollections.collectionDate} < ${tomorrow}`
+        and(
+          sql`${wasteCollections.collectionDate} >= ${today} AND ${wasteCollections.collectionDate} < ${tomorrow}`,
+          villageCondition
+        )
       );
 
     const oneWeekAgo = new Date();
@@ -1316,12 +1327,20 @@ export class DatabaseStorage implements IStorage {
     const [collectionsThisWeek] = await db
       .select({ count: count() })
       .from(wasteCollections)
-      .where(sql`${wasteCollections.collectionDate} >= ${oneWeekAgo}`);
+      .innerJoin(households, eq(wasteCollections.householdId, households.id))
+      .where(
+        and(
+          sql`${wasteCollections.collectionDate} >= ${oneWeekAgo}`,
+          villageCondition
+        )
+      );
 
     const [avgSegregation] = await db.select({
         avg: sql<number>`COALESCE(AVG(CAST(${wasteCollections.segregationRating} AS DECIMAL(3,2))), 0)`
       })
-      .from(wasteCollections);
+      .from(wasteCollections)
+      .innerJoin(households, eq(wasteCollections.householdId, households.id))
+      .where(villageCondition);
     
     const topVillages = await db.select({
         villageName: villages.name,
@@ -1330,6 +1349,7 @@ export class DatabaseStorage implements IStorage {
       .from(wasteCollections)
       .innerJoin(households, eq(wasteCollections.householdId, households.id))
       .innerJoin(villages, eq(households.villageId, villages.villageId))
+      .where(villageCondition)
       .groupBy(villages.villageId, villages.name)
       .orderBy(desc(sql`COALESCE(AVG(CAST(${wasteCollections.segregationRating} AS DECIMAL(3,2))), 0)`))
       .limit(5);
@@ -1340,6 +1360,8 @@ export class DatabaseStorage implements IStorage {
         avgRating: sql<number>`COALESCE(AVG(CAST(${wasteCollections.segregationRating} AS DECIMAL(3,2))), 0)`
       })
       .from(wasteCollections)
+      .innerJoin(households, eq(wasteCollections.householdId, households.id))
+      .where(villageCondition)
       .groupBy(sql`DATE(${wasteCollections.collectionDate})`)
       .orderBy(sql`DATE(${wasteCollections.collectionDate})`);
 
@@ -1348,7 +1370,13 @@ export class DatabaseStorage implements IStorage {
         count: count()
       })
       .from(wasteCollections)
-      .where(sql`${wasteCollections.segregationRating} IS NOT NULL`)
+      .innerJoin(households, eq(wasteCollections.householdId, households.id))
+      .where(
+        and(
+          sql`${wasteCollections.segregationRating} IS NOT NULL`,
+          villageCondition
+        )
+      )
       .groupBy(wasteCollections.segregationRating)
       .orderBy(wasteCollections.segregationRating);
     
