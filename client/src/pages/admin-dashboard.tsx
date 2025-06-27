@@ -13,11 +13,12 @@ import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { apiRequest, queryClient } from "@/lib/queryClient";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { 
   Leaf, Users, AlertTriangle, TrendingUp, Plus, Megaphone, BarChart3, 
   LogOut, Settings, Copy, Download, Eye, Trash2, RotateCcw, Filter, 
   PieChart, LineChart, Building2, UserPlus, X, Home, MessageSquare,
-  User, MapPin, Calendar, Activity, FileText, Bell
+  User, MapPin, Calendar, Activity, FileText, Bell, Star, Award, Package
 } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart as RechartsLineChart, Line, PieChart as RechartsPieChart, Cell, Pie } from 'recharts';
 import { cn } from "@/lib/utils";
