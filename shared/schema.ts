@@ -21,6 +21,7 @@ export const users = pgTable("users", {
   villageId: text("village_id").references(() => villages.villageId),
   name: text("name").notNull(),
   phone: text("phone"),
+  email: text("email"),
   isFirstLogin: boolean("is_first_login").default(true),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
@@ -354,7 +355,10 @@ export const insertCollectorComplaintSchema = createInsertSchema(collectorCompla
 
 export const insertModeratorSchema = createInsertSchema(moderators).omit({
   id: true,
+  userId: true,  // Auto-generated on server
   createdAt: true,
+}).extend({
+  email: z.string().optional(),  // Allow email field from frontend
 });
 
 export const insertModeratorVillageAssignmentSchema = createInsertSchema(moderatorVillageAssignments).omit({

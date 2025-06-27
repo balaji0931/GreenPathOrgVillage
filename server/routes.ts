@@ -1329,19 +1329,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const nextNumber = existingModerators.length + 1;
       const moderatorUserId = `MOD-${nextNumber.toString().padStart(3, '0')}`;
       
-      // Create moderator record
+      // Create moderator record (only includes fields that exist in moderators table)
       const moderator = await storage.createModerator({
-        ...moderatorData,
         userId: moderatorUserId,
+        name: moderatorData.name,
+        phone: moderatorData.phone,
       });
 
-      // Create user account for moderator
+      // Create user account for moderator 
       const hashedPassword = await bcrypt.hash(moderatorUserId, 10); // Password same as ID
       await storage.createUser({
         userId: moderatorUserId,
         password: hashedPassword,
         role: 'moderator',
         name: moderatorData.name,
+        email: moderatorData.email,
         villageId: null,
       });
 
