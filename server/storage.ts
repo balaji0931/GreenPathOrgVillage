@@ -44,7 +44,7 @@ import {
 
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, and, desc, count, sql } from "drizzle-orm";
+import { eq, and, desc, count, sql, inArray, gte, lt } from "drizzle-orm";
 
 interface DetailedAttendance {
   id: number;
@@ -1395,7 +1395,7 @@ export class DatabaseStorage implements IStorage {
       .from(wasteCollections)
       .innerJoin(households, eq(wasteCollections.householdId, households.id))
       .where(villageCondition);
-    
+
     const topVillages = await db.select({
         villageName: villages.name,
         avgRating: sql<number>`COALESCE(AVG(CAST(${wasteCollections.segregationRating} AS DECIMAL(3,2))), 0)`
@@ -1433,7 +1433,7 @@ export class DatabaseStorage implements IStorage {
       )
       .groupBy(wasteCollections.segregationRating)
       .orderBy(wasteCollections.segregationRating);
-    
+
     // Safely convert avgSegregation to number
     const avgRating = Number(avgSegregation.avg) || 0;
 
@@ -1528,11 +1528,33 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getVillagesByModeratorUserId(moderatorUserId: string): Promise<Village[]> {
-    const moderator = await this.getModeratorByUserId(moderatorUserId);
-    if (!moderator) {
+    try {
+      const moderator = await db.select()
+        .from(moderators)
+        .where(eq(moderators.userId, moderatorUserId))
+        .limit(1);
+
+      if (!moderator.length) {
+        console.log('Moderator not found for userId:', moderatorUserId);
+        return [];
+      }
+
+      const moderatorId = moderator[0].id;
+
+      const assignedVillages = await db.select({
+        villageId: moderatorVillageAssignments.villageId,
+        name: villages.name
+      })
+        .from(moderatorVillageAssignments)
+        .innerJoin(villages, eq(moderatorVillageAssignments.villageId, villages.villageId))
+        .where(eq(moderatorVillageAssignments.moderatorId, moderatorId));
+
+      console.log('Villages for moderator', moderatorUserId, ':', assignedVillages);
+      return assignedVillages;
+    } catch (error) {
+      console.error('Error getting villages for moderator:', error);
       return [];
     }
-    return await this.getModeratorVillages(moderator.id);
   }
 
   async getModeratorAssignments(): Promise<any[]> {
@@ -1554,67 +1576,96 @@ export class DatabaseStorage implements IStorage {
     return assignments;
   }
 
-  // Moderator-specific data access (filtered by assigned villages)
   async getModeratorStats(moderatorUserId: string): Promise<{
     totalVillages: number;
     totalManagers: number;
     totalOpenIssues: number;
     totalCollectionsToday: number;
   }> {
-    const assignedVillages = await this.getVillagesByModeratorUserId(moderatorUserId);
-    const villageIds = assignedVillages.map(v => v.villageId);
+    try {
+      // Get moderator's assigned villages
+      const moderator = await db.select()
+        .from(moderators)
+        .where(eq(moderators.userId, moderatorUserId))
+        .limit(1);
 
-    if (villageIds.length === 0) {
+      if (!moderator.length) {
+        console.log('Moderator not found for userId:', moderatorUserId);
+        return {
+          totalVillages: 0,
+          totalManagers: 0,
+          totalOpenIssues: 0,
+          totalCollectionsToday: 0
+        };
+      }
+
+      const moderatorId = moderator[0].id;
+
+      // Get assigned villages
+      const assignedVillages = await db.select({
+        villageId: moderatorVillageAssignments.villageId
+      })
+        .from(moderatorVillageAssignments)
+        .where(eq(moderatorVillageAssignments.moderatorId, moderatorId));
+
+      const villageIds = assignedVillages.map(v => v.villageId);
+
+      if (villageIds.length === 0) {
+        console.log('No villages assigned to moderator:', moderatorUserId);
+        return {
+          totalVillages: 0,
+          totalManagers: 0,
+          totalOpenIssues: 0,
+          totalCollectionsToday: 0
+        };
+      }
+
+      // Get managers in assigned villages
+      const managersCount = await db.select({ count: sql<number>`count(*)` })
+        .from(users)
+        .where(and(
+          eq(users.role, 'manager'),
+          sql`${users.villageId} IN (${sql.join(villageIds.map(id => sql.raw(`'${id}'`)), sql`, `)})`
+        ));
+
+      // Get open issues in assigned villages
+      const openIssuesCount = await db.select({ count: sql<number>`count(*)` })
+        .from(issues)
+        .where(and(
+          eq(issues.status, 'open'),
+          sql`${issues.villageId} IN (${sql.join(villageIds.map(id => sql.raw(`'${id}'`)), sql`, `)})`
+        ));
+
+      // Get today's collections in assigned villages
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const tomorrow = new Date(today);
+      tomorrow.setDate(tomorrow.getDate() + 1);
+
+      const todayCollectionsCount = await db.select({ count: sql<number>`count(*)` })
+        .from(wasteCollections)
+        .innerJoin(households, eq(wasteCollections.householdId, households.id))
+        .where(and(
+          sql`${wasteCollections.collectionDate} >= ${today}`,
+          sql`${wasteCollections.collectionDate} < ${tomorrow}`,
+          sql`${households.villageId} IN (${sql.join(villageIds.map(id => sql.raw(`'${id}'`)), sql`, `)})`
+        ));
+
+      return {
+        totalVillages: villageIds.length,
+        totalManagers: managersCount[0]?.count || 0,
+        totalOpenIssues: openIssuesCount[0]?.count || 0,
+        totalCollectionsToday: todayCollectionsCount[0]?.count || 0,
+      };
+    } catch (error) {
+      console.error('Error getting moderator stats:', error);
       return {
         totalVillages: 0,
         totalManagers: 0,
         totalOpenIssues: 0,
-        totalCollectionsToday: 0,
+        totalCollectionsToday: 0
       };
     }
-
-    const totalVillages = villageIds.length;
-
-    // Count managers in assigned villages
-    const managersCount = await db
-      .select({ count: sql<number>`count(*)` })
-      .from(users)
-      .where(and(
-        eq(users.role, 'manager'),
-        sql`${users.villageId} IN (${sql.join(villageIds.map(id => sql.raw(`'${id}'`)), sql`, `)})`
-      ));
-
-    // Count open issues in assigned villages
-    const openIssuesCount = await db
-      .select({ count: sql<number>`count(*)` })
-      .from(issues)
-      .where(and(
-        eq(issues.status, 'open'),
-        sql`${issues.villageId} IN (${sql.join(villageIds.map(id => sql.raw(`'${id}'`)), sql`, `)})`
-      ));
-
-    // Count today's collections in assigned villages
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const tomorrow = new Date(today);
-    tomorrow.setDate(tomorrow.getDate() + 1);
-
-    const todayCollectionsCount = await db
-      .select({ count: sql<number>`count(*)` })
-      .from(wasteCollections)
-      .innerJoin(households, eq(wasteCollections.householdId, households.id))
-      .where(and(
-        sql`${wasteCollections.collectionDate} >= ${today}`,
-        sql`${wasteCollections.collectionDate} < ${tomorrow}`,
-        sql`${households.villageId} IN (${sql.join(villageIds.map(id => sql.raw(`'${id}'`)), sql`, `)})`
-      ));
-
-    return {
-      totalVillages,
-      totalManagers: managersCount[0]?.count || 0,
-      totalOpenIssues: openIssuesCount[0]?.count || 0,
-      totalCollectionsToday: todayCollectionsCount[0]?.count || 0,
-    };
   }
 
   async getModeratorReports(moderatorUserId: string, filters: any): Promise<any> {

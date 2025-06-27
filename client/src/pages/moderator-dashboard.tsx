@@ -55,24 +55,28 @@ export default function ModeratorDashboard() {
   });
 
   // Fetch moderator stats
-  const { data: stats, isLoading: statsLoading } = useQuery({
+  const { data: stats, isLoading: statsLoading, error: statsError } = useQuery({
     queryKey: ["/api/moderator/stats"],
+    retry: 1,
   });
 
   // Fetch moderator assigned villages
-  const { data: villages, isLoading: villagesLoading } = useQuery({
+  const { data: villages, isLoading: villagesLoading, error: villagesError } = useQuery({
     queryKey: ["/api/moderator/villages"],
+    retry: 1,
   });
 
   // Fetch managers in assigned villages
-  const { data: managers, isLoading: managersLoading } = useQuery({
+  const { data: managers, isLoading: managersLoading, error: managersError } = useQuery({
     queryKey: ["/api/managers"],
+    retry: 1,
   });
 
   // Fetch moderator reports
-  const { data: reportData, isLoading: reportLoading } = useQuery({
+  const { data: reportData, isLoading: reportLoading, error: reportError } = useQuery({
     queryKey: ["/api/moderator/reports", reportFilters],
     enabled: activeTab === "reports",
+    retry: 1,
   });
 
   // Village details query
@@ -272,7 +276,13 @@ export default function ModeratorDashboard() {
                   <Building2 className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold">{stats?.totalVillages || 0}</div>
+                  {statsLoading ? (
+                    <div className="text-2xl font-bold">Loading...</div>
+                  ) : statsError ? (
+                    <div className="text-2xl font-bold text-red-500">Error</div>
+                  ) : (
+                    <div className="text-2xl font-bold">{stats?.totalVillages || 0}</div>
+                  )}
                   <p className="text-xs text-muted-foreground">Assigned to you</p>
                 </CardContent>
               </Card>
@@ -283,7 +293,13 @@ export default function ModeratorDashboard() {
                   <Users className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold">{stats?.totalManagers || 0}</div>
+                  {statsLoading ? (
+                    <div className="text-2xl font-bold">Loading...</div>
+                  ) : statsError ? (
+                    <div className="text-2xl font-bold text-red-500">Error</div>
+                  ) : (
+                    <div className="text-2xl font-bold">{stats?.totalManagers || 0}</div>
+                  )}
                   <p className="text-xs text-muted-foreground">In your villages</p>
                 </CardContent>
               </Card>
@@ -294,7 +310,13 @@ export default function ModeratorDashboard() {
                   <AlertTriangle className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold">{stats?.totalOpenIssues || 0}</div>
+                  {statsLoading ? (
+                    <div className="text-2xl font-bold">Loading...</div>
+                  ) : statsError ? (
+                    <div className="text-2xl font-bold text-red-500">Error</div>
+                  ) : (
+                    <div className="text-2xl font-bold">{stats?.totalOpenIssues || 0}</div>
+                  )}
                   <p className="text-xs text-muted-foreground">Needs attention</p>
                 </CardContent>
               </Card>
@@ -305,7 +327,13 @@ export default function ModeratorDashboard() {
                   <TrendingUp className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold">{stats?.totalCollectionsToday || 0}</div>
+                  {statsLoading ? (
+                    <div className="text-2xl font-bold">Loading...</div>
+                  ) : statsError ? (
+                    <div className="text-2xl font-bold text-red-500">Error</div>
+                  ) : (
+                    <div className="text-2xl font-bold">{stats?.totalCollectionsToday || 0}</div>
+                  )}
                   <p className="text-xs text-muted-foreground">Completed today</p>
                 </CardContent>
               </Card>
@@ -388,6 +416,37 @@ export default function ModeratorDashboard() {
                 </div>
               </CardContent>
             </Card>
+
+            {/* Debug Information */}
+            {(statsError || villagesError || managersError) && (
+              <Card className="border-red-200 bg-red-50">
+                <CardHeader>
+                  <CardTitle className="text-red-700">Debug Information</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-2 text-sm">
+                    {statsError && (
+                      <div className="text-red-600">
+                        <strong>Stats Error:</strong> {JSON.stringify(statsError)}
+                      </div>
+                    )}
+                    {villagesError && (
+                      <div className="text-red-600">
+                        <strong>Villages Error:</strong> {JSON.stringify(villagesError)}
+                      </div>
+                    )}
+                    {managersError && (
+                      <div className="text-red-600">
+                        <strong>Managers Error:</strong> {JSON.stringify(managersError)}
+                      </div>
+                    )}
+                    <div className="text-gray-600">
+                      <strong>User Info:</strong> {JSON.stringify(user)}
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
           </TabsContent>
 
           {/* Villages & Managers Tab */}
