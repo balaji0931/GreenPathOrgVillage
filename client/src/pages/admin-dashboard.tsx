@@ -1467,7 +1467,12 @@ export default function AdminDashboard() {
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold text-yellow-900">
-                  {dailyAnalytics?.avgSegregationRating?.toFixed(1) || "0.0"}
+                  {(() => {
+                    const rating = dailyAnalytics?.avgSegregationRating;
+                    if (rating == null) return "0.0";
+                    const numRating = typeof rating === 'string' ? parseFloat(rating) : rating;
+                    return isNaN(numRating) ? "0.0" : numRating.toFixed(1);
+                  })()}
                 </div>
                 <p className="text-xs text-yellow-700">Out of 5.0 stars</p>
               </CardContent>
