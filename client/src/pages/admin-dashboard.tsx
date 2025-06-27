@@ -1469,8 +1469,8 @@ export default function AdminDashboard() {
                 <div className="text-2xl font-bold text-yellow-900">
                   {(() => {
                     const rating = dailyAnalytics?.avgSegregationRating;
-                    if (rating == null) return "0.0";
-                    const numRating = typeof rating === 'string' ? parseFloat(rating) : rating;
+                    if (rating == null || rating === undefined) return "0.0";
+                    const numRating = typeof rating === 'string' ? parseFloat(rating) : Number(rating);
                     return isNaN(numRating) ? "0.0" : numRating.toFixed(1);
                   })()}
                 </div>
