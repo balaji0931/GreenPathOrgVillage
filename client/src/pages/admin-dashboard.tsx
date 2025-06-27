@@ -1787,7 +1787,7 @@ export default function AdminDashboard() {
                     );
                   })}
                 </div>
-                {timelineData.length === 0 && (
+                {(!dailyAnalytics?.collectionTimeline || dailyAnalytics.collectionTimeline.length === 0) && (
                   <p className="text-center text-muted-foreground py-4">No collection data available for selected date</p>
                 )}
               </CardContent>
