@@ -723,8 +723,8 @@ export class DatabaseStorage implements IStorage {
           villageId: households.villageId,
           villageName: villages.name,
           collections: count(wasteCollections.id),
-          avgSegregationRating: sql<number>`COALESCE(AVG(${wasteCollections.segregationRating}), 0)`,
-          avgPlasticRating: sql<number>`COALESCE(AVG(${wasteCollections.plasticRating}), 0)`,
+          avgSegregationRating: sql<number>`COALESCE(CAST(AVG(${wasteCollections.segregationRating}) AS DECIMAL(3,2)), 0)`,
+          avgPlasticRating: sql<number>`COALESCE(CAST(AVG(${wasteCollections.plasticRating}) AS DECIMAL(3,2)), 0)`,
         })
         .from(wasteCollections)
         .innerJoin(households, eq(wasteCollections.householdId, households.id))
@@ -750,8 +750,16 @@ export class DatabaseStorage implements IStorage {
 
       const collectionsData = await collectionsQuery;
 
+      // Ensure numeric values are properly converted
+      const formattedCollections = collectionsData.map(item => ({
+        ...item,
+        avgSegregationRating: parseFloat((Number(item.avgSegregationRating) || 0).toFixed(2)),
+        avgPlasticRating: parseFloat((Number(item.avgPlasticRating) || 0).toFixed(2)),
+        collections: Number(item.collections) || 0
+      }));
+
       return {
-        collections: collectionsData,
+        collections: formattedCollections,
       };
     } catch (error) {
       console.error("Generate report error:", error);

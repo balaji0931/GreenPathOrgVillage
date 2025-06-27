@@ -81,7 +81,7 @@ export default function AdminDashboard() {
       if (reportFilters.role !== "all") params.set("role", reportFilters.role);
       if (reportFilters.startDate) params.set("startDate", reportFilters.startDate);
       if (reportFilters.endDate) params.set("endDate", reportFilters.endDate);
-      
+
       const response = await apiRequest("GET", `/api/reports?${params.toString()}`);
       return response.json();
     },
@@ -94,7 +94,7 @@ export default function AdminDashboard() {
     queryFn: async () => {
       const params = new URLSearchParams();
       if (reportFilters.village !== "all") params.set("village", reportFilters.village);
-      
+
       const response = await apiRequest("GET", `/api/analytics/system?${params.toString()}`);
       return response.json();
     },
@@ -108,7 +108,7 @@ export default function AdminDashboard() {
       const params = new URLSearchParams();
       if (reportFilters.village !== "all") params.set("village", reportFilters.village);
       params.set("date", reportFilters.startDate || new Date().toISOString().split('T')[0]);
-      
+
       const response = await apiRequest("GET", `/api/analytics/daily?${params.toString()}`);
       return response.json();
     },
@@ -1109,14 +1109,15 @@ export default function AdminDashboard() {
               <CardContent>
                 <div className="text-3xl font-bold text-yellow-900">
                   {(() => {
-                    if (reportFilters.village === "all") {
-                      return systemAnalytics?.averageSegregationRating?.toFixed(1) || "0.0";
-                    } else {
-                      // Show rating for selected village
-                      const villageData = reportData?.collections?.find((c: any) => c.villageId === reportFilters.village);
-                      return villageData?.avgSegregationRating?.toFixed(1) || "0.0";
-                    }
-                  })()}
+                      if (reportFilters.village === "all") {
+                        return systemAnalytics?.averageSegregationRating?.toFixed(1) || "0.0";
+                      } else {
+                        // Show rating for selected village
+                        const villageData = reportData?.collections?.find((c: any) => c.villageId === reportFilters.village);
+                        const rating = villageData?.avgSegregationRating;
+                        return rating ? (typeof rating === 'number' ? rating : parseFloat(rating)).toFixed(1) : "0.0";
+                      }
+                    })()}
                 </div>
                 <p className="text-xs text-yellow-700 mt-1">
                   {reportFilters.village === "all" ? "Overall rating" : `Rating for ${villages?.find(v => v.villageId === reportFilters.village)?.name || "selected village"}`}
@@ -1147,12 +1148,12 @@ export default function AdminDashboard() {
                       trend.date === dateStr || trend.collectionDate === dateStr
                     );
                     const collectionsForDay = dayData?.collections || 0;
-                    
+
                     // Calculate total households and collection percentage
                     const totalHouseholds = reportFilters.village === "all" 
                       ? systemAnalytics?.totalHouseholds || 0 
                       : villages?.find(v => v.villageId === reportFilters.village)?.totalHouseholds || 0;
-                    
+
                     const dailyTotalHouseholds = Math.max(totalHouseholds, 1);
                     const collectionPercentage = (collectionsForDay / dailyTotalHouseholds) * 100;
                     const uncollected = dailyTotalHouseholds - collectionsForDay;
@@ -1255,7 +1256,7 @@ export default function AdminDashboard() {
                       // For village-specific data, we need to fetch from daily analytics or calculate from collections
                       distribution = dailyAnalytics?.ratingDistribution || [];
                     }
-                    
+
                     const excellent = distribution.filter((d: any) => d.rating >= 4).reduce((sum: number, d: any) => sum + d.count, 0);
                     const good = distribution.filter((d: any) => d.rating >= 3 && d.rating < 4).reduce((sum: number, d: any) => sum + d.count, 0);
                     const poor = distribution.filter((d: any) => d.rating < 3 && d.rating > 0).reduce((sum: number, d: any) => sum + d.count, 0);
@@ -1325,7 +1326,7 @@ export default function AdminDashboard() {
                 <div className="space-y-3">
                   {(() => {
                     let performanceData = [];
-                    
+
                     if (reportFilters.village === "all") {
                       performanceData = systemAnalytics?.topPerformingVillages || reportData?.collections || [];
                     } else {
@@ -1390,11 +1391,11 @@ export default function AdminDashboard() {
                     const totalHouseholds = reportFilters.village === "all" 
                       ? systemAnalytics?.totalHouseholds || 0
                       : villages?.find(v => v.villageId === reportFilters.village)?.totalHouseholds || 0;
-                    
+
                     const collectedToday = reportFilters.village === "all"
                       ? systemAnalytics?.totalCollectionsToday || 0
                       : dailyAnalytics?.collected || 0;
-                    
+
                     const collectionRate = totalHouseholds > 0 ? (collectedToday / totalHouseholds) * 100 : 0;
                     const notCollectedRate = 100 - collectionRate;
 
