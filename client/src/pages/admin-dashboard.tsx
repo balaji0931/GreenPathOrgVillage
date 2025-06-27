@@ -37,6 +37,13 @@ export default function AdminDashboard() {
     managerPhone: "",
   });
 
+  const [newModerator, setNewModerator] = useState({
+    name: "",
+    phone: "",
+    email: "",
+    villageIds: [] as string[],
+  });
+
   const [announcement, setAnnouncement] = useState({
     message: "",
     targetAudience: "all",
@@ -69,6 +76,11 @@ export default function AdminDashboard() {
   // Fetch managers
   const { data: managers, isLoading: managersLoading } = useQuery({
     queryKey: ["/api/managers"],
+  });
+
+  // Fetch moderators
+  const { data: moderators, isLoading: moderatorsLoading } = useQuery({
+    queryKey: ["/api/moderators"],
   });
 
   // Fetch reports
@@ -291,6 +303,119 @@ export default function AdminDashboard() {
     },
   });
 
+  // Create moderator mutation
+  const createModeratorMutation = useMutation({
+    mutationFn: async (data: typeof newModerator) => {
+      const response = await apiRequest("POST", "/api/moderators", data);
+      return response.json();
+    },
+    onSuccess: (data) => {
+      toast({
+        title: "Success",
+        description: "Moderator created successfully",
+      });
+      setCreatedCredentials(data.credentials);
+      setNewModerator({ name: "", phone: "", email: "", villageIds: [] });
+      queryClient.invalidateQueries({ queryKey: ["/api/moderators"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/stats/admin"] });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to create moderator",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Delete moderator mutation
+  const deleteModeratorMutation = useMutation({
+    mutationFn: async (moderatorId: string) => {
+      const response = await apiRequest("DELETE", `/api/moderators/${moderatorId}`);
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Success",
+        description: "Moderator deleted successfully",
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/moderators"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/stats/admin"] });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to delete moderator",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Reset moderator password mutation
+  const resetModeratorPasswordMutation = useMutation({
+    mutationFn: async (moderatorId: string) => {
+      const response = await apiRequest("PUT", `/api/moderators/${moderatorId}/reset-password`);
+      return response.json();
+    },
+    onSuccess: (data) => {
+      toast({
+        title: "Success",
+        description: `Password reset to: ${data.newPassword}`,
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to reset password",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Assign village to moderator mutation
+  const assignVillageToModeratorMutation = useMutation({
+    mutationFn: async ({ moderatorId, villageId }: { moderatorId: string; villageId: string }) => {
+      const response = await apiRequest("POST", `/api/moderators/${moderatorId}/villages`, { villageId });
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Success",
+        description: "Village assigned to moderator successfully",
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/moderators"] });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to assign village to moderator",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Remove village from moderator mutation
+  const removeVillageFromModeratorMutation = useMutation({
+    mutationFn: async ({ moderatorId, villageId }: { moderatorId: string; villageId: string }) => {
+      const response = await apiRequest("DELETE", `/api/moderators/${moderatorId}/villages/${villageId}`);
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Success",
+        description: "Village removed from moderator successfully",
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/moderators"] });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to remove village from moderator",
+        variant: "destructive",
+      });
+    },
+  });
+
   // Add manager to village mutation
   const addManagerMutation = useMutation({
     mutationFn: async ({ villageId, managerName, managerPhone }: { villageId: string; managerName: string; managerPhone: string }) => {
@@ -359,6 +484,7 @@ export default function AdminDashboard() {
     { id: "overview", label: "Overview", icon: Home },
     { id: "villages", label: "Villages", icon: Building2 },
     { id: "managers", label: "Managers", icon: Users },
+    { id: "moderators", label: "Moderators", icon: UserPlus },
     { id: "reports", label: "Reports", icon: BarChart3 },
     { id: "announcements", label: "Announcements", icon: Megaphone },
     { id: "profile", label: "Profile", icon: User },
@@ -1008,6 +1134,220 @@ export default function AdminDashboard() {
                           size="sm"
                           variant="destructive"
                           onClick={() => deleteManagerMutation.mutate(manager.userId)}
+                          className="p-1 sm:p-2"
+                        >
+                          <Trash2 className="h-3 w-3 sm:h-4 sm:w-4" />
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+
+  const renderModerators = () => (
+    <div className="space-y-4 sm:space-y-6">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div>
+          <h2 className="text-2xl sm:text-3xl font-bold">Moderator Management</h2>
+          <p className="text-muted-foreground">Create and manage moderators with village assignments</p>
+        </div>
+        <Dialog>
+          <DialogTrigger asChild>
+            <Button className="w-full sm:w-auto">
+              <Plus className="h-4 w-4 mr-2" />
+              Add Moderator
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="max-w-[95vw] sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>Create New Moderator</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="moderatorName">Name</Label>
+                <Input
+                  id="moderatorName"
+                  value={newModerator.name}
+                  onChange={(e) => setNewModerator({ ...newModerator, name: e.target.value })}
+                  placeholder="Enter moderator name"
+                />
+              </div>
+              <div>
+                <Label htmlFor="moderatorPhone">Phone</Label>
+                <Input
+                  id="moderatorPhone"
+                  value={newModerator.phone}
+                  onChange={(e) => setNewModerator({ ...newModerator, phone: e.target.value })}
+                  placeholder="Enter phone number"
+                />
+              </div>
+              <div>
+                <Label htmlFor="moderatorEmail">Email (Optional)</Label>
+                <Input
+                  id="moderatorEmail"
+                  value={newModerator.email}
+                  onChange={(e) => setNewModerator({ ...newModerator, email: e.target.value })}
+                  placeholder="Enter email address"
+                />
+              </div>
+              <div>
+                <Label>Assign Villages (Optional)</Label>
+                <div className="space-y-2 max-h-32 overflow-y-auto">
+                  {villages?.map((village: any) => (
+                    <div key={village.villageId} className="flex items-center space-x-2">
+                      <input
+                        type="checkbox"
+                        id={`village-${village.villageId}`}
+                        checked={newModerator.villageIds.includes(village.villageId)}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setNewModerator({
+                              ...newModerator,
+                              villageIds: [...newModerator.villageIds, village.villageId]
+                            });
+                          } else {
+                            setNewModerator({
+                              ...newModerator,
+                              villageIds: newModerator.villageIds.filter(id => id !== village.villageId)
+                            });
+                          }
+                        }}
+                        className="rounded"
+                      />
+                      <label htmlFor={`village-${village.villageId}`} className="text-sm">
+                        {village.name} ({village.villageId})
+                      </label>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <Button 
+                onClick={() => createModeratorMutation.mutate(newModerator)}
+                disabled={createModeratorMutation.isPending}
+                className="w-full"
+              >
+                {createModeratorMutation.isPending ? "Creating..." : "Create Moderator"}
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+      </div>
+
+      <Card>
+        <CardHeader className="p-3 sm:p-6">
+          <CardTitle className="text-lg sm:text-xl">All Moderators</CardTitle>
+        </CardHeader>
+        <CardContent className="p-3 sm:p-6 pt-0">
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="text-xs sm:text-sm">Moderator ID</TableHead>
+                  <TableHead className="text-xs sm:text-sm">Name</TableHead>
+                  <TableHead className="text-xs sm:text-sm hidden sm:table-cell">Phone</TableHead>
+                  <TableHead className="text-xs sm:text-sm">Assigned Villages</TableHead>
+                  <TableHead className="text-xs sm:text-sm">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {moderators?.map((moderator: any) => (
+                  <TableRow key={moderator.id}>
+                    <TableCell className="font-medium text-xs sm:text-sm">{moderator.moderatorId}</TableCell>
+                    <TableCell className="text-xs sm:text-sm">{moderator.name}</TableCell>
+                    <TableCell className="text-xs sm:text-sm hidden sm:table-cell">{moderator.phone}</TableCell>
+                    <TableCell className="text-xs sm:text-sm">
+                      <div className="flex flex-wrap gap-1">
+                        {moderator.villages?.map((village: any) => (
+                          <Badge key={village.villageId} variant="secondary" className="text-xs">
+                            {village.villageId}
+                          </Badge>
+                        ))}
+                        {(!moderator.villages || moderator.villages.length === 0) && (
+                          <span className="text-muted-foreground text-xs">No villages assigned</span>
+                        )}
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex space-x-1 sm:space-x-2">
+                        <Dialog>
+                          <DialogTrigger asChild>
+                            <Button size="sm" variant="outline" className="p-1 sm:p-2">
+                              <Eye className="h-3 w-3 sm:h-4 sm:w-4" />
+                            </Button>
+                          </DialogTrigger>
+                          <DialogContent className="max-w-[95vw] sm:max-w-md">
+                            <DialogHeader>
+                              <DialogTitle>Manage Villages for {moderator.name}</DialogTitle>
+                            </DialogHeader>
+                            <div className="space-y-4">
+                              <div>
+                                <Label>Currently Assigned Villages</Label>
+                                <div className="space-y-2 max-h-32 overflow-y-auto">
+                                  {moderator.villages?.map((village: any) => (
+                                    <div key={village.villageId} className="flex items-center justify-between p-2 border rounded">
+                                      <span className="text-sm">{village.name} ({village.villageId})</span>
+                                      <Button
+                                        size="sm"
+                                        variant="destructive"
+                                        onClick={() => removeVillageFromModeratorMutation.mutate({
+                                          moderatorId: moderator.moderatorId,
+                                          villageId: village.villageId
+                                        })}
+                                      >
+                                        <X className="h-3 w-3" />
+                                      </Button>
+                                    </div>
+                                  ))}
+                                  {(!moderator.villages || moderator.villages.length === 0) && (
+                                    <p className="text-muted-foreground text-sm">No villages assigned</p>
+                                  )}
+                                </div>
+                              </div>
+                              <div>
+                                <Label>Assign New Village</Label>
+                                <div className="space-y-2">
+                                  <Select onValueChange={(villageId) => {
+                                    assignVillageToModeratorMutation.mutate({
+                                      moderatorId: moderator.moderatorId,
+                                      villageId
+                                    });
+                                  }}>
+                                    <SelectTrigger>
+                                      <SelectValue placeholder="Select village to assign" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      {villages?.filter((village: any) => 
+                                        !moderator.villages?.some((mv: any) => mv.villageId === village.villageId)
+                                      ).map((village: any) => (
+                                        <SelectItem key={village.villageId} value={village.villageId}>
+                                          {village.name} ({village.villageId})
+                                        </SelectItem>
+                                      ))}
+                                    </SelectContent>
+                                  </Select>
+                                </div>
+                              </div>
+                            </div>
+                          </DialogContent>
+                        </Dialog>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => resetModeratorPasswordMutation.mutate(moderator.moderatorId)}
+                          className="p-1 sm:p-2"
+                        >
+                          <RotateCcw className="h-3 w-3 sm:h-4 sm:w-4" />
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="destructive"
+                          onClick={() => deleteModeratorMutation.mutate(moderator.moderatorId)}
                           className="p-1 sm:p-2"
                         >
                           <Trash2 className="h-3 w-3 sm:h-4 sm:w-4" />
@@ -2021,6 +2361,7 @@ export default function AdminDashboard() {
       case "overview": return renderOverview();
       case "villages": return renderVillages();
       case "managers": return renderManagers();
+      case "moderators": return renderModerators();
       case "reports": return renderReports();
       case "announcements": return renderAnnouncements();
       case "profile": return renderProfile();
@@ -2138,7 +2479,7 @@ export default function AdminDashboard() {
 
         {/* Mobile Bottom Navigation */}
         <div className="fixed bottom-0 left-0 right-0 bg-white border-t z-50 md:hidden">
-          <div className="grid grid-cols-6 gap-1">
+          <div className="grid grid-cols-7 gap-1">
             {navigationItems.map((item) => {
               const Icon = item.icon;
               return (

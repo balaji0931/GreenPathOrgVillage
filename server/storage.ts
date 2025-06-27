@@ -12,6 +12,8 @@ import {
   segregators,
   segregatorAttendance,
   collectorComplaints,
+  moderators,
+  moderatorVillageAssignments,
   type Village,
   type User,
   type Household,
@@ -23,7 +25,9 @@ import {
   type Feedback,
   type Segregator,
   type SegregatorAttendance,
-
+  type CollectorComplaint,
+  type Moderator,
+  type ModeratorVillageAssignment,
   type InsertVillage,
   type InsertUser,
   type InsertHousehold,
@@ -35,7 +39,9 @@ import {
   type InsertFeedback,
   type InsertSegregator,
   type InsertSegregatorAttendance,
-
+  type InsertCollectorComplaint,
+  type InsertModerator,
+  type InsertModeratorVillageAssignment,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, desc, count, sql } from "drizzle-orm";
@@ -1366,7 +1372,7 @@ export class DatabaseStorage implements IStorage {
       .from(wasteCollections)
       .innerJoin(households, eq(wasteCollections.householdId, households.id))
       .where(villageCondition);
-    
+
     const topVillages = await db.select({
         villageName: villages.name,
         avgRating: sql<number>`COALESCE(AVG(CAST(${wasteCollections.segregationRating} AS DECIMAL(3,2))), 0)`
@@ -1404,7 +1410,7 @@ export class DatabaseStorage implements IStorage {
       )
       .groupBy(wasteCollections.segregationRating)
       .orderBy(wasteCollections.segregationRating);
-    
+
     // Safely convert avgSegregation to number
     const avgRating = Number(avgSegregation.avg) || 0;
 
