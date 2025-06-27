@@ -922,7 +922,6 @@ export class DatabaseStorage implements IStorage {
       householdId: collectorComplaints.householdId,
       householdUid: households.uid,
       headName: households.headName,
-```text
       houseNumber: households.houseNumber,
     })
     .from(collectorComplaints)
