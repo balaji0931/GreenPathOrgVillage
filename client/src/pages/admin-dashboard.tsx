@@ -78,6 +78,18 @@ export default function AdminDashboard() {
     enabled: activeTab === "reports",
   });
 
+  // Fetch system analytics
+  const { data: systemAnalytics, isLoading: analyticsLoading } = useQuery({
+    queryKey: ["/api/analytics/system"],
+    enabled: activeTab === "reports",
+  });
+
+  // Fetch daily analytics
+  const { data: dailyAnalytics, isLoading: dailyLoading } = useQuery({
+    queryKey: ["/api/analytics/daily", reportFilters.village, reportFilters.startDate],
+    enabled: activeTab === "reports",
+  });
+
   // Village details query
   const { data: villageDetails } = useQuery({
     queryKey: ["/api/villages", selectedVillage, "details"],
@@ -1048,7 +1060,7 @@ export default function AdminDashboard() {
               <CardContent>
                 <div className="text-3xl font-bold text-blue-900">
                   {(() => {
-                    if (!reportData?.collections) return 0;
+                    if (!reportData?.collections) return systemAnalytics?.totalCollectionsThisWeek || 0;
                     const filteredCollections = reportFilters.village === "all" 
                       ? reportData.collections 
                       : reportData.collections.filter((c: any) => c.villageId === reportFilters.village);
@@ -1072,7 +1084,7 @@ export default function AdminDashboard() {
               <CardContent>
                 <div className="text-3xl font-bold text-yellow-900">
                   {(() => {
-                    if (!reportData?.collections) return "0.0";
+                    if (!reportData?.collections) return systemAnalytics?.averageSegregationRating?.toFixed(1) || "0.0";
                     const filteredCollections = reportFilters.village === "all" 
                       ? reportData.collections 
                       : reportData.collections.filter((c: any) => c.villageId === reportFilters.village);
@@ -1103,12 +1115,18 @@ export default function AdminDashboard() {
                   {Array.from({ length: 7 }).map((_, i) => {
                     const date = new Date();
                     date.setDate(date.getDate() - (6 - i));
-                    const dateStr = date.toDateString();
+                    const dateStr = date.toISOString().split('T')[0];
                     
-                    // Mock data for daily collections - in real implementation, this would come from API
-                    const collectionsForDay = Math.floor(Math.random() * 50) + 10;
-                    const maxCollections = 60;
-                    const percentage = (collectionsForDay / maxCollections) * 100;
+                    // Find real data for this date
+                    const dayData = systemAnalytics?.collectionTrends?.find((trend: any) => 
+                      trend.date === dateStr
+                    );
+                    const collectionsForDay = dayData?.collections || 0;
+                    const maxCollections = Math.max(
+                      ...(systemAnalytics?.collectionTrends?.map((t: any) => t.collections) || [50]), 
+                      50
+                    );
+                    const percentage = maxCollections > 0 ? (collectionsForDay / maxCollections) * 100 : 0;
                     
                     return (
                       <div key={i} className="flex items-center gap-3">
@@ -1120,9 +1138,11 @@ export default function AdminDashboard() {
                             className="bg-blue-500 h-4 rounded-full transition-all" 
                             style={{ width: `${Math.min(percentage, 100)}%` }}
                           />
-                          <span className="absolute inset-0 flex items-center justify-center text-xs font-medium text-white">
-                            {collectionsForDay}
-                          </span>
+                          {collectionsForDay > 0 && (
+                            <span className="absolute inset-0 flex items-center justify-center text-xs font-medium text-white">
+                              {collectionsForDay}
+                            </span>
+                          )}
                         </div>
                         <div className="w-12 text-xs text-right">
                           {Math.round(percentage)}%
@@ -1147,9 +1167,13 @@ export default function AdminDashboard() {
                   {Array.from({ length: 7 }).map((_, i) => {
                     const date = new Date();
                     date.setDate(date.getDate() - (6 - i));
+                    const dateStr = date.toISOString().split('T')[0];
                     
-                    // Mock data for average rating - in real implementation, this would come from API
-                    const avgRating = Math.random() * 2 + 3; // Random rating between 3-5
+                    // Find real data for this date
+                    const dayData = systemAnalytics?.collectionTrends?.find((trend: any) => 
+                      trend.date === dateStr
+                    );
+                    const avgRating = dayData?.avgRating || 0;
                     
                     return (
                       <div key={i} className="flex items-center gap-3">
@@ -1160,13 +1184,14 @@ export default function AdminDashboard() {
                           <div 
                             className={`h-4 rounded-full transition-all ${
                               avgRating >= 4 ? 'bg-green-500' : 
-                              avgRating >= 3 ? 'bg-yellow-500' : 'bg-red-500'
+                              avgRating >= 3 ? 'bg-yellow-500' : 
+                              avgRating > 0 ? 'bg-red-500' : 'bg-gray-300'
                             }`}
-                            style={{ width: `${(avgRating / 5) * 100}%` }}
+                            style={{ width: `${avgRating > 0 ? (avgRating / 5) * 100 : 0}%` }}
                           />
                         </div>
                         <div className="w-12 text-xs text-right font-medium">
-                          {avgRating.toFixed(1)}
+                          {avgRating > 0 ? avgRating.toFixed(1) : 'N/A'}
                         </div>
                       </div>
                     );
@@ -1186,11 +1211,12 @@ export default function AdminDashboard() {
               <CardContent>
                 <div className="flex items-center justify-center">
                   {(() => {
-                    // Mock data for segregation rates
-                    const excellent = 65;
-                    const good = 25;
-                    const poor = 10;
-                    const total = excellent + good + poor;
+                    // Calculate segregation rates from real data
+                    const distribution = systemAnalytics?.segregationRateDistribution || [];
+                    const excellent = distribution.filter((d: any) => d.rating >= 4).reduce((sum: number, d: any) => sum + d.count, 0);
+                    const good = distribution.filter((d: any) => d.rating >= 3 && d.rating < 4).reduce((sum: number, d: any) => sum + d.count, 0);
+                    const poor = distribution.filter((d: any) => d.rating < 3 && d.rating > 0).reduce((sum: number, d: any) => sum + d.count, 0);
+                    const total = excellent + good + poor || 1;
                     
                     return (
                       <div className="w-48 h-48 relative">
@@ -1254,32 +1280,34 @@ export default function AdminDashboard() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
-                  {reportData?.collections?.slice(0, 6).map((village: any, index: number) => {
-                    const avgRating = parseFloat(village.avgSegregationRating) || 0;
+                  {(systemAnalytics?.topPerformingVillages || reportData?.collections || []).slice(0, 6).map((village: any, index: number) => {
+                    const avgRating = parseFloat(village.avgRating || village.avgSegregationRating) || 0;
                     const collections = parseInt(village.collections) || 0;
                     
                     return (
                       <div key={index} className="space-y-1">
                         <div className="flex justify-between text-xs">
-                          <span className="font-medium truncate">{village.villageName}</span>
+                          <span className="font-medium truncate">{village.villageName || village.name}</span>
                           <span>{collections} collections</span>
                         </div>
                         <div className="flex h-6 bg-gray-200 rounded overflow-hidden">
                           <div 
                             className={`transition-all ${
                               avgRating >= 4 ? 'bg-green-500' : 
-                              avgRating >= 3 ? 'bg-yellow-500' : 'bg-red-500'
+                              avgRating >= 3 ? 'bg-yellow-500' : 
+                              avgRating > 0 ? 'bg-red-500' : 'bg-gray-300'
                             }`}
-                            style={{ width: `${(avgRating / 5) * 100}%` }}
+                            style={{ width: `${avgRating > 0 ? (avgRating / 5) * 100 : 0}%` }}
                             title={`Rating: ${avgRating.toFixed(1)}`}
                           />
                         </div>
                         <div className="text-xs text-muted-foreground text-right">
-                          {avgRating.toFixed(1)}/5.0
+                          {avgRating > 0 ? avgRating.toFixed(1) : 'N/A'}/5.0
                         </div>
                       </div>
                     );
-                  }) || (
+                  })}
+                  {(!systemAnalytics?.topPerformingVillages && !reportData?.collections) && (
                     <p className="text-center text-muted-foreground py-4">No village data available</p>
                   )}
                 </div>
@@ -1353,7 +1381,7 @@ export default function AdminDashboard() {
                       <p className="text-xs text-muted-foreground">Active communities</p>
                     </div>
                     <div className="text-2xl font-bold text-blue-600">
-                      {villages?.length || 0}
+                      {systemAnalytics?.totalVillages || villages?.length || 0}
                     </div>
                   </div>
                   
@@ -1363,7 +1391,7 @@ export default function AdminDashboard() {
                       <p className="text-xs text-muted-foreground">Registered users</p>
                     </div>
                     <div className="text-2xl font-bold text-green-600">
-                      {stats?.totalVillages ? stats.totalVillages * 50 : 0}
+                      {systemAnalytics?.totalHouseholds || 0}
                     </div>
                   </div>
                   
@@ -1373,7 +1401,7 @@ export default function AdminDashboard() {
                       <p className="text-xs text-muted-foreground">Active staff</p>
                     </div>
                     <div className="text-2xl font-bold text-yellow-600">
-                      {stats?.totalManagers ? stats.totalManagers * 3 : 0}
+                      {systemAnalytics?.totalCollectors || 0}
                     </div>
                   </div>
                 </div>
@@ -1439,7 +1467,7 @@ export default function AdminDashboard() {
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold text-yellow-900">
-                  4.2
+                  {dailyAnalytics?.avgSegregationRating?.toFixed(1) || "0.0"}
                 </div>
                 <p className="text-xs text-yellow-700">Out of 5.0 stars</p>
               </CardContent>
@@ -1451,7 +1479,7 @@ export default function AdminDashboard() {
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold text-blue-900">
-                  {reportFilters.village === "all" ? (stats?.totalVillages ? stats.totalVillages * 50 : 0) : 45}
+                  {dailyAnalytics?.totalHouses || 0}
                 </div>
                 <p className="text-xs text-blue-700">Registered households</p>
               </CardContent>
@@ -1463,7 +1491,7 @@ export default function AdminDashboard() {
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold text-green-900">
-                  {reportFilters.village === "all" ? 180 : 38}
+                  {dailyAnalytics?.collected || 0}
                 </div>
                 <p className="text-xs text-green-700">Collections completed</p>
               </CardContent>
@@ -1475,7 +1503,7 @@ export default function AdminDashboard() {
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold text-red-900">
-                  {reportFilters.village === "all" ? 70 : 7}
+                  {dailyAnalytics?.remaining || 0}
                 </div>
                 <p className="text-xs text-red-700">Yet to collect</p>
               </CardContent>
@@ -1495,8 +1523,8 @@ export default function AdminDashboard() {
               <CardContent>
                 <div className="flex items-center justify-center">
                   {(() => {
-                    const collected = reportFilters.village === "all" ? 180 : 38;
-                    const total = reportFilters.village === "all" ? 250 : 45;
+                    const collected = dailyAnalytics?.collected || 0;
+                    const total = dailyAnalytics?.totalHouses || 1;
                     const notCollected = total - collected;
                     
                     return (
@@ -1552,10 +1580,10 @@ export default function AdminDashboard() {
               <CardContent>
                 <div className="space-y-3">
                   {[5, 4, 3, 2, 1].map(stars => {
-                    // Mock data for star distribution
-                    const starCounts = { 5: 42, 4: 28, 3: 15, 2: 8, 1: 3 };
-                    const starCount = starCounts[stars as keyof typeof starCounts] || 0;
-                    const total = Object.values(starCounts).reduce((a, b) => a + b, 0);
+                    // Use real data for star distribution
+                    const ratingData = dailyAnalytics?.ratingDistribution || [];
+                    const starCount = ratingData.find((r: any) => r.rating === stars)?.count || 0;
+                    const total = ratingData.reduce((sum: number, r: any) => sum + r.count, 0) || 1;
                     const percentage = total > 0 ? (starCount / total) * 100 : 0;
                     
                     return (
@@ -1593,15 +1621,15 @@ export default function AdminDashboard() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
-                  {reportFilters.village === "all" ? (
-                    villages?.slice(0, 5).map((village: any, index) => {
-                      const collections = Math.floor(Math.random() * 30) + 20;
-                      const avgRating = Math.random() * 2 + 3;
+                  {dailyAnalytics?.villagePerformance?.length > 0 ? (
+                    dailyAnalytics.villagePerformance.slice(0, 5).map((performer: any, index: number) => {
+                      const collections = performer.collections || 0;
+                      const avgRating = performer.avgRating || 0;
                       
                       return (
-                        <div key={village.villageId} className="p-3 bg-gray-50 rounded-lg">
+                        <div key={index} className="p-3 bg-gray-50 rounded-lg">
                           <div className="flex items-center justify-between mb-2">
-                            <h4 className="font-medium">{village.name}</h4>
+                            <h4 className="font-medium">{performer.name}</h4>
                             <Badge variant="outline">{collections} collections</Badge>
                           </div>
                           <div className="flex items-center gap-2">
@@ -1609,43 +1637,21 @@ export default function AdminDashboard() {
                               <div 
                                 className={`h-2 rounded-full ${
                                   avgRating >= 4 ? 'bg-green-500' : 
-                                  avgRating >= 3 ? 'bg-yellow-500' : 'bg-red-500'
+                                  avgRating >= 3 ? 'bg-yellow-500' : 
+                                  avgRating > 0 ? 'bg-red-500' : 'bg-gray-300'
                                 }`}
-                                style={{ width: `${(avgRating / 5) * 100}%` }}
+                                style={{ width: `${avgRating > 0 ? (avgRating / 5) * 100 : 0}%` }}
                               />
                             </div>
-                            <span className="text-sm font-medium">{avgRating.toFixed(1)}</span>
+                            <span className="text-sm font-medium">
+                              {avgRating > 0 ? avgRating.toFixed(1) : 'N/A'}
+                            </span>
                           </div>
                         </div>
                       );
                     })
                   ) : (
-                    // Show collectors for selected village
-                    Array.from({ length: 3 }).map((_, index) => {
-                      const collections = Math.floor(Math.random() * 15) + 8;
-                      const avgRating = Math.random() * 2 + 3;
-                      
-                      return (
-                        <div key={index} className="p-3 bg-gray-50 rounded-lg">
-                          <div className="flex items-center justify-between mb-2">
-                            <h4 className="font-medium">Collector {index + 1}</h4>
-                            <Badge variant="outline">{collections} collections</Badge>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <div className="flex-1 bg-gray-200 rounded-full h-2">
-                              <div 
-                                className={`h-2 rounded-full ${
-                                  avgRating >= 4 ? 'bg-green-500' : 
-                                  avgRating >= 3 ? 'bg-yellow-500' : 'bg-red-500'
-                                }`}
-                                style={{ width: `${(avgRating / 5) * 100}%` }}
-                              />
-                            </div>
-                            <span className="text-sm font-medium">{avgRating.toFixed(1)}</span>
-                          </div>
-                        </div>
-                      );
-                    })
+                    <p className="text-center text-muted-foreground py-4">No performance data available for selected date</p>
                   )}
                 </div>
               </CardContent>
@@ -1663,9 +1669,14 @@ export default function AdminDashboard() {
                 <div className="space-y-2">
                   {Array.from({ length: 12 }).map((_, i) => {
                     const hour = i + 8; // Start from 8 AM
-                    const hourCollections = Math.floor(Math.random() * 20) + 2;
-                    const maxCollections = 25;
-                    const percentage = (hourCollections / maxCollections) * 100;
+                    const timelineData = dailyAnalytics?.collectionTimeline || [];
+                    const hourData = timelineData.find((t: any) => t.hour === hour);
+                    const hourCollections = hourData?.collections || 0;
+                    const maxCollections = Math.max(
+                      ...timelineData.map((t: any) => t.collections), 
+                      25
+                    );
+                    const percentage = maxCollections > 0 ? (hourCollections / maxCollections) * 100 : 0;
                     
                     return (
                       <div key={i} className="flex items-center gap-3">

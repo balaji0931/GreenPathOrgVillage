@@ -998,6 +998,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get('/api/analytics/system', requireAuth, requireRole(['admin']), async (req, res) => {
+    try {
+      const analytics = await storage.getSystemAnalytics();
+      res.json(analytics);
+    } catch (error) {
+      console.error("Get system analytics error:", error);
+      res.status(500).json({ message: "Failed to get system analytics" });
+    }
+  });
+
+  app.get('/api/analytics/daily', requireAuth, requireRole(['admin']), async (req, res) => {
+    try {
+      const { village, date } = req.query;
+      const dailyData = await storage.getDailyReportData(
+        village as string,
+        date as string
+      );
+      res.json(dailyData);
+    } catch (error) {
+      console.error("Get daily analytics error:", error);
+      res.status(500).json({ message: "Failed to get daily analytics" });
+    }
+  });
+
   app.get('/api/villages/:villageId/details', requireAuth, requireRole(['admin']), async (req, res) => {
     try {
       const { villageId } = req.params;
