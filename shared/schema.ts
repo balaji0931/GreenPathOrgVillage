@@ -159,6 +159,23 @@ export const collectorComplaints = pgTable("collector_complaints", {
   resolvedAt: timestamp("resolved_at"),
 });
 
+// Moderators table
+export const moderators = pgTable("moderators", {
+  id: serial("id").primaryKey(),
+  userId: text("user_id").notNull().unique(),
+  name: text("name").notNull(),
+  phone: text("phone"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Moderator village assignments
+export const moderatorVillageAssignments = pgTable("moderator_village_assignments", {
+  id: serial("id").primaryKey(),
+  moderatorId: integer("moderator_id").notNull().references(() => moderators.id),
+  villageId: text("village_id").notNull().references(() => villages.villageId),
+  assignedAt: timestamp("assigned_at").defaultNow(),
+});
+
 // Relations
 export const villagesRelations = relations(villages, ({ many }) => ({
   users: many(users),
@@ -256,6 +273,21 @@ export const collectorComplaintsRelations = relations(collectorComplaints, ({ on
   }),
 }));
 
+export const moderatorsRelations = relations(moderators, ({ many }) => ({
+  villageAssignments: many(moderatorVillageAssignments),
+}));
+
+export const moderatorVillageAssignmentsRelations = relations(moderatorVillageAssignments, ({ one }) => ({
+  moderator: one(moderators, {
+    fields: [moderatorVillageAssignments.moderatorId],
+    references: [moderators.id],
+  }),
+  village: one(villages, {
+    fields: [moderatorVillageAssignments.villageId],
+    references: [villages.villageId],
+  }),
+}));
+
 // Insert schemas
 export const insertVillageSchema = createInsertSchema(villages).omit({
   id: true,
@@ -320,6 +352,16 @@ export const insertCollectorComplaintSchema = createInsertSchema(collectorCompla
   resolvedAt: true,
 });
 
+export const insertModeratorSchema = createInsertSchema(moderators).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertModeratorVillageAssignmentSchema = createInsertSchema(moderatorVillageAssignments).omit({
+  id: true,
+  assignedAt: true,
+});
+
 // Types
 export type InsertVillage = z.infer<typeof insertVillageSchema>;
 export type InsertUser = z.infer<typeof insertUserSchema>;
@@ -333,6 +375,8 @@ export type InsertFeedback = z.infer<typeof insertFeedbackSchema>;
 export type InsertSegregator = z.infer<typeof insertSegregatorSchema>;
 export type InsertSegregatorAttendance = z.infer<typeof insertSegregatorAttendanceSchema>;
 export type InsertCollectorComplaint = z.infer<typeof insertCollectorComplaintSchema>;
+export type InsertModerator = z.infer<typeof insertModeratorSchema>;
+export type InsertModeratorVillageAssignment = z.infer<typeof insertModeratorVillageAssignmentSchema>;
 
 export type Village = typeof villages.$inferSelect;
 export type User = typeof users.$inferSelect;
@@ -344,7 +388,7 @@ export type Announcement = typeof announcements.$inferSelect;
 export type Attendance = typeof attendance.$inferSelect;
 export type Feedback = typeof feedback.$inferSelect;
 export type Segregator = typeof segregators.$inferSelect;
-export type InsertSegregatorAttendance = typeof segregatorAttendance.$inferInsert;
 export type SegregatorAttendance = typeof segregatorAttendance.$inferSelect;
 export type CollectorComplaint = typeof collectorComplaints.$inferSelect;
-export type InsertCollectorComplaint = typeof collectorComplaints.$inferInsert;
+export type Moderator = typeof moderators.$inferSelect;
+export type ModeratorVillageAssignment = typeof moderatorVillageAssignments.$inferSelect;
