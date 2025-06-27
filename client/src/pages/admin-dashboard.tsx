@@ -56,6 +56,18 @@ export default function AdminDashboard() {
     endDate: "",
   });
 
+  // Moderator states
+  const [newModerator, setNewModerator] = useState({
+    name: "",
+    email: "",
+    phone: "",
+  });
+
+  const [assignmentData, setAssignmentData] = useState({
+    moderatorId: "",
+    villageId: "",
+  });
+
   // Fetch admin stats
   const { data: stats, isLoading: statsLoading } = useQuery({
     queryKey: ["/api/stats/admin"],
@@ -69,6 +81,16 @@ export default function AdminDashboard() {
   // Fetch managers
   const { data: managers, isLoading: managersLoading } = useQuery({
     queryKey: ["/api/managers"],
+  });
+
+  // Fetch moderators
+  const { data: moderators, isLoading: moderatorsLoading } = useQuery({
+    queryKey: ["/api/moderators"],
+  });
+
+  // Fetch moderator assignments
+  const { data: moderatorAssignments, isLoading: assignmentsLoading } = useQuery({
+    queryKey: ["/api/moderator-assignments"],
   });
 
   // Fetch reports
@@ -241,6 +263,100 @@ export default function AdminDashboard() {
       toast({
         title: "Error",
         description: "Failed to delete village",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Create moderator mutation
+  const createModeratorMutation = useMutation({
+    mutationFn: async (data: typeof newModerator) => {
+      const response = await apiRequest("POST", "/api/moderators", data);
+      return response.json();
+    },
+    onSuccess: (data) => {
+      toast({
+        title: "Success",
+        description: `Moderator created successfully. Login: ${data.credentials.userId}, Password: ${data.credentials.password}`,
+      });
+      setNewModerator({ name: "", email: "", phone: "" });
+      queryClient.invalidateQueries({ queryKey: ["/api/moderators"] });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to create moderator",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Assign village to moderator mutation
+  const assignVillageMutation = useMutation({
+    mutationFn: async (data: typeof assignmentData) => {
+      const response = await apiRequest("POST", "/api/moderator-assignments", {
+        moderatorId: parseInt(data.moderatorId),
+        villageId: data.villageId,
+      });
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Success",
+        description: "Village assigned to moderator successfully",
+      });
+      setAssignmentData({ moderatorId: "", villageId: "" });
+      queryClient.invalidateQueries({ queryKey: ["/api/moderator-assignments"] });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to assign village to moderator",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Remove village from moderator mutation
+  const removeVillageMutation = useMutation({
+    mutationFn: async ({ moderatorId, villageId }: { moderatorId: number; villageId: string }) => {
+      const response = await apiRequest("DELETE", `/api/moderator-assignments/${moderatorId}/${villageId}`);
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Success",
+        description: "Village removed from moderator successfully",
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/moderator-assignments"] });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to remove village from moderator",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Delete moderator mutation
+  const deleteModeratorMutation = useMutation({
+    mutationFn: async (moderatorId: number) => {
+      const response = await apiRequest("DELETE", `/api/moderators/${moderatorId}`);
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Success",
+        description: "Moderator deleted successfully",
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/moderators"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/moderator-assignments"] });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to delete moderator",
         variant: "destructive",
       });
     },
@@ -2018,119 +2134,6 @@ export default function AdminDashboard() {
   );
 
   const renderModerators = () => {
-    const { data: moderators, isLoading: moderatorsLoading } = useQuery({
-      queryKey: ["/api/moderators"],
-    });
-
-    const { data: moderatorAssignments, isLoading: assignmentsLoading } = useQuery({
-      queryKey: ["/api/moderator-assignments"],
-    });
-
-    const [newModerator, setNewModerator] = useState({
-      name: "",
-      email: "",
-      phone: "",
-    });
-
-    const [assignmentData, setAssignmentData] = useState({
-      moderatorId: "",
-      villageId: "",
-    });
-
-    // Create moderator mutation
-    const createModeratorMutation = useMutation({
-      mutationFn: async (data: typeof newModerator) => {
-        const response = await apiRequest("POST", "/api/moderators", data);
-        return response.json();
-      },
-      onSuccess: (data) => {
-        toast({
-          title: "Success",
-          description: `Moderator created successfully. Login: ${data.credentials.userId}, Password: ${data.credentials.password}`,
-        });
-        setNewModerator({ name: "", email: "", phone: "" });
-        queryClient.invalidateQueries({ queryKey: ["/api/moderators"] });
-      },
-      onError: () => {
-        toast({
-          title: "Error",
-          description: "Failed to create moderator",
-          variant: "destructive",
-        });
-      },
-    });
-
-    // Assign village to moderator mutation
-    const assignVillageMutation = useMutation({
-      mutationFn: async (data: typeof assignmentData) => {
-        const response = await apiRequest("POST", "/api/moderator-assignments", {
-          moderatorId: parseInt(data.moderatorId),
-          villageId: data.villageId,
-        });
-        return response.json();
-      },
-      onSuccess: () => {
-        toast({
-          title: "Success",
-          description: "Village assigned to moderator successfully",
-        });
-        setAssignmentData({ moderatorId: "", villageId: "" });
-        queryClient.invalidateQueries({ queryKey: ["/api/moderator-assignments"] });
-      },
-      onError: () => {
-        toast({
-          title: "Error",
-          description: "Failed to assign village to moderator",
-          variant: "destructive",
-        });
-      },
-    });
-
-    // Remove village from moderator mutation
-    const removeVillageMutation = useMutation({
-      mutationFn: async ({ moderatorId, villageId }: { moderatorId: number; villageId: string }) => {
-        const response = await apiRequest("DELETE", `/api/moderator-assignments/${moderatorId}/${villageId}`);
-        return response.json();
-      },
-      onSuccess: () => {
-        toast({
-          title: "Success",
-          description: "Village removed from moderator successfully",
-        });
-        queryClient.invalidateQueries({ queryKey: ["/api/moderator-assignments"] });
-      },
-      onError: () => {
-        toast({
-          title: "Error",
-          description: "Failed to remove village from moderator",
-          variant: "destructive",
-        });
-      },
-    });
-
-    // Delete moderator mutation
-    const deleteModeratorMutation = useMutation({
-      mutationFn: async (moderatorId: number) => {
-        const response = await apiRequest("DELETE", `/api/moderators/${moderatorId}`);
-        return response.json();
-      },
-      onSuccess: () => {
-        toast({
-          title: "Success",
-          description: "Moderator deleted successfully",
-        });
-        queryClient.invalidateQueries({ queryKey: ["/api/moderators"] });
-        queryClient.invalidateQueries({ queryKey: ["/api/moderator-assignments"] });
-      },
-      onError: () => {
-        toast({
-          title: "Error",
-          description: "Failed to delete moderator",
-          variant: "destructive",
-        });
-      },
-    });
-
     return (
       <div className="space-y-4 sm:space-y-6">
         <div>
