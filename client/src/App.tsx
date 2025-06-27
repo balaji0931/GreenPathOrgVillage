@@ -6,7 +6,6 @@ import { useAuth } from "@/hooks/useAuth";
 import { InstallPWA } from "@/components/InstallPWA";
 import Login from "@/pages/login";
 import AdminDashboard from "@/pages/admin-dashboard";
-import ModeratorDashboard from "@/pages/moderator-dashboard";
 import ManagerDashboard from "@/pages/manager-dashboard";
 import CollectorDashboard from "@/pages/collector-dashboard";
 import GeneratorDashboard from "@/pages/generator-dashboard";
@@ -63,9 +62,6 @@ function Router() {
             case 'admin':
               setLocation("/admin");
               return <AdminDashboard />;
-            case 'moderator':
-              setLocation("/moderator");
-              return <ModeratorDashboard />;
             case 'manager':
               setLocation("/manager");
               return <ManagerDashboard />;
@@ -82,7 +78,6 @@ function Router() {
         }}
       </Route>
       <Route path="/admin" component={AdminDashboard} />
-      <Route path="/moderator" component={ModeratorDashboard} />
       <Route path="/manager" component={ManagerDashboard} />
       <Route path="/collector" component={CollectorDashboard} />
       <Route path="/generator" component={GeneratorDashboard} />
@@ -92,8 +87,6 @@ function Router() {
           switch (user.role) {
             case 'admin':
               return <AdminDashboard />;
-            case 'moderator':
-              return <ModeratorDashboard />;
             case 'manager':
               return <ManagerDashboard />;
             case 'collector':

@@ -5,7 +5,7 @@ import { storage } from "./storage";
 import bcrypt from "bcrypt";
 import multer from "multer";
 import session from "express-session";
-import { insertUserSchema, insertVillageSchema, insertHouseholdSchema, insertCollectorSchema, insertWasteCollectionSchema, insertIssueSchema, insertAnnouncementSchema, insertAttendanceSchema, insertFeedbackSchema, insertModeratorSchema, insertModeratorVillageAssignmentSchema } from "@shared/schema";
+import { insertUserSchema, insertVillageSchema, insertHouseholdSchema, insertCollectorSchema, insertWasteCollectionSchema, insertIssueSchema, insertAnnouncementSchema, insertAttendanceSchema, insertFeedbackSchema } from "@shared/schema";
 import { z } from "zod";
 import path from "path";
 import { readFileSync } from "fs";
@@ -56,11 +56,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   }));
 
   // Initialize admin user if not exists
-  const adminUser = await storage.getUserByUserId('ADMIN');
+  const adminUser = await storage.getUserByUserId('admin');
   if (!adminUser) {
     await storage.createUser({
-      userId: 'ADMIN',
-      password: await bcrypt.hash('Admin123', 10),
+      userId: 'admin',
+      password: await bcrypt.hash('admin', 10),
       role: 'admin',
       name: 'Administrator',
       villageId: null,
@@ -72,29 +72,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { userId, password } = req.body;
 
-      // Check if it's a regular user
-      let user = await storage.getUserByUserId(userId);
-      let userRole = user?.role;
-      let userName = user?.name;
-      let villageId = user?.villageId;
-      let isFirstLogin = user?.isFirstLogin;
-
-      // If not found in users table, check if it's a moderator
-      if (!user && userId.startsWith('MOD-')) {
-        const moderator = await storage.getModeratorByUserId(userId);
-        if (moderator) {
-          // Check if moderator has a user account
-          const moderatorUser = await storage.getUserByUserId(userId);
-          if (moderatorUser) {
-            user = moderatorUser;
-            userRole = 'moderator';
-            userName = moderator.name;
-            villageId = null; // Moderators don't have single village
-            isFirstLogin = moderatorUser.isFirstLogin;
-          }
-        }
-      }
-
+      const user = await storage.getUserByUserId(userId);
       if (!user) {
         return res.status(401).json({ message: "Invalid credentials" });
       }
@@ -105,16 +83,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       req.session.userId = user.userId;
-      req.session.role = userRole;
-      req.session.villageId = villageId ?? undefined;
+      req.session.role = user.role;
+      req.session.villageId = user.villageId ?? undefined;
 
       res.json({
         user: {
           userId: user.userId,
-          role: userRole,
-          name: userName,
-          villageId: villageId,
-          isFirstLogin: isFirstLogin,
+          role: user.role,
+          name: user.name,
+          villageId: user.villageId,
+          isFirstLogin: user.isFirstLogin,
         }
       });
     } catch (error) {
@@ -1306,141 +1284,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Get village feedback error:", error);
       res.status(500).json({ message: "Failed to get village feedback" });
-    }
-  });
-
-  // Moderator routes
-  app.get('/api/moderators', requireAuth, requireRole(['admin']), async (req, res) => {
-    try {
-      const moderators = await storage.getModerators();
-      res.json(moderators);
-    } catch (error) {
-      console.error("Get moderators error:", error);
-      res.status(500).json({ message: "Failed to get moderators" });
-    }
-  });
-
-  app.post('/api/moderators', requireAuth, requireRole(['admin']), async (req, res) => {
-    try {
-      const moderatorData = insertModeratorSchema.parse(req.body);
-      
-      // Generate moderator user ID
-      const existingModerators = await storage.getModerators();
-      const nextNumber = existingModerators.length + 1;
-      const moderatorUserId = `MOD-${nextNumber.toString().padStart(3, '0')}`;
-      
-      // Create moderator record (only includes fields that exist in moderators table)
-      const moderator = await storage.createModerator({
-        userId: moderatorUserId,
-        name: moderatorData.name,
-        phone: moderatorData.phone,
-      });
-
-      // Create user account for moderator 
-      const hashedPassword = await bcrypt.hash(moderatorUserId, 10); // Password same as ID
-      await storage.createUser({
-        userId: moderatorUserId,
-        password: hashedPassword,
-        role: 'moderator',
-        name: moderatorData.name,
-        email: moderatorData.email,
-        villageId: null,
-      });
-
-      res.json({
-        moderator,
-        credentials: {
-          userId: moderatorUserId,
-          password: moderatorUserId,
-        }
-      });
-    } catch (error) {
-      console.error("Create moderator error:", error);
-      res.status(500).json({ message: "Failed to create moderator" });
-    }
-  });
-
-  app.delete('/api/moderators/:id', requireAuth, requireRole(['admin']), async (req, res) => {
-    try {
-      const moderatorId = parseInt(req.params.id);
-      const moderator = await storage.getModerators();
-      const toDelete = moderator.find(m => m.id === moderatorId);
-      
-      if (toDelete) {
-        // Delete user account first
-        await storage.deleteUser(toDelete.userId);
-        // Delete moderator record
-        await storage.deleteModerator(moderatorId);
-      }
-      
-      res.json({ success: true });
-    } catch (error) {
-      console.error("Delete moderator error:", error);
-      res.status(500).json({ message: "Failed to delete moderator" });
-    }
-  });
-
-  app.get('/api/moderator-assignments', requireAuth, requireRole(['admin']), async (req, res) => {
-    try {
-      const assignments = await storage.getModeratorAssignments();
-      res.json(assignments);
-    } catch (error) {
-      console.error("Get moderator assignments error:", error);
-      res.status(500).json({ message: "Failed to get moderator assignments" });
-    }
-  });
-
-  app.post('/api/moderator-assignments', requireAuth, requireRole(['admin']), async (req, res) => {
-    try {
-      const assignmentData = insertModeratorVillageAssignmentSchema.parse(req.body);
-      const assignment = await storage.assignVillageToModerator(assignmentData);
-      res.json(assignment);
-    } catch (error) {
-      console.error("Assign village to moderator error:", error);
-      res.status(500).json({ message: "Failed to assign village to moderator" });
-    }
-  });
-
-  app.delete('/api/moderator-assignments/:moderatorId/:villageId', requireAuth, requireRole(['admin']), async (req, res) => {
-    try {
-      const moderatorId = parseInt(req.params.moderatorId);
-      const villageId = req.params.villageId;
-      await storage.removeVillageFromModerator(moderatorId, villageId);
-      res.json({ success: true });
-    } catch (error) {
-      console.error("Remove village from moderator error:", error);
-      res.status(500).json({ message: "Failed to remove village from moderator" });
-    }
-  });
-
-  // Moderator-specific routes
-  app.get('/api/moderator/stats', requireAuth, requireRole(['moderator']), async (req, res) => {
-    try {
-      const stats = await storage.getModeratorStats(req.session.userId!);
-      res.json(stats);
-    } catch (error) {
-      console.error("Get moderator stats error:", error);
-      res.status(500).json({ message: "Failed to get moderator stats" });
-    }
-  });
-
-  app.get('/api/moderator/reports', requireAuth, requireRole(['moderator']), async (req, res) => {
-    try {
-      const reports = await storage.getModeratorReports(req.session.userId!, req.query);
-      res.json(reports);
-    } catch (error) {
-      console.error("Get moderator reports error:", error);
-      res.status(500).json({ message: "Failed to get moderator reports" });
-    }
-  });
-
-  app.get('/api/moderator/villages', requireAuth, requireRole(['moderator']), async (req, res) => {
-    try {
-      const villages = await storage.getVillagesByModeratorUserId(req.session.userId!);
-      res.json(villages);
-    } catch (error) {
-      console.error("Get moderator villages error:", error);
-      res.status(500).json({ message: "Failed to get moderator villages" });
     }
   });
 

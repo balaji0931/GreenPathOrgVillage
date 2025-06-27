@@ -56,18 +56,6 @@ export default function AdminDashboard() {
     endDate: "",
   });
 
-  // Moderator states
-  const [newModerator, setNewModerator] = useState({
-    name: "",
-    email: "",
-    phone: "",
-  });
-
-  const [assignmentData, setAssignmentData] = useState({
-    moderatorId: "",
-    villageId: "",
-  });
-
   // Fetch admin stats
   const { data: stats, isLoading: statsLoading } = useQuery({
     queryKey: ["/api/stats/admin"],
@@ -81,16 +69,6 @@ export default function AdminDashboard() {
   // Fetch managers
   const { data: managers, isLoading: managersLoading } = useQuery({
     queryKey: ["/api/managers"],
-  });
-
-  // Fetch moderators
-  const { data: moderators, isLoading: moderatorsLoading } = useQuery({
-    queryKey: ["/api/moderators"],
-  });
-
-  // Fetch moderator assignments
-  const { data: moderatorAssignments, isLoading: assignmentsLoading } = useQuery({
-    queryKey: ["/api/moderator-assignments"],
   });
 
   // Fetch reports
@@ -268,100 +246,6 @@ export default function AdminDashboard() {
     },
   });
 
-  // Create moderator mutation
-  const createModeratorMutation = useMutation({
-    mutationFn: async (data: typeof newModerator) => {
-      const response = await apiRequest("POST", "/api/moderators", data);
-      return response.json();
-    },
-    onSuccess: (data) => {
-      toast({
-        title: "Success",
-        description: `Moderator created successfully. Login: ${data.credentials.userId}, Password: ${data.credentials.password}`,
-      });
-      setNewModerator({ name: "", email: "", phone: "" });
-      queryClient.invalidateQueries({ queryKey: ["/api/moderators"] });
-    },
-    onError: () => {
-      toast({
-        title: "Error",
-        description: "Failed to create moderator",
-        variant: "destructive",
-      });
-    },
-  });
-
-  // Assign village to moderator mutation
-  const assignVillageMutation = useMutation({
-    mutationFn: async (data: typeof assignmentData) => {
-      const response = await apiRequest("POST", "/api/moderator-assignments", {
-        moderatorId: parseInt(data.moderatorId),
-        villageId: data.villageId,
-      });
-      return response.json();
-    },
-    onSuccess: () => {
-      toast({
-        title: "Success",
-        description: "Village assigned to moderator successfully",
-      });
-      setAssignmentData({ moderatorId: "", villageId: "" });
-      queryClient.invalidateQueries({ queryKey: ["/api/moderator-assignments"] });
-    },
-    onError: () => {
-      toast({
-        title: "Error",
-        description: "Failed to assign village to moderator",
-        variant: "destructive",
-      });
-    },
-  });
-
-  // Remove village from moderator mutation
-  const removeVillageMutation = useMutation({
-    mutationFn: async ({ moderatorId, villageId }: { moderatorId: number; villageId: string }) => {
-      const response = await apiRequest("DELETE", `/api/moderator-assignments/${moderatorId}/${villageId}`);
-      return response.json();
-    },
-    onSuccess: () => {
-      toast({
-        title: "Success",
-        description: "Village removed from moderator successfully",
-      });
-      queryClient.invalidateQueries({ queryKey: ["/api/moderator-assignments"] });
-    },
-    onError: () => {
-      toast({
-        title: "Error",
-        description: "Failed to remove village from moderator",
-        variant: "destructive",
-      });
-    },
-  });
-
-  // Delete moderator mutation
-  const deleteModeratorMutation = useMutation({
-    mutationFn: async (moderatorId: number) => {
-      const response = await apiRequest("DELETE", `/api/moderators/${moderatorId}`);
-      return response.json();
-    },
-    onSuccess: () => {
-      toast({
-        title: "Success",
-        description: "Moderator deleted successfully",
-      });
-      queryClient.invalidateQueries({ queryKey: ["/api/moderators"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/moderator-assignments"] });
-    },
-    onError: () => {
-      toast({
-        title: "Error",
-        description: "Failed to delete moderator",
-        variant: "destructive",
-      });
-    },
-  });
-
   // Reset password mutation
   const resetPasswordMutation = useMutation({
     mutationFn: async (managerId: string) => {
@@ -475,7 +359,6 @@ export default function AdminDashboard() {
     { id: "overview", label: "Overview", icon: Home },
     { id: "villages", label: "Villages", icon: Building2 },
     { id: "managers", label: "Managers", icon: Users },
-    { id: "moderators", label: "Moderators", icon: Settings },
     { id: "reports", label: "Reports", icon: BarChart3 },
     { id: "announcements", label: "Announcements", icon: Megaphone },
     { id: "profile", label: "Profile", icon: User },
@@ -2133,204 +2016,11 @@ export default function AdminDashboard() {
     </div>
   );
 
-  const renderModerators = () => {
-    return (
-      <div className="space-y-4 sm:space-y-6">
-        <div>
-          <h2 className="text-2xl sm:text-3xl font-bold">Moderators</h2>
-          <p className="text-muted-foreground">Manage moderators and their village assignments</p>
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Create Moderator */}
-          <Card>
-            <CardHeader className="p-3 sm:p-6">
-              <CardTitle className="text-lg sm:text-xl">Create New Moderator</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4 p-3 sm:p-6 pt-0">
-              <div>
-                <Label htmlFor="moderatorName">Name</Label>
-                <Input
-                  id="moderatorName"
-                  value={newModerator.name}
-                  onChange={(e) => setNewModerator({ ...newModerator, name: e.target.value })}
-                  placeholder="Enter moderator name"
-                  className="text-sm sm:text-base"
-                />
-              </div>
-              <div>
-                <Label htmlFor="moderatorEmail">Email</Label>
-                <Input
-                  id="moderatorEmail"
-                  type="email"
-                  value={newModerator.email}
-                  onChange={(e) => setNewModerator({ ...newModerator, email: e.target.value })}
-                  placeholder="Enter email address"
-                  className="text-sm sm:text-base"
-                />
-              </div>
-              <div>
-                <Label htmlFor="moderatorPhone">Phone</Label>
-                <Input
-                  id="moderatorPhone"
-                  value={newModerator.phone}
-                  onChange={(e) => setNewModerator({ ...newModerator, phone: e.target.value })}
-                  placeholder="Enter phone number"
-                  className="text-sm sm:text-base"
-                />
-              </div>
-              <Button
-                onClick={() => createModeratorMutation.mutate(newModerator)}
-                disabled={createModeratorMutation.isPending || !newModerator.name}
-                className="w-full"
-              >
-                {createModeratorMutation.isPending ? "Creating..." : "Create Moderator"}
-              </Button>
-            </CardContent>
-          </Card>
-
-          {/* Assign Village */}
-          <Card>
-            <CardHeader className="p-3 sm:p-6">
-              <CardTitle className="text-lg sm:text-xl">Assign Village to Moderator</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4 p-3 sm:p-6 pt-0">
-              <div>
-                <Label htmlFor="selectModerator">Select Moderator</Label>
-                <Select
-                  value={assignmentData.moderatorId}
-                  onValueChange={(value) => setAssignmentData({ ...assignmentData, moderatorId: value })}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select a moderator" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {moderators?.map((moderator: any) => (
-                      <SelectItem key={moderator.id} value={moderator.id.toString()}>
-                        {moderator.name} ({moderator.userId})
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <Label htmlFor="selectVillage">Select Village</Label>
-                <Select
-                  value={assignmentData.villageId}
-                  onValueChange={(value) => setAssignmentData({ ...assignmentData, villageId: value })}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select a village" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {villages?.map((village: any) => (
-                      <SelectItem key={village.villageId} value={village.villageId}>
-                        {village.villageName} ({village.villageId})
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <Button
-                onClick={() => assignVillageMutation.mutate(assignmentData)}
-                disabled={assignVillageMutation.isPending || !assignmentData.moderatorId || !assignmentData.villageId}
-                className="w-full"
-              >
-                {assignVillageMutation.isPending ? "Assigning..." : "Assign Village"}
-              </Button>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Moderators List */}
-        <Card>
-          <CardHeader className="p-3 sm:p-6">
-            <CardTitle className="text-lg sm:text-xl">Moderators List</CardTitle>
-          </CardHeader>
-          <CardContent className="p-3 sm:p-6 pt-0">
-            {moderatorsLoading ? (
-              <div className="text-center py-4">Loading moderators...</div>
-            ) : moderators && moderators.length > 0 ? (
-              <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead className="text-xs sm:text-sm">Name</TableHead>
-                      <TableHead className="text-xs sm:text-sm">User ID</TableHead>
-                      <TableHead className="text-xs sm:text-sm">Email</TableHead>
-                      <TableHead className="text-xs sm:text-sm">Phone</TableHead>
-                      <TableHead className="text-xs sm:text-sm">Assigned Villages</TableHead>
-                      <TableHead className="text-xs sm:text-sm text-right">Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {moderators.map((moderator: any) => {
-                      const assignments = moderatorAssignments?.filter((a: any) => a.moderatorId === moderator.id) || [];
-                      return (
-                        <TableRow key={moderator.id}>
-                          <TableCell className="font-medium text-xs sm:text-sm">{moderator.name}</TableCell>
-                          <TableCell className="text-xs sm:text-sm">{moderator.userId}</TableCell>
-                          <TableCell className="text-xs sm:text-sm">{moderator.email || 'N/A'}</TableCell>
-                          <TableCell className="text-xs sm:text-sm">{moderator.phone || 'N/A'}</TableCell>
-                          <TableCell className="text-xs sm:text-sm">
-                            <div className="space-y-1">
-                              {assignments.map((assignment: any) => (
-                                <div key={assignment.villageId} className="flex items-center justify-between">
-                                  <Badge variant="outline" className="text-xs">
-                                    {assignment.villageName}
-                                  </Badge>
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    onClick={() => removeVillageMutation.mutate({
-                                      moderatorId: moderator.id,
-                                      villageId: assignment.villageId
-                                    })}
-                                    className="ml-2 h-6 w-6 p-0"
-                                  >
-                                    <X className="h-3 w-3" />
-                                  </Button>
-                                </div>
-                              ))}
-                              {assignments.length === 0 && (
-                                <span className="text-gray-500">No villages assigned</span>
-                              )}
-                            </div>
-                          </TableCell>
-                          <TableCell className="text-right">
-                            <Button
-                              variant="destructive"
-                              size="sm"
-                              onClick={() => deleteModeratorMutation.mutate(moderator.id)}
-                              disabled={deleteModeratorMutation.isPending}
-                              className="text-xs"
-                            >
-                              <Trash2 className="h-3 w-3" />
-                            </Button>
-                          </TableCell>
-                        </TableRow>
-                      );
-                    })}
-                  </TableBody>
-                </Table>
-              </div>
-            ) : (
-              <div className="text-center py-8 text-gray-500">
-                No moderators found. Create your first moderator above.
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      </div>
-    );
-  };
-
   const renderContent = () => {
     switch (activeTab) {
       case "overview": return renderOverview();
       case "villages": return renderVillages();
       case "managers": return renderManagers();
-      case "moderators": return renderModerators();
       case "reports": return renderReports();
       case "announcements": return renderAnnouncements();
       case "profile": return renderProfile();

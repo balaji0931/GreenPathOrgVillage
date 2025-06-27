@@ -12,8 +12,6 @@ import {
   segregators,
   segregatorAttendance,
   collectorComplaints,
-  moderators,
-  moderatorVillageAssignments,
   type Village,
   type User,
   type Household,
@@ -25,8 +23,6 @@ import {
   type Feedback,
   type Segregator,
   type SegregatorAttendance,
-  type Moderator,
-  type ModeratorVillageAssignment,
 
   type InsertVillage,
   type InsertUser,
@@ -39,12 +35,10 @@ import {
   type InsertFeedback,
   type InsertSegregator,
   type InsertSegregatorAttendance,
-  type InsertModerator,
-  type InsertModeratorVillageAssignment,
 
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, and, desc, count, sql, inArray, gte, lt } from "drizzle-orm";
+import { eq, and, desc, count, sql } from "drizzle-orm";
 
 interface DetailedAttendance {
   id: number;
@@ -236,29 +230,6 @@ export interface IStorage {
   getDetailedAttendanceByVillageAndDate(villageId: string, date: Date): Promise<DetailedAttendance[]>;
   getHouseholdByGeneratorUserId(generatorUserId: string): Promise<Household | undefined>;
   getComplaintsByVillage(villageId: string): Promise<any[]>;
-
-  // Moderator operations
-  createModerator(moderator: InsertModerator): Promise<Moderator>;
-  getModerators(): Promise<Moderator[]>;
-  getModeratorByUserId(userId: string): Promise<Moderator | undefined>;
-  updateModerator(id: number, updates: Partial<Moderator>): Promise<Moderator>;
-  deleteModerator(id: number): Promise<void>;
-
-  // Moderator village assignment operations
-  assignVillageToModerator(assignment: InsertModeratorVillageAssignment): Promise<ModeratorVillageAssignment>;
-  removeVillageFromModerator(moderatorId: number, villageId: string): Promise<void>;
-  getModeratorVillages(moderatorId: number): Promise<Village[]>;
-  getVillagesByModeratorUserId(moderatorUserId: string): Promise<Village[]>;
-  getModeratorAssignments(): Promise<any[]>;
-
-  // Moderator-specific data access (filtered by assigned villages)
-  getModeratorStats(moderatorUserId: string): Promise<{
-    totalVillages: number;
-    totalManagers: number;
-    totalOpenIssues: number;
-    totalCollectionsToday: number;
-  }>;
-  getModeratorReports(moderatorUserId: string, filters: any): Promise<any>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -1395,7 +1366,7 @@ export class DatabaseStorage implements IStorage {
       .from(wasteCollections)
       .innerJoin(households, eq(wasteCollections.householdId, households.id))
       .where(villageCondition);
-
+    
     const topVillages = await db.select({
         villageName: villages.name,
         avgRating: sql<number>`COALESCE(AVG(CAST(${wasteCollections.segregationRating} AS DECIMAL(3,2))), 0)`
@@ -1433,7 +1404,7 @@ export class DatabaseStorage implements IStorage {
       )
       .groupBy(wasteCollections.segregationRating)
       .orderBy(wasteCollections.segregationRating);
-
+    
     // Safely convert avgSegregation to number
     const avgRating = Number(avgSegregation.avg) || 0;
 
@@ -1453,279 +1424,6 @@ export class DatabaseStorage implements IStorage {
         avgRating: parseFloat((Number(t.avgRating) || 0).toFixed(2))
       })),
       segregationRateDistribution: segregationDistribution,
-    };
-  }
-
-  // Moderator operations
-  async createModerator(insertModerator: InsertModerator): Promise<Moderator> {
-    const [moderator] = await db
-      .insert(moderators)
-      .values(insertModerator)
-      .returning();
-    return moderator;
-  }
-
-  async getModerators(): Promise<Moderator[]> {
-    return await db.select().from(moderators).orderBy(moderators.userId);
-  }
-
-  async getModeratorByUserId(userId: string): Promise<Moderator | undefined> {
-    const [moderator] = await db.select().from(moderators).where(eq(moderators.userId, userId));
-    return moderator || undefined;
-  }
-
-  async updateModerator(id: number, updates: Partial<Moderator>): Promise<Moderator> {
-    const [moderator] = await db
-      .update(moderators)
-      .set(updates)
-      .where(eq(moderators.id, id))
-      .returning();
-    return moderator;
-  }
-
-  async deleteModerator(id: number): Promise<void> {
-    // Remove all village assignments first
-    await db.delete(moderatorVillageAssignments).where(eq(moderatorVillageAssignments.moderatorId, id));
-    // Delete the moderator
-    await db.delete(moderators).where(eq(moderators.id, id));
-  }
-
-  // Moderator village assignment operations
-  async assignVillageToModerator(assignment: InsertModeratorVillageAssignment): Promise<ModeratorVillageAssignment> {
-    const [result] = await db
-      .insert(moderatorVillageAssignments)
-      .values(assignment)
-      .returning();
-    return result;
-  }
-
-  async removeVillageFromModerator(moderatorId: number, villageId: string): Promise<void> {
-    await db
-      .delete(moderatorVillageAssignments)
-      .where(
-        and(
-          eq(moderatorVillageAssignments.moderatorId, moderatorId),
-          eq(moderatorVillageAssignments.villageId, villageId)
-        )
-      );
-  }
-
-  async getModeratorVillages(moderatorId: number): Promise<Village[]> {
-    const result = await db
-      .select({
-        id: villages.id,
-        villageId: villages.villageId,
-        name: villages.name,
-        createdAt: villages.createdAt,
-        updatedAt: villages.updatedAt,
-      })
-      .from(moderatorVillageAssignments)
-      .innerJoin(villages, eq(moderatorVillageAssignments.villageId, villages.villageId))
-      .where(eq(moderatorVillageAssignments.moderatorId, moderatorId))
-      .orderBy(villages.villageId);
-
-    return result;
-  }
-
-  async getVillagesByModeratorUserId(moderatorUserId: string): Promise<Village[]> {
-    try {
-      const moderator = await db.select()
-        .from(moderators)
-        .where(eq(moderators.userId, moderatorUserId))
-        .limit(1);
-
-      if (!moderator.length) {
-        console.log('Moderator not found for userId:', moderatorUserId);
-        return [];
-      }
-
-      const moderatorId = moderator[0].id;
-
-      const assignedVillages = await db.select({
-        villageId: moderatorVillageAssignments.villageId,
-        name: villages.name
-      })
-        .from(moderatorVillageAssignments)
-        .innerJoin(villages, eq(moderatorVillageAssignments.villageId, villages.villageId))
-        .where(eq(moderatorVillageAssignments.moderatorId, moderatorId));
-
-      console.log('Villages for moderator', moderatorUserId, ':', assignedVillages);
-      return assignedVillages;
-    } catch (error) {
-      console.error('Error getting villages for moderator:', error);
-      return [];
-    }
-  }
-
-  async getModeratorAssignments(): Promise<any[]> {
-    const assignments = await db
-      .select({
-        moderatorId: moderators.id,
-        moderatorUserId: moderators.userId,
-        moderatorName: moderators.name,
-        moderatorPhone: moderators.phone,
-        villageId: villages.villageId,
-        villageName: villages.name,
-        assignedAt: moderatorVillageAssignments.assignedAt,
-      })
-      .from(moderatorVillageAssignments)
-      .innerJoin(moderators, eq(moderatorVillageAssignments.moderatorId, moderators.id))
-      .innerJoin(villages, eq(moderatorVillageAssignments.villageId, villages.villageId))
-      .orderBy(moderators.userId, villages.villageId);
-
-    return assignments;
-  }
-
-  async getModeratorStats(moderatorUserId: string): Promise<{
-    totalVillages: number;
-    totalManagers: number;
-    totalOpenIssues: number;
-    totalCollectionsToday: number;
-  }> {
-    try {
-      // Get moderator's assigned villages
-      const moderator = await db.select()
-        .from(moderators)
-        .where(eq(moderators.userId, moderatorUserId))
-        .limit(1);
-
-      if (!moderator.length) {
-        console.log('Moderator not found for userId:', moderatorUserId);
-        return {
-          totalVillages: 0,
-          totalManagers: 0,
-          totalOpenIssues: 0,
-          totalCollectionsToday: 0
-        };
-      }
-
-      const moderatorId = moderator[0].id;
-
-      // Get assigned villages
-      const assignedVillages = await db.select({
-        villageId: moderatorVillageAssignments.villageId
-      })
-        .from(moderatorVillageAssignments)
-        .where(eq(moderatorVillageAssignments.moderatorId, moderatorId));
-
-      const villageIds = assignedVillages.map(v => v.villageId);
-
-      if (villageIds.length === 0) {
-        console.log('No villages assigned to moderator:', moderatorUserId);
-        return {
-          totalVillages: 0,
-          totalManagers: 0,
-          totalOpenIssues: 0,
-          totalCollectionsToday: 0
-        };
-      }
-
-      // Get managers in assigned villages
-      const managersCount = await db.select({ count: sql<number>`count(*)` })
-        .from(users)
-        .where(and(
-          eq(users.role, 'manager'),
-          sql`${users.villageId} IN (${sql.join(villageIds.map(id => sql.raw(`'${id}'`)), sql`, `)})`
-        ));
-
-      // Get open issues in assigned villages
-      const openIssuesCount = await db.select({ count: sql<number>`count(*)` })
-        .from(issues)
-        .where(and(
-          eq(issues.status, 'open'),
-          sql`${issues.villageId} IN (${sql.join(villageIds.map(id => sql.raw(`'${id}'`)), sql`, `)})`
-        ));
-
-      // Get today's collections in assigned villages
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      const tomorrow = new Date(today);
-      tomorrow.setDate(tomorrow.getDate() + 1);
-
-      const todayCollectionsCount = await db.select({ count: sql<number>`count(*)` })
-        .from(wasteCollections)
-        .innerJoin(households, eq(wasteCollections.householdId, households.id))
-        .where(and(
-          sql`${wasteCollections.collectionDate} >= ${today}`,
-          sql`${wasteCollections.collectionDate} < ${tomorrow}`,
-          sql`${households.villageId} IN (${sql.join(villageIds.map(id => sql.raw(`'${id}'`)), sql`, `)})`
-        ));
-
-      return {
-        totalVillages: villageIds.length,
-        totalManagers: managersCount[0]?.count || 0,
-        totalOpenIssues: openIssuesCount[0]?.count || 0,
-        totalCollectionsToday: todayCollectionsCount[0]?.count || 0,
-      };
-    } catch (error) {
-      console.error('Error getting moderator stats:', error);
-      return {
-        totalVillages: 0,
-        totalManagers: 0,
-        totalOpenIssues: 0,
-        totalCollectionsToday: 0
-      };
-    }
-  }
-
-  async getModeratorReports(moderatorUserId: string, filters: any): Promise<any> {
-    const assignedVillages = await this.getVillagesByModeratorUserId(moderatorUserId);
-    const villageIds = assignedVillages.map(v => v.villageId);
-
-    if (villageIds.length === 0) {
-      return {
-        collections: [],
-        issues: [],
-        announcements: [],
-        villages: [],
-      };
-    }
-
-    // Filter collections by assigned villages
-    const collectionsQuery = db
-      .select({
-        villageId: households.villageId,
-        villageName: sql<string>`${villages.name}`,
-        collectionsCount: sql<number>`count(*)`,
-        avgSegregationRating: sql<number>`avg(${wasteCollections.segregationRating})`,
-        avgPlasticRating: sql<number>`avg(${wasteCollections.plasticRating})`,
-      })
-      .from(wasteCollections)
-      .innerJoin(households, eq(wasteCollections.householdId, households.id))
-      .innerJoin(villages, eq(households.villageId, villages.villageId))
-      .where(
-        sql`${households.villageId} IN (${sql.join(villageIds.map(id => sql.raw(`'${id}'`)), sql`, `)})`
-      )
-      .groupBy(households.villageId, villages.name)
-      .orderBy(households.villageId);
-
-    // Filter issues by assigned villages
-    const issuesQuery = db
-      .select({
-        villageId: issues.villageId,
-        villageName: sql<string>`${villages.name}`,
-        openIssues: sql<number>`count(case when ${issues.status} = 'open' then 1 end)`,
-        resolvedIssues: sql<number>`count(case when ${issues.status} = 'resolved' then 1 end)`,
-        totalIssues: sql<number>`count(*)`,
-      })
-      .from(issues)
-      .innerJoin(villages, eq(issues.villageId, villages.villageId))
-      .where(
-        sql`${issues.villageId} IN (${sql.join(villageIds.map(id => sql.raw(`'${id}'`)), sql`, `)})`
-      )
-      .groupBy(issues.villageId, villages.name)
-      .orderBy(issues.villageId);
-
-    const [collections, issuesData] = await Promise.all([
-      collectionsQuery,
-      issuesQuery,
-    ]);
-
-    return {
-      collections,
-      issues: issuesData,
-      announcements: [], // Moderator-specific announcements can be added here
-      villages: assignedVillages,
     };
   }
 }
