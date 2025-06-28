@@ -55,12 +55,11 @@ function Router() {
     );
   }
 
-  // User is authenticated, show appropriate dashboard
   return (
     <Switch>
       <Route path="/login">
         {() => {
-          // Redirect authenticated users away from login
+          // Redirect authenticated users based on role
           switch (user.role) {
             case 'admin':
               setLocation("/admin");
@@ -100,7 +99,7 @@ function Router() {
       </Route>
       <Route path="/">
         {() => {
-          // Route based on user role
+          // Auto-redirect to appropriate dashboard based on role
           switch (user?.role) {
             case 'admin':
               setLocation("/admin");
