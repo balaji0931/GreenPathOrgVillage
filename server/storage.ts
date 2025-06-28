@@ -245,6 +245,7 @@ export interface IStorage {
   assignVillageToModerator(assignment: InsertModeratorVillageAssignment): Promise<ModeratorVillageAssignment>;
   removeVillageFromModerator(moderatorId: string, villageId: string): Promise<void>;
   getModeratorVillages(moderatorId: string): Promise<any[]>;
+  getModeratorStats(moderatorId: string): Promise<any>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -1517,6 +1518,69 @@ export class DatabaseStorage implements IStorage {
       segregationRateDistribution: segregationDistribution,
     };
   }
+
+  async getModeratorStats(moderatorId: string): Promise<any> {
+    try {
+      // Get assigned villages
+      const assignedVillages = await db
+        .select({ villageId: moderatorVillageAssignments.villageId })
+        .from(moderatorVillageAssignments)
+        .where(eq(moderatorVillageAssignments.moderatorId, moderatorId));
+
+      if (assignedVillages.length === 0) {
+        return {
+          totalVillages: 0,
+          totalHouseholds: 0,
+          totalOpenIssues: 0,
+          totalCollectionsToday: 0
+        };
+      }
+
+      const villageIds = assignedVillages.map(v => v.villageId);
+
+      // Get total households in assigned villages
+      const households = await db
+        .select({ count: count() })
+        .from(households)
+        .where(inArray(households.villageId, villageIds));
+
+		const openIssues = await db
+			.select({count: count()})
+			.from(issues)
+			.where(inArray(issues.villageId, villageIds));
+      // Get today's collections
+      const today = new Date();
+	  today.setHours(0, 0, 0, 0);
+	  const tomorrow = new Date(today);
+	  tomorrow.setDate(tomorrow.getDate() + 1);
+      const collections = await db
+        .select({count: count()})
+        .from(wasteCollections)
+        .innerJoin(households, eq(wasteCollections.householdId, households.id))
+        .where(
+          and(
+            inArray(households.villageId, villageIds),
+			sql`${wasteCollections.collectionDate} >= ${today} AND ${wasteCollections.collectionDate} < ${tomorrow}`
+          )
+        );
+
+      return {
+        totalVillages: assignedVillages.length,
+        totalHouseholds: households[0]?.count || 0,
+        totalOpenIssues: openIssues[0]?.count || 0,
+        totalCollectionsToday: collections[0]?.count || 0
+      };
+    } catch (error) {
+      console.error("Get moderator stats error:", error);
+      return {
+        totalVillages: 0,
+        totalHouseholds: 0,
+        totalOpenIssues: 0,
+        totalCollectionsToday: 0
+      };
+    }
+  }
+
 }
 
 export const storage = new DatabaseStorage();

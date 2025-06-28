@@ -936,8 +936,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.error("Get moderator villages error:", error);
       res.status(500).json({ message: "Failed to get moderator villages" });
     }
-  });
-
+  });```text
+  
   app.get('/api/stats/village', requireAuth, requireRole(['manager']), async (req, res) => {
     try {
       const villageId = req.session.villageId!;
