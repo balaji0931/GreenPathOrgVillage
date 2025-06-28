@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -288,54 +287,65 @@ export default function ModeratorDashboard() {
       </div>
 
       {/* Villages Table */}
-      <Card>
-        <CardHeader className="p-3 sm:p-6">
-          <CardTitle className="text-lg sm:text-xl">Assigned Villages</CardTitle>
-        </CardHeader>
-        <CardContent className="p-3 sm:p-6 pt-0">
-          <div className="overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="text-xs sm:text-sm">Village ID</TableHead>
-                  <TableHead className="text-xs sm:text-sm">Name</TableHead>
-                  <TableHead className="text-xs sm:text-sm hidden sm:table-cell">Households</TableHead>
-                  <TableHead className="text-xs sm:text-sm hidden sm:table-cell">Collectors</TableHead>
-                  <TableHead className="text-xs sm:text-sm">Issues</TableHead>
-                  <TableHead className="text-xs sm:text-sm">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {villages?.map((village: any) => (
-                  <TableRow key={village.id}>
-                    <TableCell className="font-medium text-xs sm:text-sm">{village.villageId}</TableCell>
-                    <TableCell className="text-xs sm:text-sm">{village.name}</TableCell>
-                    <TableCell className="text-xs sm:text-sm hidden sm:table-cell">{village.totalHouseholds || 0}</TableCell>
-                    <TableCell className="text-xs sm:text-sm hidden sm:table-cell">{village.totalCollectors || 0}</TableCell>
-                    <TableCell>
-                      <Badge variant={village.openIssues > 0 ? "destructive" : "secondary"} className="text-xs">
-                        {village.openIssues || 0}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex space-x-1 sm:space-x-2">
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => setSelectedVillage(village.villageId)}
-                          className="p-1 sm:p-2"
-                        >
-                          <Eye className="h-3 w-3 sm:h-4 sm:w-4" />
-                        </Button>
-                      </div>
-                    </TableCell>
+      {villages && villages.length > 0 ? (
+        <Card>
+          <CardHeader className="p-3 sm:p-6">
+            <CardTitle className="text-lg sm:text-xl">Assigned Villages</CardTitle>
+          </CardHeader>
+          <CardContent className="p-3 sm:p-6 pt-0">
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="text-xs sm:text-sm">Village ID</TableHead>
+                    <TableHead className="text-xs sm:text-sm">Name</TableHead>
+                    <TableHead className="text-xs sm:text-sm hidden sm:table-cell">Households</TableHead>
+                    <TableHead className="text-xs sm:text-sm hidden sm:table-cell">Collectors</TableHead>
+                    <TableHead className="text-xs sm:text-sm">Issues</TableHead>
+                    <TableHead className="text-xs sm:text-sm">Actions</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
-        </CardContent>
-      </Card>
+                </TableHeader>
+                <TableBody>
+                  {villages?.map((village: any) => (
+                    <TableRow key={village.id}>
+                      <TableCell className="font-medium text-xs sm:text-sm">{village.villageId}</TableCell>
+                      <TableCell className="text-xs sm:text-sm">{village.name}</TableCell>
+                      <TableCell className="text-xs sm:text-sm hidden sm:table-cell">{village.totalHouseholds || 0}</TableCell>
+                      <TableCell className="text-xs sm:text-sm hidden sm:table-cell">{village.totalCollectors || 0}</TableCell>
+                      <TableCell>
+                        <Badge variant={village.openIssues > 0 ? "destructive" : "secondary"} className="text-xs">
+                          {village.openIssues || 0}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex space-x-1 sm:space-x-2">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => setSelectedVillage(village.villageId)}
+                            className="p-1 sm:p-2"
+                          >
+                            <Eye className="h-3 w-3 sm:h-4 sm:w-4" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          </CardContent>
+        </Card>
+      ) : (
+        <Card>
+          <CardHeader className="p-3 sm:p-6">
+            <CardTitle className="text-lg sm:text-xl">Assigned Villages</CardTitle>
+          </CardHeader>
+          <CardContent className="p-3 sm:p-6 pt-0">
+              No villages assigned to you yet.
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 

@@ -44,7 +44,7 @@ import {
   type InsertModeratorVillageAssignment,
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, and, desc, count, sql } from "drizzle-orm";
+import { eq, desc, and, gte, lte, count, sql, inArray } from "drizzle-orm";
 
 interface DetailedAttendance {
   id: number;
@@ -212,7 +212,7 @@ export interface IStorage {
   deleteHousehold(id: number): Promise<void>;
 
   getRecentCollectionsByVillage(villageId: string, days?: number): Promise<any[]>;
-  getSystemAnalytics(): Promise<{
+  getSystemAnalytics(villageFilter?: string): Promise<{
     totalVillages: number;
     totalHouseholds: number;
     totalCollectors: number;
@@ -1321,7 +1321,7 @@ export class DatabaseStorage implements IStorage {
       .insert(moderators)
       .values(insertModerator)
       .returning();
-    
+
     // Create user account for moderator
     const hashedPassword = await bcrypt.hash(insertModerator.moderatorId, 10);
     await db
@@ -1334,7 +1334,7 @@ export class DatabaseStorage implements IStorage {
         phone: insertModerator.phone,
         villageId: null,
       });
-    
+
     return moderator;
   }
 
@@ -1354,10 +1354,10 @@ export class DatabaseStorage implements IStorage {
   async deleteModerator(moderatorId: string): Promise<void> {
     // Delete moderator village assignments first
     await db.delete(moderatorVillageAssignments).where(eq(moderatorVillageAssignments.moderatorId, moderatorId));
-    
+
     // Delete user account
     await db.delete(users).where(eq(users.userId, moderatorId));
-    
+
     // Delete moderator
     await db.delete(moderators).where(eq(moderators.moderatorId, moderatorId));
   }
