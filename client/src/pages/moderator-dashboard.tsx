@@ -214,10 +214,10 @@ export default function ModeratorDashboard() {
       const response = await apiRequest("POST", "/api/moderator/announcements", data);
       return response.json();
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       toast({
         title: "Success",
-        description: "Announcement sent to all assigned villages successfully",
+        description: data.message || `Announcement sent to ${data.villageCount || 'all assigned'} villages successfully`,
       });
       setAnnouncement({ message: "", targetAudience: "all" });
     },

@@ -966,24 +966,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/moderator/announcements', requireAuth, requireRole(['moderator']), async (req, res) => {
     try {
       const moderatorId = req.session.userId!;
-      const { message, targetAudience, villageId } = req.body;
+      const { message, targetAudience } = req.body;
 
-      // Verify moderator has access to this village
-      const villages = await storage.getModeratorVillages(moderatorId);
-      const hasAccess = villages.some(v => v.villageId === villageId);
-
-      if (!hasAccess) {
-        return res.status(403).json({ message: "Access denied to this village" });
+      if (!message || !targetAudience) {
+        return res.status(400).json({ message: "Message and target audience are required" });
       }
 
-      const announcement = await storage.createAnnouncement({
-        message,
-        targetAudience,
-        villageId,
-        createdBy: moderatorId,
-      });
+      // Get villages assigned to this moderator
+      const assignedVillages = await storage.getModeratorVillages(moderatorId);
 
-      res.json(announcement);
+      if (assignedVillages.length === 0) {
+        return res.status(400).json({ message: "No villages assigned to moderator" });
+      }
+
+      // Create announcements for each assigned village
+      const announcements = [];
+      for (const village of assignedVillages) {
+        const announcement = await storage.createAnnouncement({
+          message,
+          targetAudience,
+          villageId: village.villageId,
+          createdBy: moderatorId,
+        });
+        announcements.push(announcement);
+      }
+
+      res.json({ 
+        message: `Announcements created successfully for ${announcements.length} villages`, 
+        announcements,
+        villageCount: announcements.length
+      });
     } catch (error) {
       console.error('Create moderator announcement error:', error);
       res.status(500).json({ message: "Failed to create announcement" });
@@ -1207,11 +1219,42 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const villageIds = assignedVillages.map(v => v.villageId);
 
       if (villageIds.length === 0) {
-        return res.json({ totalCollections: 0, avgRating: 0, villageStats: [] });
+        return res.json({ 
+          totalCollections: 0, 
+          avgRating: 0, 
+          villageStats: [],
+          totalCollectionsThisWeek: 0,
+          averageSegregationRating: 0,
+          topPerformingVillages: [],
+          collectionTrends: [],
+          segregationRateDistribution: [],
+          totalVillages: 0,
+          totalHouseholds: 0,
+          totalCollectors: 0,
+          totalCollectionsToday: 0
+        });
       }
 
+      // Get comprehensive analytics for moderator villages
       const analytics = await storage.getModeratorSystemAnalytics(villageIds);
-      res.json(analytics);
+      const stats = await storage.getModeratorStats(villageIds);
+      
+      // Get collection trends for the villages
+      const oneWeekAgo = new Date();
+      oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
+      
+      // Combine all analytics data
+      const fullAnalytics = {
+        ...analytics,
+        ...stats,
+        totalCollectionsThisWeek: analytics.totalCollections,
+        averageSegregationRating: analytics.avgRating,
+        topPerformingVillages: analytics.villageStats.slice(0, 5),
+        collectionTrends: [],
+        segregationRateDistribution: []
+      };
+
+      res.json(fullAnalytics);
     } catch (error) {
       console.error("Get moderator system analytics error:", error);
       res.status(500).json({ message: "Failed to get moderator system analytics" });
