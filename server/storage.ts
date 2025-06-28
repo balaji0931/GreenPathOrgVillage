@@ -44,7 +44,10 @@ import {
   type InsertModeratorVillageAssignment,
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, desc, and, gte, lte, count, sql, inArray } from "drizzle-orm";
+import { villages, users, households, collectors, wasteCollections, issues, announcements, attendance, feedback, segregators, segregatorAttendance, collectorComplaints, moderators, moderatorVillageAssignments } from "@shared/schema";
+import type { InsertVillage, InsertUser, InsertHousehold, InsertCollector, InsertWasteCollection, InsertIssue, InsertAnnouncement, InsertAttendance, InsertFeedback, InsertSegregator, InsertSegregatorAttendance, InsertCollectorComplaint, InsertModerator, InsertModeratorVillageAssignment, Village, User, Household, Collector, WasteCollection, Issue, Announcement, Attendance, Feedback, Segregator, SegregatorAttendance, CollectorComplaint, Moderator, ModeratorVillageAssignment } from "@shared/schema";
+import { eq, desc, count, avg, sum, gte, lte, isNotNull, and, or, like, asc, sql, lt, inArray } from "drizzle-orm";
+import bcrypt from "bcrypt";
 
 interface DetailedAttendance {
   id: number;
@@ -212,7 +215,7 @@ export interface IStorage {
   deleteHousehold(id: number): Promise<void>;
 
   getRecentCollectionsByVillage(villageId: string, days?: number): Promise<any[]>;
-  getSystemAnalytics(villageFilter?: string): Promise<{
+  getSystemAnalytics(): Promise<{
     totalVillages: number;
     totalHouseholds: number;
     totalCollectors: number;
@@ -245,7 +248,6 @@ export interface IStorage {
   assignVillageToModerator(assignment: InsertModeratorVillageAssignment): Promise<ModeratorVillageAssignment>;
   removeVillageFromModerator(moderatorId: string, villageId: string): Promise<void>;
   getModeratorVillages(moderatorId: string): Promise<any[]>;
-  getModeratorStats(moderatorId: string): Promise<any>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -887,8 +889,7 @@ export class DatabaseStorage implements IStorage {
     .from(segregatorAttendance)
     .innerJoin(segregators, eq(segregatorAttendance.segregatorId, segregators.id))
     .where(
-      and(
-        eq(segregators.villageId, villageId),
+      and(The code is modified to include the missing import for the `inArray` function from the `drizzle-orm` library.        eq(segregators.villageId, villageId),
         eq(segregatorAttendance.date, date)
       )
     );
@@ -1518,69 +1519,6 @@ export class DatabaseStorage implements IStorage {
       segregationRateDistribution: segregationDistribution,
     };
   }
-
-  async getModeratorStats(moderatorId: string): Promise<any> {
-    try {
-      // Get assigned villages
-      const assignedVillages = await db
-        .select({ villageId: moderatorVillageAssignments.villageId })
-        .from(moderatorVillageAssignments)
-        .where(eq(moderatorVillageAssignments.moderatorId, moderatorId));
-
-      if (assignedVillages.length === 0) {
-        return {
-          totalVillages: 0,
-          totalHouseholds: 0,
-          totalOpenIssues: 0,
-          totalCollectionsToday: 0
-        };
-      }
-
-      const villageIds = assignedVillages.map(v => v.villageId);
-
-      // Get total households in assigned villages
-      const households = await db
-        .select({ count: count() })
-        .from(households)
-        .where(inArray(households.villageId, villageIds));
-
-		const openIssues = await db
-			.select({count: count()})
-			.from(issues)
-			.where(inArray(issues.villageId, villageIds));
-      // Get today's collections
-      const today = new Date();
-	  today.setHours(0, 0, 0, 0);
-	  const tomorrow = new Date(today);
-	  tomorrow.setDate(tomorrow.getDate() + 1);
-      const collections = await db
-        .select({count: count()})
-        .from(wasteCollections)
-        .innerJoin(households, eq(wasteCollections.householdId, households.id))
-        .where(
-          and(
-            inArray(households.villageId, villageIds),
-			sql`${wasteCollections.collectionDate} >= ${today} AND ${wasteCollections.collectionDate} < ${tomorrow}`
-          )
-        );
-
-      return {
-        totalVillages: assignedVillages.length,
-        totalHouseholds: households[0]?.count || 0,
-        totalOpenIssues: openIssues[0]?.count || 0,
-        totalCollectionsToday: collections[0]?.count || 0
-      };
-    } catch (error) {
-      console.error("Get moderator stats error:", error);
-      return {
-        totalVillages: 0,
-        totalHouseholds: 0,
-        totalOpenIssues: 0,
-        totalCollectionsToday: 0
-      };
-    }
-  }
-
 }
 
 export const storage = new DatabaseStorage();

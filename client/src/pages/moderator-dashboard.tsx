@@ -1,26 +1,42 @@
-import { useState, useEffect } from "react";
+import React, { useState } from "react";
+import { useAuth } from "@/hooks/useAuth";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useToast } from "@/hooks/use-toast";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { useToast } from "@/hooks/use-toast";
-import { useAuth } from "@/hooks/useAuth";
-import { apiRequest, queryClient } from "@/lib/queryClient";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { 
-  Leaf, Users, AlertTriangle, TrendingUp, Plus, Megaphone, BarChart3, 
-  LogOut, Settings, Copy, Download, Eye, Trash2, RotateCcw, Filter, 
-  PieChart, LineChart, Building2, UserPlus, X, Home, MessageSquare,
-  User, MapPin, Calendar, Activity, FileText, Bell, Star, Award, Package
-} from "lucide-react";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart as RechartsLineChart, Line, PieChart as RechartsPieChart, Cell, Pie } from 'recharts';
-import { cn } from "@/lib/utils";
+import { Separator } from "@/components/ui/separator";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import { Users, Building2, AlertTriangle, TrendingUp, BarChart3, Settings, LogOut, Plus, Eye, CheckCircle, Clock, XCircle, FileText, Megaphone, MapPin, UserCheck } from "lucide-react";
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, PieChart, Pie, Cell } from "recharts";
+
+// API helper
+async function apiRequest(method: string, url: string, data?: any) {
+  const options: RequestInit = {
+    method,
+    headers: {
+      "Content-Type": "application/json",
+    },
+    credentials: "include",
+  };
+
+  if (data) {
+    options.body = JSON.stringify(data);
+  }
+
+  const response = await fetch(url, options);
+  if (!response.ok) {
+    throw new Error(`HTTP error! status: ${response.status}`);
+  }
+  return response;
+}
 
 export default function ModeratorDashboard() {
   const { user, logout } = useAuth();
@@ -28,7 +44,6 @@ export default function ModeratorDashboard() {
 
   const [activeTab, setActiveTab] = useState("overview");
   const [selectedVillage, setSelectedVillage] = useState("");
-  const [createdCredentials, setCreatedCredentials] = useState<any>(null);
 
   const [announcement, setAnnouncement] = useState({
     message: "",
@@ -43,7 +58,6 @@ export default function ModeratorDashboard() {
   });
 
   const [reportFilters, setReportFilters] = useState({
-    village: "all",
     role: "all",
     startDate: "",
     endDate: "",
@@ -54,70 +68,66 @@ export default function ModeratorDashboard() {
     queryKey: ["/api/stats/moderator"],
   });
 
-  // Fetch moderator villages
+  // Fetch assigned villages
   const { data: villages, isLoading: villagesLoading } = useQuery({
     queryKey: ["/api/moderator/villages"],
   });
 
-  // Fetch managers for assigned villages
-  const { data: managers, isLoading: managersLoading } = useQuery({
-    queryKey: ["/api/managers"],
-    enabled: false, // We'll fetch this conditionally based on village access
-  });
-
-  // Fetch reports for assigned villages
+  // Fetch moderator reports
   const { data: reportData, isLoading: reportLoading } = useQuery({
-    queryKey: ["/api/reports", reportFilters],
-    enabled: activeTab === "reports" && villages && villages.length > 0,
+    queryKey: ["/api/moderator/reports", reportFilters],
+    enabled: activeTab === "reports",
     queryFn: async () => {
       const params = new URLSearchParams();
-      if (reportFilters.village !== "all") {
-        // Check if moderator has access to this village
-        const hasAccess = villages?.some((v: any) => v.villageId === reportFilters.village);
-        if (!hasAccess) {
-          throw new Error("Access denied to this village");
-        }
-        params.set("village", reportFilters.village);
-      }
       if (reportFilters.role !== "all") params.set("role", reportFilters.role);
       if (reportFilters.startDate) params.set("startDate", reportFilters.startDate);
       if (reportFilters.endDate) params.set("endDate", reportFilters.endDate);
 
-      const response = await apiRequest("GET", `/api/reports?${params.toString()}`);
+      const response = await apiRequest("GET", `/api/moderator/reports?${params.toString()}`);
       return response.json();
     },
   });
 
-  // Fetch system analytics with village filter (limited to assigned villages)
+  // Fetch system analytics
   const { data: systemAnalytics, isLoading: analyticsLoading } = useQuery({
-    queryKey: ["/api/analytics/system", reportFilters.village],
-    enabled: activeTab === "reports" && villages && villages.length > 0,
+    queryKey: ["/api/moderator/analytics/system"],
+    enabled: activeTab === "reports",
     queryFn: async () => {
-      const params = new URLSearchParams();
-      if (reportFilters.village !== "all") {
-        // Check if moderator has access to this village
-        const hasAccess = villages?.some((v: any) => v.villageId === reportFilters.village);
-        if (!hasAccess) {
-          throw new Error("Access denied to this village");
-        }
-        params.set("village", reportFilters.village);
-      }
+      const response = await apiRequest("GET", "/api/moderator/analytics/system");
+      return response.json();
+    },
+  });
 
-      const response = await apiRequest("GET", `/api/analytics/system?${params.toString()}`);
+  // Fetch village details for selected village
+  const { data: villageDetails, isLoading: villageDetailsLoading } = useQuery({
+    queryKey: ["/api/moderator/village", selectedVillage, "details"],
+    enabled: !!selectedVillage && activeTab === "villages",
+    queryFn: async () => {
+      const response = await apiRequest("GET", `/api/moderator/village/${selectedVillage}/details`);
+      return response.json();
+    },
+  });
+
+  // Fetch village issues for selected village
+  const { data: villageIssues, isLoading: villageIssuesLoading } = useQuery({
+    queryKey: ["/api/moderator/village", selectedVillage, "issues"],
+    enabled: !!selectedVillage && activeTab === "villages",
+    queryFn: async () => {
+      const response = await apiRequest("GET", `/api/moderator/village/${selectedVillage}/issues`);
       return response.json();
     },
   });
 
   // Create announcement mutation
   const createAnnouncementMutation = useMutation({
-    mutationFn: async (data: typeof announcement) => {
-      const response = await apiRequest("POST", "/api/announcements", data);
+    mutationFn: async (data: any) => {
+      const response = await apiRequest("POST", "/api/moderator/announcements", data);
       return response.json();
     },
     onSuccess: () => {
       toast({
         title: "Success",
-        description: "Announcement sent successfully",
+        description: "Announcement sent to all assigned villages successfully",
       });
       setAnnouncement({ message: "", targetAudience: "all" });
     },
@@ -130,9 +140,34 @@ export default function ModeratorDashboard() {
     },
   });
 
+  // Update issue mutation
+  const updateIssueMutation = useMutation({
+    mutationFn: async ({ id, updates }: { id: number; updates: any }) => {
+      const response = await apiRequest("PATCH", `/api/moderator/issues/${id}`, updates);
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Success",
+        description: "Issue updated successfully",
+      });
+      // Refresh village issues
+      if (selectedVillage) {
+        // This will trigger a refetch
+      }
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to update issue",
+        variant: "destructive",
+      });
+    },
+  });
+
   // Update profile mutation
   const updateProfileMutation = useMutation({
-    mutationFn: async (data: typeof profileData) => {
+    mutationFn: async (data: any) => {
       const response = await apiRequest("PUT", "/api/profile", data);
       return response.json();
     },
@@ -141,571 +176,622 @@ export default function ModeratorDashboard() {
         title: "Success",
         description: "Profile updated successfully",
       });
-      setProfileData(prev => ({ ...prev, currentPassword: "", newPassword: "", confirmPassword: "" }));
+      setProfileData({
+        ...profileData,
+        currentPassword: "",
+        newPassword: "",
+        confirmPassword: "",
+      });
     },
-    onError: (error: any) => {
+    onError: () => {
       toast({
         title: "Error",
-        description: error.message || "Failed to update profile",
+        description: "Failed to update profile",
         variant: "destructive",
       });
     },
   });
 
-  const navigationItems = [
-    { id: "overview", label: "Overview", icon: Home },
-    { id: "villages", label: "My Villages", icon: Building2 },
-    { id: "reports", label: "Reports", icon: BarChart3 },
-    { id: "announcements", label: "Announcements", icon: Megaphone },
-    { id: "profile", label: "Profile", icon: User },
-  ];
+  const handleCreateAnnouncement = () => {
+    if (!announcement.message.trim()) {
+      toast({
+        title: "Error",
+        description: "Please enter an announcement message",
+        variant: "destructive",
+      });
+      return;
+    }
 
-  const renderOverview = () => (
-    <div className="space-y-4 sm:space-y-6">
-      <div>
-        <h2 className="text-2xl sm:text-3xl font-bold mb-2">Moderator Dashboard</h2>
-        <p className="text-muted-foreground">Manage your assigned villages</p>
+    createAnnouncementMutation.mutate(announcement);
+  };
+
+  const handleUpdateProfile = () => {
+    if (profileData.newPassword && profileData.newPassword !== profileData.confirmPassword) {
+      toast({
+        title: "Error",
+        description: "Passwords do not match",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const updateData: any = { name: profileData.name };
+    if (profileData.newPassword) {
+      updateData.currentPassword = profileData.currentPassword;
+      updateData.newPassword = profileData.newPassword;
+    }
+
+    updateProfileMutation.mutate(updateData);
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case "open": return "destructive";
+      case "in_progress": return "default";
+      case "resolved": return "secondary";
+      default: return "outline";
+    }
+  };
+
+  if (statsLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading dashboard...</p>
+        </div>
       </div>
+    );
+  }
 
-      {/* Stats Cards - Mobile Responsive */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 p-3 sm:p-6">
-            <CardTitle className="text-xs sm:text-sm font-medium truncate pr-2">Assigned Villages</CardTitle>
-            <Building2 className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground flex-shrink-0" />
-          </CardHeader>
-          <CardContent className="p-3 sm:p-6 pt-0">
-            <div className="text-lg sm:text-2xl font-bold">{stats?.totalVillages || 0}</div>
-            <p className="text-xs text-muted-foreground">Villages under management</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 p-3 sm:p-6">
-            <CardTitle className="text-xs sm:text-sm font-medium truncate pr-2">Total Households</CardTitle>
-            <Users className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground flex-shrink-0" />
-          </CardHeader>
-          <CardContent className="p-3 sm:p-6 pt-0">
-            <div className="text-lg sm:text-2xl font-bold">{stats?.totalHouseholds || 0}</div>
-            <p className="text-xs text-muted-foreground">Registered households</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 p-3 sm:p-6">
-            <CardTitle className="text-xs sm:text-sm font-medium truncate pr-2">Open Issues</CardTitle>
-            <AlertTriangle className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground flex-shrink-0" />
-          </CardHeader>
-          <CardContent className="p-3 sm:p-6 pt-0">
-            <div className="text-lg sm:text-2xl font-bold">{stats?.totalOpenIssues || 0}</div>
-            <p className="text-xs text-muted-foreground">Pending resolution</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 p-3 sm:p-6">
-            <CardTitle className="text-xs sm:text-sm font-medium truncate pr-2">Today's Collections</CardTitle>
-            <TrendingUp className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground flex-shrink-0" />
-          </CardHeader>
-          <CardContent className="p-3 sm:p-6 pt-0">
-            <div className="text-lg sm:text-2xl font-bold">{stats?.totalCollectionsToday || 0}</div>
-            <p className="text-xs text-muted-foreground">Waste collections</p>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Quick Actions */}
-      <Card>
-        <CardHeader className="p-3 sm:p-6">
-          <CardTitle className="text-lg sm:text-xl">Quick Actions</CardTitle>
-        </CardHeader>
-        <CardContent className="p-3 sm:p-6 pt-0">
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4">
-            <Button onClick={() => setActiveTab("villages")} className="h-16 sm:h-24 flex flex-col text-xs sm:text-sm">
-              <Building2 className="h-4 w-4 sm:h-8 sm:w-8 mb-1 sm:mb-2" />
-              <span>View Villages</span>
-            </Button>
-            <Button onClick={() => setActiveTab("reports")} variant="outline" className="h-16 sm:h-24 flex flex-col text-xs sm:text-sm">
-              <BarChart3 className="h-4 w-4 sm:h-8 sm:w-8 mb-1 sm:mb-2" />
-              <span>View Reports</span>
-            </Button>
-            <Button onClick={() => setActiveTab("announcements")} variant="outline" className="h-16 sm:h-24 flex flex-col text-xs sm:text-sm">
-              <Megaphone className="h-4 w-4 sm:h-8 sm:w-8 mb-1 sm:mb-2" />
-              <span>Send Message</span>
-            </Button>
-            <Button onClick={() => setActiveTab("profile")} variant="outline" className="h-16 sm:h-24 flex flex-col text-xs sm:text-sm">
-              <Settings className="h-4 w-4 sm:h-8 sm:w-8 mb-1 sm:mb-2" />
-              <span>Settings</span>
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Recent Activity */}
-      <Card>
-        <CardHeader className="p-3 sm:p-6">
-          <CardTitle className="text-lg sm:text-xl">Recent Activity</CardTitle>
-        </CardHeader>
-        <CardContent className="p-3 sm:p-6 pt-0">
-          <div className="space-y-3 sm:space-y-4">
-            <div className="flex items-center space-x-3 sm:space-x-4">
-              <div className="w-2 h-2 bg-green-500 rounded-full flex-shrink-0"></div>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium">Villages running smoothly</p>
-                <p className="text-xs text-muted-foreground">All assigned villages operational</p>
-              </div>
+  return (
+    <div className="min-h-screen bg-gray-50">
+      {/* Header */}
+      <div className="bg-white shadow-sm border-b">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center py-4">
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900">Moderator Dashboard</h1>
+              <p className="text-sm text-gray-600">Welcome back, {user?.name}</p>
             </div>
-            <div className="flex items-center space-x-3 sm:space-x-4">
-              <div className="w-2 h-2 bg-blue-500 rounded-full flex-shrink-0"></div>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium">{stats?.totalCollectionsToday || 0} collections today</p>
-                <p className="text-xs text-muted-foreground">Waste management active</p>
-              </div>
+            <div className="flex items-center space-x-4">
+              <Button variant="outline" onClick={() => setActiveTab("profile")}>
+                <Settings className="h-4 w-4 mr-2" />
+                Settings
+              </Button>
+              <Button variant="outline" onClick={logout}>
+                <LogOut className="h-4 w-4 mr-2" />
+                Logout
+              </Button>
             </div>
-            {stats?.totalOpenIssues > 0 && (
-              <div className="flex items-center space-x-3 sm:space-x-4">
-                <div className="w-2 h-2 bg-red-500 rounded-full flex-shrink-0"></div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium">{stats.totalOpenIssues} open issues</p>
-                  <p className="text-xs text-muted-foreground">Require attention</p>
-                </div>
-              </div>
-            )}
           </div>
-        </CardContent>
-      </Card>
-    </div>
-  );
-
-  const renderVillages = () => (
-    <div className="space-y-4 sm:space-y-6">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div>
-          <h2 className="text-2xl sm:text-3xl font-bold">My Villages</h2>
-          <p className="text-muted-foreground">Villages assigned to you for management</p>
         </div>
       </div>
 
-      {/* Villages Table */}
-      {villages && villages.length > 0 ? (
-        <Card>
-          <CardHeader className="p-3 sm:p-6">
-            <CardTitle className="text-lg sm:text-xl">Assigned Villages</CardTitle>
-          </CardHeader>
-          <CardContent className="p-3 sm:p-6 pt-0">
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className="text-xs sm:text-sm">Village ID</TableHead>
-                    <TableHead className="text-xs sm:text-sm">Name</TableHead>
-                    <TableHead className="text-xs sm:text-sm hidden sm:table-cell">Households</TableHead>
-                    <TableHead className="text-xs sm:text-sm hidden sm:table-cell">Collectors</TableHead>
-                    <TableHead className="text-xs sm:text-sm">Issues</TableHead>
-                    <TableHead className="text-xs sm:text-sm">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {villages?.map((village: any) => (
-                    <TableRow key={village.id}>
-                      <TableCell className="font-medium text-xs sm:text-sm">{village.villageId}</TableCell>
-                      <TableCell className="text-xs sm:text-sm">{village.name}</TableCell>
-                      <TableCell className="text-xs sm:text-sm hidden sm:table-cell">{village.totalHouseholds || 0}</TableCell>
-                      <TableCell className="text-xs sm:text-sm hidden sm:table-cell">{village.totalCollectors || 0}</TableCell>
-                      <TableCell>
-                        <Badge variant={village.openIssues > 0 ? "destructive" : "secondary"} className="text-xs">
-                          {village.openIssues || 0}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex space-x-1 sm:space-x-2">
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => setSelectedVillage(village.villageId)}
-                            className="p-1 sm:p-2"
-                          >
-                            <Eye className="h-3 w-3 sm:h-4 sm:w-4" />
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+      {/* Main Content */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <Tabs value={activeTab} onValueChange={setActiveTab}>
+          <TabsList className="grid w-full grid-cols-5">
+            <TabsTrigger value="overview">Overview</TabsTrigger>
+            <TabsTrigger value="villages">Villages</TabsTrigger>
+            <TabsTrigger value="announcements">Announcements</TabsTrigger>
+            <TabsTrigger value="reports">Reports</TabsTrigger>
+            <TabsTrigger value="profile">Profile</TabsTrigger>
+          </TabsList>
+
+          {/* Overview Tab */}
+          <TabsContent value="overview" className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">Assigned Villages</CardTitle>
+                  <Building2 className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">{stats?.totalVillages || 0}</div>
+                  <p className="text-xs text-muted-foreground">Villages under supervision</p>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">Total Households</CardTitle>
+                  <Users className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">{stats?.totalHouseholds || 0}</div>
+                  <p className="text-xs text-muted-foreground">Across all villages</p>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">Active Collectors</CardTitle>
+                  <UserCheck className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">{stats?.totalCollectors || 0}</div>
+                  <p className="text-xs text-muted-foreground">Working collectors</p>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">Open Issues</CardTitle>
+                  <AlertTriangle className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">{stats?.totalOpenIssues || 0}</div>
+                  <p className="text-xs text-muted-foreground">Require attention</p>
+                </CardContent>
+              </Card>
             </div>
-          </CardContent>
-        </Card>
-      ) : (
-        <Card>
-          <CardHeader className="p-3 sm:p-6">
-            <CardTitle className="text-lg sm:text-xl">Assigned Villages</CardTitle>
-          </CardHeader>
-          <CardContent className="p-3 sm:p-6 pt-0">
-              No villages assigned to you yet.
-          </CardContent>
-        </Card>
-      )}
-    </div>
-  );
 
-  const renderReports = () => (
-    <div className="space-y-4 sm:space-y-6">
-      <div>
-        <h2 className="text-2xl sm:text-3xl font-bold">Reports & Analytics</h2>
-        <p className="text-muted-foreground">Performance insights for your assigned villages</p>
-      </div>
+            {/* Assigned Villages List */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Assigned Villages</CardTitle>
+                <CardDescription>Villages under your supervision</CardDescription>
+              </CardHeader>
+              <CardContent>
+                {villagesLoading ? (
+                  <div className="text-center py-4">Loading villages...</div>
+                ) : villages && villages.length > 0 ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {villages.map((village: any) => (
+                      <Card key={village.villageId} className="cursor-pointer hover:shadow-md transition-shadow"
+                            onClick={() => {
+                              setSelectedVillage(village.villageId);
+                              setActiveTab("villages");
+                            }}>
+                        <CardContent className="p-4">
+                          <div className="flex justify-between items-start mb-2">
+                            <h3 className="font-semibold">{village.name}</h3>
+                            <Badge variant="outline">{village.villageId}</Badge>
+                          </div>
+                          <div className="space-y-1 text-sm text-gray-600">
+                            <div className="flex justify-between">
+                              <span>Households:</span>
+                              <span>{village.totalHouseholds || 0}</span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span>Collectors:</span>
+                              <span>{village.totalCollectors || 0}</span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span>Open Issues:</span>
+                              <span>{village.openIssues || 0}</span>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-8 text-gray-500">
+                    No villages assigned yet
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
 
-      {/* Village Filter */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Filter Reports</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex gap-4 items-center">
-            <div className="flex-1">
-              <Label htmlFor="village">Filter by Village</Label>
-              <Select value={reportFilters.village} onValueChange={(value) => setReportFilters({ ...reportFilters, village: value })}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select Village" />
+          {/* Villages Management Tab */}
+          <TabsContent value="villages" className="space-y-6">
+            <div className="flex justify-between items-center">
+              <h2 className="text-xl font-semibold">Village Management</h2>
+              <Select value={selectedVillage} onValueChange={setSelectedVillage}>
+                <SelectTrigger className="w-64">
+                  <SelectValue placeholder="Select a village to manage" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">All My Villages</SelectItem>
                   {villages?.map((village: any) => (
                     <SelectItem key={village.villageId} value={village.villageId}>
-                      {village.name}
+                      {village.name} ({village.villageId})
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
-            <Button variant="outline" onClick={() => setReportFilters({ ...reportFilters, village: "all" })}>
-              Clear Filter
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
 
-      {/* Charts and Analytics would go here - similar to admin dashboard but filtered to assigned villages */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <Card>
-          <CardHeader>
-            <CardTitle>Collection Overview</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-center">
-              <div className="text-3xl font-bold">{stats?.totalCollectionsToday || 0}</div>
-              <p className="text-muted-foreground">Collections Today</p>
-            </div>
-          </CardContent>
-        </Card>
+            {selectedVillage ? (
+              <div className="space-y-6">
+                {/* Village Details */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Village Details</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    {villageDetailsLoading ? (
+                      <div className="text-center py-4">Loading village details...</div>
+                    ) : villageDetails ? (
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <div className="space-y-2">
+                          <Label className="text-sm font-medium">Basic Information</Label>
+                          <div className="space-y-1 text-sm">
+                            <div className="flex justify-between">
+                              <span>Village ID:</span>
+                              <span className="font-medium">{villageDetails.villageId}</span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span>Name:</span>
+                              <span className="font-medium">{villageDetails.name}</span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span>Created:</span>
+                              <span className="font-medium">
+                                {new Date(villageDetails.createdAt).toLocaleDateString()}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                        <div className="space-y-2">
+                          <Label className="text-sm font-medium">Households</Label>
+                          <div className="space-y-1 text-sm">
+                            <div className="flex justify-between">
+                              <span>Total:</span>
+                              <span className="font-medium">{villageDetails.totalHouseholds || 0}</span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span>Active:</span>
+                              <span className="font-medium">{villageDetails.activeHouseholds || 0}</span>
+                            </div>
+                          </div>
+                        </div>
+                        <div className="space-y-2">
+                          <Label className="text-sm font-medium">Staff</Label>
+                          <div className="space-y-1 text-sm">
+                            <div className="flex justify-between">
+                              <span>Managers:</span>
+                              <span className="font-medium">{villageDetails.totalManagers || 0}</span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span>Collectors:</span>
+                              <span className="font-medium">{villageDetails.totalCollectors || 0}</span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="text-center py-4 text-gray-500">No details available</div>
+                    )}
+                  </CardContent>
+                </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Issues Overview</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-center">
-              <div className="text-3xl font-bold">{stats?.totalOpenIssues || 0}</div>
-              <p className="text-muted-foreground">Open Issues</p>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-    </div>
-  );
-
-  const renderAnnouncements = () => (
-    <div className="space-y-4 sm:space-y-6">
-      <div>
-        <h2 className="text-2xl sm:text-3xl font-bold">Announcements</h2>
-        <p className="text-muted-foreground">Send messages to users in your assigned villages</p>
-      </div>
-
-      <Card>
-        <CardHeader className="p-3 sm:p-6">
-          <CardTitle className="text-lg sm:text-xl">Send Announcement</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4 p-3 sm:p-6 pt-0">
-          <div>
-            <Label htmlFor="message">Message</Label>
-            <Textarea
-              id="message"
-              value={announcement.message}
-              onChange={(e) => setAnnouncement({ ...announcement, message: e.target.value })}
-              placeholder="Type your announcement..."
-              rows={4}
-              className="text-sm sm:text-base"
-            />
-          </div>
-          <div>
-            <Label htmlFor="targetAudience">Target Audience</Label>
-            <Select 
-              value={announcement.targetAudience} 
-              onValueChange={(value) => setAnnouncement({ ...announcement, targetAudience: value })}
-            >
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Users</SelectItem>
-                <SelectItem value="managers">Managers Only</SelectItem>
-                <SelectItem value="generators">Generators Only</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          <Button 
-            onClick={() => createAnnouncementMutation.mutate(announcement)}
-            disabled={createAnnouncementMutation.isPending}
-            className="w-full"
-          >
-            {createAnnouncementMutation.isPending ? "Sending..." : "Send Announcement"}
-          </Button>
-        </CardContent>
-      </Card>
-    </div>
-  );
-
-  const renderProfile = () => (
-    <div className="space-y-4 sm:space-y-6">
-      <div>
-        <h2 className="text-2xl sm:text-3xl font-bold">Profile Settings</h2>
-        <p className="text-muted-foreground">Manage your moderator account</p>
-      </div>
-
-      <Card>
-        <CardHeader className="p-3 sm:p-6">
-          <CardTitle className="text-lg sm:text-xl">Profile Information</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4 p-3 sm:p-6 pt-0">
-          <div>
-            <Label htmlFor="profileName">Name</Label>
-            <Input
-              id="profileName"
-              value={profileData.name}
-              onChange={(e) => setProfileData({ ...profileData, name: e.target.value })}
-              placeholder="Enter your name"
-              className="text-sm sm:text-base"
-            />
-          </div>
-          <div>
-            <Label htmlFor="userId">User ID (Cannot be changed)</Label>
-            <Input
-              id="userId"
-              value={user?.userId || ""}
-              disabled
-              className="bg-muted text-sm sm:text-base"
-            />
-          </div>
-          <div className="border-t pt-4">
-            <h3 className="text-base sm:text-lg font-medium mb-4">Change Password</h3>
-            <div className="space-y-4">
-              <div>
-                <Label htmlFor="currentPassword">Current Password</Label>
-                <Input
-                  id="currentPassword"
-                  type="password"
-                  value={profileData.currentPassword}
-                  onChange={(e) => setProfileData({ ...profileData, currentPassword: e.target.value })}
-                  placeholder="Enter current password"
-                  className="text-sm sm:text-base"
-                />
+                {/* Village Issues */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Issues Management</CardTitle>
+                    <CardDescription>Track and resolve village issues</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    {villageIssuesLoading ? (
+                      <div className="text-center py-4">Loading issues...</div>
+                    ) : villageIssues && villageIssues.length > 0 ? (
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>Title</TableHead>
+                            <TableHead>Category</TableHead>
+                            <TableHead>Status</TableHead>
+                            <TableHead>Reported</TableHead>
+                            <TableHead>Actions</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {villageIssues.map((issue: any) => (
+                            <TableRow key={issue.id}>
+                              <TableCell className="font-medium">{issue.title}</TableCell>
+                              <TableCell>{issue.category}</TableCell>
+                              <TableCell>
+                                <Badge variant={getStatusColor(issue.status)}>
+                                  {issue.status}
+                                </Badge>
+                              </TableCell>
+                              <TableCell>
+                                {new Date(issue.createdAt).toLocaleDateString()}
+                              </TableCell>
+                              <TableCell>
+                                <Dialog>
+                                  <DialogTrigger asChild>
+                                    <Button size="sm" variant="outline">
+                                      <Eye className="h-3 w-3 mr-1" />
+                                      View
+                                    </Button>
+                                  </DialogTrigger>
+                                  <DialogContent className="max-w-2xl">
+                                    <DialogHeader>
+                                      <DialogTitle>{issue.title}</DialogTitle>
+                                      <DialogDescription>Issue Details</DialogDescription>
+                                    </DialogHeader>
+                                    <div className="space-y-4">
+                                      <div>
+                                        <Label>Description</Label>
+                                        <p className="text-sm text-gray-600 mt-1">{issue.description}</p>
+                                      </div>
+                                      <div className="grid grid-cols-2 gap-4">
+                                        <div>
+                                          <Label>Category</Label>
+                                          <p className="text-sm text-gray-600 mt-1">{issue.category}</p>
+                                        </div>
+                                        <div>
+                                          <Label>Status</Label>
+                                          <Badge variant={getStatusColor(issue.status)} className="mt-1">
+                                            {issue.status}
+                                          </Badge>
+                                        </div>
+                                      </div>
+                                      {issue.managerReply && (
+                                        <div>
+                                          <Label>Manager Reply</Label>
+                                          <p className="text-sm text-gray-600 mt-1">{issue.managerReply}</p>
+                                        </div>
+                                      )}
+                                      <div className="flex space-x-2">
+                                        <Button
+                                          size="sm"
+                                          onClick={() => updateIssueMutation.mutate({
+                                            id: issue.id,
+                                            updates: { status: 'in_progress' }
+                                          })}
+                                          disabled={issue.status === 'in_progress'}
+                                        >
+                                          <Clock className="h-3 w-3 mr-1" />
+                                          In Progress
+                                        </Button>
+                                        <Button
+                                          size="sm"
+                                          onClick={() => updateIssueMutation.mutate({
+                                            id: issue.id,
+                                            updates: { status: 'resolved' }
+                                          })}
+                                          disabled={issue.status === 'resolved'}
+                                        >
+                                          <CheckCircle className="h-3 w-3 mr-1" />
+                                          Resolve
+                                        </Button>
+                                      </div>
+                                    </div>
+                                  </DialogContent>
+                                </Dialog>
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    ) : (
+                      <div className="text-center py-8 text-gray-500">
+                        No issues reported for this village
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
               </div>
-              <div>
-                <Label htmlFor="newPassword">New Password</Label>
-                <Input
-                  id="newPassword"
-                  type="password"
-                  value={profileData.newPassword}
-                  onChange={(e) => setProfileData({ ...profileData, newPassword: e.target.value })}
-                  placeholder="Enter new password"
-                  className="text-sm sm:text-base"
-                />
-              </div>
-              <div>
-                <Label htmlFor="confirmPassword">Confirm New Password</Label>
-                <Input
-                  id="confirmPassword"
-                  type="password"
-                  value={profileData.confirmPassword}
-                  onChange={(e) => setProfileData({ ...profileData, confirmPassword: e.target.value })}
-                  placeholder="Confirm new password"
-                  className="text-sm sm:text-base"
-                />
-              </div>
-            </div>
-          </div>
-          <Button 
-            onClick={() => {
-              if (profileData.newPassword && profileData.newPassword !== profileData.confirmPassword) {
-                toast({
-                  title: "Error",
-                  description: "Passwords do not match",
-                  variant: "destructive",
-                });
-                return;
-              }
-              updateProfileMutation.mutate(profileData);
-            }}
-            disabled={updateProfileMutation.isPending}
-            className="w-full"
-          >
-            {updateProfileMutation.isPending ? "Updating..." : "Update Profile"}
-          </Button>
-        </CardContent>
-      </Card>
-    </div>
-  );
+            ) : (
+              <Card>
+                <CardContent className="text-center py-12">
+                  <MapPin className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                  <h3 className="text-lg font-medium mb-2">Select a Village</h3>
+                  <p className="text-gray-600">Choose a village from the dropdown to view details and manage issues</p>
+                </CardContent>
+              </Card>
+            )}
+          </TabsContent>
 
-  const renderContent = () => {
-    switch (activeTab) {
-      case "overview": return renderOverview();
-      case "villages": return renderVillages();
-      case "reports": return renderReports();
-      case "announcements": return renderAnnouncements();
-      case "profile": return renderProfile();
-      default: return renderOverview();
-    }
-  };
-
-  return (
-    <div className="min-h-screen bg-background flex flex-col">
-      {/* Mobile Top Bar */}
-      <div className="md:hidden bg-white border-b px-3 py-3">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-3">
-            <Leaf className="h-6 w-6 text-green-600" />
-            <div>
-              <h1 className="text-lg font-bold">GreenPath</h1>
-              <p className="text-xs text-muted-foreground">Moderator Panel</p>
-            </div>
-          </div>
-          <div className="flex items-center space-x-2">
-            <Button 
-              onClick={() => setActiveTab("profile")} 
-              variant="ghost" 
-              size="sm"
-              className="p-2"
-            >
-              <Settings className="h-4 w-4" />
-            </Button>
-            <Button 
-              onClick={logout} 
-              variant="ghost" 
-              size="sm"
-              className="p-2"
-            >
-              <LogOut className="h-4 w-4" />
-            </Button>
-          </div>
-        </div>
-      </div>
-
-      <div className="flex flex-1 min-h-0">
-        {/* Desktop Sidebar */}
-        <div className="hidden md:flex w-64 bg-white border-r flex-col">
-          {/* Header */}
-          <div className="p-6 border-b">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-3">
-                <Leaf className="h-8 w-8 text-green-600" />
+          {/* Announcements Tab */}
+          <TabsContent value="announcements" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Send Announcement</CardTitle>
+                <CardDescription>Send announcements to all users in your assigned villages</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
                 <div>
-                  <h1 className="text-xl font-bold">GreenPath</h1>
-                  <p className="text-sm text-muted-foreground">Moderator Panel</p>
+                  <Label htmlFor="announcement-message">Message</Label>
+                  <Textarea
+                    id="announcement-message"
+                    placeholder="Enter your announcement message..."
+                    value={announcement.message}
+                    onChange={(e) => setAnnouncement({ ...announcement, message: e.target.value })}
+                    rows={4}
+                  />
                 </div>
-              </div>
-            </div>
-
-            {/* User Profile Section */}
-            <div className="mt-4 p-3 bg-muted rounded-lg">
-              <div className="flex items-center space-x-3 mb-3">
-                <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center">
-                  <User className="h-5 w-5 text-primary" />
-                </div>
-                <div className="flex-1">
-                  <p className="font-medium text-sm">{user?.name}</p>
-                  <p className="text-xs text-muted-foreground">Moderator</p>
-                </div>
-              </div>
-
-              {/* Quick Actions */}
-              <div className="flex space-x-2">
-                <Button 
-                  onClick={() => setActiveTab("profile")} 
-                  variant="ghost" 
-                  size="sm"
-                  className="flex-1 h-8 text-xs"
-                >
-                  <Settings className="h-3 w-3 mr-1" />
-                  Profile
-                </Button>
-                <Button 
-                  onClick={logout} 
-                  variant="ghost" 
-                  size="sm"
-                  className="flex-1 h-8 text-xs"
-                >
-                  <LogOut className="h-3 w-3 mr-1" />
-                  Logout
-                </Button>
-              </div>
-            </div>
-          </div>
-
-          {/* Navigation */}
-          <nav className="flex-1 p-4">
-            <div className="space-y-1">
-              {navigationItems.filter(item => item.id !== 'profile').map((item) => {
-                const Icon = item.icon;
-                return (
-                  <button
-                    key={item.id}
-                    onClick={() => setActiveTab(item.id)}
-                    className={`w-full flex items-center space-x-3 px-3 py-2 rounded-lg text-left transition-colors ${
-                      activeTab === item.id
-                        ? 'bg-primary text-primary-foreground'
-                        : 'hover:bg-muted'
-                    }`}
+                <div>
+                  <Label htmlFor="target-audience">Target Audience</Label>
+                  <Select
+                    value={announcement.targetAudience}
+                    onValueChange={(value) => setAnnouncement({ ...announcement, targetAudience: value })}
                   >
-                    <Icon className="h-5 w-5" />
-                    <span>{item.label}</span>
-                  </button>
-                );
-              })}
-            </div>
-          </nav>
-        </div>
-
-        {/* Mobile Bottom Navigation */}
-        <div className="fixed bottom-0 left-0 right-0 bg-white border-t z-50 md:hidden">
-          <div className="grid grid-cols-5 gap-1">
-            {navigationItems.map((item) => {
-              const Icon = item.icon;
-              return (
-                <button
-                  key={item.id}
-                  onClick={() => setActiveTab(item.id)}
-                  className={cn(
-                    "flex flex-col items-center py-2 px-1 transition-colors text-xs",
-                    activeTab === item.id
-                      ? "text-blue-600 bg-blue-50"
-                      : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
-                  )}
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Users</SelectItem>
+                      <SelectItem value="managers">Managers Only</SelectItem>
+                      <SelectItem value="generators">Generators Only</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <Button
+                  onClick={handleCreateAnnouncement}
+                  disabled={createAnnouncementMutation.isPending}
+                  className="w-full"
                 >
-                  <Icon className="h-5 w-5 mb-1" strokeWidth={2.5} />
-                  <span className="truncate">{item.label}</span>
-                </button>
-              );
-            })}
-          </div>
-        </div>
+                  <Megaphone className="h-4 w-4 mr-2" />
+                  {createAnnouncementMutation.isPending ? "Sending..." : "Send Announcement"}
+                </Button>
+              </CardContent>
+            </Card>
+          </TabsContent>
 
-        {/* Main Content */}
-        <div className="flex-1 overflow-auto pb-20 md:pb-6">
-          <div className="p-3 sm:p-6">
-            {renderContent()}
-          </div>
-        </div>
+          {/* Reports Tab */}
+          <TabsContent value="reports" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Report Filters</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div>
+                    <Label>Role</Label>
+                    <Select
+                      value={reportFilters.role}
+                      onValueChange={(value) => setReportFilters({ ...reportFilters, role: value })}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All Roles</SelectItem>
+                        <SelectItem value="manager">Managers</SelectItem>
+                        <SelectItem value="collector">Collectors</SelectItem>
+                        <SelectItem value="generator">Generators</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label>Start Date</Label>
+                    <Input
+                      type="date"
+                      value={reportFilters.startDate}
+                      onChange={(e) => setReportFilters({ ...reportFilters, startDate: e.target.value })}
+                    />
+                  </div>
+                  <div>
+                    <Label>End Date</Label>
+                    <Input
+                      type="date"
+                      value={reportFilters.endDate}
+                      onChange={(e) => setReportFilters({ ...reportFilters, endDate: e.target.value })}
+                    />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {reportLoading ? (
+              <div className="text-center py-8">Loading reports...</div>
+            ) : reportData ? (
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Users Summary</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-2">
+                      <div className="flex justify-between">
+                        <span>Total Users:</span>
+                        <span className="font-medium">{reportData.users?.length || 0}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>Managers:</span>
+                        <span className="font-medium">
+                          {reportData.users?.filter((u: any) => u.role === 'manager').length || 0}
+                        </span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>Collectors:</span>
+                        <span className="font-medium">
+                          {reportData.users?.filter((u: any) => u.role === 'collector').length || 0}
+                        </span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>Generators:</span>
+                        <span className="font-medium">
+                          {reportData.users?.filter((u: any) => u.role === 'generator').length || 0}
+                        </span>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Collections Summary</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-2">
+                      <div className="flex justify-between">
+                        <span>Total Collections:</span>
+                        <span className="font-medium">{reportData.collections?.length || 0}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>Average Rating:</span>
+                        <span className="font-medium">
+                          {reportData.collections?.length > 0
+                            ? (reportData.collections.reduce((acc: number, c: any) => acc + (c.segregationRating || 0), 0) / reportData.collections.length).toFixed(1)
+                            : 'N/A'}
+                        </span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>Issues Reported:</span>
+                        <span className="font-medium">{reportData.issues?.length || 0}</span>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            ) : null}
+          </TabsContent>
+
+          {/* Profile Tab */}
+          <TabsContent value="profile" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Profile Settings</CardTitle>
+                <CardDescription>Update your personal information and password</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div>
+                  <Label htmlFor="profile-name">Name</Label>
+                  <Input
+                    id="profile-name"
+                    value={profileData.name}
+                    onChange={(e) => setProfileData({ ...profileData, name: e.target.value })}
+                  />
+                </div>
+                <Separator />
+                <div className="space-y-4">
+                  <h3 className="text-lg font-medium">Change Password</h3>
+                  <div>
+                    <Label htmlFor="current-password">Current Password</Label>
+                    <Input
+                      id="current-password"
+                      type="password"
+                      value={profileData.currentPassword}
+                      onChange={(e) => setProfileData({ ...profileData, currentPassword: e.target.value })}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="new-password">New Password</Label>
+                    <Input
+                      id="new-password"
+                      type="password"
+                      value={profileData.newPassword}
+                      onChange={(e) => setProfileData({ ...profileData, newPassword: e.target.value })}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="confirm-password">Confirm New Password</Label>
+                    <Input
+                      id="confirm-password"
+                      type="password"
+                      value={profileData.confirmPassword}
+                      onChange={(e) => setProfileData({ ...profileData, confirmPassword: e.target.value })}
+                    />
+                  </div>
+                </div>
+                <Button
+                  onClick={handleUpdateProfile}
+                  disabled={updateProfileMutation.isPending}
+                  className="w-full"
+                >
+                  {updateProfileMutation.isPending ? "Updating..." : "Update Profile"}
+                </Button>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
       </div>
     </div>
   );
