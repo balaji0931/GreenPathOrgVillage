@@ -1314,6 +1314,101 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Add manager to village for moderator
+  app.post('/api/moderator/village/:villageId/managers', requireAuth, requireRole(['moderator']), async (req, res) => {
+    try {
+      const { villageId } = req.params;
+      const { managerName, managerPhone } = req.body;
+      const moderatorId = req.session.userId!;
+
+      // Verify that this village is assigned to the moderator
+      const assignedVillages = await storage.getModeratorVillages(moderatorId);
+      const isAssigned = assignedVillages.some(v => v.villageId === villageId);
+
+      if (!isAssigned) {
+        return res.status(403).json({ message: "Access denied to this village" });
+      }
+
+      const manager = await storage.addManagerToVillage({
+        villageId,
+        managerName,
+        managerPhone,
+      });
+
+      res.json({
+        manager: {
+          ...manager,
+          credentials: {
+            userId: manager.userId,
+            password: manager.userId // Password is same as userId
+          }
+        }
+      });
+    } catch (error) {
+      console.error("Add manager error:", error);
+      res.status(500).json({ message: "Failed to add manager" });
+    }
+  });
+
+  // Reset manager password for moderator
+  app.put('/api/moderator/managers/:managerId/reset-password', requireAuth, requireRole(['moderator']), async (req, res) => {
+    try {
+      const { managerId } = req.params;
+      const moderatorId = req.session.userId!;
+
+      // Get manager details to check village access
+      const manager = await storage.getUserByUserId(managerId);
+      if (!manager || manager.role !== 'manager') {
+        return res.status(404).json({ message: "Manager not found" });
+      }
+
+      // Verify moderator has access to this manager's village
+      const assignedVillages = await storage.getModeratorVillages(moderatorId);
+      const isAssigned = assignedVillages.some(v => v.villageId === manager.villageId);
+
+      if (!isAssigned) {
+        return res.status(403).json({ message: "Access denied to this manager" });
+      }
+
+      const newPassword = managerId; // Reset to manager ID
+      const hashedPassword = await bcrypt.hash(newPassword, 10);
+      await storage.updateUserPassword(managerId, hashedPassword);
+
+      res.json({ message: "Password reset successfully", newPassword });
+    } catch (error) {
+      console.error("Reset manager password error:", error);
+      res.status(500).json({ message: "Failed to reset manager password" });
+    }
+  });
+
+  // Delete manager for moderator
+  app.delete('/api/moderator/managers/:managerId', requireAuth, requireRole(['moderator']), async (req, res) => {
+    try {
+      const { managerId } = req.params;
+      const moderatorId = req.session.userId!;
+
+      // Get manager details to check village access
+      const manager = await storage.getUserByUserId(managerId);
+      if (!manager || manager.role !== 'manager') {
+        return res.status(404).json({ message: "Manager not found" });
+      }
+
+      // Verify moderator has access to this manager's village
+      const assignedVillages = await storage.getModeratorVillages(moderatorId);
+      const isAssigned = assignedVillages.some(v => v.villageId === manager.villageId);
+
+      if (!isAssigned) {
+        return res.status(403).json({ message: "Access denied to this manager" });
+      }
+
+      await storage.deleteUser(managerId);
+      res.json({ message: "Manager deleted successfully" });
+    } catch (error) {
+      console.error("Delete manager error:", error);
+      res.status(500).json({ message: "Failed to delete manager" });
+    }
+  });
+
   app.get('/api/moderator/village/:villageId/issues', requireAuth, requireRole(['moderator']), async (req, res) => {
     try {
       const { villageId } = req.params;

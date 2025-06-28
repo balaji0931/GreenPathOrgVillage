@@ -112,30 +112,36 @@ export default function ModeratorDashboard() {
     endDate: "",
   });
 
-  // Fetch admin stats
+  // Fetch moderator stats
   const { data: stats, isLoading: statsLoading } = useQuery({
-    queryKey: ["/api/stats/admin"],
+    queryKey: ["/api/stats/moderator"],
   });
 
-  // Fetch villages
+  // Fetch moderator villages
   const { data: villages, isLoading: villagesLoading } = useQuery({
-    queryKey: ["/api/villages"],
+    queryKey: ["/api/moderator/villages"],
   });
 
-  // Fetch managers
+  // Fetch moderator managers
   const { data: managers, isLoading: managersLoading } = useQuery({
-    queryKey: ["/api/managers"],
+    queryKey: ["/api/moderator/households"],
+    select: (data) => {
+      // Transform households data to show managers for each village
+      const managersByVillage = {};
+      villages?.forEach((village: any) => {
+        managersByVillage[village.villageId] = [];
+      });
+      return managersByVillage;
+    }
   });
 
 
-  // Fetch reports
+  // Fetch moderator reports
   const { data: reportData, isLoading: reportLoading } = useQuery({
-    queryKey: ["/api/reports", reportFilters],
+    queryKey: ["/api/moderator/reports", reportFilters],
     enabled: activeTab === "reports",
     queryFn: async () => {
       const params = new URLSearchParams();
-      if (reportFilters.village !== "all")
-        params.set("village", reportFilters.village);
       if (reportFilters.role !== "all") params.set("role", reportFilters.role);
       if (reportFilters.startDate)
         params.set("startDate", reportFilters.startDate);
@@ -143,41 +149,27 @@ export default function ModeratorDashboard() {
 
       const response = await apiRequest(
         "GET",
-        `/api/reports?${params.toString()}`,
+        `/api/moderator/reports?${params.toString()}`,
       );
       return response.json();
     },
   });
 
-  // Fetch system analytics with village filter
+  // Fetch moderator system analytics
   const { data: systemAnalytics, isLoading: analyticsLoading } = useQuery({
-    queryKey: ["/api/analytics/system", reportFilters.village],
+    queryKey: ["/api/moderator/analytics/system"],
     enabled: activeTab === "reports",
-    queryFn: async () => {
-      const params = new URLSearchParams();
-      if (reportFilters.village !== "all")
-        params.set("village", reportFilters.village);
-
-      const response = await apiRequest(
-        "GET",
-        `/api/analytics/system?${params.toString()}`,
-      );
-      return response.json();
-    },
   });
 
-  // Fetch daily analytics with proper filters
+  // Fetch moderator daily analytics
   const { data: dailyAnalytics, isLoading: dailyLoading } = useQuery({
     queryKey: [
-      "/api/analytics/daily",
-      reportFilters.village,
+      "/api/moderator/analytics/daily",
       reportFilters.startDate || new Date().toISOString().split("T")[0],
     ],
     enabled: activeTab === "reports",
     queryFn: async () => {
       const params = new URLSearchParams();
-      if (reportFilters.village !== "all")
-        params.set("village", reportFilters.village);
       params.set(
         "date",
         reportFilters.startDate || new Date().toISOString().split("T")[0],
@@ -185,7 +177,7 @@ export default function ModeratorDashboard() {
 
       const response = await apiRequest(
         "GET",
-        `/api/analytics/daily?${params.toString()}`,
+        `/api/moderator/analytics/daily?${params.toString()}`,
       );
       return response.json();
     },
@@ -193,78 +185,22 @@ export default function ModeratorDashboard() {
 
   // Village details query
   const { data: villageDetails } = useQuery({
-    queryKey: ["/api/villages", selectedVillage, "details"],
+    queryKey: ["/api/moderator/village", selectedVillage, "details"],
     enabled: !!selectedVillage,
   });
 
-  // Create village mutation
-  const createVillageMutation = useMutation({
-    mutationFn: async (data: typeof newVillage) => {
-      const response = await apiRequest("POST", "/api/villages", data);
-      return response.json();
-    },
-    onSuccess: (data) => {
-      toast({
-        title: "Success",
-        description: "Village and manager created successfully",
-      });
-      setCreatedCredentials(data.manager.credentials);
-      setNewVillage({ villageName: "", managerName: "", managerPhone: "" });
-      queryClient.invalidateQueries({ queryKey: ["/api/villages"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/stats/admin"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/managers"] });
-    },
-    onError: () => {
-      toast({
-        title: "Error",
-        description: "Failed to create village",
-        variant: "destructive",
-      });
-    },
-  });
-
-  // Create multiple villages mutation
-  const createMultipleVillagesMutation = useMutation({
-    mutationFn: async (villages: typeof villageList) => {
-      const results = [];
-      for (const village of villages) {
-        if (village.villageName && village.managerName) {
-          const response = await apiRequest("POST", "/api/villages", village);
-          const data = await response.json();
-          results.push(data);
-        }
-      }
-      return results;
-    },
-    onSuccess: (results) => {
-      toast({
-        title: "Success",
-        description: `${results.length} villages created successfully`,
-      });
-      setVillageList([{ villageName: "", managerName: "", managerPhone: "" }]);
-      queryClient.invalidateQueries({ queryKey: ["/api/villages"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/stats/admin"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/managers"] });
-    },
-    onError: () => {
-      toast({
-        title: "Error",
-        description: "Failed to create villages",
-        variant: "destructive",
-      });
-    },
-  });
+  
 
   // Create announcement mutation
   const createAnnouncementMutation = useMutation({
     mutationFn: async (data: typeof announcement) => {
-      const response = await apiRequest("POST", "/api/announcements", data);
+      const response = await apiRequest("POST", "/api/moderator/announcements", data);
       return response.json();
     },
     onSuccess: () => {
       toast({
         title: "Success",
-        description: "Announcement sent successfully",
+        description: "Announcement sent to all assigned villages successfully",
       });
       setAnnouncement({ message: "", targetAudience: "all" });
     },
@@ -389,7 +325,7 @@ export default function ModeratorDashboard() {
     }) => {
       const response = await apiRequest(
         "POST",
-        `/api/villages/${villageId}/managers`,
+        `/api/moderator/village/${villageId}/managers`,
         { managerName, managerPhone },
       );
       return response.json();
@@ -400,13 +336,60 @@ export default function ModeratorDashboard() {
         description: "Manager added successfully",
       });
       setCreatedCredentials(data.manager.credentials);
-      queryClient.invalidateQueries({ queryKey: ["/api/managers"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/villages"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/moderator/villages"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/moderator/village", selectedVillage, "details"] });
     },
     onError: () => {
       toast({
         title: "Error",
         description: "Failed to add manager",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Reset manager password mutation
+  const resetManagerPasswordMutation = useMutation({
+    mutationFn: async (managerId: string) => {
+      const response = await apiRequest(
+        "PUT",
+        `/api/moderator/managers/${managerId}/reset-password`,
+      );
+      return response.json();
+    },
+    onSuccess: (data) => {
+      toast({
+        title: "Success",
+        description: `Password reset to: ${data.newPassword}`,
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to reset password",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Delete manager mutation
+  const deleteManagerMutation = useMutation({
+    mutationFn: async (managerId: string) => {
+      const response = await apiRequest("DELETE", `/api/moderator/managers/${managerId}`);
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Success",
+        description: "Manager deleted successfully",
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/moderator/villages"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/moderator/village", selectedVillage, "details"] });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to delete manager",
         variant: "destructive",
       });
     },
@@ -459,7 +442,7 @@ export default function ModeratorDashboard() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 p-3 sm:p-6">
             <CardTitle className="text-xs sm:text-sm font-medium truncate pr-2">
-              Total Villages
+              Assigned Villages
             </CardTitle>
             <Building2 className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground flex-shrink-0" />
           </CardHeader>
@@ -467,22 +450,22 @@ export default function ModeratorDashboard() {
             <div className="text-lg sm:text-2xl font-bold">
               {stats?.totalVillages || 0}
             </div>
-            <p className="text-xs text-muted-foreground">Active communities</p>
+            <p className="text-xs text-muted-foreground">Your assigned villages</p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 p-3 sm:p-6">
             <CardTitle className="text-xs sm:text-sm font-medium truncate pr-2">
-              Total Managers
+              Total Households
             </CardTitle>
             <Users className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground flex-shrink-0" />
           </CardHeader>
           <CardContent className="p-3 sm:p-6 pt-0">
             <div className="text-lg sm:text-2xl font-bold">
-              {stats?.totalManagers || 0}
+              {stats?.totalHouseholds || 0}
             </div>
-            <p className="text-xs text-muted-foreground">Village managers</p>
+            <p className="text-xs text-muted-foreground">Registered households</p>
           </CardContent>
         </Card>
 
@@ -942,7 +925,7 @@ export default function ModeratorDashboard() {
                                   size="sm"
                                   variant="outline"
                                   onClick={() =>
-                                    resetPasswordMutation.mutate(manager.userId)
+                                    resetManagerPasswordMutation.mutate(manager.userId)
                                   }
                                   className="p-1 sm:p-2"
                                 >

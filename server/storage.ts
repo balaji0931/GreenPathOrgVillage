@@ -1391,6 +1391,11 @@ export class DatabaseStorage implements IStorage {
       .where(eq(moderatorVillageAssignments.moderatorId, moderatorId));
   }
 
+  async getManagersByVillage(villageId: string): Promise<User[]> {
+    return await db.select().from(users)
+      .where(and(eq(users.villageId, villageId), eq(users.role, 'manager')));
+  }
+
   async getModeratorStats(villageIds: string[]): Promise<{
     totalVillages: number;
     totalHouseholds: number;
