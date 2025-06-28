@@ -861,6 +861,15 @@ export default function CollectorDashboard() {
                         >
                           <div className="p-3 bg-blue-50 rounded-lg border-l-4 border-blue-400">
                             <p className="text-sm text-gray-800 font-medium line-clamp-2">{announcement.message}</p>
+                            {announcement.photoUrl && (
+                              <div className="mt-2">
+                                <img 
+                                  src={announcement.photoUrl} 
+                                  alt="Announcement" 
+                                  className="max-w-full h-24 object-cover rounded border"
+                                />
+                              </div>
+                            )}
                             <p className="text-xs text-gray-500 mt-1">
                               {new Date(announcement.createdAt).toLocaleDateString()}
                             </p>

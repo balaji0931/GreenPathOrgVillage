@@ -44,9 +44,10 @@ export default function AdminDashboard() {
     villageIds: [] as string[],
   });
 
-  const [announcement, setAnnouncement] = useState({
+  const [announcement, setAnnouncement] = useState<any>({
     message: "",
     targetAudience: "all",
+    photoFile: null,
   });
 
   const [profileData, setProfileData] = useState({
@@ -192,8 +193,17 @@ export default function AdminDashboard() {
 
   // Create announcement mutation
   const createAnnouncementMutation = useMutation({
-    mutationFn: async (data: typeof announcement) => {
-      const response = await apiRequest("POST", "/api/announcements", data);
+    mutationFn: async (data: any) => {
+      const formData = new FormData();
+      formData.append("message", data.message);
+      formData.append("targetAudience", data.targetAudience);
+      if (data.photoFile) {
+        formData.append("photo", data.photoFile);
+      }
+
+      const response = await apiRequest("POST", "/api/announcements", formData, {
+        "Content-Type": "multipart/form-data",
+      });
       return response.json();
     },
     onSuccess: () => {
@@ -201,7 +211,7 @@ export default function AdminDashboard() {
         title: "Success",
         description: "Announcement sent successfully",
       });
-      setAnnouncement({ message: "", targetAudience: "all" });
+      setAnnouncement({ message: "", targetAudience: "all", photoFile: null });
     },
     onError: () => {
       toast({
@@ -772,7 +782,8 @@ export default function AdminDashboard() {
                           size="sm"
                           variant="outline"
                           onClick={() => setSelectedVillage(village.villageId)}
-                          className="p-1 sm:p-2"
+                          ```python
+className="p-1 sm:p-2"
                         >
                           <Eye className="h-3 w-3 sm:h-4 sm:w-4" />
                         </Button>
@@ -2227,9 +2238,9 @@ export default function AdminDashboard() {
         </CardHeader>
         <CardContent className="space-y-4 p-3 sm:p-6 pt-0">
           <div>
-            <Label htmlFor="message">Message</Label>
+            <Label htmlFor="announcement-message">Message</Label>
             <Textarea
-              id="message"
+              id="announcement-message"
               value={announcement.message}
               onChange={(e) => setAnnouncement({ ...announcement, message: e.target.value })}
               placeholder="Type your announcement..."
@@ -2238,7 +2249,7 @@ export default function AdminDashboard() {
             />
           </div>
           <div>
-            <Label htmlFor="targetAudience">Target Audience</Label>
+            <Label htmlFor="announcement-audience">Target Audience</Label>
             <Select 
               value={announcement.targetAudience} 
               onValueChange={(value) => setAnnouncement({ ...announcement, targetAudience: value })}
@@ -2247,11 +2258,28 @@ export default function AdminDashboard() {
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Users</SelectItem>
-                <SelectItem value="managers">Managers Only</SelectItem>
+                <SelectItem value="all">All Users</SelectItem                <SelectItem value="managers">Managers Only</SelectItem>
                 <SelectItem value="generators">Generators Only</SelectItem>
               </SelectContent>
             </Select>
+          </div>
+          <div>
+            <Label htmlFor="announcement-photo">Image (Optional)</Label>
+            <Input
+              id="announcement-photo"
+              type="file"
+              accept="image/*"
+              onChange={(e) => {
+                const file = e.target.files?.[0] || null;
+                setAnnouncement({ ...announcement, photoFile: file });
+              }}
+              className="cursor-pointer"
+            />
+            {announcement.photoFile && (
+              <p className="text-xs text-muted-foreground mt-1">
+                Selected: {announcement.photoFile.name}
+              </p>
+            )}
           </div>
           <Button 
             onClick={() => createAnnouncementMutation.mutate(announcement)}
@@ -2260,6 +2288,49 @@ export default function AdminDashboard() {
           >
             {createAnnouncementMutation.isPending ? "Sending..." : "Send Announcement"}
           </Button>
+        </CardContent>
+      </Card>
+
+      {/* Display Announcements */}
+      <Card>
+        <CardHeader className="p-3 sm:p-6">
+          <CardTitle className="text-lg sm:text-xl">Recent Announcements</CardTitle>
+        </CardHeader>
+        <CardContent className="p-3 sm:p-6 pt-0">
+          {/* Check if announcements are available */}
+          {announcements && announcements.length > 0 ? (
+            <div className="space-y-3 sm:space-y-4">
+              {announcements.slice(0, 3).map((announcement: any) => (
+                <div key={announcement.id} className="p-3 bg-blue-50 rounded-lg border-l-4 border-blue-400">
+                  <p className="text-sm text-gray-800 font-medium">
+                    {announcement.message}
+                  </p>
+                  {announcement.photoUrl && (
+                    <div className="mt-2">
+                      <img 
+                        src={announcement.photoUrl} 
+                        alt="Announcement" 
+                        className="max-w-full h-32 object-cover rounded-lg border"
+                      />
+                    </div>
+                  )}
+                  <div className="flex justify-between items-center mt-2">
+                    <Badge variant="secondary" className="text-xs">
+                      {announcement.targetAudience}
+                    </Badge>
+                    <p className="text-xs text-gray-500">
+                      {new Date(announcement.createdAt).toLocaleDateString()}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            // Display message if no announcements are available
+            <div className="text-center text-muted-foreground py-4">
+              No announcements available
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>

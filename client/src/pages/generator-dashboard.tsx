@@ -485,6 +485,15 @@ export default function GeneratorDashboard() {
                               <p className="text-sm text-gray-800 font-medium line-clamp-2">
                                 {announcement.message}
                               </p>
+                              {announcement.photoUrl && (
+                                <div className="mt-2">
+                                  <img 
+                                    src={announcement.photoUrl} 
+                                    alt="Announcement" 
+                                    className="max-w-full h-24 object-cover rounded border"
+                                  />
+                                </div>
+                              )}
                               <p className="text-xs text-gray-500 mt-1">
                                 {new Date(
                                   announcement.createdAt,
@@ -964,7 +973,7 @@ export default function GeneratorDashboard() {
                 {issues
                   .filter((issue: any) => {
                     if (issueFilter === "All") return true;
-                    if (issueFilter === "Open") return issue.status === "open";
+                    if (issueFilter === "Open") return issue.status ==="open";
                     if (issueFilter === "In Progress")
                       return issue.status === "in_progress";
                     if (issueFilter === "Resolved")

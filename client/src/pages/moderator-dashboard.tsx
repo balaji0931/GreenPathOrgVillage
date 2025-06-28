@@ -96,6 +96,7 @@ export default function ModeratorDashboard() {
   const [announcement, setAnnouncement] = useState({
     message: "",
     targetAudience: "all",
+    photoFile: null,
   });
 
   const [profileData, setProfileData] = useState({
@@ -129,7 +130,7 @@ export default function ModeratorDashboard() {
       // Get all managers for moderator's villages
       const moderatorVillages = await apiRequest("GET", "/api/moderator/villages");
       const villagesData = await moderatorVillages.json();
-      
+
       const allManagers = [];
       for (const village of villagesData) {
         try {
@@ -177,7 +178,7 @@ export default function ModeratorDashboard() {
       if (reportFilters.village && reportFilters.village !== 'all') {
         params.set('village', reportFilters.village);
       }
-      
+
       const response = await apiRequest(
         "GET", 
         `/api/moderator/analytics/system${params.toString() ? `?${params.toString()}` : ''}`
@@ -218,7 +219,7 @@ export default function ModeratorDashboard() {
     enabled: !!selectedVillage,
   });
 
-  
+
 
   // Create announcement mutation
   const createAnnouncementMutation = useMutation({
@@ -231,7 +232,7 @@ export default function ModeratorDashboard() {
         title: "Success",
         description: data.message || `Announcement sent to ${data.villageCount || 'all assigned'} villages successfully`,
       });
-      setAnnouncement({ message: "", targetAudience: "all" });
+      setAnnouncement({ message: "", targetAudience: "all", photoFile: null });
     },
     onError: (error: any) => {
       toast({
@@ -268,8 +269,8 @@ export default function ModeratorDashboard() {
       });
     },
   });
-  
-  
+
+
   // Add manager to village mutation
   const addManagerMutation = useMutation({
     mutationFn: async ({
@@ -329,7 +330,7 @@ export default function ModeratorDashboard() {
       });
     },
   });
-  
+
   const copyCredentials = (credentials: any) => {
     const text = `User ID: ${credentials.userId}\nPassword: ${credentials.password}`;
     navigator.clipboard.writeText(text);
@@ -910,7 +911,7 @@ export default function ModeratorDashboard() {
                       </Table>
                     </div>
                   </CardContent>
-                </Card>
+                </                Card>
 
                 <Card>
                   <CardHeader className="p-3 sm:p-6">
@@ -1270,7 +1271,7 @@ export default function ModeratorDashboard() {
                           avgRating: 0
                         };
                       });
-                      
+
                       return emptyTrends.map((dayData, i) => (
                         <div key={i} className="space-y-1">
                           <div className="flex items-center justify-between text-xs">
@@ -1382,7 +1383,7 @@ export default function ModeratorDashboard() {
                           collections: 0
                         };
                       });
-                      
+
                       return emptyTrends.map((dayData, i) => (
                         <div key={i} className="flex items-center gap-3">
                           <div className="w-16 text-xs text-muted-foreground">
@@ -1527,7 +1528,7 @@ export default function ModeratorDashboard() {
                             stroke="#f3f4f6"
                             strokeWidth="20"
                           />
-                          
+
                           {/* Poor (red) */}
                           {poor > 0 && (
                             <circle
@@ -1541,7 +1542,7 @@ export default function ModeratorDashboard() {
                               strokeDashoffset="0"
                             />
                           )}
-                          
+
                           {/* Good (yellow) */}
                           {good > 0 && (
                             <circle
@@ -1555,7 +1556,7 @@ export default function ModeratorDashboard() {
                               strokeDashoffset={`-${poorStroke}`}
                             />
                           )}
-                          
+
                           {/* Excellent (green) */}
                           {excellent > 0 && (
                             <circle
@@ -1592,7 +1593,7 @@ export default function ModeratorDashboard() {
                     const distribution = reportFilters.village === "all"
                       ? systemAnalytics?.segregationRateDistribution || []
                       : dailyAnalytics?.ratingDistribution || systemAnalytics?.segregationRateDistribution || [];
-                    
+
                     const excellent = distribution
                       .filter((d: any) => Number(d.rating) >= 4)
                       .reduce((sum: number, d: any) => sum + Number(d.count), 0);
@@ -2372,62 +2373,79 @@ export default function ModeratorDashboard() {
     </div>
   );
 
-  const renderAnnouncements = () => (
+const renderAnnouncements = () => (
     <div className="space-y-4 sm:space-y-6">
       <div>
         <h2 className="text-2xl sm:text-3xl font-bold">Announcements</h2>
-        <p className="text-muted-foreground">
-          Send messages to users across villages
-        </p>
+        <p className="text-muted-foreground">Send announcements to villages</p>
       </div>
 
       <Card>
         <CardHeader className="p-3 sm:p-6">
           <CardTitle className="text-lg sm:text-xl">
-            Send Announcement
+            Send New Announcement
           </CardTitle>
         </CardHeader>
-        <CardContent className="space-y-4 p-3 sm:p-6 pt-0">
-          <div>
-            <Label htmlFor="message">Message</Label>
-            <Textarea
-              id="message"
-              value={announcement.message}
-              onChange={(e) =>
-                setAnnouncement({ ...announcement, message: e.target.value })
-              }
-              placeholder="Type your announcement..."
-              rows={4}
-              className="text-sm sm:text-base"
-            />
-          </div>
-          <div>
-            <Label htmlFor="targetAudience">Target Audience</Label>
-            <Select
-              value={announcement.targetAudience}
-              onValueChange={(value) =>
-                setAnnouncement({ ...announcement, targetAudience: value })
-              }
+        <CardContent className="p-3 sm:p-6 pt-0">
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="announcement-message">Message</Label>
+              <Textarea
+                id="announcement-message"
+                value={announcement.message}
+                onChange={(e) =>
+                  setAnnouncement({ ...announcement, message: e.target.value })
+                }
+                placeholder="Enter announcement message"
+                rows={4}
+              />
+            </div>
+            <div>
+              <Label htmlFor="announcement-audience">Target Audience</Label>
+              <Select
+                value={announcement.targetAudience}
+                onValueChange={(value) =>
+                  setAnnouncement({ ...announcement, targetAudience: value })
+                }
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select target audience" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Users</SelectItem>
+                  <SelectItem value="managers">Managers Only</SelectItem>
+                  <SelectItem value="generators">Generators Only</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label htmlFor="announcement-photo">Image (Optional)</Label>
+              <Input
+                id="announcement-photo"
+                type="file"
+                accept="image/*"
+                onChange={(e) => {
+                  const file = e.target.files?.[0] || null;
+                  setAnnouncement({ ...announcement, photoFile: file });
+                }}
+                className="cursor-pointer"
+              />
+              {announcement.photoFile && (
+                <p className="text-xs text-muted-foreground mt-1">
+                  Selected: {announcement.photoFile.name}
+                </p>
+              )}
+            </div>
+            <Button
+              onClick={() => createAnnouncementMutation.mutate(announcement)}
+              disabled={createAnnouncementMutation.isPending}
+              className="w-full"
             >
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Users</SelectItem>
-                <SelectItem value="managers">Managers Only</SelectItem>
-                <SelectItem value="generators">Generators Only</SelectItem>
-              </SelectContent>
-            </Select>
+              {createAnnouncementMutation.isPending
+                ? "Sending..."
+                : "Send Announcement"}
+            </Button>
           </div>
-          <Button
-            onClick={() => createAnnouncementMutation.mutate(announcement)}
-            disabled={createAnnouncementMutation.isPending}
-            className="w-full"
-          >
-            {createAnnouncementMutation.isPending
-              ? "Sending..."
-              : "Send Announcement"}
-          </Button>
         </CardContent>
       </Card>
     </div>

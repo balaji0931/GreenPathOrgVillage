@@ -92,6 +92,7 @@ export const announcements = pgTable("announcements", {
   targetAudience: text("target_audience").notNull(), // all, managers, generators
   villageId: text("village_id").references(() => villages.villageId), // null for global
   createdBy: text("created_by").notNull(), // UID of creator
+  photoUrl: text("photo_url"), // Optional image URL from Cloudinary
   createdAt: timestamp("created_at").defaultNow(),
 });
 

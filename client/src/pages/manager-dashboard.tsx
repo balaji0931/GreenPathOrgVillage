@@ -323,6 +323,7 @@ export default function ManagerDashboard() {
   const [showIssueDialog, setShowIssueDialog] = useState(false);
   const [announcementMessage, setAnnouncementMessage] = useState("");
   const [announcementTarget, setAnnouncementTarget] = useState("generators");
+  const [announcementPhotoFile, setAnnouncementPhotoFile] = useState<File | null>(null);
 
   // Consolidated filters
   const [filters, setFilters] = useState<FilterState>({
@@ -406,15 +407,26 @@ export default function ManagerDashboard() {
   });
 
   const sendAnnouncementMutation = useMutation({
-    mutationFn: (data: { message: string; targetAudience: string }) =>
-      apiRequest("POST", "/api/announcements", {
-        ...data,
-        villageId: user?.villageId,
-      }),
+    mutationFn: (data: { message: string; targetAudience: string, photoFile: File | null }) => {
+      const formData = new FormData();
+      formData.append("message", data.message);
+      formData.append("targetAudience", data.targetAudience);
+      formData.append("villageId", user?.villageId || "");
+      if (data.photoFile) {
+        formData.append("photo", data.photoFile);
+      }
+
+      return apiRequest("POST", "/api/announcements", formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      });
+    },
     onSuccess: () => {
       toast({ title: "Announcement sent successfully!" });
       queryClient.invalidateQueries({ queryKey: ["/api/announcements"] });
       setAnnouncementMessage("");
+      setAnnouncementPhotoFile(null);
     },
     onError: () => {
       toast({ title: "Failed to send announcement", variant: "destructive" });
@@ -527,7 +539,7 @@ export default function ManagerDashboard() {
       </CardContent>
     </Card>
   );
-  
+
   const CollectorFeedbackModal = ({ collector, allCollections, feedbacks }: {
     collector: Collector;
     allCollections: WasteCollection[];
@@ -537,7 +549,7 @@ export default function ManagerDashboard() {
 
     // Get feedbacks for this collector
     const collectorFeedbacks = feedbacks.filter(feedback => feedback.toCollectorId === collector.id);
-    
+
     // Filter feedbacks by date if selected
     const filteredFeedbacks = collectorFeedbacks.filter(feedback => {
       if (!feedbackDateFilter) return true;
@@ -633,7 +645,7 @@ export default function ManagerDashboard() {
                   .map((feedback) => {
                     // Find the household that gave this feedback
                     const household = households.find(h => h.id === feedback.fromHouseholdId);
-                    
+
                     return (
                       <Card key={feedback.id} className="border-l-4 border-l-purple-400">
                         <CardContent className="p-4">
@@ -985,7 +997,7 @@ export default function ManagerDashboard() {
                               <span>Collector Feedbacks - {collector.name}</span>
                             </DialogTitle>
                           </DialogHeader>
-                          
+
                           <CollectorFeedbackModal 
                             collector={collector}
                             allCollections={allCollections}
@@ -1074,7 +1086,7 @@ export default function ManagerDashboard() {
                               {createBulkHouseholdsMutation.isPending ? "Creating..." : `Create ${bulkHouseholds.filter(h => h.headName.trim() && h.houseNumber.trim() && h.phone.trim()).length} Households`}
                             </Button>
                           </div>
-                          
+
                           <div className="space-y-3 max-h-96 overflow-y-auto">
                             {bulkHouseholds.map((household, index) => (
                               <Card key={index} className="p-4">
@@ -1151,7 +1163,7 @@ export default function ManagerDashboard() {
                               </Card>
                             ))}
                           </div>
-                          
+
                           {bulkHouseholds.length === 0 && (
                             <div className="text-center py-8">
                               <p className="text-muted-foreground">Click "Add Row" to start adding households</p>
@@ -1723,7 +1735,7 @@ export default function ManagerDashboard() {
                         </CardHeader>
                         <CardContent>
                           <div className="space-y-3">
-                            {Array.from({ length: 7 }).map((_, i) => {
+                            {Array.from({ length: 7 }).map``((_, i) => {
                               const date = new Date();
                               date.setDate(date.getDate() - (6 - i));
                               const dateStr = date.toDateString();
@@ -1733,7 +1745,7 @@ export default function ManagerDashboard() {
                               const percentage = stats?.totalHouseholds > 0 
                                 ? (collectionsForDay / stats.totalHouseholds) * 100 
                                 : 0;
-                              
+
                               return (
                                 <div key={i} className="flex items-center gap-3">
                                   <div className="w-16 text-xs text-muted-foreground">
@@ -1778,7 +1790,7 @@ export default function ManagerDashboard() {
                               const avgRating = dayCollections.length > 0
                                 ? dayCollections.reduce((sum, c) => sum + (c.segregationRating || 0), 0) / dayCollections.length
                                 : 0;
-                              
+
                               return (
                                 <div key={i} className="flex items-center gap-3">
                                   <div className="w-16 text-xs text-muted-foreground">
@@ -1820,12 +1832,12 @@ export default function ManagerDashboard() {
                                   new Date(c.collectionDate).toDateString() === new Date(filters.date).toDateString()
                                 );
                               }
-                              
+
                               const excellent = filteredCollections.filter(c => (c.segregationRating || 0) >= 4).length;
                               const good = filteredCollections.filter(c => (c.segregationRating || 0) >= 3 && (c.segregationRating || 0) < 4).length;
                               const poor = filteredCollections.filter(c => (c.segregationRating || 0) < 3).length;
                               const total = filteredCollections.length;
-                              
+
                               return (
                                 <div className="w-48 h-48 relative">
                                   <svg viewBox="0 0 100 100" className="w-full h-full transform -rotate-90">
@@ -1899,12 +1911,12 @@ export default function ManagerDashboard() {
                               const dayCollections = allCollections.filter(c => 
                                 new Date(c.collectionDate).toDateString() === dateStr
                               );
-                              
+
                               const excellent = dayCollections.filter(c => (c.segregationRating || 0) >= 4).length;
                               const good = dayCollections.filter(c => (c.segregationRating || 0) >= 3 && (c.segregationRating || 0) < 4).length;
                               const poor = dayCollections.filter(c => (c.segregationRating || 0) < 3).length;
                               const total = dayCollections.length;
-                              
+
                               return (
                                 <div key={i} className="space-y-1">
                                   <div className="flex justify-between text-xs">
@@ -1958,12 +1970,12 @@ export default function ManagerDashboard() {
                                   new Date(c.collectionDate).toDateString() === new Date(filters.date).toDateString()
                                 );
                               }
-                              
+
                               // Assuming we have wetWasteComposting field in collections
                               const composting = filteredCollections.filter(c => c.wasteSegregated === true).length;
                               const notComposting = filteredCollections.length - composting;
                               const total = filteredCollections.length;
-                              
+
                               return (
                                 <div className="w-40 h-40 relative">
                                   <svg viewBox="0 0 100 100" className="w-full h-full transform -rotate-90">
@@ -2021,11 +2033,11 @@ export default function ManagerDashboard() {
                                   new Date(c.collectionDate).toDateString() === new Date(filters.date).toDateString()
                                 );
                               }
-                              
+
                               const avgRating = collectorCollections.length > 0
                                 ? (collectorCollections.reduce((sum, c) => sum + (c.segregationRating || 0), 0) / collectorCollections.length)
                                 : 0;
-                              
+
                               return (
                                 <div key={collector.id} className="flex items-center gap-3">
                                   <div className="w-24 text-xs font-medium truncate">
@@ -2164,7 +2176,7 @@ export default function ManagerDashboard() {
                               ).length;
                               const total = stats?.totalHouseholds || 0;
                               const notCollected = total - collected;
-                              
+
                               return (
                                 <div className="w-48 h-48 relative">
                                   <svg viewBox="0 0 100 100" className="w-full h-full transform -rotate-90">
@@ -2229,7 +2241,7 @@ export default function ManagerDashboard() {
                               const starCount = dayCollections.filter(c => (c.segregationRating || 0) === stars).length;
                               const total = dayCollections.length;
                               const percentage = total > 0 ? (starCount / total) * 100 : 0;
-                              
+
                               return (
                                 <div key={stars} className="flex items-center gap-3">
                                   <div className="flex items-center gap-1 w-16">
@@ -2274,7 +2286,7 @@ export default function ManagerDashboard() {
                               const avgRating = collectorCollections.length > 0
                                 ? (collectorCollections.reduce((sum, c) => sum + (c.segregationRating || 0), 0) / collectorCollections.length)
                                 : 0;
-                              
+
                               return (
                                 <div key={collector.id} className="p-3 bg-gray-50 rounded-lg">
                                   <div className="flex items-center justify-between mb-2">
@@ -2318,7 +2330,7 @@ export default function ManagerDashboard() {
                                 return collectionDate.toDateString() === new Date(targetDate).toDateString() &&
                                        collectionDate.getHours() === hour;
                               }).length;
-                              
+
                               const maxCollections = Math.max(...Array.from({ length: 12 }).map((_, j) => {
                                 const h = j + 8;
                                 return allCollections.filter(c => {
@@ -2327,9 +2339,9 @@ export default function ManagerDashboard() {
                                          collectionDate.getHours() === h;
                                 }).length;
                               }));
-                              
+
                               const percentage = maxCollections > 0 ? (hourCollections / maxCollections) * 100 : 0;
-                              
+
                               return (
                                 <div key={i} className="flex items-center gap-3">
                                   <div className="w-16 text-xs text-muted-foreground">
@@ -2487,7 +2499,7 @@ export default function ManagerDashboard() {
               <Input id="newPassword" name="newPassword" type="password" required />
             </div>
             <div>
-              <Label htmlFor="confirmPassword">Confirm New Password</Label>
+              <Label htmlFor="confirmPassword">Confirm New Password</Input</Label>
               <Input id="confirmPassword" name="confirmPassword" type="password" required />
             </div>
             <Button type="submit" disabled={changePasswordMutation.isPending}>

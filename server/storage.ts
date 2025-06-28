@@ -386,10 +386,16 @@ export class DatabaseStorage implements IStorage {
     return issue;
   }
 
-  async createAnnouncement(insertAnnouncement: InsertAnnouncement): Promise<Announcement> {
+  async createAnnouncement(data: {
+    message: string;
+    targetAudience: string;
+    villageId?: string | null;
+    createdBy: string;
+    photoUrl?: string | null;
+  }) {
     const [announcement] = await db
       .insert(announcements)
-      .values(insertAnnouncement)
+      .values(data)
       .returning();
     return announcement;
   }
@@ -905,7 +911,8 @@ export class DatabaseStorage implements IStorage {
     performanceRating?: number;
     markedBy: string;
   }): Promise<Attendance> {
-    const [newAttendance] = await db.insert(attendance).values(attendanceData).returning();
+    const [newAttendance]```text
+ = await db.insert(attendance).values(attendanceData).returning();
     return newAttendance;
   }
 
@@ -1705,7 +1712,7 @@ export class DatabaseStorage implements IStorage {
         const date = new Date();
         date.setDate(date.getDate() - i);
         const dateStr = date.toISOString().split('T')[0];
-        
+
         const dayData = collectionTrendsData.find(trend => trend.date === dateStr);
         collectionTrends.push({
           date: dateStr,
@@ -1775,7 +1782,7 @@ export class DatabaseStorage implements IStorage {
       };
     } catch (error) {
       console.error("Get moderator system analytics error:", error);
-      
+
       // Return default structure with empty 7-day trends on error
       const emptyCollectionTrends = [];
       for (let i = 6; i >= 0; i--) {

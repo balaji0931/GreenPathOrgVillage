@@ -783,7 +783,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Announcements routes
   app.post('/api/announcements', requireAuth, requireRole(['admin', 'manager']), async (req, res) => {
     try {
-      const { message, targetAudience } = req.body;
+      const { message, targetAudience, photoUrl } = req.body;
       const createdBy = req.session.userId!;
       const villageId = req.session.role === 'admin' ? null : req.session.villageId!;
 
@@ -792,6 +792,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         targetAudience,
         villageId,
         createdBy,
+        photoUrl: photoUrl || null,
       });
 
       res.json(announcement);
@@ -966,7 +967,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/moderator/announcements', requireAuth, requireRole(['moderator']), async (req, res) => {
     try {
       const moderatorId = req.session.userId!;
-      const { message, targetAudience } = req.body;
+      const { message, targetAudience, photoUrl } = req.body;
 
       if (!message || !targetAudience) {
         return res.status(400).json({ message: "Message and target audience are required" });
@@ -987,6 +988,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           targetAudience,
           villageId: village.villageId,
           createdBy: moderatorId,
+          photoUrl: photoUrl || null,
         });
         announcements.push(announcement);
       }
@@ -1281,7 +1283,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post('/api/moderator/announcements', requireAuth, requireRole(['moderator']), async (req, res) => {
     try {
-      const { message, targetAudience } = req.body;
+      const { message, targetAudience, photoUrl } = req.body;
       const moderatorId = req.session.userId!;
 
       if (!message || !targetAudience) {
@@ -1303,6 +1305,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           targetAudience,
           villageId: village.villageId,
           createdBy: moderatorId,
+          photoUrl: photoUrl || null,
         });
         announcements.push(announcement);
       }
