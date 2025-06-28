@@ -890,7 +890,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const moderatorId = req.session.userId!;
       const villages = await storage.getModeratorVillages(moderatorId);
-
+      
       let totalHouseholds = 0;
       let totalCollectors = 0;
       let totalOpenIssues = 0;
@@ -922,7 +922,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const moderatorId = req.session.userId!;
       const villages = await storage.getModeratorVillages(moderatorId);
-
+      
       // Get stats for each village
       const villagesWithStats = await Promise.all(
         villages.map(async (village) => {
@@ -1180,7 +1180,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/moderators', requireAuth, requireRole(['admin']), async (req, res) => {
     try {
       const moderators = await storage.getModeratorsList();
-
+      
       // Get village assignments for each moderator
       const moderatorsWithVillages = await Promise.all(
         moderators.map(async (moderator) => {
