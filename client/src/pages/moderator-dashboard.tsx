@@ -124,15 +124,28 @@ export default function ModeratorDashboard() {
 
   // Fetch moderator managers
   const { data: managers, isLoading: managersLoading } = useQuery({
-    queryKey: ["/api/moderator/households"],
-    select: (data) => {
-      // Transform households data to show managers for each village
-      const managersByVillage = {};
-      villages?.forEach((village: any) => {
-        managersByVillage[village.villageId] = [];
-      });
-      return managersByVillage;
-    }
+    queryKey: ["/api/moderator/managers"],
+    queryFn: async () => {
+      // Get all managers for moderator's villages
+      const moderatorVillages = await apiRequest("GET", "/api/moderator/villages");
+      const villagesData = await moderatorVillages.json();
+      
+      const allManagers = [];
+      for (const village of villagesData) {
+        try {
+          const managersResponse = await apiRequest("GET", `/api/moderator/village/${village.villageId}/managers`);
+          const villageManagers = await managersResponse.json();
+          allManagers.push(...villageManagers.map((manager: any) => ({
+            ...manager,
+            villageName: village.name
+          })));
+        } catch (error) {
+          console.error(`Failed to fetch managers for village ${village.villageId}:`, error);
+        }
+      }
+      return allManagers;
+    },
+    enabled: !!villages && villages.length > 0,
   });
 
 
@@ -186,6 +199,10 @@ export default function ModeratorDashboard() {
   // Village details query
   const { data: villageDetails } = useQuery({
     queryKey: ["/api/moderator/village", selectedVillage, "details"],
+    queryFn: async () => {
+      const response = await apiRequest("GET", `/api/moderator/village/${selectedVillage}/details`);
+      return response.json();
+    },
     enabled: !!selectedVillage,
   });
 
@@ -204,10 +221,10 @@ export default function ModeratorDashboard() {
       });
       setAnnouncement({ message: "", targetAudience: "all" });
     },
-    onError: () => {
+    onError: (error: any) => {
       toast({
         title: "Error",
-        description: "Failed to send announcement",
+        description: error.message || "Failed to send announcement",
         variant: "destructive",
       });
     },
@@ -239,29 +256,7 @@ export default function ModeratorDashboard() {
       });
     },
   });
-  // Reset password mutation
-  const resetPasswordMutation = useMutation({
-    mutationFn: async (managerId: string) => {
-      const response = await apiRequest(
-        "PUT",
-        `/api/managers/${managerId}/reset-password`,
-      );
-      return response.json();
-    },
-    onSuccess: (data) => {
-      toast({
-        title: "Success",
-        description: `Password reset to: ${data.newPassword}`,
-      });
-    },
-    onError: () => {
-      toast({
-        title: "Error",
-        description: "Failed to reset password",
-        variant: "destructive",
-      });
-    },
-  });
+  
   
   // Add manager to village mutation
   const addManagerMutation = useMutation({
@@ -1022,63 +1017,78 @@ export default function ModeratorDashboard() {
           <CardTitle className="text-lg sm:text-xl">All Managers</CardTitle>
         </CardHeader>
         <CardContent className="p-3 sm:p-6 pt-0">
-          <div className="overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="text-xs sm:text-sm">
-                    Manager ID
-                  </TableHead>
-                  <TableHead className="text-xs sm:text-sm">Name</TableHead>
-                  <TableHead className="text-xs sm:text-sm hidden md:table-cell">
-                    Village
-                  </TableHead>
-                  <TableHead className="text-xs sm:text-sm hidden sm:table-cell">
-                    Phone
-                  </TableHead>
-                  <TableHead className="text-xs sm:text-sm">Status</TableHead>
-                  <TableHead className="text-xs sm:text-sm">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {managers?.map((manager: any) => (
-                  <TableRow key={manager.id}>
-                    <TableCell className="font-medium text-xs sm:text-sm">
-                      {manager.userId}
-                    </TableCell>
-                    <TableCell className="text-xs sm:text-sm">
-                      {manager.name}
-                    </TableCell>
-                    <TableCell className="text-xs sm:text-sm hidden md:table-cell">
-                      {manager.villageId}
-                    </TableCell>
-                    <TableCell className="text-xs sm:text-sm hidden sm:table-cell">
-                      {manager.phone}
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant="default" className="text-xs">
-                        Active
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex space-x-1 sm:space-x-2">
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() =>
-                            resetPasswordMutation.mutate(manager.userId)
-                          }
-                          className="p-1 sm:p-2"
-                        >
-                          <RotateCcw className="h-3 w-3 sm:h-4 sm:w-4" />
-                        </Button>
-                      </div>
-                    </TableCell>
+          {managersLoading ? (
+            <div className="flex items-center justify-center p-6">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+              <span className="ml-2 text-sm">Loading managers...</span>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="text-xs sm:text-sm">
+                      Manager ID
+                    </TableHead>
+                    <TableHead className="text-xs sm:text-sm">Name</TableHead>
+                    <TableHead className="text-xs sm:text-sm hidden md:table-cell">
+                      Village
+                    </TableHead>
+                    <TableHead className="text-xs sm:text-sm hidden sm:table-cell">
+                      Phone
+                    </TableHead>
+                    <TableHead className="text-xs sm:text-sm">Status</TableHead>
+                    <TableHead className="text-xs sm:text-sm">Actions</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
+                </TableHeader>
+                <TableBody>
+                  {Array.isArray(managers) && managers.length > 0 ? (
+                    managers.map((manager: any) => (
+                      <TableRow key={manager.id || manager.userId}>
+                        <TableCell className="font-medium text-xs sm:text-sm">
+                          {manager.userId}
+                        </TableCell>
+                        <TableCell className="text-xs sm:text-sm">
+                          {manager.name}
+                        </TableCell>
+                        <TableCell className="text-xs sm:text-sm hidden md:table-cell">
+                          {manager.villageName || manager.villageId}
+                        </TableCell>
+                        <TableCell className="text-xs sm:text-sm hidden sm:table-cell">
+                          {manager.phone}
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant="default" className="text-xs">
+                            Active
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex space-x-1 sm:space-x-2">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() =>
+                                resetManagerPasswordMutation.mutate(manager.userId)
+                              }
+                              className="p-1 sm:p-2"
+                            >
+                              <RotateCcw className="h-3 w-3 sm:h-4 sm:w-4" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  ) : (
+                    <TableRow>
+                      <TableCell colSpan={6} className="text-center text-muted-foreground">
+                        No managers found
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>

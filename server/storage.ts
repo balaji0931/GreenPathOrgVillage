@@ -1391,6 +1391,11 @@ export class DatabaseStorage implements IStorage {
       .where(eq(moderatorVillageAssignments.moderatorId, moderatorId));
   }
 
+  async getIssueById(id: number): Promise<Issue | undefined> {
+    const [issue] = await db.select().from(issues).where(eq(issues.id, id));
+    return issue || undefined;
+  }
+
   async getManagersByVillage(villageId: string): Promise<User[]> {
     return await db.select().from(users)
       .where(and(eq(users.villageId, villageId), eq(users.role, 'manager')));
@@ -1565,6 +1570,111 @@ export class DatabaseStorage implements IStorage {
       .innerJoin(villages, eq(households.villageId, villages.villageId))
       .where(inArray(households.villageId, villageIds))
       .orderBy(households.uid);
+  }
+
+  async getModeratorSystemAnalytics(villageIds: string[]): Promise<{
+    totalCollections: number;
+    avgRating: number;
+    villageStats: any[];
+  }> {
+    if (villageIds.length === 0) {
+      return {
+        totalCollections: 0,
+        avgRating: 0,
+        villageStats: [],
+      };
+    }
+
+    const [collectionsCount] = await db
+      .select({ count: count() })
+      .from(wasteCollections)
+      .innerJoin(households, eq(wasteCollections.householdId, households.id))
+      .where(inArray(households.villageId, villageIds));
+
+    const [avgRating] = await db.select({
+        avg: sql<number>`COALESCE(AVG(CAST(${wasteCollections.segregationRating} AS DECIMAL(3,2))), 0)`
+      })
+      .from(wasteCollections)
+      .innerJoin(households, eq(wasteCollections.householdId, households.id))
+      .where(inArray(households.villageId, villageIds));
+
+    const villageStats = await db.select({
+        villageId: households.villageId,
+        villageName: villages.name,
+        collections: count(wasteCollections.id),
+        avgRating: sql<number>`COALESCE(AVG(CAST(${wasteCollections.segregationRating} AS DECIMAL(3,2))), 0)`
+      })
+      .from(wasteCollections)
+      .innerJoin(households, eq(wasteCollections.householdId, households.id))
+      .innerJoin(villages, eq(households.villageId, villages.villageId))
+      .where(inArray(households.villageId, villageIds))
+      .groupBy(households.villageId, villages.name);
+
+    return {
+      totalCollections: collectionsCount.count,
+      avgRating: parseFloat((Number(avgRating.avg) || 0).toFixed(2)),
+      villageStats: villageStats.map(stat => ({
+        ...stat,
+        avgRating: parseFloat((Number(stat.avgRating) || 0).toFixed(2))
+      })),
+    };
+  }
+
+  async getModeratorDailyReportData(villageIds: string[], date?: string): Promise<{
+    totalHouses: number;
+    collected: number;
+    remaining: number;
+    avgSegregationRating: number;
+  }> {
+    if (villageIds.length === 0) {
+      return {
+        totalHouses: 0,
+        collected: 0,
+        remaining: 0,
+        avgSegregationRating: 0,
+      };
+    }
+
+    const targetDate = date ? new Date(date) : new Date();
+    targetDate.setHours(0, 0, 0, 0);
+    const nextDay = new Date(targetDate);
+    nextDay.setDate(nextDay.getDate() + 1);
+
+    const [householdsCount] = await db
+      .select({ count: count() })
+      .from(households)
+      .where(inArray(households.villageId, villageIds));
+
+    const [collectionsCount] = await db
+      .select({ count: count() })
+      .from(wasteCollections)
+      .innerJoin(households, eq(wasteCollections.householdId, households.id))
+      .where(
+        and(
+          inArray(households.villageId, villageIds),
+          sql`${wasteCollections.collectionDate} >= ${targetDate} AND ${wasteCollections.collectionDate} < ${nextDay}`
+        )
+      );
+
+    const [avgRating] = await db
+      .select({
+        avg: sql<number>`COALESCE(AVG(CAST(${wasteCollections.segregationRating} AS DECIMAL(3,2))), 0)`
+      })
+      .from(wasteCollections)
+      .innerJoin(households, eq(wasteCollections.householdId, households.id))
+      .where(
+        and(
+          inArray(households.villageId, villageIds),
+          sql`${wasteCollections.collectionDate} >= ${targetDate} AND ${wasteCollections.collectionDate} < ${nextDay}`
+        )
+      );
+
+    return {
+      totalHouses: householdsCount.count,
+      collected: collectionsCount.count,
+      remaining: householdsCount.count - collectionsCount.count,
+      avgSegregationRating: parseFloat((Number(avgRating.avg) || 0).toFixed(2)),
+    };
   }
 
   async getSystemAnalytics(villageFilter?: string): Promise<{

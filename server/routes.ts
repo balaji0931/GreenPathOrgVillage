@@ -1186,9 +1186,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.json({ villages: [], users: [], collections: [], issues: [] });
       }
 
-      const reportData = await storage.generateModeratorReport({
-        villageIds,
-        role: role === 'all' ? undefined : role as string,
+      const reportData = await storage.getModeratorReports(villageIds, {
         startDate: startDate ? new Date(startDate as string) : undefined,
         endDate: endDate ? new Date(endDate as string) : undefined,
       });
@@ -1246,6 +1244,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { message, targetAudience } = req.body;
       const moderatorId = req.session.userId!;
 
+      if (!message || !targetAudience) {
+        return res.status(400).json({ message: "Message and target audience are required" });
+      }
+
       // Get villages assigned to this moderator
       const assignedVillages = await storage.getModeratorVillages(moderatorId);
 
@@ -1265,7 +1267,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         announcements.push(announcement);
       }
 
-      res.json({ message: "Announcements created successfully", announcements });
+      res.json({ 
+        message: `Announcements created successfully for ${announcements.length} villages`, 
+        announcements,
+        villageCount: announcements.length
+      });
     } catch (error) {
       console.error("Create moderator announcement error:", error);
       res.status(500).json({ message: "Failed to create announcement" });
@@ -1286,6 +1292,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const details = await storage.getVillageDetails(villageId);
+      
+      // Add recent collections data for village performance charts
+      const recentCollections = await storage.getRecentCollectionsByVillage(villageId, 7);
+      details.recentCollections = recentCollections;
+      
       res.json(details);
     } catch (error) {
       console.error("Get moderator village details error:", error);
@@ -1311,6 +1322,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Get village managers error:", error);
       res.status(500).json({ message: "Failed to get village managers" });
+    }
+  });
+
+  // Add general moderator managers endpoint
+  app.get('/api/moderator/managers', requireAuth, requireRole(['moderator']), async (req, res) => {
+    try {
+      const moderatorId = req.session.userId!;
+      const assignedVillages = await storage.getModeratorVillages(moderatorId);
+      
+      const allManagers = [];
+      for (const village of assignedVillages) {
+        const managers = await storage.getManagersByVillage(village.villageId);
+        allManagers.push(...managers.map(manager => ({
+          ...manager,
+          villageName: village.name
+        })));
+      }
+      
+      res.json(allManagers);
+    } catch (error) {
+      console.error("Get moderator managers error:", error);
+      res.status(500).json({ message: "Failed to get managers" });
     }
   });
 
