@@ -1587,6 +1587,20 @@ export class DatabaseStorage implements IStorage {
     totalCollectionsToday: number;
   }> {
     if (villageIds.length === 0) {
+      // Return default structure with empty data but valid 7-day trends
+      const emptyCollectionTrends = [];
+      for (let i = 6; i >= 0; i--) {
+        const date = new Date();
+        date.setDate(date.getDate() - i);
+        const dateStr = date.toISOString().split('T')[0];
+        emptyCollectionTrends.push({
+          date: dateStr,
+          collectionDate: dateStr,
+          collections: 0,
+          avgRating: 0
+        });
+      }
+
       return {
         totalCollections: 0,
         avgRating: 0,
@@ -1594,7 +1608,7 @@ export class DatabaseStorage implements IStorage {
         totalCollectionsThisWeek: 0,
         averageSegregationRating: 0,
         topPerformingVillages: [],
-        collectionTrends: [],
+        collectionTrends: emptyCollectionTrends,
         segregationRateDistribution: [],
         totalVillages: 0,
         totalHouseholds: 0,
@@ -1661,7 +1675,7 @@ export class DatabaseStorage implements IStorage {
           sql`${wasteCollections.segregationRating} IS NOT NULL`
         ));
 
-      // Collection trends (last 7 days) - Generate all 7 days
+      // Collection trends (last 7 days) - Get actual data
       const collectionTrendsData = await db.select({
           date: sql<string>`DATE(${wasteCollections.collectionDate})`,
           collections: count(wasteCollections.id),
@@ -1678,7 +1692,7 @@ export class DatabaseStorage implements IStorage {
         .groupBy(sql`DATE(${wasteCollections.collectionDate})`)
         .orderBy(sql`DATE(${wasteCollections.collectionDate})`);
 
-      // Create complete 7-day collection trends with all dates
+      // Create complete 7-day collection trends with all dates (ensure all 7 days are present)
       const collectionTrends = [];
       for (let i = 6; i >= 0; i--) {
         const date = new Date();
@@ -1695,7 +1709,7 @@ export class DatabaseStorage implements IStorage {
       }
 
       // Segregation rate distribution
-      const segregationRateDistribution = await db.select({
+      const segregationRateDistributionData = await db.select({
           rating: wasteCollections.segregationRating,
           count: count()
         })
@@ -1742,7 +1756,7 @@ export class DatabaseStorage implements IStorage {
           collections: Number(stat.collections) || 0
         })),
         collectionTrends,
-        segregationRateDistribution: segregationRateDistribution.map(item => ({
+        segregationRateDistribution: segregationRateDistributionData.map(item => ({
           rating: Number(item.rating) || 0,
           count: Number(item.count) || 0
         })),
@@ -1753,6 +1767,21 @@ export class DatabaseStorage implements IStorage {
       };
     } catch (error) {
       console.error("Get moderator system analytics error:", error);
+      
+      // Return default structure with empty 7-day trends on error
+      const emptyCollectionTrends = [];
+      for (let i = 6; i >= 0; i--) {
+        const date = new Date();
+        date.setDate(date.getDate() - i);
+        const dateStr = date.toISOString().split('T')[0];
+        emptyCollectionTrends.push({
+          date: dateStr,
+          collectionDate: dateStr,
+          collections: 0,
+          avgRating: 0
+        });
+      }
+
       return {
         totalCollections: 0,
         avgRating: 0,
@@ -1760,7 +1789,7 @@ export class DatabaseStorage implements IStorage {
         totalCollectionsThisWeek: 0,
         averageSegregationRating: 0,
         topPerformingVillages: [],
-        collectionTrends: [],
+        collectionTrends: emptyCollectionTrends,
         segregationRateDistribution: [],
         totalVillages: 0,
         totalHouseholds: 0,

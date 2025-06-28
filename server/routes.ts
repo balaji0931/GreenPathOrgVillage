@@ -1237,21 +1237,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Get comprehensive analytics for moderator villages
       const analytics = await storage.getModeratorSystemAnalytics(villageIds);
-      const stats = await storage.getModeratorStats(villageIds);
       
-      // Get collection trends for the villages
-      const oneWeekAgo = new Date();
-      oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
-      
-      // Combine all analytics data
+      // Return the full analytics object directly as it contains all needed data
       const fullAnalytics = {
         ...analytics,
-        ...stats,
-        totalCollectionsThisWeek: analytics.totalCollections,
-        averageSegregationRating: analytics.avgRating,
-        topPerformingVillages: analytics.villageStats.slice(0, 5),
-        collectionTrends: [],
-        segregationRateDistribution: []
+        // Ensure all required fields are present
+        totalCollectionsThisWeek: analytics.totalCollectionsThisWeek,
+        averageSegregationRating: analytics.averageSegregationRating,
+        topPerformingVillages: analytics.topPerformingVillages,
+        collectionTrends: analytics.collectionTrends,
+        segregationRateDistribution: analytics.segregationRateDistribution
       };
 
       res.json(fullAnalytics);
