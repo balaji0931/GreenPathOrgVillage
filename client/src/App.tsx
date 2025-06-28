@@ -90,17 +90,17 @@ function Router() {
       <Route path="/">
         {() => {
           // Route based on user role
-          switch (user.role) {
+          switch (user?.role) {
             case 'admin':
               return <AdminDashboard />;
-            case 'moderator':
-              return <ModeratorDashboard />;
             case 'manager':
               return <ManagerDashboard />;
             case 'collector':
               return <CollectorDashboard />;
             case 'generator':
               return <GeneratorDashboard />;
+            case 'moderator':
+              return <ModeratorDashboard />;
             default:
               setLocation("/login");
               return <Login />;
