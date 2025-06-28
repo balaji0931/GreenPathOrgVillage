@@ -239,31 +239,6 @@ export default function ModeratorDashboard() {
       });
     },
   });
-
-  // Delete village mutation
-  const deleteVillageMutation = useMutation({
-    mutationFn: async (villageId: string) => {
-      const response = await apiRequest("DELETE", `/api/villages/${villageId}`);
-      return response.json();
-    },
-    onSuccess: () => {
-      toast({
-        title: "Success",
-        description: "Village deleted successfully",
-      });
-      queryClient.invalidateQueries({ queryKey: ["/api/villages"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/stats/admin"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/managers"] });
-    },
-    onError: () => {
-      toast({
-        title: "Error",
-        description: "Failed to delete village",
-        variant: "destructive",
-      });
-    },
-  });
-
   // Reset password mutation
   const resetPasswordMutation = useMutation({
     mutationFn: async (managerId: string) => {
@@ -287,31 +262,7 @@ export default function ModeratorDashboard() {
       });
     },
   });
-
-  // Delete manager mutation
-  const deleteManagerMutation = useMutation({
-    mutationFn: async (managerId: string) => {
-      const response = await apiRequest("DELETE", `/api/managers/${managerId}`);
-      return response.json();
-    },
-    onSuccess: () => {
-      toast({
-        title: "Success",
-        description: "Manager deleted successfully",
-      });
-      queryClient.invalidateQueries({ queryKey: ["/api/managers"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/villages"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/stats/admin"] });
-    },
-    onError: () => {
-      toast({
-        title: "Error",
-        description: "Failed to delete manager",
-        variant: "destructive",
-      });
-    },
-  });
-
+  
   // Add manager to village mutation
   const addManagerMutation = useMutation({
     mutationFn: async ({
@@ -371,30 +322,7 @@ export default function ModeratorDashboard() {
       });
     },
   });
-
-  // Delete manager mutation
-  const deleteManagerMutation = useMutation({
-    mutationFn: async (managerId: string) => {
-      const response = await apiRequest("DELETE", `/api/moderator/managers/${managerId}`);
-      return response.json();
-    },
-    onSuccess: () => {
-      toast({
-        title: "Success",
-        description: "Manager deleted successfully",
-      });
-      queryClient.invalidateQueries({ queryKey: ["/api/moderator/villages"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/moderator/village", selectedVillage, "details"] });
-    },
-    onError: () => {
-      toast({
-        title: "Error",
-        description: "Failed to delete manager",
-        variant: "destructive",
-      });
-    },
-  });
-
+  
   const copyCredentials = (credentials: any) => {
     const text = `User ID: ${credentials.userId}\nPassword: ${credentials.password}`;
     navigator.clipboard.writeText(text);
@@ -654,16 +582,6 @@ export default function ModeratorDashboard() {
                           className="p-1 sm:p-2"
                         >
                           <Eye className="h-3 w-3 sm:h-4 sm:w-4" />
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="destructive"
-                          onClick={() =>
-                            deleteVillageMutation.mutate(village.villageId)
-                          }
-                          className="p-1 sm:p-2"
-                        >
-                          <Trash2 className="h-3 w-3 sm:h-4 sm:w-4" />
                         </Button>
                       </div>
                     </TableCell>
@@ -931,16 +849,6 @@ export default function ModeratorDashboard() {
                                 >
                                   <RotateCcw className="h-3 w-3 sm:h-4 sm:w-4" />
                                 </Button>
-                                <Button
-                                  size="sm"
-                                  variant="destructive"
-                                  onClick={() =>
-                                    deleteManagerMutation.mutate(manager.userId)
-                                  }
-                                  className="p-1 sm:p-2"
-                                >
-                                  <Trash2 className="h-3 w-3 sm:h-4 sm:w-4" />
-                                </Button>
                               </div>
                             </TableCell>
                           </TableRow>
@@ -1163,16 +1071,6 @@ export default function ModeratorDashboard() {
                           className="p-1 sm:p-2"
                         >
                           <RotateCcw className="h-3 w-3 sm:h-4 sm:w-4" />
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="destructive"
-                          onClick={() =>
-                            deleteManagerMutation.mutate(manager.userId)
-                          }
-                          className="p-1 sm:p-2"
-                        >
-                          <Trash2 className="h-3 w-3 sm:h-4 sm:w-4" />
                         </Button>
                       </div>
                     </TableCell>
@@ -2392,7 +2290,7 @@ export default function ModeratorDashboard() {
     <div className="space-y-4 sm:space-y-6">
       <div>
         <h2 className="text-2xl sm:text-3xl font-bold">Profile Settings</h2>
-        <p className="text-muted-foreground">Manage your admin account</p>
+        <p className="text-muted-foreground">Manage your moderater account</p>
       </div>
 
       <Card>
@@ -2531,7 +2429,7 @@ export default function ModeratorDashboard() {
             <Leaf className="h-6 w-6 text-green-600" />
             <div>
               <h1 className="text-lg font-bold">GreenPath</h1>
-              <p className="text-xs text-muted-foreground">Admin Panel</p>
+              <p className="text-xs text-muted-foreground">Modereator Panel</p>
             </div>
           </div>
           <div className="flex items-center space-x-2">
@@ -2560,7 +2458,7 @@ export default function ModeratorDashboard() {
                 <Leaf className="h-8 w-8 text-green-600" />
                 <div>
                   <h1 className="text-xl font-bold">GreenPath</h1>
-                  <p className="text-sm text-muted-foreground">Admin Panel</p>
+                  <p className="text-sm text-muted-foreground">Moderator Panel</p>
                 </div>
               </div>
             </div>
