@@ -2,7 +2,7 @@
 
 ## Overview
 
-GreenPathOrg is a comprehensive waste management system designed for villages to track waste collection, manage households, and coordinate between different user roles. The application serves as a digital platform connecting waste generators (households), collectors, managers, and administrators in an efficient waste management ecosystem.
+GreenPathOrg is a comprehensive waste management system designed for villages to track waste collection, manage households, and coordinate between different user roles. The application serves as a digital platform connecting waste generators (households), collectors, managers, moderators, and administrators in an efficient waste management ecosystem.
 
 ## System Architecture
 
@@ -31,6 +31,7 @@ GreenPathOrg is a comprehensive waste management system designed for villages to
 
 ### User Roles and Authentication
 - **Admin**: System-wide management and village creation
+- **Moderator**: manages allocated villages by the admin a lower level admin
 - **Manager**: Village-level management and household coordination
 - **Collector**: Waste collection operations and QR scanning
 - **Generator**: Household waste management and issue reporting
