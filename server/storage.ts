@@ -1661,8 +1661,8 @@ export class DatabaseStorage implements IStorage {
           sql`${wasteCollections.segregationRating} IS NOT NULL`
         ));
 
-      // Collection trends (last 7 days)
-      const collectionTrends = await db.select({
+      // Collection trends (last 7 days) - Generate all 7 days
+      const collectionTrendsData = await db.select({
           date: sql<string>`DATE(${wasteCollections.collectionDate})`,
           collections: count(wasteCollections.id),
           avgRating: sql<number>`COALESCE(AVG(CAST(${wasteCollections.segregationRating} AS DECIMAL(3,2))), 0)`
@@ -1677,6 +1677,22 @@ export class DatabaseStorage implements IStorage {
         )
         .groupBy(sql`DATE(${wasteCollections.collectionDate})`)
         .orderBy(sql`DATE(${wasteCollections.collectionDate})`);
+
+      // Create complete 7-day collection trends with all dates
+      const collectionTrends = [];
+      for (let i = 6; i >= 0; i--) {
+        const date = new Date();
+        date.setDate(date.getDate() - i);
+        const dateStr = date.toISOString().split('T')[0];
+        
+        const dayData = collectionTrendsData.find(trend => trend.date === dateStr);
+        collectionTrends.push({
+          date: dateStr,
+          collectionDate: dateStr,
+          collections: Number(dayData?.collections) || 0,
+          avgRating: parseFloat((Number(dayData?.avgRating) || 0).toFixed(2))
+        });
+      }
 
       // Segregation rate distribution
       const segregationRateDistribution = await db.select({
@@ -1725,12 +1741,7 @@ export class DatabaseStorage implements IStorage {
           avgRating: parseFloat((Number(stat.avgRating) || 0).toFixed(2)),
           collections: Number(stat.collections) || 0
         })),
-        collectionTrends: collectionTrends.map(trend => ({
-          date: trend.date,
-          collectionDate: trend.date,
-          collections: Number(trend.collections) || 0,
-          avgRating: parseFloat((Number(trend.avgRating) || 0).toFixed(2))
-        })),
+        collectionTrends,
         segregationRateDistribution: segregationRateDistribution.map(item => ({
           rating: Number(item.rating) || 0,
           count: Number(item.count) || 0

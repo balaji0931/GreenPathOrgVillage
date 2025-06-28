@@ -1241,80 +1241,110 @@ export default function ModeratorDashboard() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
-                  {Array.from({ length: 7 }).map((_, i) => {
-                    const date = new Date();
-                    date.setDate(date.getDate() - (6 - i));
-                    const dateStr = date.toISOString().split("T")[0];
+                  {(() => {
+                    // Get the appropriate collection trends based on filter
+                    let trends = [];
+                    if (reportFilters.village === "all") {
+                      trends = systemAnalytics?.collectionTrends || [];
+                    } else {
+                      // For village-specific, create trends from daily analytics or use available data
+                      trends = systemAnalytics?.collectionTrends || [];
+                    }
 
-                    // Find real data for this date
-                    const dayData = systemAnalytics?.collectionTrends?.find(
-                      (trend: any) =>
-                        trend.date === dateStr ||
-                        trend.collectionDate === dateStr,
-                    );
-                    const collectionsForDay = Number(dayData?.collections) || 0;
+                    // If no trends available, generate last 7 days with zero data
+                    if (trends.length === 0) {
+                      trends = Array.from({ length: 7 }).map((_, i) => {
+                        const date = new Date();
+                        date.setDate(date.getDate() - (6 - i));
+                        return {
+                          date: date.toISOString().split("T")[0],
+                          collections: 0,
+                          avgRating: 0
+                        };
+                      });
+                    }
 
-                    // Calculate total households and collection percentage
-                    const totalHouseholds =
-                      reportFilters.village === "all"
-                        ? systemAnalytics?.totalHouseholds || 0
-                        : villages?.find(
-                            (v) => v.villageId === reportFilters.village,
-                          )?.totalHouseholds || 0;
+                    // Ensure we have data for the last 7 days
+                    const last7Days = Array.from({ length: 7 }).map((_, i) => {
+                      const date = new Date();
+                      date.setDate(date.getDate() - (6 - i));
+                      const dateStr = date.toISOString().split("T")[0];
+                      
+                      const dayData = trends.find(
+                        (trend: any) => trend.date === dateStr || trend.collectionDate === dateStr
+                      );
+                      
+                      return {
+                        date: dateStr,
+                        collections: Number(dayData?.collections) || 0,
+                        avgRating: Number(dayData?.avgRating) || 0
+                      };
+                    });
 
-                    const dailyTotalHouseholds = Math.max(totalHouseholds, 1);
-                    const collectionPercentage =
-                      (collectionsForDay / dailyTotalHouseholds) * 100;
-                    const uncollected = Math.max(
-                      0,
-                      dailyTotalHouseholds - collectionsForDay,
-                    );
+                    return last7Days.map((dayData, i) => {
+                      const date = new Date(dayData.date);
+                      const collectionsForDay = dayData.collections;
 
-                    return (
-                      <div key={i} className="space-y-1">
-                        <div className="flex items-center justify-between text-xs">
-                          <span className="text-muted-foreground">
-                            {date.toLocaleDateString("en-US", {
-                              month: "short",
-                              day: "numeric",
-                            })}
-                          </span>
-                          <span className="font-medium">
-                            {collectionsForDay}/{dailyTotalHouseholds}
-                          </span>
+                      // Calculate total households for context
+                      const totalHouseholds =
+                        reportFilters.village === "all"
+                          ? systemAnalytics?.totalHouseholds || 100
+                          : villages?.find(
+                              (v) => v.villageId === reportFilters.village,
+                            )?.totalHouseholds || 50;
+
+                      const dailyExpectedCollections = Math.ceil(totalHouseholds / 7); // Rough estimate
+                      const collectionPercentage = dailyExpectedCollections > 0 
+                        ? (collectionsForDay / dailyExpectedCollections) * 100 
+                        : 0;
+                      const remaining = Math.max(0, dailyExpectedCollections - collectionsForDay);
+
+                      return (
+                        <div key={i} className="space-y-1">
+                          <div className="flex items-center justify-between text-xs">
+                            <span className="text-muted-foreground">
+                              {date.toLocaleDateString("en-US", {
+                                month: "short",
+                                day: "numeric",
+                              })}
+                            </span>
+                            <span className="font-medium">
+                              {collectionsForDay} collections
+                            </span>
+                          </div>
+                          <div className="flex h-4 bg-gray-200 rounded overflow-hidden">
+                            <div
+                              className="bg-green-500 transition-all"
+                              style={{
+                                width: `${Math.min(Math.max(collectionPercentage, 5), 100)}%`,
+                              }}
+                              title={`Collected: ${collectionsForDay}`}
+                            />
+                            <div
+                              className="bg-gray-300 transition-all"
+                              style={{
+                                width: `${Math.max(100 - collectionPercentage, 0)}%`,
+                              }}
+                              title={`Expected: ${dailyExpectedCollections}`}
+                            />
+                          </div>
+                          <div className="flex justify-between text-xs text-muted-foreground">
+                            <span className="text-green-600">
+                              Collected: {collectionsForDay}
+                            </span>
+                            <span className="text-blue-600">
+                              Rating: {dayData.avgRating.toFixed(1)}/5
+                            </span>
+                          </div>
                         </div>
-                        <div className="flex h-4 bg-gray-200 rounded overflow-hidden">
-                          <div
-                            className="bg-green-500 transition-all"
-                            style={{
-                              width: `${Math.min(collectionPercentage, 100)}%`,
-                            }}
-                            title={`Collected: ${collectionsForDay}`}
-                          />
-                          <div
-                            className="bg-red-500 transition-all"
-                            style={{
-                              width: `${Math.min(100 - collectionPercentage, 100)}%`,
-                            }}
-                            title={`Not collected: ${uncollected}`}
-                          />
-                        </div>
-                        <div className="flex justify-between text-xs text-muted-foreground">
-                          <span className="text-green-600">
-                            Collected: {collectionsForDay}
-                          </span>
-                          <span className="text-red-600">
-                            Remaining: {uncollected}
-                          </span>
-                        </div>
-                      </div>
-                    );
-                  })}
+                      );
+                    });
+                  })()}
                 </div>
                 {(!systemAnalytics?.collectionTrends ||
                   systemAnalytics.collectionTrends.length === 0) && (
-                  <p className="text-center text-muted-foreground py-4">
-                    No collection trend data available
+                  <p className="text-center text-muted-foreground py-4 text-xs">
+                    Loading collection trend data...
                   </p>
                 )}
               </CardContent>
@@ -1330,50 +1360,84 @@ export default function ModeratorDashboard() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
-                  {Array.from({ length: 7 }).map((_, i) => {
-                    const date = new Date();
-                    date.setDate(date.getDate() - (6 - i));
-                    const dateStr = date.toISOString().split("T")[0];
+                  {(() => {
+                    // Get the appropriate collection trends based on filter
+                    let trends = [];
+                    if (reportFilters.village === "all") {
+                      trends = systemAnalytics?.collectionTrends || [];
+                    } else {
+                      trends = systemAnalytics?.collectionTrends || [];
+                    }
 
-                    // Find real data for this date
-                    const dayData = systemAnalytics?.collectionTrends?.find(
-                      (trend: any) =>
-                        trend.date === dateStr ||
-                        trend.collectionDate === dateStr,
-                    );
-                    const avgRating = dayData?.avgRating || 0;
+                    // Generate last 7 days data
+                    const last7Days = Array.from({ length: 7 }).map((_, i) => {
+                      const date = new Date();
+                      date.setDate(date.getDate() - (6 - i));
+                      const dateStr = date.toISOString().split("T")[0];
+                      
+                      const dayData = trends.find(
+                        (trend: any) => trend.date === dateStr || trend.collectionDate === dateStr
+                      );
+                      
+                      return {
+                        date: dateStr,
+                        avgRating: Number(dayData?.avgRating) || 0,
+                        collections: Number(dayData?.collections) || 0
+                      };
+                    });
 
-                    return (
-                      <div key={i} className="flex items-center gap-3">
-                        <div className="w-16 text-xs text-muted-foreground">
-                          {date.toLocaleDateString("en-US", {
-                            month: "short",
-                            day: "numeric",
-                          })}
+                    return last7Days.map((dayData, i) => {
+                      const date = new Date(dayData.date);
+                      const avgRating = dayData.avgRating;
+
+                      return (
+                        <div key={i} className="flex items-center gap-3">
+                          <div className="w-16 text-xs text-muted-foreground">
+                            {date.toLocaleDateString("en-US", {
+                              month: "short",
+                              day: "numeric",
+                            })}
+                          </div>
+                          <div className="flex-1 bg-gray-200 rounded-full h-4 relative">
+                            <div
+                              className={`h-4 rounded-full transition-all ${
+                                avgRating >= 4
+                                  ? "bg-green-500"
+                                  : avgRating >= 3
+                                    ? "bg-yellow-500"
+                                    : avgRating > 0
+                                      ? "bg-red-500"
+                                      : "bg-gray-300"
+                              }`}
+                              style={{
+                                width: `${avgRating > 0 ? (avgRating / 5) * 100 : 5}%`,
+                              }}
+                            />
+                            {avgRating > 0 && (
+                              <div className="absolute inset-0 flex items-center justify-center text-xs font-medium text-white">
+                                {avgRating.toFixed(1)}
+                              </div>
+                            )}
+                          </div>
+                          <div className="w-16 text-xs text-right">
+                            <div className="font-medium">
+                              {avgRating > 0 ? avgRating.toFixed(1) : "0.0"}/5
+                            </div>
+                            <div className="text-muted-foreground">
+                              {dayData.collections} items
+                            </div>
+                          </div>
                         </div>
-                        <div className="flex-1 bg-gray-200 rounded-full h-4 relative">
-                          <div
-                            className={`h-4 rounded-full transition-all ${
-                              avgRating >= 4
-                                ? "bg-green-500"
-                                : avgRating >= 3
-                                  ? "bg-yellow-500"
-                                  : avgRating > 0
-                                    ? "bg-red-500"
-                                    : "bg-gray-300"
-                            }`}
-                            style={{
-                              width: `${avgRating > 0 ? (avgRating / 5) * 100 : 0}%`,
-                            }}
-                          />
-                        </div>
-                        <div className="w-12 text-xs text-right font-medium">
-                          {avgRating > 0 ? avgRating.toFixed(1) : "N/A"}
-                        </div>
-                      </div>
-                    );
-                  })}
+                      );
+                    });
+                  })()}
                 </div>
+                {(!systemAnalytics?.collectionTrends ||
+                  systemAnalytics.collectionTrends.length === 0) && (
+                  <p className="text-center text-muted-foreground py-4 text-xs">
+                    Loading segregation trend data...
+                  </p>
+                )}
               </CardContent>
             </Card>
 
@@ -1393,23 +1457,44 @@ export default function ModeratorDashboard() {
                     // Get appropriate distribution data based on filter
                     let distribution = [];
                     if (reportFilters.village === "all") {
-                      distribution =
-                        systemAnalytics?.segregationRateDistribution || [];
+                      distribution = systemAnalytics?.segregationRateDistribution || [];
                     } else {
-                      // For village-specific data, we need to fetch from daily analytics or calculate from collections
-                      distribution = dailyAnalytics?.ratingDistribution || [];
+                      distribution = dailyAnalytics?.ratingDistribution || systemAnalytics?.segregationRateDistribution || [];
                     }
 
+                    // Calculate rating categories
                     const excellent = distribution
-                      .filter((d: any) => d.rating >= 4)
-                      .reduce((sum: number, d: any) => sum + d.count, 0);
+                      .filter((d: any) => Number(d.rating) >= 4)
+                      .reduce((sum: number, d: any) => sum + Number(d.count), 0);
                     const good = distribution
-                      .filter((d: any) => d.rating >= 3 && d.rating < 4)
-                      .reduce((sum: number, d: any) => sum + d.count, 0);
+                      .filter((d: any) => Number(d.rating) >= 3 && Number(d.rating) < 4)
+                      .reduce((sum: number, d: any) => sum + Number(d.count), 0);
                     const poor = distribution
-                      .filter((d: any) => d.rating < 3 && d.rating > 0)
-                      .reduce((sum: number, d: any) => sum + d.count, 0);
-                    const total = excellent + good + poor || 1;
+                      .filter((d: any) => Number(d.rating) < 3 && Number(d.rating) > 0)
+                      .reduce((sum: number, d: any) => sum + Number(d.count), 0);
+                    const total = excellent + good + poor;
+
+                    // If no data, show placeholder
+                    if (total === 0) {
+                      return (
+                        <div className="w-48 h-48 relative flex items-center justify-center">
+                          <div className="text-center text-muted-foreground">
+                            <div className="text-lg font-medium">No Data</div>
+                            <div className="text-xs">No segregation ratings available</div>
+                          </div>
+                        </div>
+                      );
+                    }
+
+                    const excellentPercent = (excellent / total) * 100;
+                    const goodPercent = (good / total) * 100;
+                    const poorPercent = (poor / total) * 100;
+
+                    // Calculate stroke-dasharray for pie chart
+                    const circumference = 2 * Math.PI * 40; // radius = 40
+                    const excellentStroke = (excellentPercent / 100) * circumference;
+                    const goodStroke = (goodPercent / 100) * circumference;
+                    const poorStroke = (poorPercent / 100) * circumference;
 
                     return (
                       <div className="w-48 h-48 relative">
@@ -1417,6 +1502,7 @@ export default function ModeratorDashboard() {
                           viewBox="0 0 100 100"
                           className="w-full h-full transform -rotate-90"
                         >
+                          {/* Background circle */}
                           <circle
                             cx="50"
                             cy="50"
@@ -1425,47 +1511,59 @@ export default function ModeratorDashboard() {
                             stroke="#f3f4f6"
                             strokeWidth="20"
                           />
-                          <circle
-                            cx="50"
-                            cy="50"
-                            r="40"
-                            fill="none"
-                            stroke="#ef4444"
-                            strokeWidth="20"
-                            strokeDasharray={`${(poor / total) * 251.3} 251.3`}
-                            strokeDashoffset="0"
-                          />
-                          <circle
-                            cx="50"
-                            cy="50"
-                            r="40"
-                            fill="none"
-                            stroke="#eab308"
-                            strokeWidth="20"
-                            strokeDasharray={`${(good / total) * 251.3} 251.3`}
-                            strokeDashoffset={`-${(poor / total) * 251.3}`}
-                          />
-                          <circle
-                            cx="50"
-                            cy="50"
-                            r="40"
-                            fill="none"
-                            stroke="#22c55e"
-                            strokeWidth="20"
-                            strokeDasharray={`${(excellent / total) * 251.3} 251.3`}
-                            strokeDashoffset={`-${((poor + good) / total) * 251.3}`}
-                          />
+                          
+                          {/* Poor (red) */}
+                          {poor > 0 && (
+                            <circle
+                              cx="50"
+                              cy="50"
+                              r="40"
+                              fill="none"
+                              stroke="#ef4444"
+                              strokeWidth="20"
+                              strokeDasharray={`${poorStroke} ${circumference}`}
+                              strokeDashoffset="0"
+                            />
+                          )}
+                          
+                          {/* Good (yellow) */}
+                          {good > 0 && (
+                            <circle
+                              cx="50"
+                              cy="50"
+                              r="40"
+                              fill="none"
+                              stroke="#eab308"
+                              strokeWidth="20"
+                              strokeDasharray={`${goodStroke} ${circumference}`}
+                              strokeDashoffset={`-${poorStroke}`}
+                            />
+                          )}
+                          
+                          {/* Excellent (green) */}
+                          {excellent > 0 && (
+                            <circle
+                              cx="50"
+                              cy="50"
+                              r="40"
+                              fill="none"
+                              stroke="#22c55e"
+                              strokeWidth="20"
+                              strokeDasharray={`${excellentStroke} ${circumference}`}
+                              strokeDashoffset={`-${poorStroke + goodStroke}`}
+                            />
+                          )}
                         </svg>
                         <div className="absolute inset-0 flex items-center justify-center">
                           <div className="text-center">
-                            <div className="text-2xl font-bold">
-                              {total > 1
-                                ? Math.round((excellent / total) * 100)
-                                : 0}
-                              %
+                            <div className="text-2xl font-bold text-green-600">
+                              {Math.round(excellentPercent)}%
                             </div>
                             <div className="text-xs text-muted-foreground">
                               Excellent
+                            </div>
+                            <div className="text-xs text-muted-foreground">
+                              {total} total
                             </div>
                           </div>
                         </div>
@@ -1474,18 +1572,41 @@ export default function ModeratorDashboard() {
                   })()}
                 </div>
                 <div className="grid grid-cols-3 gap-2 mt-4">
-                  <div className="text-center">
-                    <div className="w-4 h-4 bg-green-500 rounded mx-auto mb-1"></div>
-                    <div className="text-xs">Excellent (4-5★)</div>
-                  </div>
-                  <div className="text-center">
-                    <div className="w-4 h-4 bg-yellow-500 rounded mx-auto mb-1"></div>
-                    <div className="text-xs">Good (3-4★)</div>
-                  </div>
-                  <div className="text-center">
-                    <div className="w-4 h-4 bg-red-500 rounded mx-auto mb-1"></div>
-                    <div className="text-xs">Poor (0-3★)</div>
-                  </div>
+                  {(() => {
+                    const distribution = reportFilters.village === "all"
+                      ? systemAnalytics?.segregationRateDistribution || []
+                      : dailyAnalytics?.ratingDistribution || systemAnalytics?.segregationRateDistribution || [];
+                    
+                    const excellent = distribution
+                      .filter((d: any) => Number(d.rating) >= 4)
+                      .reduce((sum: number, d: any) => sum + Number(d.count), 0);
+                    const good = distribution
+                      .filter((d: any) => Number(d.rating) >= 3 && Number(d.rating) < 4)
+                      .reduce((sum: number, d: any) => sum + Number(d.count), 0);
+                    const poor = distribution
+                      .filter((d: any) => Number(d.rating) < 3 && Number(d.rating) > 0)
+                      .reduce((sum: number, d: any) => sum + Number(d.count), 0);
+
+                    return (
+                      <>
+                        <div className="text-center">
+                          <div className="w-4 h-4 bg-green-500 rounded mx-auto mb-1"></div>
+                          <div className="text-xs">Excellent (4-5★)</div>
+                          <div className="text-xs font-medium">{excellent}</div>
+                        </div>
+                        <div className="text-center">
+                          <div className="w-4 h-4 bg-yellow-500 rounded mx-auto mb-1"></div>
+                          <div className="text-xs">Good (3-4★)</div>
+                          <div className="text-xs font-medium">{good}</div>
+                        </div>
+                        <div className="text-center">
+                          <div className="w-4 h-4 bg-red-500 rounded mx-auto mb-1"></div>
+                          <div className="text-xs">Poor (0-3★)</div>
+                          <div className="text-xs font-medium">{poor}</div>
+                        </div>
+                      </>
+                    );
+                  })()}
                 </div>
               </CardContent>
             </Card>
