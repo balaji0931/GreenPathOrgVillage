@@ -13,7 +13,6 @@ import AdminDashboard from "./pages/admin-dashboard";
 import ManagerDashboard from "./pages/manager-dashboard";
 import CollectorDashboard from "./pages/collector-dashboard";
 import GeneratorDashboard from "./pages/generator-dashboard";
-import ModeratorDashboard from "./pages/moderator-dashboard";
 import NotFound from "./pages/not-found";
 import { InstallPWA } from "./components/InstallPWA";
 import { I18nextProvider } from 'react-i18next';
@@ -40,13 +39,11 @@ function Router() {
       <Route path="/manager" component={ManagerDashboard} />
       <Route path="/collector" component={CollectorDashboard} />
       <Route path="/generator" component={GeneratorDashboard} />
-      <Route path="/moderator" component={ModeratorDashboard} />
       <Route path="/">
         {user.role === "admin" && <AdminDashboard />}
         {user.role === "manager" && <ManagerDashboard />}
         {user.role === "collector" && <CollectorDashboard />}
         {user.role === "generator" && <GeneratorDashboard />}
-        {user.role === "moderator" && <ModeratorDashboard />}
       </Route>
       <Route component={NotFound} />
     </Switch>

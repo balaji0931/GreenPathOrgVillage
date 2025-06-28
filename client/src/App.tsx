@@ -1,3 +1,4 @@
+
 import { Switch, Route, useLocation } from "wouter";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
@@ -58,7 +59,7 @@ function Router() {
     <Switch>
       <Route path="/login">
         {() => {
-          // Redirect authenticated users away from login
+          // Redirect authenticated users based on role
           switch (user.role) {
             case 'admin':
               setLocation("/admin");
@@ -81,24 +82,39 @@ function Router() {
           }
         }}
       </Route>
-      <Route path="/admin" component={AdminDashboard} />
-      <Route path="/moderator" component={ModeratorDashboard} />
-      <Route path="/manager" component={ManagerDashboard} />
-      <Route path="/collector" component={CollectorDashboard} />
-      <Route path="/generator" component={GeneratorDashboard} />
+      <Route path="/admin">
+        {() => user.role === 'admin' ? <AdminDashboard /> : <NotFound />}
+      </Route>
+      <Route path="/moderator">
+        {() => user.role === 'moderator' ? <ModeratorDashboard /> : <NotFound />}
+      </Route>
+      <Route path="/manager">
+        {() => user.role === 'manager' ? <ManagerDashboard /> : <NotFound />}
+      </Route>
+      <Route path="/collector">
+        {() => user.role === 'collector' ? <CollectorDashboard /> : <NotFound />}
+      </Route>
+      <Route path="/generator">
+        {() => user.role === 'generator' ? <GeneratorDashboard /> : <NotFound />}
+      </Route>
       <Route path="/">
         {() => {
-          // Route based on user role
-          switch (user.role) {
+          // Auto-redirect to appropriate dashboard based on role
+          switch (user?.role) {
             case 'admin':
+              setLocation("/admin");
               return <AdminDashboard />;
             case 'moderator':
+              setLocation("/moderator");
               return <ModeratorDashboard />;
             case 'manager':
+              setLocation("/manager");
               return <ManagerDashboard />;
             case 'collector':
+              setLocation("/collector");
               return <CollectorDashboard />;
             case 'generator':
+              setLocation("/generator");
               return <GeneratorDashboard />;
             default:
               setLocation("/login");
