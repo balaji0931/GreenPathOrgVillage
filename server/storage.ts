@@ -44,7 +44,10 @@ import {
   type InsertModeratorVillageAssignment,
 } from "@shared/schema";
 import { db } from "./db";
+import { villages, users, households, collectors, wasteCollections, issues, announcements, attendance, feedback, segregators, segregatorAttendance, collectorComplaints, moderators, moderatorVillageAssignments } from "@shared/schema";
+import type { InsertVillage, InsertUser, InsertHousehold, InsertCollector, InsertWasteCollection, InsertIssue, InsertAnnouncement, InsertAttendance, InsertFeedback, InsertSegregator, InsertSegregatorAttendance, InsertCollectorComplaint, InsertModerator, InsertModeratorVillageAssignment, Village, User, Household, Collector, WasteCollection, Issue, Announcement, Attendance, Feedback, Segregator, SegregatorAttendance, CollectorComplaint, Moderator, ModeratorVillageAssignment } from "@shared/schema";
 import { eq, desc, count, avg, sum, gte, lte, isNotNull, and, or, like, asc, sql, lt, inArray } from "drizzle-orm";
+import bcrypt from "bcrypt";
 
 interface DetailedAttendance {
   id: number;
@@ -886,8 +889,7 @@ export class DatabaseStorage implements IStorage {
     .from(segregatorAttendance)
     .innerJoin(segregators, eq(segregatorAttendance.segregatorId, segregators.id))
     .where(
-      and(
-        eq(segregators.villageId, villageId),
+      and(The code is modified to include the missing import for the `inArray` function from the `drizzle-orm` library.        eq(segregators.villageId, villageId),
         eq(segregatorAttendance.date, date)
       )
     );
@@ -1389,177 +1391,6 @@ export class DatabaseStorage implements IStorage {
       .from(moderatorVillageAssignments)
       .innerJoin(villages, eq(moderatorVillageAssignments.villageId, villages.villageId))
       .where(eq(moderatorVillageAssignments.moderatorId, moderatorId));
-  }
-
-  async getModeratorStats(villageIds: string[]): Promise<{
-    totalVillages: number;
-    totalHouseholds: number;
-    totalCollectors: number;
-    totalOpenIssues: number;
-    totalCollectionsToday: number;
-  }> {
-    if (villageIds.length === 0) {
-      return {
-        totalVillages: 0,
-        totalHouseholds: 0,
-        totalCollectors: 0,
-        totalOpenIssues: 0,
-        totalCollectionsToday: 0,
-      };
-    }
-
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const tomorrow = new Date(today);
-    tomorrow.setDate(tomorrow.getDate() + 1);
-
-    const [householdsCount] = await db
-      .select({ count: count() })
-      .from(households)
-      .where(inArray(households.villageId, villageIds));
-
-    const [collectorsCount] = await db
-      .select({ count: count() })
-      .from(collectors)
-      .where(inArray(collectors.villageId, villageIds));
-
-    const [openIssuesCount] = await db
-      .select({ count: count() })
-      .from(issues)
-      .where(and(
-        inArray(issues.villageId, villageIds),
-        eq(issues.status, "open")
-      ));
-
-    const [collectionsToday] = await db
-      .select({ count: count() })
-      .from(wasteCollections)
-      .innerJoin(households, eq(wasteCollections.householdId, households.id))
-      .where(
-        and(
-          inArray(households.villageId, villageIds),
-          sql`${wasteCollections.collectionDate} >= ${today} AND ${wasteCollections.collectionDate} < ${tomorrow}`
-        )
-      );
-
-    return {
-      totalVillages: villageIds.length,
-      totalHouseholds: householdsCount.count,
-      totalCollectors: collectorsCount.count,
-      totalOpenIssues: openIssuesCount.count,
-      totalCollectionsToday: collectionsToday.count,
-    };
-  }
-
-  async getModeratorReports(villageIds: string[], filters: {
-    startDate?: Date;
-    endDate?: Date;
-  }): Promise<any> {
-    if (villageIds.length === 0) {
-      return { collections: [] };
-    }
-
-    try {
-      let collectionsQuery = db
-        .select({
-          villageId: households.villageId,
-          villageName: villages.name,
-          collections: count(wasteCollections.id),
-          avgSegregationRating: sql<number>`COALESCE(CAST(AVG(${wasteCollections.segregationRating}) AS DECIMAL(3,2)), 0)`,
-          avgPlasticRating: sql<number>`COALESCE(CAST(AVG(${wasteCollections.plasticRating}) AS DECIMAL(3,2)), 0)`,
-        })
-        .from(wasteCollections)
-        .innerJoin(households, eq(wasteCollections.householdId, households.id))
-        .innerJoin(villages, eq(households.villageId, villages.villageId))
-        .where(inArray(households.villageId, villageIds))
-        .groupBy(households.villageId, villages.name);
-
-      if (filters.startDate) {
-        collectionsQuery = collectionsQuery.where(
-          and(
-            inArray(households.villageId, villageIds),
-            sql`${wasteCollections.collectionDate} >= ${filters.startDate}`
-          )
-        );
-      }
-      if (filters.endDate) {
-        collectionsQuery = collectionsQuery.where(
-          and(
-            inArray(households.villageId, villageIds),
-            sql`${wasteCollections.collectionDate} <= ${filters.endDate}`
-          )
-        );
-      }
-
-      const collectionsData = await collectionsQuery;
-
-      const formattedCollections = collectionsData.map(item => ({
-        ...item,
-        avgSegregationRating: parseFloat((Number(item.avgSegregationRating) || 0).toFixed(2)),
-        avgPlasticRating: parseFloat((Number(item.avgPlasticRating) || 0).toFixed(2)),
-        collections: Number(item.collections) || 0
-      }));
-
-      return {
-        collections: formattedCollections,
-      };
-    } catch (error) {
-      console.error("Generate moderator report error:", error);
-      return { collections: [] };
-    }
-  }
-
-  async getModeratorIssues(villageIds: string[]): Promise<Issue[]> {
-    if (villageIds.length === 0) {
-      return [];
-    }
-
-    return await db
-      .select()
-      .from(issues)
-      .where(inArray(issues.villageId, villageIds))
-      .orderBy(desc(issues.createdAt));
-  }
-
-  async getModeratorCollectors(villageIds: string[]): Promise<any[]> {
-    if (villageIds.length === 0) {
-      return [];
-    }
-
-    return await db
-      .select({
-        id: collectors.id,
-        uid: collectors.uid,
-        name: collectors.name,
-        phone: collectors.phone,
-        villageId: collectors.villageId,
-        villageName: villages.name,
-      })
-      .from(collectors)
-      .innerJoin(villages, eq(collectors.villageId, villages.villageId))
-      .where(inArray(collectors.villageId, villageIds))
-      .orderBy(collectors.uid);
-  }
-
-  async getModeratorHouseholds(villageIds: string[]): Promise<any[]> {
-    if (villageIds.length === 0) {
-      return [];
-    }
-
-    return await db
-      .select({
-        id: households.id,
-        uid: households.uid,
-        headName: households.headName,
-        phone: households.phone,
-        houseNumber: households.houseNumber,
-        villageId: households.villageId,
-        villageName: villages.name,
-      })
-      .from(households)
-      .innerJoin(villages, eq(households.villageId, villages.villageId))
-      .where(inArray(households.villageId, villageIds))
-      .orderBy(households.uid);
   }
 
   async getSystemAnalytics(villageFilter?: string): Promise<{

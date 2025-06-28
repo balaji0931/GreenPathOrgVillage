@@ -829,6 +829,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+
+
   // Manager stats route
   app.get('/api/manager/stats', requireAuth, requireRole(['manager']), async (req, res) => {
     try {
@@ -840,6 +842,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: "Failed to get village stats" });
     }
   });
+
+
 
   // Collector assignment routes
   app.post('/api/collector-assignments', requireAuth, requireRole(['manager']), async (req, res) => {
@@ -886,7 +890,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const moderatorId = req.session.userId!;
       const villages = await storage.getModeratorVillages(moderatorId);
-
+      
       let totalHouseholds = 0;
       let totalCollectors = 0;
       let totalOpenIssues = 0;
@@ -914,124 +918,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Get moderator villages
   app.get('/api/moderator/villages', requireAuth, requireRole(['moderator']), async (req, res) => {
     try {
       const moderatorId = req.session.userId!;
       const villages = await storage.getModeratorVillages(moderatorId);
-      res.json(villages);
+      
+      // Get stats for each village
+      const villagesWithStats = await Promise.all(
+        villages.map(async (village) => {
+          const stats = await storage.getVillageStats(village.villageId);
+          return { ...village, ...stats };
+        })
+      );
+
+      res.json(villagesWithStats);
     } catch (error) {
-      console.error('Get moderator villages error:', error);
-      res.status(500).json({ message: "Failed to get villages" });
-    }
-  });
-
-  // Get moderator stats (only for assigned villages)
-  app.get('/api/moderator/stats', requireAuth, requireRole(['moderator']), async (req, res) => {
-    try {
-      const moderatorId = req.session.userId!;
-      const villages = await storage.getModeratorVillages(moderatorId);
-      const villageIds = villages.map(v => v.villageId);
-
-      const stats = await storage.getModeratorStats(villageIds);
-      res.json(stats);
-    } catch (error) {
-      console.error('Get moderator stats error:', error);
-      res.status(500).json({ message: "Failed to get stats" });
-    }
-  });
-
-  // Get reports for moderator villages only
-  app.get('/api/moderator/reports', requireAuth, requireRole(['moderator']), async (req, res) => {
-    try {
-      const moderatorId = req.session.userId!;
-      const villages = await storage.getModeratorVillages(moderatorId);
-      const villageIds = villages.map(v => v.villageId);
-
-      const { startDate, endDate } = req.query;
-
-      const reports = await storage.getModeratorReports(villageIds, {
-        startDate: startDate ? new Date(startDate as string) : undefined,
-        endDate: endDate ? new Date(endDate as string) : undefined,
-      });
-
-      res.json(reports);
-    } catch (error) {
-      console.error('Get moderator reports error:', error);
-      res.status(500).json({ message: "Failed to get reports" });
-    }
-  });
-
-  // Create announcement for moderator villages only
-  app.post('/api/moderator/announcements', requireAuth, requireRole(['moderator']), async (req, res) => {
-    try {
-      const moderatorId = req.session.userId!;
-      const { message, targetAudience, villageId } = req.body;
-
-      // Verify moderator has access to this village
-      const villages = await storage.getModeratorVillages(moderatorId);
-      const hasAccess = villages.some(v => v.villageId === villageId);
-
-      if (!hasAccess) {
-        return res.status(403).json({ message: "Access denied to this village" });
-      }
-
-      const announcement = await storage.createAnnouncement({
-        message,
-        targetAudience,
-        villageId,
-        createdBy: moderatorId,
-      });
-
-      res.json(announcement);
-    } catch (error) {
-      console.error('Create moderator announcement error:', error);
-      res.status(500).json({ message: "Failed to create announcement" });
-    }
-  });
-
-  // Get issues for moderator villages only
-  app.get('/api/moderator/issues', requireAuth, requireRole(['moderator']), async (req, res) => {
-    try {
-      const moderatorId = req.session.userId!;
-      const villages = await storage.getModeratorVillages(moderatorId);
-      const villageIds = villages.map(v => v.villageId);
-
-      const issues = await storage.getModeratorIssues(villageIds);
-      res.json(issues);
-    } catch (error) {
-      console.error('Get moderator issues error:', error);
-      res.status(500).json({ message: "Failed to get issues" });
-    }
-  });
-
-  // Get collectors for moderator villages only
-  app.get('/api/moderator/collectors', requireAuth, requireRole(['moderator']), async (req, res) => {
-    try {
-      const moderatorId = req.session.userId!;
-      const villages = await storage.getModeratorVillages(moderatorId);
-      const villageIds = villages.map(v => v.villageId);
-
-      const collectors = await storage.getModeratorCollectors(villageIds);
-      res.json(collectors);
-    } catch (error) {
-      console.error('Get moderator collectors error:', error);
-      res.status(500).json({ message: "Failed to get collectors" });
-    }
-  });
-
-  // Get households for moderator villages only
-  app.get('/api/moderator/households', requireAuth, requireRole(['moderator']), async (req, res) => {
-    try {
-      const moderatorId = req.session.userId!;
-      const villages = await storage.getModeratorVillages(moderatorId);
-      const villageIds = villages.map(v => v.villageId);
-
-      const households = await storage.getModeratorHouseholds(villageIds);
-      res.json(households);
-    } catch (error) {
-      console.error('Get moderator households error:', error);
-      res.status(500).json({ message: "Failed to get households" });
+      console.error("Get moderator villages error:", error);
+      res.status(500).json({ message: "Failed to get moderator villages" });
     }
   });
 
@@ -1177,15 +1080,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const moderatorId = req.session.userId!;
       const { role, startDate, endDate } = req.query;
-
+      
       // Get villages assigned to this moderator
       const assignedVillages = await storage.getModeratorVillages(moderatorId);
       const villageIds = assignedVillages.map(v => v.villageId);
-
+      
       if (villageIds.length === 0) {
         return res.json({ villages: [], users: [], collections: [], issues: [] });
       }
-
+      
       const reportData = await storage.generateModeratorReport({
         villageIds,
         role: role === 'all' ? undefined : role as string,
@@ -1203,15 +1106,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/moderator/analytics/system', requireAuth, requireRole(['moderator']), async (req, res) => {
     try {
       const moderatorId = req.session.userId!;
-
+      
       // Get villages assigned to this moderator
       const assignedVillages = await storage.getModeratorVillages(moderatorId);
       const villageIds = assignedVillages.map(v => v.villageId);
-
+      
       if (villageIds.length === 0) {
         return res.json({ totalCollections: 0, avgRating: 0, villageStats: [] });
       }
-
+      
       const analytics = await storage.getModeratorSystemAnalytics(villageIds);
       res.json(analytics);
     } catch (error) {
@@ -1224,15 +1127,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const moderatorId = req.session.userId!;
       const { date } = req.query;
-
+      
       // Get villages assigned to this moderator
       const assignedVillages = await storage.getModeratorVillages(moderatorId);
       const villageIds = assignedVillages.map(v => v.villageId);
-
+      
       if (villageIds.length === 0) {
         return res.json({ totalHouses: 0, collected: 0, remaining: 0, avgSegregationRating: 0 });
       }
-
+      
       const dailyData = await storage.getModeratorDailyReportData(villageIds, date as string);
       res.json(dailyData);
     } catch (error) {
@@ -1245,14 +1148,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { message, targetAudience } = req.body;
       const moderatorId = req.session.userId!;
-
+      
       // Get villages assigned to this moderator
       const assignedVillages = await storage.getModeratorVillages(moderatorId);
-
+      
       if (assignedVillages.length === 0) {
         return res.status(400).json({ message: "No villages assigned to moderator" });
       }
-
+      
       // Create announcements for each assigned village
       const announcements = [];
       for (const village of assignedVillages) {
@@ -1276,15 +1179,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { villageId } = req.params;
       const moderatorId = req.session.userId!;
-
+      
       // Verify that this village is assigned to the moderator
       const assignedVillages = await storage.getModeratorVillages(moderatorId);
       const isAssigned = assignedVillages.some(v => v.villageId === villageId);
-
+      
       if (!isAssigned) {
         return res.status(403).json({ message: "Access denied to this village" });
       }
-
+      
       const details = await storage.getVillageDetails(villageId);
       res.json(details);
     } catch (error) {
@@ -1297,15 +1200,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { villageId } = req.params;
       const moderatorId = req.session.userId!;
-
+      
       // Verify that this village is assigned to the moderator
       const assignedVillages = await storage.getModeratorVillages(moderatorId);
       const isAssigned = assignedVillages.some(v => v.villageId === villageId);
-
+      
       if (!isAssigned) {
         return res.status(403).json({ message: "Access denied to this village" });
       }
-
+      
       const managers = await storage.getManagersByVillage(villageId);
       res.json(managers);
     } catch (error) {
@@ -1318,15 +1221,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { villageId } = req.params;
       const moderatorId = req.session.userId!;
-
+      
       // Verify that this village is assigned to the moderator
       const assignedVillages = await storage.getModeratorVillages(moderatorId);
       const isAssigned = assignedVillages.some(v => v.villageId === villageId);
-
+      
       if (!isAssigned) {
         return res.status(403).json({ message: "Access denied to this village" });
       }
-
+      
       const issues = await storage.getIssuesByVillage(villageId);
       res.json(issues);
     } catch (error) {
@@ -1340,21 +1243,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { id } = req.params;
       const updates = req.body;
       const moderatorId = req.session.userId!;
-
+      
       // Get the issue to verify village access
       const issue = await storage.getIssueById(parseInt(id));
       if (!issue) {
         return res.status(404).json({ message: "Issue not found" });
       }
-
+      
       // Verify that this village is assigned to the moderator
       const assignedVillages = await storage.getModeratorVillages(moderatorId);
       const isAssigned = assignedVillages.some(v => v.villageId === issue.villageId);
-
+      
       if (!isAssigned) {
         return res.status(403).json({ message: "Access denied to this village" });
       }
-
+      
       const updatedIssue = await storage.updateIssue(parseInt(id), updates);
       res.json(updatedIssue);
     } catch (error) {
@@ -1468,7 +1371,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/moderators', requireAuth, requireRole(['admin']), async (req, res) => {
     try {
       const moderators = await storage.getModeratorsList();
-
+      
       // Get village assignments for each moderator
       const moderatorsWithVillages = await Promise.all(
         moderators.map(async (moderator) => {
