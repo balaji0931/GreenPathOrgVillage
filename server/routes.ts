@@ -1075,6 +1075,197 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Moderator-specific API endpoints
+  app.get('/api/moderator/reports', requireAuth, requireRole(['moderator']), async (req, res) => {
+    try {
+      const moderatorId = req.session.userId!;
+      const { role, startDate, endDate } = req.query;
+      
+      // Get villages assigned to this moderator
+      const assignedVillages = await storage.getModeratorVillages(moderatorId);
+      const villageIds = assignedVillages.map(v => v.villageId);
+      
+      if (villageIds.length === 0) {
+        return res.json({ villages: [], users: [], collections: [], issues: [] });
+      }
+      
+      const reportData = await storage.generateModeratorReport({
+        villageIds,
+        role: role === 'all' ? undefined : role as string,
+        startDate: startDate ? new Date(startDate as string) : undefined,
+        endDate: endDate ? new Date(endDate as string) : undefined,
+      });
+
+      res.json(reportData);
+    } catch (error) {
+      console.error("Generate moderator report error:", error);
+      res.status(500).json({ message: "Failed to generate moderator report" });
+    }
+  });
+
+  app.get('/api/moderator/analytics/system', requireAuth, requireRole(['moderator']), async (req, res) => {
+    try {
+      const moderatorId = req.session.userId!;
+      
+      // Get villages assigned to this moderator
+      const assignedVillages = await storage.getModeratorVillages(moderatorId);
+      const villageIds = assignedVillages.map(v => v.villageId);
+      
+      if (villageIds.length === 0) {
+        return res.json({ totalCollections: 0, avgRating: 0, villageStats: [] });
+      }
+      
+      const analytics = await storage.getModeratorSystemAnalytics(villageIds);
+      res.json(analytics);
+    } catch (error) {
+      console.error("Get moderator system analytics error:", error);
+      res.status(500).json({ message: "Failed to get moderator system analytics" });
+    }
+  });
+
+  app.get('/api/moderator/analytics/daily', requireAuth, requireRole(['moderator']), async (req, res) => {
+    try {
+      const moderatorId = req.session.userId!;
+      const { date } = req.query;
+      
+      // Get villages assigned to this moderator
+      const assignedVillages = await storage.getModeratorVillages(moderatorId);
+      const villageIds = assignedVillages.map(v => v.villageId);
+      
+      if (villageIds.length === 0) {
+        return res.json({ totalHouses: 0, collected: 0, remaining: 0, avgSegregationRating: 0 });
+      }
+      
+      const dailyData = await storage.getModeratorDailyReportData(villageIds, date as string);
+      res.json(dailyData);
+    } catch (error) {
+      console.error("Get moderator daily analytics error:", error);
+      res.status(500).json({ message: "Failed to get moderator daily analytics" });
+    }
+  });
+
+  app.post('/api/moderator/announcements', requireAuth, requireRole(['moderator']), async (req, res) => {
+    try {
+      const { message, targetAudience } = req.body;
+      const moderatorId = req.session.userId!;
+      
+      // Get villages assigned to this moderator
+      const assignedVillages = await storage.getModeratorVillages(moderatorId);
+      
+      if (assignedVillages.length === 0) {
+        return res.status(400).json({ message: "No villages assigned to moderator" });
+      }
+      
+      // Create announcements for each assigned village
+      const announcements = [];
+      for (const village of assignedVillages) {
+        const announcement = await storage.createAnnouncement({
+          message,
+          targetAudience,
+          villageId: village.villageId,
+          createdBy: moderatorId,
+        });
+        announcements.push(announcement);
+      }
+
+      res.json({ message: "Announcements created successfully", announcements });
+    } catch (error) {
+      console.error("Create moderator announcement error:", error);
+      res.status(500).json({ message: "Failed to create announcement" });
+    }
+  });
+
+  app.get('/api/moderator/village/:villageId/details', requireAuth, requireRole(['moderator']), async (req, res) => {
+    try {
+      const { villageId } = req.params;
+      const moderatorId = req.session.userId!;
+      
+      // Verify that this village is assigned to the moderator
+      const assignedVillages = await storage.getModeratorVillages(moderatorId);
+      const isAssigned = assignedVillages.some(v => v.villageId === villageId);
+      
+      if (!isAssigned) {
+        return res.status(403).json({ message: "Access denied to this village" });
+      }
+      
+      const details = await storage.getVillageDetails(villageId);
+      res.json(details);
+    } catch (error) {
+      console.error("Get moderator village details error:", error);
+      res.status(500).json({ message: "Failed to get village details" });
+    }
+  });
+
+  app.get('/api/moderator/village/:villageId/managers', requireAuth, requireRole(['moderator']), async (req, res) => {
+    try {
+      const { villageId } = req.params;
+      const moderatorId = req.session.userId!;
+      
+      // Verify that this village is assigned to the moderator
+      const assignedVillages = await storage.getModeratorVillages(moderatorId);
+      const isAssigned = assignedVillages.some(v => v.villageId === villageId);
+      
+      if (!isAssigned) {
+        return res.status(403).json({ message: "Access denied to this village" });
+      }
+      
+      const managers = await storage.getManagersByVillage(villageId);
+      res.json(managers);
+    } catch (error) {
+      console.error("Get village managers error:", error);
+      res.status(500).json({ message: "Failed to get village managers" });
+    }
+  });
+
+  app.get('/api/moderator/village/:villageId/issues', requireAuth, requireRole(['moderator']), async (req, res) => {
+    try {
+      const { villageId } = req.params;
+      const moderatorId = req.session.userId!;
+      
+      // Verify that this village is assigned to the moderator
+      const assignedVillages = await storage.getModeratorVillages(moderatorId);
+      const isAssigned = assignedVillages.some(v => v.villageId === villageId);
+      
+      if (!isAssigned) {
+        return res.status(403).json({ message: "Access denied to this village" });
+      }
+      
+      const issues = await storage.getIssuesByVillage(villageId);
+      res.json(issues);
+    } catch (error) {
+      console.error("Get village issues error:", error);
+      res.status(500).json({ message: "Failed to get village issues" });
+    }
+  });
+
+  app.patch('/api/moderator/issues/:id', requireAuth, requireRole(['moderator']), async (req, res) => {
+    try {
+      const { id } = req.params;
+      const updates = req.body;
+      const moderatorId = req.session.userId!;
+      
+      // Get the issue to verify village access
+      const issue = await storage.getIssueById(parseInt(id));
+      if (!issue) {
+        return res.status(404).json({ message: "Issue not found" });
+      }
+      
+      // Verify that this village is assigned to the moderator
+      const assignedVillages = await storage.getModeratorVillages(moderatorId);
+      const isAssigned = assignedVillages.some(v => v.villageId === issue.villageId);
+      
+      if (!isAssigned) {
+        return res.status(403).json({ message: "Access denied to this village" });
+      }
+      
+      const updatedIssue = await storage.updateIssue(parseInt(id), updates);
+      res.json(updatedIssue);
+    } catch (error) {
+      console.error("Update issue error:", error);
+      res.status(500).json({ message: "Failed to update issue" });
+    }
+  });
+
   app.get('/api/villages/:villageId/details', requireAuth, requireRole(['admin']), async (req, res) => {
     try {
       const { villageId } = req.params;

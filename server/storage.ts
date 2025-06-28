@@ -44,7 +44,10 @@ import {
   type InsertModeratorVillageAssignment,
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, and, desc, count, sql } from "drizzle-orm";
+import { villages, users, households, collectors, wasteCollections, issues, announcements, attendance, feedback, segregators, segregatorAttendance, collectorComplaints, moderators, moderatorVillageAssignments } from "@shared/schema";
+import type { InsertVillage, InsertUser, InsertHousehold, InsertCollector, InsertWasteCollection, InsertIssue, InsertAnnouncement, InsertAttendance, InsertFeedback, InsertSegregator, InsertSegregatorAttendance, InsertCollectorComplaint, InsertModerator, InsertModeratorVillageAssignment, Village, User, Household, Collector, WasteCollection, Issue, Announcement, Attendance, Feedback, Segregator, SegregatorAttendance, CollectorComplaint, Moderator, ModeratorVillageAssignment } from "@shared/schema";
+import { eq, desc, count, avg, sum, gte, lte, isNotNull, and, or, like, asc, sql, lt, inArray } from "drizzle-orm";
+import bcrypt from "bcrypt";
 
 interface DetailedAttendance {
   id: number;
@@ -886,8 +889,7 @@ export class DatabaseStorage implements IStorage {
     .from(segregatorAttendance)
     .innerJoin(segregators, eq(segregatorAttendance.segregatorId, segregators.id))
     .where(
-      and(
-        eq(segregators.villageId, villageId),
+      and(The code is modified to include the missing import for the `inArray` function from the `drizzle-orm` library.        eq(segregators.villageId, villageId),
         eq(segregatorAttendance.date, date)
       )
     );
@@ -1321,7 +1323,7 @@ export class DatabaseStorage implements IStorage {
       .insert(moderators)
       .values(insertModerator)
       .returning();
-    
+
     // Create user account for moderator
     const hashedPassword = await bcrypt.hash(insertModerator.moderatorId, 10);
     await db
@@ -1334,7 +1336,7 @@ export class DatabaseStorage implements IStorage {
         phone: insertModerator.phone,
         villageId: null,
       });
-    
+
     return moderator;
   }
 
@@ -1354,10 +1356,10 @@ export class DatabaseStorage implements IStorage {
   async deleteModerator(moderatorId: string): Promise<void> {
     // Delete moderator village assignments first
     await db.delete(moderatorVillageAssignments).where(eq(moderatorVillageAssignments.moderatorId, moderatorId));
-    
+
     // Delete user account
     await db.delete(users).where(eq(users.userId, moderatorId));
-    
+
     // Delete moderator
     await db.delete(moderators).where(eq(moderators.moderatorId, moderatorId));
   }
