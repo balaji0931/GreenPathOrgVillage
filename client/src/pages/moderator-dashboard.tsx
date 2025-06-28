@@ -170,8 +170,20 @@ export default function ModeratorDashboard() {
 
   // Fetch moderator system analytics
   const { data: systemAnalytics, isLoading: analyticsLoading } = useQuery({
-    queryKey: ["/api/moderator/analytics/system"],
+    queryKey: ["/api/moderator/analytics/system", reportFilters.village],
     enabled: activeTab === "reports",
+    queryFn: async () => {
+      const params = new URLSearchParams();
+      if (reportFilters.village && reportFilters.village !== 'all') {
+        params.set('village', reportFilters.village);
+      }
+      
+      const response = await apiRequest(
+        "GET", 
+        `/api/moderator/analytics/system${params.toString() ? `?${params.toString()}` : ''}`
+      );
+      return response.json();
+    },
   });
 
   // Fetch moderator daily analytics
@@ -1242,62 +1254,58 @@ export default function ModeratorDashboard() {
               <CardContent>
                 <div className="space-y-3">
                   {(() => {
-                    // Get the appropriate collection trends based on filter
-                    let trends = [];
-                    if (reportFilters.village === "all") {
-                      trends = systemAnalytics?.collectionTrends || [];
-                    } else {
-                      // For village-specific, create trends from daily analytics or use available data
-                      trends = systemAnalytics?.collectionTrends || [];
-                    }
+                    // Get collection trends from analytics (already filtered by village)
+                    const trends = systemAnalytics?.collectionTrends || [];
+                    const totalHouseholds = systemAnalytics?.totalHouseholds || 0;
 
                     // If no trends available, generate last 7 days with zero data
                     if (trends.length === 0) {
-                      trends = Array.from({ length: 7 }).map((_, i) => {
+                      const emptyTrends = Array.from({ length: 7 }).map((_, i) => {
                         const date = new Date();
                         date.setDate(date.getDate() - (6 - i));
                         return {
                           date: date.toISOString().split("T")[0],
                           collections: 0,
+                          totalHouseholds: totalHouseholds,
                           avgRating: 0
                         };
                       });
+                      
+                      return emptyTrends.map((dayData, i) => (
+                        <div key={i} className="space-y-1">
+                          <div className="flex items-center justify-between text-xs">
+                            <span className="text-muted-foreground">
+                              {new Date(dayData.date).toLocaleDateString("en-US", {
+                                month: "short",
+                                day: "numeric",
+                              })}
+                            </span>
+                            <span className="font-medium">
+                              0 / {totalHouseholds} houses
+                            </span>
+                          </div>
+                          <div className="flex h-4 bg-gray-200 rounded overflow-hidden">
+                            <div className="w-full bg-gray-300" />
+                          </div>
+                          <div className="flex justify-between text-xs text-muted-foreground">
+                            <span className="text-gray-600">No collections</span>
+                            <span className="text-gray-600">Rating: 0.0/5</span>
+                          </div>
+                        </div>
+                      ));
                     }
 
-                    // Ensure we have data for the last 7 days
-                    const last7Days = Array.from({ length: 7 }).map((_, i) => {
-                      const date = new Date();
-                      date.setDate(date.getDate() - (6 - i));
-                      const dateStr = date.toISOString().split("T")[0];
-                      
-                      const dayData = trends.find(
-                        (trend: any) => trend.date === dateStr || trend.collectionDate === dateStr
-                      );
-                      
-                      return {
-                        date: dateStr,
-                        collections: Number(dayData?.collections) || 0,
-                        avgRating: Number(dayData?.avgRating) || 0
-                      };
-                    });
-
-                    return last7Days.map((dayData, i) => {
+                    return trends.map((dayData: any, i: number) => {
                       const date = new Date(dayData.date);
-                      const collectionsForDay = dayData.collections;
+                      const collectionsForDay = Number(dayData.collections) || 0;
+                      const householdsForDay = Number(dayData.totalHouseholds) || totalHouseholds;
+                      const avgRating = Number(dayData.avgRating) || 0;
 
-                      // Calculate total households for context
-                      const totalHouseholds =
-                        reportFilters.village === "all"
-                          ? systemAnalytics?.totalHouseholds || 100
-                          : villages?.find(
-                              (v) => v.villageId === reportFilters.village,
-                            )?.totalHouseholds || 50;
-
-                      const dailyExpectedCollections = Math.ceil(totalHouseholds / 7); // Rough estimate
-                      const collectionPercentage = dailyExpectedCollections > 0 
-                        ? (collectionsForDay / dailyExpectedCollections) * 100 
+                      // Calculate collection percentage out of total households
+                      const collectionPercentage = householdsForDay > 0 
+                        ? (collectionsForDay / householdsForDay) * 100 
                         : 0;
-                      const remaining = Math.max(0, dailyExpectedCollections - collectionsForDay);
+                      const remaining = Math.max(0, householdsForDay - collectionsForDay);
 
                       return (
                         <div key={i} className="space-y-1">
@@ -1309,31 +1317,31 @@ export default function ModeratorDashboard() {
                               })}
                             </span>
                             <span className="font-medium">
-                              {collectionsForDay} collections
+                              {collectionsForDay} / {householdsForDay} houses
                             </span>
                           </div>
                           <div className="flex h-4 bg-gray-200 rounded overflow-hidden">
                             <div
                               className="bg-green-500 transition-all"
                               style={{
-                                width: `${Math.min(Math.max(collectionPercentage, 5), 100)}%`,
+                                width: `${Math.max(collectionPercentage, 0)}%`,
                               }}
-                              title={`Collected: ${collectionsForDay}`}
+                              title={`Collected: ${collectionsForDay} out of ${householdsForDay} houses`}
                             />
                             <div
                               className="bg-gray-300 transition-all"
                               style={{
                                 width: `${Math.max(100 - collectionPercentage, 0)}%`,
                               }}
-                              title={`Expected: ${dailyExpectedCollections}`}
+                              title={`Remaining: ${remaining} houses`}
                             />
                           </div>
                           <div className="flex justify-between text-xs text-muted-foreground">
                             <span className="text-green-600">
-                              Collected: {collectionsForDay}
+                              Collected: {collectionsForDay} ({Math.round(collectionPercentage)}%)
                             </span>
                             <span className="text-blue-600">
-                              Rating: {dayData.avgRating.toFixed(1)}/5
+                              Avg Rating: {avgRating.toFixed(1)}/5
                             </span>
                           </div>
                         </div>
@@ -1341,8 +1349,7 @@ export default function ModeratorDashboard() {
                     });
                   })()}
                 </div>
-                {(!systemAnalytics?.collectionTrends ||
-                  systemAnalytics.collectionTrends.length === 0) && (
+                {analyticsLoading && (
                   <p className="text-center text-muted-foreground py-4 text-xs">
                     Loading collection trend data...
                   </p>
@@ -1361,34 +1368,44 @@ export default function ModeratorDashboard() {
               <CardContent>
                 <div className="space-y-3">
                   {(() => {
-                    // Get the appropriate collection trends based on filter
-                    let trends = [];
-                    if (reportFilters.village === "all") {
-                      trends = systemAnalytics?.collectionTrends || [];
-                    } else {
-                      trends = systemAnalytics?.collectionTrends || [];
+                    // Get collection trends from analytics (already filtered by village)
+                    const trends = systemAnalytics?.collectionTrends || [];
+
+                    // If no trends available, generate last 7 days with zero data
+                    if (trends.length === 0) {
+                      const emptyTrends = Array.from({ length: 7 }).map((_, i) => {
+                        const date = new Date();
+                        date.setDate(date.getDate() - (6 - i));
+                        return {
+                          date: date.toISOString().split("T")[0],
+                          avgRating: 0,
+                          collections: 0
+                        };
+                      });
+                      
+                      return emptyTrends.map((dayData, i) => (
+                        <div key={i} className="flex items-center gap-3">
+                          <div className="w-16 text-xs text-muted-foreground">
+                            {new Date(dayData.date).toLocaleDateString("en-US", {
+                              month: "short",
+                              day: "numeric",
+                            })}
+                          </div>
+                          <div className="flex-1 bg-gray-200 rounded-full h-4 relative">
+                            <div className="h-4 rounded-full bg-gray-300 w-full" />
+                          </div>
+                          <div className="w-16 text-xs text-right">
+                            <div className="font-medium">0.0/5</div>
+                            <div className="text-muted-foreground">0 items</div>
+                          </div>
+                        </div>
+                      ));
                     }
 
-                    // Generate last 7 days data
-                    const last7Days = Array.from({ length: 7 }).map((_, i) => {
-                      const date = new Date();
-                      date.setDate(date.getDate() - (6 - i));
-                      const dateStr = date.toISOString().split("T")[0];
-                      
-                      const dayData = trends.find(
-                        (trend: any) => trend.date === dateStr || trend.collectionDate === dateStr
-                      );
-                      
-                      return {
-                        date: dateStr,
-                        avgRating: Number(dayData?.avgRating) || 0,
-                        collections: Number(dayData?.collections) || 0
-                      };
-                    });
-
-                    return last7Days.map((dayData, i) => {
+                    return trends.map((dayData: any, i: number) => {
                       const date = new Date(dayData.date);
-                      const avgRating = dayData.avgRating;
+                      const avgRating = Number(dayData.avgRating) || 0;
+                      const collections = Number(dayData.collections) || 0;
 
                       return (
                         <div key={i} className="flex items-center gap-3">
@@ -1410,7 +1427,7 @@ export default function ModeratorDashboard() {
                                       : "bg-gray-300"
                               }`}
                               style={{
-                                width: `${avgRating > 0 ? (avgRating / 5) * 100 : 5}%`,
+                                width: `${avgRating > 0 ? Math.max((avgRating / 5) * 100, 5) : 5}%`,
                               }}
                             />
                             {avgRating > 0 && (
@@ -1424,7 +1441,7 @@ export default function ModeratorDashboard() {
                               {avgRating > 0 ? avgRating.toFixed(1) : "0.0"}/5
                             </div>
                             <div className="text-muted-foreground">
-                              {dayData.collections} items
+                              {collections} items
                             </div>
                           </div>
                         </div>
@@ -1432,8 +1449,7 @@ export default function ModeratorDashboard() {
                     });
                   })()}
                 </div>
-                {(!systemAnalytics?.collectionTrends ||
-                  systemAnalytics.collectionTrends.length === 0) && (
+                {analyticsLoading && (
                   <p className="text-center text-muted-foreground py-4 text-xs">
                     Loading segregation trend data...
                   </p>

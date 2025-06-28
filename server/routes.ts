@@ -1213,6 +1213,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/moderator/analytics/system', requireAuth, requireRole(['moderator']), async (req, res) => {
     try {
       const moderatorId = req.session.userId!;
+      const { village } = req.query;
 
       // Get villages assigned to this moderator
       const assignedVillages = await storage.getModeratorVillages(moderatorId);
@@ -1235,8 +1236,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      // Get comprehensive analytics for moderator villages
-      const analytics = await storage.getModeratorSystemAnalytics(villageIds);
+      // Get comprehensive analytics for moderator villages with village filter
+      const selectedVillageId = village === 'all' ? undefined : village as string;
+      const analytics = await storage.getModeratorSystemAnalytics(villageIds, selectedVillageId);
       
       // Return the full analytics object directly as it contains all needed data
       const fullAnalytics = {

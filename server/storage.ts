@@ -1572,7 +1572,7 @@ export class DatabaseStorage implements IStorage {
       .orderBy(households.uid);
   }
 
-  async getModeratorSystemAnalytics(villageIds: string[]): Promise<{
+  async getModeratorSystemAnalytics(villageIds: string[], selectedVillageId?: string): Promise<{
     totalCollections: number;
     avgRating: number;
     villageStats: any[];
@@ -1586,7 +1586,12 @@ export class DatabaseStorage implements IStorage {
     totalCollectors: number;
     totalCollectionsToday: number;
   }> {
-    if (villageIds.length === 0) {
+    // Filter villageIds based on selectedVillageId if provided
+    const targetVillageIds = selectedVillageId && selectedVillageId !== 'all' 
+      ? [selectedVillageId].filter(id => villageIds.includes(id))
+      : villageIds;
+
+    if (targetVillageIds.length === 0) {
       // Return default structure with empty data but valid 7-day trends
       const emptyCollectionTrends = [];
       for (let i = 6; i >= 0; i--) {
@@ -1597,6 +1602,7 @@ export class DatabaseStorage implements IStorage {
           date: dateStr,
           collectionDate: dateStr,
           collections: 0,
+          totalHouseholds: 0,
           avgRating: 0
         });
       }
@@ -1631,17 +1637,17 @@ export class DatabaseStorage implements IStorage {
         .select({ count: count() })
         .from(wasteCollections)
         .innerJoin(households, eq(wasteCollections.householdId, households.id))
-        .where(inArray(households.villageId, villageIds));
+        .where(inArray(households.villageId, targetVillageIds));
 
       const [householdsCount] = await db
         .select({ count: count() })
         .from(households)
-        .where(inArray(households.villageId, villageIds));
+        .where(inArray(households.villageId, targetVillageIds));
 
       const [collectorsCount] = await db
         .select({ count: count() })
         .from(collectors)
-        .where(inArray(collectors.villageId, villageIds));
+        .where(inArray(collectors.villageId, targetVillageIds));
 
       const [collectionsToday] = await db
         .select({ count: count() })
@@ -1649,7 +1655,7 @@ export class DatabaseStorage implements IStorage {
         .innerJoin(households, eq(wasteCollections.householdId, households.id))
         .where(
           and(
-            inArray(households.villageId, villageIds),
+            inArray(households.villageId, targetVillageIds),
             sql`${wasteCollections.collectionDate} >= ${today} AND ${wasteCollections.collectionDate} < ${tomorrow}`
           )
         );
@@ -1660,7 +1666,7 @@ export class DatabaseStorage implements IStorage {
         .innerJoin(households, eq(wasteCollections.householdId, households.id))
         .where(
           and(
-            inArray(households.villageId, villageIds),
+            inArray(households.villageId, targetVillageIds),
             sql`${wasteCollections.collectionDate} >= ${oneWeekAgo}`
           )
         );
@@ -1671,11 +1677,11 @@ export class DatabaseStorage implements IStorage {
         .from(wasteCollections)
         .innerJoin(households, eq(wasteCollections.householdId, households.id))
         .where(and(
-          inArray(households.villageId, villageIds),
+          inArray(households.villageId, targetVillageIds),
           sql`${wasteCollections.segregationRating} IS NOT NULL`
         ));
 
-      // Collection trends (last 7 days) - Get actual data
+      // Collection trends (last 7 days) - Get actual data with total households context
       const collectionTrendsData = await db.select({
           date: sql<string>`DATE(${wasteCollections.collectionDate})`,
           collections: count(wasteCollections.id),
@@ -1685,14 +1691,15 @@ export class DatabaseStorage implements IStorage {
         .innerJoin(households, eq(wasteCollections.householdId, households.id))
         .where(
           and(
-            inArray(households.villageId, villageIds),
+            inArray(households.villageId, targetVillageIds),
             sql`${wasteCollections.collectionDate} >= ${oneWeekAgo}`
           )
         )
         .groupBy(sql`DATE(${wasteCollections.collectionDate})`)
         .orderBy(sql`DATE(${wasteCollections.collectionDate})`);
 
-      // Create complete 7-day collection trends with all dates (ensure all 7 days are present)
+      // Create complete 7-day collection trends with all dates and total households context
+      const totalHouseholdsForTrends = Number(householdsCount?.count) || 0;
       const collectionTrends = [];
       for (let i = 6; i >= 0; i--) {
         const date = new Date();
@@ -1704,6 +1711,7 @@ export class DatabaseStorage implements IStorage {
           date: dateStr,
           collectionDate: dateStr,
           collections: Number(dayData?.collections) || 0,
+          totalHouseholds: totalHouseholdsForTrends,
           avgRating: parseFloat((Number(dayData?.avgRating) || 0).toFixed(2))
         });
       }
@@ -1717,7 +1725,7 @@ export class DatabaseStorage implements IStorage {
         .innerJoin(households, eq(wasteCollections.householdId, households.id))
         .where(
           and(
-            inArray(households.villageId, villageIds),
+            inArray(households.villageId, targetVillageIds),
             sql`${wasteCollections.segregationRating} IS NOT NULL`
           )
         )
@@ -1734,7 +1742,7 @@ export class DatabaseStorage implements IStorage {
         .from(wasteCollections)
         .innerJoin(households, eq(wasteCollections.householdId, households.id))
         .innerJoin(villages, eq(households.villageId, villages.villageId))
-        .where(inArray(households.villageId, villageIds))
+        .where(inArray(households.villageId, targetVillageIds))
         .groupBy(households.villageId, villages.name)
         .orderBy(desc(sql`COALESCE(AVG(CAST(${wasteCollections.segregationRating} AS DECIMAL(3,2))), 0)`));
 
@@ -1760,8 +1768,8 @@ export class DatabaseStorage implements IStorage {
           rating: Number(item.rating) || 0,
           count: Number(item.count) || 0
         })),
-        totalVillages: villageIds.length,
-        totalHouseholds: Number(householdsCount?.count) || 0,
+        totalVillages: targetVillageIds.length,
+        totalHouseholds: totalHouseholdsForTrends,
         totalCollectors: Number(collectorsCount?.count) || 0,
         totalCollectionsToday: Number(collectionsToday?.count) || 0,
       };
@@ -1778,6 +1786,7 @@ export class DatabaseStorage implements IStorage {
           date: dateStr,
           collectionDate: dateStr,
           collections: 0,
+          totalHouseholds: 0,
           avgRating: 0
         });
       }
