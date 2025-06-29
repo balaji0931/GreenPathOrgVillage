@@ -54,82 +54,51 @@ function Router() {
     );
   }
 
+  // Determine the correct dashboard based on user role
+  const getDashboardComponent = () => {
+    switch (user.role) {
+      case 'admin':
+        return <AdminDashboard />;
+      case 'moderator':
+        return <ModeratorDashboard />;
+      case 'manager':
+        return <ManagerDashboard />;
+      case 'collector':
+        return <CollectorDashboard />;
+      case 'generator':
+        return <GeneratorDashboard />;
+      default:
+        setLocation("/login");
+        return <Login />;
+    }
+  };
+
   return (
     <Switch>
       <Route path="/login">
         {() => {
-          // Redirect authenticated users away from login
-          switch (user.role) {
-            case 'admin':
-              setLocation("/admin");
-              return <AdminDashboard />;
-            case 'moderator':
-              setLocation("/moderator");
-              return <ModeratorDashboard />;
-            case 'manager':
-              setLocation("/manager");
-              return <ManagerDashboard />;
-            case 'collector':
-              setLocation("/collector");
-              return <CollectorDashboard />;
-            case 'generator':
-              setLocation("/generator");
-              return <GeneratorDashboard />;
-            default:
-              setLocation("/login");
-              return <Login />;
-          }
+          // Redirect authenticated users to their dashboard
+          setLocation("/");
+          return getDashboardComponent();
         }}
       </Route>
-      <Route path="/admin" component={AdminDashboard} />
-      <Route path="/moderator" component={ModeratorDashboard} />
-      <Route path="/manager" component={ManagerDashboard} />
-      <Route path="/collector" component={CollectorDashboard} />
-      <Route path="/generator" component={GeneratorDashboard} />
+      <Route path="/admin">
+        {() => user.role === 'admin' ? <AdminDashboard /> : getDashboardComponent()}
+      </Route>
+      <Route path="/moderator">
+        {() => user.role === 'moderator' ? <ModeratorDashboard /> : getDashboardComponent()}
+      </Route>
+      <Route path="/manager">
+        {() => user.role === 'manager' ? <ManagerDashboard /> : getDashboardComponent()}
+      </Route>
+      <Route path="/collector">
+        {() => user.role === 'collector' ? <CollectorDashboard /> : getDashboardComponent()}
+      </Route>
+      <Route path="/generator">
+        {() => user.role === 'generator' ? <GeneratorDashboard /> : getDashboardComponent()}
+      </Route>
       <Route path="/">
-        {() => {
-          if (isLoading) return <div>Loading...</div>;
-          if (!user) {
-            if (location !== "/login") {
-              setLocation("/login");
-            }
-            return <Login />;
-          }
-
-          // Handle role-based routing with explicit path checking
-          const currentPath = location || "/";
-
-          switch (user.role) {
-            case 'admin':
-              if (currentPath !== "/" && currentPath !== "/admin") {
-                setLocation("/");
-              }
-              return <AdminDashboard />;
-            case 'manager':
-              if (currentPath !== "/" && currentPath !== "/manager") {
-                setLocation("/");
-              }
-              return <ManagerDashboard />;
-            case 'moderator':
-              if (currentPath !== "/" && currentPath !== "/moderator") {
-                setLocation("/");
-              }
-              return <ModeratorDashboard />;
-            case 'collector':
-              if (currentPath !== "/" && currentPath !== "/collector") {
-                setLocation("/");
-              }
-              return <CollectorDashboard />;
-            case 'generator':
-              if (currentPath !== "/" && currentPath !== "/generator") {
-                setLocation("/");
-              }
-              return <GeneratorDashboard />;
-            default:
-              setLocation("/login");
-              return <Login />;
-          }
-        }}
+        {() => getDashboardComponent()}
       </Route>
       <Route component={NotFound} />
     </Switch>
