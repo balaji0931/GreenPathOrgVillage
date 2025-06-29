@@ -1961,6 +1961,129 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Collector tracking API routes
+  app.post("/api/tracking/start", requireAuth, requireRole(['collector']), async (req, res) => {
+    try {
+      const userId = req.session.userId!;
+      
+      // Mock tracking session for now - will be replaced with actual DB implementation
+      const session = {
+        id: Date.now(),
+        collectorId: userId,
+        sessionDate: new Date().toISOString().split('T')[0],
+        startTime: new Date().toISOString(),
+        status: "active"
+      };
+
+      res.json({ session });
+    } catch (error) {
+      console.error("Error starting tracking session:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  app.post("/api/tracking/end", requireAuth, requireRole(['collector']), async (req, res) => {
+    try {
+      const userId = req.session.userId!;
+      
+      // Mock session end for now
+      const session = {
+        id: Date.now(),
+        collectorId: userId,
+        sessionDate: new Date().toISOString().split('T')[0],
+        endTime: new Date().toISOString(),
+        status: "completed"
+      };
+
+      res.json({ session });
+    } catch (error) {
+      console.error("Error ending tracking session:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  app.post("/api/tracking/location", requireAuth, requireRole(['collector']), async (req, res) => {
+    try {
+      const { latitude, longitude, accuracy } = req.body;
+      const userId = req.session.userId!;
+
+      if (!latitude || !longitude) {
+        return res.status(400).json({ message: "Latitude and longitude are required" });
+      }
+
+      // Mock location storage for now
+      const locationEntry = {
+        id: Date.now(),
+        collectorId: userId,
+        latitude,
+        longitude,
+        accuracy: accuracy || null,
+        timestamp: new Date().toISOString()
+      };
+
+      res.json({ location: locationEntry });
+    } catch (error) {
+      console.error("Error saving location:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  app.get("/api/tracking/status", requireAuth, requireRole(['collector']), async (req, res) => {
+    try {
+      // Mock status check for now
+      const hasActiveSession = Math.random() > 0.5; // Random for demo
+      
+      res.json({ 
+        hasActiveSession,
+        session: hasActiveSession ? {
+          id: Date.now(),
+          startTime: new Date().toISOString(),
+          status: "active"
+        } : null
+      });
+    } catch (error) {
+      console.error("Error checking tracking status:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  // Manager tracking view - get all collectors' tracking data for last 5 days
+  app.get("/api/manager/tracking", requireAuth, requireRole(['manager']), async (req, res) => {
+    try {
+      // Mock tracking data for last 5 days with different colors
+      const mockTrackingData = [];
+      const colors = ['#ff0000', '#00ff00', '#0000ff', '#ffff00', '#ff00ff']; // Red, Green, Blue, Yellow, Magenta
+      
+      for (let i = 0; i < 5; i++) {
+        const date = new Date();
+        date.setDate(date.getDate() - i);
+        
+        mockTrackingData.push({
+          id: i + 1,
+          collectorId: 1,
+          collector: { name: 'Collector 1', uid: 'V001-C1' },
+          sessionDate: date.toISOString().split('T')[0],
+          startTime: date.toISOString(),
+          endTime: new Date(date.getTime() + 4 * 60 * 60 * 1000).toISOString(), // 4 hours later
+          status: 'completed',
+          color: colors[i],
+          dayLabel: i === 0 ? 'Today' : i === 1 ? 'Yesterday' : `${i} days ago`,
+          locationTracking: Array.from({ length: 20 }, (_, j) => ({
+            id: i * 20 + j,
+            latitude: 12.9716 + (Math.random() - 0.5) * 0.01, // Bangalore coordinates with variation
+            longitude: 77.5946 + (Math.random() - 0.5) * 0.01,
+            timestamp: new Date(date.getTime() + j * 15 * 60 * 1000).toISOString() // Every 15 minutes
+          }))
+        });
+      }
+
+      res.json({ trackingData: mockTrackingData });
+    } catch (error) {
+      console.error("Error fetching tracking data:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
   // Serve uploaded files
   app.use('/uploads', express.static('uploads'));
 

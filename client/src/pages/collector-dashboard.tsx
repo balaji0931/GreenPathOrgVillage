@@ -17,6 +17,7 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import { QRScanner } from "@/components/qr-scanner";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import { useOfflineStorage } from "@/lib/offline-storage";
+import { TrackingMap } from "@/components/TrackingMap";
 import { 
   Home, 
   QrCode, 
@@ -39,7 +40,10 @@ import {
   Settings,
   Bell,
   MapPin,
-  Upload
+  Upload,
+  Play,
+  Square,
+  Navigation
 } from "lucide-react";
 
 interface CollectionForm {
@@ -131,6 +135,12 @@ export default function CollectorDashboard() {
     description: "",
     photoFile: null as File | null,
   });
+
+  // Tracking state
+  const [isTracking, setIsTracking] = useState(false);
+  const [trackingSession, setTrackingSession] = useState<any>(null);
+  const [currentLocation, setCurrentLocation] = useState<{lat: number; lng: number} | null>(null);
+  const [locationInterval, setLocationInterval] = useState<NodeJS.Timeout | null>(null);
 
   // Fetch today's route (households)
   const householdsQuery = useQuery({
@@ -326,6 +336,63 @@ export default function CollectorDashboard() {
     },
   });
 
+  // Tracking mutations
+  const startTrackingMutation = useMutation({
+    mutationFn: async () => {
+      const response = await apiRequest("POST", "/api/tracking/start");
+      return response.json();
+    },
+    onSuccess: (data) => {
+      setIsTracking(true);
+      setTrackingSession(data.session);
+      startLocationTracking();
+      toast({
+        title: "Tracking Started",
+        description: "Your location is now being tracked every minute.",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error?.message || "Failed to start tracking",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const endTrackingMutation = useMutation({
+    mutationFn: async () => {
+      const response = await apiRequest("POST", "/api/tracking/end");
+      return response.json();
+    },
+    onSuccess: () => {
+      setIsTracking(false);
+      setTrackingSession(null);
+      stopLocationTracking();
+      toast({
+        title: "Tracking Stopped",
+        description: "Location tracking has been stopped.",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error?.message || "Failed to stop tracking",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const saveLocationMutation = useMutation({
+    mutationFn: async (location: { latitude: number; longitude: number; accuracy?: number }) => {
+      const response = await apiRequest("POST", "/api/tracking/location", location);
+      return response.json();
+    },
+    onError: (error: any) => {
+      console.error("Failed to save location:", error);
+    },
+  });
+
   // Auto-slide announcements every 5 seconds
   useEffect(() => {
     if (announcements && announcements.length > 1) {
@@ -335,6 +402,104 @@ export default function CollectorDashboard() {
       return () => clearInterval(interval);
     }
   }, [announcements]);
+
+  // Location tracking functions
+  const startLocationTracking = () => {
+    if (navigator.geolocation) {
+      const interval = setInterval(() => {
+        navigator.geolocation.getCurrentPosition(
+          (position) => {
+            const { latitude, longitude, accuracy } = position.coords;
+            setCurrentLocation({ lat: latitude, lng: longitude });
+            
+            // Save location to server
+            saveLocationMutation.mutate({
+              latitude,
+              longitude,
+              accuracy: accuracy || undefined
+            });
+          },
+          (error) => {
+            console.error("Geolocation error:", error);
+            toast({
+              title: "Location Error",
+              description: "Unable to get your location. Please enable GPS.",
+              variant: "destructive",
+            });
+          },
+          {
+            enableHighAccuracy: true,
+            timeout: 10000,
+            maximumAge: 60000
+          }
+        );
+      }, 60000); // Track every minute
+
+      setLocationInterval(interval);
+
+      // Get initial location
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const { latitude, longitude, accuracy } = position.coords;
+          setCurrentLocation({ lat: latitude, lng: longitude });
+          saveLocationMutation.mutate({
+            latitude,
+            longitude,
+            accuracy: accuracy || undefined
+          });
+        },
+        (error) => {
+          console.error("Initial geolocation error:", error);
+        }
+      );
+    } else {
+      toast({
+        title: "GPS Not Supported",
+        description: "Your device does not support location tracking.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const stopLocationTracking = () => {
+    if (locationInterval) {
+      clearInterval(locationInterval);
+      setLocationInterval(null);
+    }
+  };
+
+  // Check tracking status on component mount
+  useEffect(() => {
+    const checkTrackingStatus = async () => {
+      try {
+        const response = await apiRequest("GET", "/api/tracking/status");
+        const data = await response.json();
+        
+        if (data.hasActiveSession) {
+          setIsTracking(true);
+          setTrackingSession(data.session);
+          startLocationTracking();
+        }
+      } catch (error) {
+        console.error("Error checking tracking status:", error);
+      }
+    };
+
+    checkTrackingStatus();
+
+    // Cleanup on unmount
+    return () => {
+      stopLocationTracking();
+    };
+  }, []);
+
+  const handleStartTracking = () => {
+    startTrackingMutation.mutate();
+  };
+
+  const handleEndTracking = () => {
+    endTrackingMutation.mutate();
+  };
 
   const resetForm = () => {
     setCollectionForm({
@@ -1222,6 +1387,138 @@ export default function CollectorDashboard() {
           </div>
         )}
 
+        {/* TRACKING TAB */}
+        {activeTab === 'tracking' && (
+          <div className="p-4 space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <Navigation className="w-5 h-5 text-purple-600" />
+                  Collection Tracking
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {/* Tracking Controls */}
+                <div className="flex gap-4">
+                  <Button
+                    onClick={handleStartTracking}
+                    disabled={isTracking || startTrackingMutation.isPending}
+                    className={`flex-1 py-3 text-lg font-bold ${
+                      isTracking 
+                        ? 'bg-gray-400 cursor-not-allowed' 
+                        : 'bg-green-600 hover:bg-green-700'
+                    }`}
+                  >
+                    <Play className="w-5 h-5 mr-2" />
+                    {startTrackingMutation.isPending ? 'Starting...' : 'Start Collection'}
+                  </Button>
+                  
+                  <Button
+                    onClick={handleEndTracking}
+                    disabled={!isTracking || endTrackingMutation.isPending}
+                    className={`flex-1 py-3 text-lg font-bold ${
+                      !isTracking 
+                        ? 'bg-gray-400 cursor-not-allowed' 
+                        : 'bg-red-600 hover:bg-red-700'
+                    }`}
+                  >
+                    <Square className="w-5 h-5 mr-2" />
+                    {endTrackingMutation.isPending ? 'Ending...' : 'End Collection'}
+                  </Button>
+                </div>
+
+                {/* Tracking Status */}
+                <div className={`p-4 rounded-lg text-center ${
+                  isTracking 
+                    ? 'bg-green-50 border-2 border-green-200' 
+                    : 'bg-gray-50 border-2 border-gray-200'
+                }`}>
+                  <div className={`text-2xl mb-2 ${isTracking ? 'animate-pulse' : ''}`}>
+                    {isTracking ? '🟢' : '⚫'}
+                  </div>
+                  <p className={`text-lg font-bold ${
+                    isTracking ? 'text-green-700' : 'text-gray-600'
+                  }`}>
+                    {isTracking ? 'Collection in Progress' : 'Collection Not Started'}
+                  </p>
+                  {isTracking && (
+                    <p className="text-sm text-green-600 mt-1">
+                      Your location is being tracked every minute
+                    </p>
+                  )}
+                  {currentLocation && (
+                    <p className="text-xs text-gray-500 mt-2">
+                      Last location: {currentLocation.lat.toFixed(6)}, {currentLocation.lng.toFixed(6)}
+                    </p>
+                  )}
+                </div>
+
+                {/* Session Info */}
+                {trackingSession && (
+                  <div className="p-3 bg-blue-50 rounded-lg border border-blue-200">
+                    <h4 className="font-semibold text-blue-800 mb-2">Current Session</h4>
+                    <div className="text-sm text-blue-700">
+                      <p>Started: {new Date(trackingSession.startTime).toLocaleTimeString()}</p>
+                      <p>Date: {trackingSession.sessionDate}</p>
+                      <p>Status: {trackingSession.status}</p>
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Live Map */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <MapPin className="w-5 h-5 text-blue-600" />
+                  Your Current Location
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <TrackingMap 
+                  currentLocation={currentLocation}
+                  isCollectorView={true}
+                  height="300px"
+                />
+                {!currentLocation && (
+                  <div className="text-center p-4 text-gray-500">
+                    <MapPin className="w-12 h-12 mx-auto mb-2 text-gray-300" />
+                    <p>Start tracking to see your location on the map</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Instructions */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg">How to Use Tracking</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3 text-sm">
+                  <div className="flex gap-3">
+                    <div className="text-green-600 font-bold">1.</div>
+                    <p>Press "Start Collection" when you begin your waste collection route</p>
+                  </div>
+                  <div className="flex gap-3">
+                    <div className="text-blue-600 font-bold">2.</div>
+                    <p>Your location will be tracked automatically every minute</p>
+                  </div>
+                  <div className="flex gap-3">
+                    <div className="text-purple-600 font-bold">3.</div>
+                    <p>Your manager can see your route on their dashboard</p>
+                  </div>
+                  <div className="flex gap-3">
+                    <div className="text-red-600 font-bold">4.</div>
+                    <p>Press "End Collection" when you finish your route</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        )}
+
         {/* PROFILE TAB */}
         {activeTab === 'profile' && (
           <div className="p-4 space-y-4">
@@ -1989,7 +2286,7 @@ export default function CollectorDashboard() {
 
       {/* Bottom Navigation */}
       <div className="fixed bottom-0 left-1/2 transform -translate-x-1/2 w-full max-w-md bg-white border-t border-gray-200 z-20">
-        <div className="grid grid-cols-5 gap-1 p-2">
+        <div className="grid grid-cols-6 gap-1 p-2">
           <button
             className={`flex flex-col items-center py-2 px-1 rounded-lg transition-colors ${
               activeTab === 'home' 
@@ -1998,8 +2295,8 @@ export default function CollectorDashboard() {
             }`}
             onClick={() => setActiveTab('home')}
           >
-            <Home size={18} />
-            <span className="text-xs mt-1">{t('navigation.dashboard')}</span>
+            <Home size={16} />
+            <span className="text-xs mt-1">Home</span>
           </button>
           <button
             className={`flex flex-col items-center py-2 px-1 rounded-lg transition-colors ${
@@ -2012,8 +2309,19 @@ export default function CollectorDashboard() {
               setShowScanner(true);
             }}
           >
-            <QrCode size={18} />
-            <span className="text-xs mt-1">{t('collections.scanQR')}</span>
+            <QrCode size={16} />
+            <span className="text-xs mt-1">Scan</span>
+          </button>
+          <button
+            className={`flex flex-col items-center py-2 px-1 rounded-lg transition-colors ${
+              activeTab === 'tracking' 
+                ? 'bg-purple-100 text-purple-600' 
+                : 'text-gray-500 hover:text-purple-600 hover:bg-gray-50'
+            }`}
+            onClick={() => setActiveTab('tracking')}
+          >
+            <Navigation size={16} />
+            <span className="text-xs mt-1">Track</span>
           </button>
           <button
             className={`flex flex-col items-center py-2 px-1 rounded-lg transition-colors ${
@@ -2023,8 +2331,8 @@ export default function CollectorDashboard() {
             }`}
             onClick={() => setActiveTab('announcements')}
           >
-            <Bell size={18} />
-            <span className="text-xs mt-1">{t('navigation.announcements')}</span>
+            <Bell size={16} />
+            <span className="text-xs mt-1">News</span>
           </button>
           <button
             className={`flex flex-col items-center py-2 px-1 rounded-lg transition-colors ${
@@ -2034,8 +2342,8 @@ export default function CollectorDashboard() {
             }`}
             onClick={() => setActiveTab('issues')}
           >
-            <AlertCircle size={18} />
-            <span className="text-xs mt-1">{t('navigation.issues')}</span>
+            <AlertCircle size={16} />
+            <span className="text-xs mt-1">Issues</span>
           </button>
           <button
             className={`flex flex-col items-center py-2 px-1 rounded-lg transition-colors ${
@@ -2045,8 +2353,8 @@ export default function CollectorDashboard() {
             }`}
             onClick={() => setActiveTab('profile')}
           >
-            <User size={18} />
-            <span className="text-xs mt-1">{t('navigation.profile')}</span>
+            <User size={16} />
+            <span className="text-xs mt-1">Profile</span>
           </button>
         </div>
       </div>

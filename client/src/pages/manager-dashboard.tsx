@@ -5,6 +5,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useTranslation } from "react-i18next";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
+import { TrackingMap } from "@/components/TrackingMap";
 import {
   Card,
   CardContent,
@@ -47,6 +48,9 @@ import {
   QrCode,
   Download,
   Eye,
+  MapPin,
+  Clock,
+  Activity,
   AlertCircle,
   TrendingUp,
   Award,
@@ -388,6 +392,15 @@ export default function ManagerDashboard() {
     queryKey: ["/api/announcements", user?.villageId],
     enabled: !!user?.villageId,
   });
+
+  // Fetch tracking data for map view
+  const { data: trackingDataResponse } = useQuery({
+    queryKey: ["/api/manager/tracking"],
+    refetchInterval: 30000, // Refetch every 30 seconds for real-time updates
+    enabled: activeTab === 'tracking', // Only fetch when tracking tab is active
+  });
+
+  const trackingData = trackingDataResponse?.trackingData || [];
 
   // Mutations
   const updateIssueMutation = useMutation({
@@ -795,6 +808,7 @@ export default function ManagerDashboard() {
                 { id: "collectors", icon: Users },
                 { id: "households", icon: Home },
                 { id: "collections", icon: Package },
+                { id: "tracking", icon: MapPin },
                 { id: "issues", icon: AlertTriangle },
                 { id: "reports", icon: BarChart3 },
               ].map(({ id, icon: Icon }) => (
@@ -823,6 +837,7 @@ export default function ManagerDashboard() {
                   { id: "collectors", icon: Users, label: "Collectors" },
                   { id: "households", icon: Home, label: "Households" },
                   { id: "collections", icon: Package, label: "Collections" },
+                  { id: "tracking", icon: MapPin, label: "Tracking" },
                   { id: "issues", icon: AlertTriangle, label: "Issues" },
                   { id: "reports", icon: BarChart3, label: "Reports" },
                   { id: "announcements", icon: Bell, label: "Announcements" },
@@ -1656,6 +1671,152 @@ export default function ManagerDashboard() {
                     </div>
                   </CardContent>
                 </Card>
+              </div>
+            )}
+
+            {/* Tracking Tab */}
+            {activeTab === "tracking" && (
+              <div className="space-y-6">
+                <div>
+                  <h2 className="text-2xl font-bold">Collector Tracking</h2>
+                  <p className="text-muted-foreground">Real-time collector locations and 5-day tracking history</p>
+                </div>
+
+                {/* Tracking Map */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <MapPin className="h-5 w-5 text-blue-600" />
+                      Live Tracking Map
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="h-96 w-full border rounded-lg overflow-hidden">
+                      <TrackingMap 
+                        trackingData={trackingData}
+                        isCollectorView={false}
+                        height="100%"
+                      />
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Collector Status Cards */}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {collectors.map((collector: Collector) => {
+                    // Find latest tracking session for this collector
+                    const latestSession = trackingData
+                      .filter((session: any) => session.collectorId === collector.id)
+                      .sort((a: any, b: any) => new Date(b.startTime).getTime() - new Date(a.startTime).getTime())[0];
+
+                    const isActive = latestSession && !latestSession.endTime;
+                    const lastLocation = latestSession?.locations?.[latestSession.locations.length - 1];
+                    const lastUpdate = lastLocation ? new Date(lastLocation.timestamp) : null;
+
+                    return (
+                      <Card key={collector.id} className={`border-l-4 ${isActive ? 'border-l-green-500 bg-green-50' : 'border-l-gray-300'}`}>
+                        <CardHeader className="pb-3">
+                          <div className="flex items-center justify-between">
+                            <CardTitle className="text-lg">{collector.name}</CardTitle>
+                            <Badge variant={isActive ? "default" : "secondary"}>
+                              {isActive ? "Active" : "Offline"}
+                            </Badge>
+                          </div>
+                          <div className="text-sm text-muted-foreground">
+                            ID: {collector.uid} | Phone: {collector.phone}
+                          </div>
+                        </CardHeader>
+                        <CardContent className="space-y-3">
+                          {isActive && lastLocation ? (
+                            <div className="space-y-2">
+                              <div className="flex items-center gap-2 text-sm">
+                                <MapPin className="h-4 w-4 text-green-600" />
+                                <span>Location: {lastLocation.latitude.toFixed(4)}, {lastLocation.longitude.toFixed(4)}</span>
+                              </div>
+                              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                                <Clock className="h-4 w-4" />
+                                <span>Last update: {lastUpdate ? new Date(lastUpdate).toLocaleTimeString() : 'Unknown'}</span>
+                              </div>
+                              <div className="flex items-center gap-2 text-sm text-green-600">
+                                <Activity className="h-4 w-4" />
+                                <span>Collection in progress</span>
+                              </div>
+                            </div>
+                          ) : (
+                            <div className="text-sm text-muted-foreground">
+                              {lastUpdate ? (
+                                <div className="flex items-center gap-2">
+                                  <Clock className="h-4 w-4" />
+                                  <span>Last seen: {new Date(lastUpdate).toLocaleDateString()} at {new Date(lastUpdate).toLocaleTimeString()}</span>
+                                </div>
+                              ) : (
+                                <div className="flex items-center gap-2">
+                                  <MapPin className="h-4 w-4" />
+                                  <span>No tracking data available</span>
+                                </div>
+                              )}
+                            </div>
+                          )}
+                        </CardContent>
+                      </Card>
+                    );
+                  })}
+                </div>
+
+                {/* Tracking Statistics */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="text-sm font-medium">Active Collectors</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-2xl font-bold text-green-600">
+                        {trackingData.filter((session: any) => !session.endTime).length}
+                      </div>
+                      <p className="text-xs text-muted-foreground mt-1">Currently collecting</p>
+                    </CardContent>
+                  </Card>
+
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="text-sm font-medium">Total Sessions Today</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-2xl font-bold text-blue-600">
+                        {trackingData.filter((session: any) => {
+                          const sessionDate = new Date(session.startTime).toDateString();
+                          const today = new Date().toDateString();
+                          return sessionDate === today;
+                        }).length}
+                      </div>
+                      <p className="text-xs text-muted-foreground mt-1">Tracking sessions</p>
+                    </CardContent>
+                  </Card>
+
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="text-sm font-medium">Average Session Time</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-2xl font-bold text-purple-600">
+                        {(() => {
+                          const completedSessions = trackingData.filter((session: any) => session.endTime);
+                          if (completedSessions.length === 0) return "0";
+                          
+                          const totalTime = completedSessions.reduce((sum: number, session: any) => {
+                            const start = new Date(session.startTime).getTime();
+                            const end = new Date(session.endTime).getTime();
+                            return sum + (end - start);
+                          }, 0);
+                          
+                          const avgMinutes = Math.round(totalTime / completedSessions.length / 60000);
+                          return avgMinutes;
+                        })()}
+                      </div>
+                      <p className="text-xs text-muted-foreground mt-1">Minutes per session</p>
+                    </CardContent>
+                  </Card>
+                </div>
               </div>
             )}
 
