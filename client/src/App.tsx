@@ -10,6 +10,9 @@ import ManagerDashboard from "@/pages/manager-dashboard";
 import CollectorDashboard from "@/pages/collector-dashboard";
 import GeneratorDashboard from "@/pages/generator-dashboard";
 import ModeratorDashboard from "@/pages/moderator-dashboard";
+import PrivacyPolicy from "./pages/privacy-policy";
+import TermsOfService from "./pages/terms-of-service";
+import DataProtection from "./pages/data-protection";
 import NotFound from "@/pages/not-found";
 import "./i18n";
 
@@ -100,6 +103,9 @@ function Router() {
       <Route path="/">
         {() => getDashboardComponent()}
       </Route>
+      <Route path="/privacy-policy" component={PrivacyPolicy} />
+      <Route path="/terms-of-service" component={TermsOfService} />
+      <Route path="/data-protection" component={DataProtection} />
       <Route component={NotFound} />
     </Switch>
   );

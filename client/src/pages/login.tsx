@@ -1,13 +1,14 @@
 import { useState } from "react";
-import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { useToast } from "@/hooks/use-toast";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useAuth } from "@/hooks/useAuth";
-import { useTranslation } from 'react-i18next';
+import { Loader2, Recycle } from "lucide-react";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import { InstallPWA } from "@/components/InstallPWA";
+import Footer from "@/components/Footer";
+import { useTranslation } from 'react-i18next';
 import { Leaf } from "lucide-react";
 
 export default function Login() {
@@ -19,7 +20,7 @@ export default function Login() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     try {
       await login({ userId, password });
       toast({
@@ -36,87 +37,86 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-green-pale to-white p-4">
-      <div className="w-full max-w-md">
-        {/* Language Switcher */}
-        <div className="flex justify-end mb-4">
-          <LanguageSwitcher />
+    <div className="min-h-screen bg-gradient-to-br from-green-50 to-blue-50 flex flex-col">
+      <div className="flex-1 flex items-center justify-center p-4">
+        <div className="w-full max-w-md space-y-4">
+          <InstallPWA />
+          <Card className="shadow-lg">
+            <CardHeader className="text-center space-y-2">
+              <div className="flex items-center justify-center space-x-2">
+                <Recycle className="h-8 w-8 text-green-600" />
+                <CardTitle className="text-2xl font-bold text-green-800">
+                  {t("app.title")}
+                </CardTitle>
+              </div>
+              <CardDescription className="text-base">
+                {t("auth.loginDescription")}
+              </CardDescription>
+              <div className="flex justify-center">
+                <LanguageSwitcher />
+              </div>
+            </CardHeader>
+            <CardContent>
+              <form onSubmit={handleSubmit} className="space-y-4">
+                <div className="space-y-2">
+                  <label htmlFor="userId" className="text-sm font-medium">
+                    {t("auth.userId")}
+                  </label>
+                  <Input
+                    id="userId"
+                    type="text"
+                    value={userId}
+                    onChange={(e) => setUserId(e.target.value)}
+                    placeholder={t("auth.userIdPlaceholder")}
+                    disabled={isLoginPending}
+                    required
+                    className="h-11"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label htmlFor="password" className="text-sm font-medium">
+                    {t("auth.password")}
+                  </label>
+                  <Input
+                    id="password"
+                    type="password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder={t("auth.passwordPlaceholder")}
+                    disabled={isLoginPending}
+                    required
+                    className="h-11"
+                  />
+                </div>
+
+                {/* loginMutation.error && (
+                  <Alert variant="destructive">
+                    <AlertDescription>
+                      {loginMutation.error?.message || t("auth.loginError")}
+                    </AlertDescription>
+                  </Alert>
+                ) */}
+
+                <Button 
+                  type="submit" 
+                  className="w-full h-11 bg-green-600 hover:bg-green-700" 
+                  disabled={isLoginPending}
+                >
+                  {isLoginPending ? (
+                    <>
+                      {/* <Loader2 className="mr-2 h-4 w-4 animate-spin" /> */}
+                      {t("auth.loggingIn")}
+                    </>
+                  ) : (
+                    t("auth.login")
+                  )}
+                </Button>
+              </form>
+            </CardContent>
+          </Card>
         </div>
-        
-        {/* Logo Section */}
-        <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-20 h-20 bg-green-primary rounded-full mb-4">
-            <Leaf className="text-white text-3xl" size={36} />
-          </div>
-          <h1 className="text-3xl font-bold text-green-dark mb-2">{t('app.title')}</h1>
-          <p className="text-gray-600 text-sm px-4">
-            Empowering Clean Villages through Smart Waste Management
-          </p>
-        </div>
-
-        {/* Login Form */}
-        <Card className="shadow-lg">
-          <CardContent className="pt-6">
-            <form onSubmit={handleSubmit} className="space-y-6">
-              <div>
-                <Label htmlFor="userId" className="text-gray-700 font-medium">
-                  {t('auth.userId')}
-                </Label>
-                <Input
-                  id="userId"
-                  type="text"
-                  placeholder="V001-M1, V001-C1, V001-G1..."
-                  value={userId}
-                  onChange={(e) => setUserId(e.target.value)}
-                  className="mt-2 focus:ring-2 focus:ring-green-primary focus:border-transparent"
-                  required
-                />
-              </div>
-              
-              <div>
-                <Label htmlFor="password" className="text-gray-700 font-medium">
-                  {t('auth.password')}
-                </Label>
-                <Input
-                  id="password"
-                  type="password"
-                  placeholder={t('auth.password')}
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="mt-2 focus:ring-2 focus:ring-green-primary focus:border-transparent"
-                  required
-                />
-              </div>
-
-              <Button
-                type="submit"
-                className="w-full bg-green-primary hover:bg-green-dark text-white font-medium py-3"
-                disabled={isLoginPending}
-              >
-                {isLoginPending ? (
-                  <>
-                    <div className="spinner mr-2" />
-                    {t('app.loading')}
-                  </>
-                ) : (
-                  t('auth.loginButton')
-                )}
-              </Button>
-              
-              {/* PWA Install Button */}
-              <div className="mt-4">
-                <InstallPWA showInline={true} />
-              </div>
-            </form>
-
-            <div className="mt-6 text-center">
-              <p className="text-xs text-gray-500">
-                New users are created by administrators only
-              </p>
-            </div>
-          </CardContent>
-        </Card>
       </div>
+      <Footer />
     </div>
   );
 }
