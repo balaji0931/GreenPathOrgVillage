@@ -4,23 +4,34 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useAuth } from "@/hooks/useAuth";
-import { Loader2, Recycle } from "lucide-react";
+import { Loader2, Leaf } from "lucide-react";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import { InstallPWA } from "@/components/InstallPWA";
 import Footer from "@/components/Footer";
 import { useTranslation } from 'react-i18next';
-import { Leaf } from "lucide-react";
-import { useToast } from "@/hooks/use-toast"
+import { useToast } from "@/hooks/use-toast";
+import { useLocation } from "wouter";
 
 export default function Login() {
   const [userId, setUserId] = useState("");
   const [password, setPassword] = useState("");
+  const [agreedToTerms, setAgreedToTerms] = useState(false);
   const { login, isLoginPending } = useAuth();
   const { toast } = useToast();
   const { t } = useTranslation();
+  const [, setLocation] = useLocation();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (!agreedToTerms) {
+      toast({
+        title: t('app.error'),
+        description: "Please agree to the Terms of Service and Privacy Policy before logging in.",
+        variant: "destructive",
+      });
+      return;
+    }
 
     try {
       await login({ userId, password });
@@ -45,7 +56,7 @@ export default function Login() {
           <Card className="shadow-lg">
             <CardHeader className="text-center space-y-2">
               <div className="flex items-center justify-center space-x-2">
-                <Recycle className="h-8 w-8 text-green-600" />
+                <Leaf className="h-8 w-8 text-green-600" />
                 <CardTitle className="text-2xl font-bold text-green-800">
                   {t("app.title")}
                 </CardTitle>
@@ -90,22 +101,43 @@ export default function Login() {
                   />
                 </div>
 
-                {/* loginMutation.error && (
-                  <Alert variant="destructive">
-                    <AlertDescription>
-                      {loginMutation.error?.message || t("auth.loginError")}
-                    </AlertDescription>
-                  </Alert>
-                ) */}
+                <div className="flex items-start space-x-2 py-2">
+                  <input
+                    type="checkbox"
+                    id="terms-agreement"
+                    checked={agreedToTerms}
+                    onChange={(e) => setAgreedToTerms(e.target.checked)}
+                    className="mt-0.5 h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 rounded"
+                    required
+                  />
+                  <label htmlFor="terms-agreement" className="text-sm text-gray-600">
+                    I agree to the{" "}
+                    <button
+                      type="button"
+                      onClick={() => setLocation('/terms-of-service')}
+                      className="text-green-600 hover:text-green-700 underline"
+                    >
+                      Terms of Service
+                    </button>
+                    {" "}and{" "}
+                    <button
+                      type="button"
+                      onClick={() => setLocation('/privacy-policy')}
+                      className="text-green-600 hover:text-green-700 underline"
+                    >
+                      Privacy Policy
+                    </button>
+                  </label>
+                </div>
 
                 <Button 
                   type="submit" 
                   className="w-full h-11 bg-green-600 hover:bg-green-700" 
-                  disabled={isLoginPending}
+                  disabled={isLoginPending || !agreedToTerms}
                 >
                   {isLoginPending ? (
                     <>
-                      {/* <Loader2 className="mr-2 h-4 w-4 animate-spin" /> */}
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                       {t("auth.loggingIn")}
                     </>
                   ) : (
