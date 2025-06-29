@@ -2320,9 +2320,9 @@ className="p-1 sm:p-2"
         </CardHeader>
         <CardContent className="p-3 sm:p-6 pt-0">
           {/* Check if announcements are available */}
-          {announcements && announcements.length > 0 ? (
+          {announcement && announcement.length > 0 ? (
             <div className="space-y-3 sm:space-y-4">
-              {announcements.slice(0, 3).map((announcement: any) => (
+              {announcement.slice(0, 3).map((announcement: any) => (
                 <div key={announcement.id} className="p-3 bg-blue-50 rounded-lg border-l-4 border-blue-400">
                   <p className="text-sm text-gray-800 font-medium">
                     {announcement.message}
