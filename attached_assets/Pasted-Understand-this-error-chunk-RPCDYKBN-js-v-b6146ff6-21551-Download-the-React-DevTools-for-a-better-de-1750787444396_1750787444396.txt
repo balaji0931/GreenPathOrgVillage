@@ -1,0 +1,92 @@
+Understand this error
+chunk-RPCDYKBN.js?v=b6146ff6:21551 Download the React DevTools for a better development experience: https://reactjs.org/link/react-devtools
+ccf52ddd-0a76-4997-99ce-404985e15a8c-00-2zivmnxzzqaaf.pike.replit.dev/:1 Error while trying to use the following icon from the Manifest: https://ccf52ddd-0a76-4997-99ce-404985e15a8c-00-2zivmnxzzqaaf.pike.replit.dev/icons/icon-144x144.png (Resource size is not correct - typo in the Manifest?)Understand this error
+queryClient.ts:32 
+            
+            
+           GET https://ccf52ddd-0a76-4997-99ce-404985e15a8c-00-2zivmnxzzqaaf.pike.replit.dev/api/auth/user 401 (Unauthorized)
+(anonymous) @ queryClient.ts:32
+fetchFn @ @tanstack_react-query.js?v=b6146ff6:840
+run @ @tanstack_react-query.js?v=b6146ff6:494
+start @ @tanstack_react-query.js?v=b6146ff6:536
+fetch @ @tanstack_react-query.js?v=b6146ff6:926
+executeFetch_fn @ @tanstack_react-query.js?v=b6146ff6:2211
+onSubscribe @ @tanstack_react-query.js?v=b6146ff6:1898
+subscribe @ @tanstack_react-query.js?v=b6146ff6:24
+(anonymous) @ @tanstack_react-query.js?v=b6146ff6:3022
+subscribeToStore @ chunk-RPCDYKBN.js?v=b6146ff6:11984
+commitHookEffectListMount @ chunk-RPCDYKBN.js?v=b6146ff6:16915
+commitPassiveMountOnFiber @ chunk-RPCDYKBN.js?v=b6146ff6:18156
+commitPassiveMountEffects_complete @ chunk-RPCDYKBN.js?v=b6146ff6:18129
+commitPassiveMountEffects_begin @ chunk-RPCDYKBN.js?v=b6146ff6:18119
+commitPassiveMountEffects @ chunk-RPCDYKBN.js?v=b6146ff6:18109
+flushPassiveEffectsImpl @ chunk-RPCDYKBN.js?v=b6146ff6:19490
+flushPassiveEffects @ chunk-RPCDYKBN.js?v=b6146ff6:19447
+performSyncWorkOnRoot @ chunk-RPCDYKBN.js?v=b6146ff6:18868
+flushSyncCallbacks @ chunk-RPCDYKBN.js?v=b6146ff6:9119
+commitRootImpl @ chunk-RPCDYKBN.js?v=b6146ff6:19432
+commitRoot @ chunk-RPCDYKBN.js?v=b6146ff6:19277
+finishConcurrentRender @ chunk-RPCDYKBN.js?v=b6146ff6:18805
+performConcurrentWorkOnRoot @ chunk-RPCDYKBN.js?v=b6146ff6:18718
+workLoop @ chunk-RPCDYKBN.js?v=b6146ff6:197
+flushWork @ chunk-RPCDYKBN.js?v=b6146ff6:176
+performWorkUntilDeadline @ chunk-RPCDYKBN.js?v=b6146ff6:384Understand this error
+queryClient.ts:32 
+            
+            
+           GET https://ccf52ddd-0a76-4997-99ce-404985e15a8c-00-2zivmnxzzqaaf.pike.replit.dev/api/auth/user 401 (Unauthorized)
+(anonymous) @ queryClient.ts:32
+fetchFn @ @tanstack_react-query.js?v=b6146ff6:840
+run @ @tanstack_react-query.js?v=b6146ff6:494
+start @ @tanstack_react-query.js?v=b6146ff6:536
+fetch @ @tanstack_react-query.js?v=b6146ff6:926
+executeFetch_fn @ @tanstack_react-query.js?v=b6146ff6:2211
+onSubscribe @ @tanstack_react-query.js?v=b6146ff6:1898
+subscribe @ @tanstack_react-query.js?v=b6146ff6:24
+(anonymous) @ @tanstack_react-query.js?v=b6146ff6:3022
+subscribeToStore @ chunk-RPCDYKBN.js?v=b6146ff6:11984
+commitHookEffectListMount @ chunk-RPCDYKBN.js?v=b6146ff6:16915
+commitPassiveMountOnFiber @ chunk-RPCDYKBN.js?v=b6146ff6:18156
+commitPassiveMountEffects_complete @ chunk-RPCDYKBN.js?v=b6146ff6:18129
+commitPassiveMountEffects_begin @ chunk-RPCDYKBN.js?v=b6146ff6:18119
+commitPassiveMountEffects @ chunk-RPCDYKBN.js?v=b6146ff6:18109
+flushPassiveEffectsImpl @ chunk-RPCDYKBN.js?v=b6146ff6:19490
+flushPassiveEffects @ chunk-RPCDYKBN.js?v=b6146ff6:19447
+commitRootImpl @ chunk-RPCDYKBN.js?v=b6146ff6:19416
+commitRoot @ chunk-RPCDYKBN.js?v=b6146ff6:19277
+performSyncWorkOnRoot @ chunk-RPCDYKBN.js?v=b6146ff6:18895
+flushSyncCallbacks @ chunk-RPCDYKBN.js?v=b6146ff6:9119
+(anonymous) @ chunk-RPCDYKBN.js?v=b6146ff6:18627
+setTimeout
+scheduleFn @ @tanstack_react-query.js?v=b6146ff6:555
+flush @ @tanstack_react-query.js?v=b6146ff6:569
+batch @ @tanstack_react-query.js?v=b6146ff6:587
+dispatch_fn @ @tanstack_react-query.js?v=b6146ff6:996
+setData @ @tanstack_react-query.js?v=b6146ff6:696
+onSuccess @ @tanstack_react-query.js?v=b6146ff6:897
+resolve @ @tanstack_react-query.js?v=b6146ff6:456
+Promise.then
+run @ @tanstack_react-query.js?v=b6146ff6:498
+start @ @tanstack_react-query.js?v=b6146ff6:536
+fetch @ @tanstack_react-query.js?v=b6146ff6:926
+executeFetch_fn @ @tanstack_react-query.js?v=b6146ff6:2211
+onSubscribe @ @tanstack_react-query.js?v=b6146ff6:1898
+subscribe @ @tanstack_react-query.js?v=b6146ff6:24
+(anonymous) @ @tanstack_react-query.js?v=b6146ff6:3022
+subscribeToStore @ chunk-RPCDYKBN.js?v=b6146ff6:11984
+commitHookEffectListMount @ chunk-RPCDYKBN.js?v=b6146ff6:16915
+commitPassiveMountOnFiber @ chunk-RPCDYKBN.js?v=b6146ff6:18156
+commitPassiveMountEffects_complete @ chunk-RPCDYKBN.js?v=b6146ff6:18129
+commitPassiveMountEffects_begin @ chunk-RPCDYKBN.js?v=b6146ff6:18119
+commitPassiveMountEffects @ chunk-RPCDYKBN.js?v=b6146ff6:18109
+flushPassiveEffectsImpl @ chunk-RPCDYKBN.js?v=b6146ff6:19490
+flushPassiveEffects @ chunk-RPCDYKBN.js?v=b6146ff6:19447
+performSyncWorkOnRoot @ chunk-RPCDYKBN.js?v=b6146ff6:18868
+flushSyncCallbacks @ chunk-RPCDYKBN.js?v=b6146ff6:9119
+commitRootImpl @ chunk-RPCDYKBN.js?v=b6146ff6:19432
+commitRoot @ chunk-RPCDYKBN.js?v=b6146ff6:19277
+finishConcurrentRender @ chunk-RPCDYKBN.js?v=b6146ff6:18805
+performConcurrentWorkOnRoot @ chunk-RPCDYKBN.js?v=b6146ff6:18718
+workLoop @ chunk-RPCDYKBN.js?v=b6146ff6:197
+flushWork @ chunk-RPCDYKBN.js?v=b6146ff6:176
+performWorkUntilDeadline @ chunk-RPCDYKBN.js?v=b6146ff6:384Understand this error
