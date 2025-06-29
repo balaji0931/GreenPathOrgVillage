@@ -683,7 +683,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Issues routes
-  app.post('/api/issues', requireAuth, requireRole(['generator']), async (req, res) => {
+  app.post('/api/issues', requireAuth, requireRole(['generator','collector']), async (req, res) => {
     try {
       const { title, description, category, photoUrl } = req.body;
       const reportedBy = req.session.userId!;

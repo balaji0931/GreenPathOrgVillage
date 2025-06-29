@@ -76,8 +76,8 @@ export default function GeneratorDashboard() {
   const [activeTab, setActiveTab] = useState("home");
   const [showIssueModal, setShowIssueModal] = useState(false);
   const [showFeedbackModal, setShowFeedbackModal] = useState(false);
-  const [showPasswordModal, setShowPasswordModal] = useState(false);
   const [selectedCollection, setSelectedCollection] = useState<any>(null);
+  const [showPasswordModal, setShowPasswordModal] = useState(false);
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [issueFilter, setIssueFilter] = useState("All");
@@ -263,25 +263,23 @@ export default function GeneratorDashboard() {
 
   // Change password mutation
   const changePasswordMutation = useMutation({
-    mutationFn: async (passwordData: any) => {
-      return apiRequest(`/api/auth/change-password`, {
-        method: "POST",
-        body: JSON.stringify(passwordData),
-      });
+    mutationFn: async (data: { newPassword: string }) => {
+      const response = await apiRequest("POST", "/api/auth/change-password", data);
+      return response.json();
     },
     onSuccess: () => {
-      setShowPasswordModal(false);
-      setNewPassword("");
-      setConfirmPassword("");
       toast({
         title: "Success",
         description: "Password changed successfully",
       });
+      setShowPasswordModal(false);
+      setNewPassword("");
+      setConfirmPassword("");
     },
-    onError: () => {
+    onError: (error: any) => {
       toast({
         title: "Error",
-        description: "Failed to change password",
+        description: error.message || "Failed to change password",
         variant: "destructive",
       });
     },
@@ -377,7 +375,7 @@ export default function GeneratorDashboard() {
 
     if (newPassword.length < 6) {
       toast({
-        title: "Error",
+        title: "Error", 
         description: "Password must be at least 6 characters",
         variant: "destructive",
       });
@@ -1148,8 +1146,8 @@ export default function GeneratorDashboard() {
                   className="w-full justify-start"
                   onClick={() => setShowPasswordModal(true)}
                 >
-                  <Lock className="w-4 h-4 mr-2" />
-                  Change Password
+                  <Settings className="mr-3" size={20} />
+                {t('auth.changePassword')}
                 </Button>
 
                 <Separator />
@@ -1540,49 +1538,43 @@ export default function GeneratorDashboard() {
 
       {/* Change Password Modal */}
       <Dialog open={showPasswordModal} onOpenChange={setShowPasswordModal}>
-        <DialogContent className="w-[95vw] max-w-md">
+        <DialogContent className="max-w-sm">
           <DialogHeader>
             <DialogTitle>Change Password</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
             <div>
-              <Label htmlFor="newPassword">New Password</Label>
+              <Label>New Password</Label>
               <Input
-                id="newPassword"
                 type="password"
                 value={newPassword}
                 onChange={(e) => setNewPassword(e.target.value)}
                 placeholder="Enter new password"
               />
             </div>
-
             <div>
-              <Label htmlFor="confirmPassword">Confirm Password</Label>
+              <Label>Confirm Password</Label>
               <Input
-                id="confirmPassword"
                 type="password"
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 placeholder="Confirm new password"
               />
             </div>
-
-            <div className="flex space-x-3">
-              <Button
-                variant="outline"
-                onClick={() => setShowPasswordModal(false)}
-                className="flex-1"
-              >
-                Cancel
-              </Button>
-              <Button
-                onClick={handleChangePassword}
-                disabled={changePasswordMutation.isPending}
-                className="flex-1"
-              >
-                {changePasswordMutation.isPending ? "Changing..." : "Change"}
-              </Button>
-            </div>
+            <Button
+              className="w-full"
+              onClick={handleChangePassword}
+              disabled={changePasswordMutation.isPending || !newPassword || !confirmPassword}
+            >
+              {changePasswordMutation.isPending ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent mr-2" />
+                  Changing...
+                </>
+              ) : (
+                "Change Password"
+              )}
+            </Button>
           </div>
         </DialogContent>
       </Dialog>

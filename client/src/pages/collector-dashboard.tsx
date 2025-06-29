@@ -24,6 +24,7 @@ import {
   Star, 
   Camera, 
   Check, 
+  AlertTriangle,
   X, 
   LogOut, 
   Package, 
@@ -123,7 +124,6 @@ export default function CollectorDashboard() {
   const [currentAnnouncementIndex, setCurrentAnnouncementIndex] = useState(0);
   const [showIssueModal, setShowIssueModal] = useState(false);
   const [issueFilter, setIssueFilter] = useState('All');
-  const [issueSearchQuery, setIssueSearchQuery] = useState('');
   
   const [newIssue, setNewIssue] = useState({
     title: "",
@@ -258,27 +258,33 @@ export default function CollectorDashboard() {
   const createIssueMutation = useMutation({
     mutationFn: async (issueData: any) => {
       let photoUrl = null;
-      
+
       // Upload photo first if provided
       if (newIssue.photoFile) {
         try {
+          console.log("Uploading photo:", newIssue.photoFile.name);
           const formData = new FormData();
-          formData.append('file', newIssue.photoFile);
-          
-          const uploadResponse = await fetch('/api/upload/photo', {
-            method: 'POST',
+          formData.append("file", newIssue.photoFile);
+
+          const uploadResponse = await fetch("/api/upload/photo", {
+            method: "POST",
             body: formData,
-            credentials: 'include'
+            credentials: "include",
           });
-          
+
           if (!uploadResponse.ok) {
             const errorData = await uploadResponse.text();
-            throw new Error(`Photo upload failed: ${uploadResponse.status} ${errorData}`);
+            console.error("Photo upload failed:", errorData);
+            throw new Error(
+              `Photo upload failed: ${uploadResponse.status} ${errorData}`,
+            );
           }
-          
+
           const uploadResult = await uploadResponse.json();
           photoUrl = uploadResult.url;
+          console.log("Photo uploaded successfully:", photoUrl);
         } catch (uploadError) {
+          console.error("Photo upload error:", uploadError);
           toast({
             title: "Warning",
             description: "Photo upload failed, continuing without photo",
@@ -289,12 +295,14 @@ export default function CollectorDashboard() {
       }
 
       // Create the issue with photo URL
-      const response = await fetch('/api/issues', {
-        method: 'POST',
+      console.log("Submitting issue with data:", { ...issueData, photoUrl });
+
+      const response = await fetch("/api/issues", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
-        credentials: 'include',
+        credentials: "include",
         body: JSON.stringify({
           ...issueData,
           photoUrl,
@@ -303,28 +311,41 @@ export default function CollectorDashboard() {
 
       if (!response.ok) {
         const errorData = await response.text();
-        throw new Error(`Failed to create issue: ${response.status} ${errorData}`);
+        console.error("Issue creation failed:", errorData);
+        throw new Error(
+          `Failed to create issue: ${response.status} ${errorData}`,
+        );
       }
 
       return response.json();
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
+      console.log("Issue created successfully:", data);
       queryClient.invalidateQueries({ queryKey: ["/api/issues"] });
       setShowIssueModal(false);
-      setNewIssue({ title: "", category: "", description: "", photoFile: null });
+      setNewIssue({
+        title: "",
+        category: "",
+        description: "",
+        photoFile: null,
+      });
       toast({
         title: "Success! 🎉",
-        description: "Your issue has been reported successfully. The manager will review it soon.",
+        description:
+          "Your issue has been reported successfully. The manager will review it soon.",
       });
     },
     onError: (error: any) => {
+      console.error("Issue creation error:", error);
       toast({
         title: "Error",
-        description: error?.message || "Failed to report issue. Please try again.",
+        description:
+          error?.message || "Failed to report issue. Please try again.",
         variant: "destructive",
       });
     },
   });
+
 
   // Auto-slide announcements every 5 seconds
   useEffect(() => {
@@ -648,7 +669,8 @@ export default function CollectorDashboard() {
     if (!trimmedTitle || !newIssue.category || !trimmedDescription) {
       toast({
         title: "Validation Error",
-        description: "Please fill in all required fields (Title, Category, Description)",
+        description:
+          "Please fill in all required fields (Title, Category, Description)",
         variant: "destructive",
       });
       return;
@@ -684,6 +706,13 @@ export default function CollectorDashboard() {
         return;
       }
     }
+
+    console.log("Submitting issue:", {
+      title: trimmedTitle,
+      category: newIssue.category,
+      description: trimmedDescription,
+      hasPhoto: !!newIssue.photoFile,
+    });
 
     createIssueMutation.mutate({
       title: trimmedTitle,
@@ -1063,13 +1092,13 @@ export default function CollectorDashboard() {
           <div className="space-y-4 p-4">
             <div className="flex items-center justify-between">
               <h2 className="text-lg font-bold">{t('issues.title')}</h2>
-              <Button 
-                size="sm"
+              <Button
                 onClick={() => setShowIssueModal(true)}
-                className="bg-red-600 hover:bg-red-700"
+                className="h-16 flex-col space-y-1 bg-red-50 text-red-700 hover:bg-red-100"
+                variant="outline"
               >
-                <Plus className="w-4 h-4 mr-1" />
-                {t('issues.reportIssue')}
+                <Plus className="w-6 h-6" />
+                <span className="text-xs">{t('issues.reportIssue')}</span>
               </Button>
             </div>
 
@@ -1094,15 +1123,6 @@ export default function CollectorDashboard() {
             </div>
 
             {/* Search */}
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={16} />
-              <Input
-                placeholder="Search issues..."
-                value={issueSearchQuery}
-                onChange={(e) => setIssueSearchQuery(e.target.value)}
-                className="pl-10 text-sm"
-              />
-            </div>
 
             {issuesLoading ? (
               <div className="text-center py-8">
@@ -1119,16 +1139,8 @@ export default function CollectorDashboard() {
                     else if (issueFilter === 'In Progress') statusMatch = issue.status === 'in_progress';
                     else if (issueFilter === 'Resolved') statusMatch = issue.status === 'resolved';
                     
-                    // Filter by search query
-                    let searchMatch = true;
-                    if (issueSearchQuery) {
-                      const searchTerm = issueSearchQuery.toLowerCase();
-                      searchMatch = issue.title.toLowerCase().includes(searchTerm) ||
-                                   issue.description.toLowerCase().includes(searchTerm) ||
-                                   issue.category.toLowerCase().includes(searchTerm);
-                    }
                     
-                    return statusMatch && searchMatch;
+                    return statusMatch;
                   })
                   .map((issue: any) => (
                   <Card key={issue.id} className="p-4 shadow-sm border-l-4 border-l-red-400">
@@ -1668,84 +1680,119 @@ export default function CollectorDashboard() {
         </DialogContent>
       </Dialog>
 
-      {/* Issue Report Modal */}
+      {/* Issue Report Modal - Enhanced Mobile-First Design */}
       <Dialog open={showIssueModal} onOpenChange={setShowIssueModal}>
         <DialogContent className="w-[96vw] max-w-lg max-h-[90vh] overflow-y-auto p-4 mx-auto">
           <DialogHeader className="pb-4">
             <DialogTitle className="text-xl font-bold text-center text-gray-900">
-              🚨 {t('issues.reportIssue')}
+              🚨 Report Village Issue
             </DialogTitle>
             <p className="text-sm text-gray-600 text-center mt-1">
-              {t('issues.helpCommunity')}
+              Help improve your community by reporting issues
             </p>
           </DialogHeader>
-          
+
           <div className="space-y-5">
             {/* Title Field */}
             <div className="space-y-2">
-              <Label htmlFor="title" className="text-sm font-semibold text-gray-800 flex items-center">
-                📝 {t('issues.issueTitle')} <span className="text-red-500 ml-1">*</span>
+              <Label
+                htmlFor="title"
+                className="text-sm font-semibold text-gray-800 flex items-center"
+              >
+                📝 Issue Title <span className="text-red-500 ml-1">*</span>
               </Label>
               <Input
                 id="title"
                 value={newIssue.title}
-                onChange={(e) => setNewIssue({ ...newIssue, title: e.target.value })}
-                placeholder={t('issues.exampleTitle')}
+                onChange={(e) =>
+                  setNewIssue({ ...newIssue, title: e.target.value })
+                }
+                placeholder="e.g., Garbage not collected for 3 days"
                 className="h-12 text-base border-2 focus:border-red-400"
                 maxLength={100}
               />
               <div className="flex justify-between items-center">
-                <p className="text-xs text-gray-500">{newIssue.title.length}/100 characters</p>
-                {newIssue.title.trim().length < 3 && newIssue.title.length > 0 && (
-                  <p className="text-xs text-red-500">{t('app.minimumChars')}</p>
-                )}
+                <p className="text-xs text-gray-500">
+                  {newIssue.title.length}/100 characters
+                </p>
+                {newIssue.title.trim().length < 3 &&
+                  newIssue.title.length > 0 && (
+                    <p className="text-xs text-red-500">
+                      Minimum 3 characters required
+                    </p>
+                  )}
               </div>
             </div>
-            
+
             {/* Category Field */}
             <div className="space-y-2">
-              <Label htmlFor="category" className="text-sm font-semibold text-gray-800 flex items-center">
-                🏷️ {t('issues.category')} <span className="text-red-500 ml-1">*</span>
+              <Label
+                htmlFor="category"
+                className="text-sm font-semibold text-gray-800 flex items-center"
+              >
+                🏷️ Category <span className="text-red-500 ml-1">*</span>
               </Label>
-              <Select value={newIssue.category} onValueChange={(value) => setNewIssue({ ...newIssue, category: value })}>
+              <Select
+                value={newIssue.category}
+                onValueChange={(value) =>
+                  setNewIssue({ ...newIssue, category: value })
+                }
+              >
                 <SelectTrigger className="h-12 text-base border-2 focus:border-red-400">
                   <SelectValue placeholder="Choose the most relevant category" />
                 </SelectTrigger>
                 <SelectContent>
                   {ISSUE_CATEGORIES.map((category) => (
-                    <SelectItem key={category} value={category} className="text-base py-3">
+                    <SelectItem
+                      key={category}
+                      value={category}
+                      className="text-base py-3"
+                    >
                       {category}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
-            
+
             {/* Description Field */}
             <div className="space-y-2">
-              <Label htmlFor="description" className="text-sm font-semibold text-gray-800 flex items-center">
+              <Label
+                htmlFor="description"
+                className="text-sm font-semibold text-gray-800 flex items-center"
+              >
                 📄 Description <span className="text-red-500 ml-1">*</span>
               </Label>
               <Textarea
                 id="description"
                 value={newIssue.description}
-                onChange={(e) => setNewIssue({ ...newIssue, description: e.target.value })}
-                placeholder={t('issues.descriptionPlaceholder')}
+                onChange={(e) =>
+                  setNewIssue({ ...newIssue, description: e.target.value })
+                }
+                placeholder="Provide detailed information about the issue, location, and when it started..."
                 rows={5}
                 className="text-base border-2 focus:border-red-400 resize-none"
                 maxLength={500}
               />
               <div className="flex justify-between items-center">
-                <p className="text-xs text-gray-500">{newIssue.description.length}/500 characters</p>
-                {newIssue.description.trim().length < 10 && newIssue.description.length > 0 && (
-                  <p className="text-xs text-red-500">Minimum 10 characters required</p>
-                )}
+                <p className="text-xs text-gray-500">
+                  {newIssue.description.length}/500 characters
+                </p>
+                {newIssue.description.trim().length < 10 &&
+                  newIssue.description.length > 0 && (
+                    <p className="text-xs text-red-500">
+                      Minimum 10 characters required
+                    </p>
+                  )}
               </div>
             </div>
-            
+
             {/* Photo Upload Field */}
             <div className="space-y-2">
-              <Label htmlFor="photo" className="text-sm font-semibold text-gray-800 flex items-center">
+              <Label
+                htmlFor="photo"
+                className="text-sm font-semibold text-gray-800 flex items-center"
+              >
                 📸 Photo Evidence (Optional)
               </Label>
               <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center">
@@ -1753,11 +1800,16 @@ export default function CollectorDashboard() {
                   id="photo"
                   type="file"
                   accept="image/*,image/heic,image/heif"
-                  onChange={(e) => setNewIssue({ ...newIssue, photoFile: e.target.files?.[0] || null })}
+                  onChange={(e) =>
+                    setNewIssue({
+                      ...newIssue,
+                      photoFile: e.target.files?.[0] || null,
+                    })
+                  }
                   className="hidden"
                 />
-                <label 
-                  htmlFor="photo" 
+                <label
+                  htmlFor="photo"
                   className="cursor-pointer flex flex-col items-center space-y-2"
                 >
                   {newIssue.photoFile ? (
@@ -1768,7 +1820,9 @@ export default function CollectorDashboard() {
                       <p className="text-sm font-medium text-green-700">
                         📷 {newIssue.photoFile.name}
                       </p>
-                      <p className="text-xs text-gray-500">Tap to change photo</p>
+                      <p className="text-xs text-gray-500">
+                        Tap to change photo
+                      </p>
                     </div>
                   ) : (
                     <div className="text-center">
@@ -1776,22 +1830,29 @@ export default function CollectorDashboard() {
                         <Upload className="w-8 h-8 text-gray-400" />
                       </div>
                       <p className="text-sm font-medium text-gray-700">
-                        {t('app.tapToUpload')}
+                        Tap to upload photo
                       </p>
                       <p className="text-xs text-gray-500">
-                        {t('app.photosHelp')}
+                        Photos help resolve issues faster
                       </p>
                     </div>
                   )}
                 </label>
               </div>
             </div>
-            
+
             {/* Action Buttons */}
             <div className="flex flex-col space-y-3 pt-4 border-t">
-              <Button 
+              <Button
                 onClick={handleSubmitIssue}
-                disabled={createIssueMutation.isPending || !newIssue.title.trim() || !newIssue.category || !newIssue.description.trim() || newIssue.title.trim().length < 3 || newIssue.description.trim().length < 10}
+                disabled={
+                  createIssueMutation.isPending ||
+                  !newIssue.title.trim() ||
+                  !newIssue.category ||
+                  !newIssue.description.trim() ||
+                  newIssue.title.trim().length < 3 ||
+                  newIssue.description.trim().length < 10
+                }
                 className="w-full h-12 bg-red-600 hover:bg-red-700 text-base font-semibold"
               >
                 {createIssueMutation.isPending ? (
@@ -1801,16 +1862,21 @@ export default function CollectorDashboard() {
                   </div>
                 ) : (
                   <div className="flex items-center space-x-2">
-                    <AlertCircle className="w-5 h-5" />
+                    <AlertTriangle className="w-5 h-5" />
                     <span>Submit Issue Report</span>
                   </div>
                 )}
               </Button>
-              <Button 
-                variant="outline" 
+              <Button
+                variant="outline"
                 onClick={() => {
                   setShowIssueModal(false);
-                  setNewIssue({ title: "", category: "", description: "", photoFile: null });
+                  setNewIssue({
+                    title: "",
+                    category: "",
+                    description: "",
+                    photoFile: null,
+                  });
                 }}
                 className="w-full h-12 border-2 text-base font-medium"
                 disabled={createIssueMutation.isPending}
@@ -1821,6 +1887,7 @@ export default function CollectorDashboard() {
           </div>
         </DialogContent>
       </Dialog>
+
 
       {/* Change Password Modal */}
       <Dialog open={showPasswordModal} onOpenChange={setShowPasswordModal}>
