@@ -1,9 +1,25 @@
 
-const CACHE_NAME = "greenpath-v1.1.0";
-const STATIC_CACHE = "greenpath-static-v1.1.0";
-const DYNAMIC_CACHE = "greenpath-dynamic-v1.1.0";
+const CACHE_VERSION = "v2.0.0";
+const CACHE_NAME = `greenpath-${CACHE_VERSION}`;
+const STATIC_CACHE = `greenpath-static-${CACHE_VERSION}`;
+const DYNAMIC_CACHE = `greenpath-dynamic-${CACHE_VERSION}`;
+const API_CACHE = `greenpath-api-${CACHE_VERSION}`;
 const OFFLINE_DB_NAME = "greenpath-offline";
-const OFFLINE_DB_VERSION = 1;
+const OFFLINE_DB_VERSION = 2;
+
+// Cache expiration times (in milliseconds)
+const CACHE_EXPIRATION = {
+  STATIC: 7 * 24 * 60 * 60 * 1000, // 7 days
+  DYNAMIC: 24 * 60 * 60 * 1000,    // 1 day
+  API: 15 * 60 * 1000,             // 15 minutes
+};
+
+// Maximum cache sizes
+const MAX_CACHE_SIZE = {
+  STATIC: 50,
+  DYNAMIC: 100,
+  API: 200
+};
 
 // Assets to cache immediately
 const STATIC_ASSETS = [
@@ -603,3 +619,196 @@ self.addEventListener("notificationclick", (event) => {
     event.waitUntil(self.clients.openWindow("/"));
   }
 });
+
+// Advanced cache management functions
+async function cleanupOldCaches() {
+  const cacheNames = await caches.keys();
+  const currentCaches = [STATIC_CACHE, DYNAMIC_CACHE, API_CACHE];
+  
+  const deletePromises = cacheNames
+    .filter(cacheName => !currentCaches.includes(cacheName))
+    .map(cacheName => caches.delete(cacheName));
+    
+  return Promise.all(deletePromises);
+}
+
+async function trimCache(cacheName, maxItems) {
+  const cache = await caches.open(cacheName);
+  const keys = await cache.keys();
+  
+  if (keys.length > maxItems) {
+    const deletePromises = keys
+      .slice(0, keys.length - maxItems)
+      .map(key => cache.delete(key));
+    return Promise.all(deletePromises);
+  }
+}
+
+async function cleanupExpiredCache(cacheName, maxAge) {
+  const cache = await caches.open(cacheName);
+  const keys = await cache.keys();
+  
+  const now = Date.now();
+  const deletePromises = [];
+  
+  for (const key of keys) {
+    const response = await cache.match(key);
+    if (response) {
+      const dateHeader = response.headers.get('date');
+      const cacheTime = dateHeader ? new Date(dateHeader).getTime() : 0;
+      
+      if (now - cacheTime > maxAge) {
+        deletePromises.push(cache.delete(key));
+      }
+    }
+  }
+  
+  return Promise.all(deletePromises);
+}
+
+// Performance monitoring
+function trackPerformance(eventType, startTime) {
+  const duration = performance.now() - startTime;
+  console.log(`[SW Performance] ${eventType}: ${duration.toFixed(2)}ms`);
+  
+  // You can send this data to analytics service in production
+  if ('serviceWorker' in navigator && 'postMessage' in navigator.serviceWorker) {
+    self.clients.matchAll().then(clients => {
+      clients.forEach(client => {
+        client.postMessage({
+          type: 'PERFORMANCE_METRIC',
+          eventType,
+          duration
+        });
+      });
+    });
+  }
+}
+
+// Background sync for offline actions
+self.addEventListener('sync', (event) => {
+  console.log('[Service Worker] Background sync event:', event.tag);
+  
+  if (event.tag === 'background-sync-collections') {
+    event.waitUntil(syncOfflineCollections());
+  }
+});
+
+// Periodic background sync for data updates
+self.addEventListener('periodicsync', (event) => {
+  console.log('[Service Worker] Periodic sync event:', event.tag);
+  
+  if (event.tag === 'update-cache') {
+    event.waitUntil(updateCacheInBackground());
+  }
+});
+
+async function updateCacheInBackground() {
+  try {
+    // Update critical data in background
+    const apiEndpoints = [
+      '/api/auth/user',
+      '/api/villages',
+      '/api/households',
+      '/api/collectors'
+    ];
+    
+    const cache = await caches.open(API_CACHE);
+    const updatePromises = apiEndpoints.map(async (endpoint) => {
+      try {
+        const response = await fetch(endpoint);
+        if (response.ok) {
+          await cache.put(endpoint, response.clone());
+        }
+      } catch (error) {
+        console.log(`[SW] Failed to update cache for ${endpoint}:`, error);
+      }
+    });
+    
+    await Promise.all(updatePromises);
+    console.log('[SW] Background cache update completed');
+  } catch (error) {
+    console.error('[SW] Background cache update failed:', error);
+  }
+}
+
+// Cache maintenance (runs periodically)
+setInterval(async () => {
+  try {
+    await cleanupOldCaches();
+    await trimCache(DYNAMIC_CACHE, MAX_CACHE_SIZE.DYNAMIC);
+    await trimCache(API_CACHE, MAX_CACHE_SIZE.API);
+    await cleanupExpiredCache(API_CACHE, CACHE_EXPIRATION.API);
+    await cleanupExpiredCache(DYNAMIC_CACHE, CACHE_EXPIRATION.DYNAMIC);
+    console.log('[SW] Cache maintenance completed');
+  } catch (error) {
+    console.error('[SW] Cache maintenance failed:', error);
+  }
+}, 60 * 60 * 1000); // Run every hour
+
+// Enhanced error handling for fetch events
+function createFallbackResponse(url) {
+  if (url.includes('/api/')) {
+    return new Response(
+      JSON.stringify({ 
+        error: 'Offline - cached data not available',
+        offline: true,
+        timestamp: Date.now()
+      }),
+      {
+        status: 503,
+        statusText: 'Service Unavailable',
+        headers: { 'Content-Type': 'application/json' }
+      }
+    );
+  }
+  
+  // Return offline page for navigation requests
+  return new Response(
+    `<!DOCTYPE html>
+    <html>
+    <head>
+      <title>GreenPath - Offline</title>
+      <meta name="viewport" content="width=device-width, initial-scale=1">
+      <style>
+        body { 
+          font-family: system-ui, -apple-system, sans-serif; 
+          text-align: center; 
+          padding: 2rem;
+          background: linear-gradient(135deg, #10b981, #059669);
+          color: white;
+          min-height: 100vh;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          flex-direction: column;
+        }
+        .offline-icon { font-size: 4rem; margin-bottom: 1rem; }
+        h1 { margin: 0 0 1rem 0; }
+        p { opacity: 0.9; }
+        button { 
+          margin-top: 2rem; 
+          padding: 0.75rem 1.5rem; 
+          background: rgba(255,255,255,0.2); 
+          border: 1px solid rgba(255,255,255,0.3);
+          border-radius: 0.5rem;
+          color: white;
+          cursor: pointer;
+          font-size: 1rem;
+        }
+        button:hover { background: rgba(255,255,255,0.3); }
+      </style>
+    </head>
+    <body>
+      <div class="offline-icon">🌱</div>
+      <h1>You're Offline</h1>
+      <p>GreenPath is not available right now. Please check your connection and try again.</p>
+      <button onclick="window.location.reload()">Try Again</button>
+    </body>
+    </html>`,
+    {
+      status: 200,
+      headers: { 'Content-Type': 'text/html' }
+    }
+  );
+}

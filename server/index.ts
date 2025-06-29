@@ -1,14 +1,139 @@
 import dotenv from 'dotenv';
 import express, { type Request, Response, NextFunction } from "express";
+import helmet from 'helmet';
+import compression from 'compression';
+import cors from 'cors';
+import rateLimit from 'express-rate-limit';
+import slowDown from 'express-slow-down';
+import morgan from 'morgan';
+import { createLogger, format, transports } from 'winston';
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 
 // Load environment variables from .env file
 dotenv.config();
 
+// Create Winston logger for production
+const logger = createLogger({
+  level: process.env.LOG_LEVEL || 'info',
+  format: format.combine(
+    format.timestamp(),
+    format.errors({ stack: true }),
+    format.json()
+  ),
+  defaultMeta: { service: 'greenpath-api' },
+  transports: [
+    new transports.Console({
+      format: format.combine(
+        format.colorize(),
+        format.simple()
+      )
+    })
+  ]
+});
+
 const app = express();
-app.use(express.json());
-app.use(express.urlencoded({ extended: false }));
+
+// Trust proxy for accurate IP addresses when behind reverse proxy
+app.set('trust proxy', 1);
+
+// Security headers with Helmet
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
+      fontSrc: ["'self'", "https://fonts.gstatic.com"],
+      imgSrc: ["'self'", "data:", "https:", "blob:"],
+      scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'"],
+      connectSrc: ["'self'", "https:", "wss:"],
+      mediaSrc: ["'self'", "https:", "blob:"],
+      workerSrc: ["'self'", "blob:"],
+      frameSrc: ["'none'"],
+      objectSrc: ["'none'"],
+      baseUri: ["'self'"]
+    }
+  },
+  crossOriginEmbedderPolicy: false // Required for some PWA features
+}));
+
+// CORS configuration
+const corsOptions = {
+  origin: process.env.NODE_ENV === 'production' 
+    ? [process.env.CLIENT_URL || 'https://your-domain.replit.app']
+    : true,
+  credentials: true,
+  optionsSuccessStatus: 200,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
+};
+app.use(cors(corsOptions));
+
+// Compression middleware
+app.use(compression({
+  level: 6,
+  threshold: 1024,
+  filter: (req, res) => {
+    if (req.headers['x-no-compression']) {
+      return false;
+    }
+    return compression.filter(req, res);
+  }
+}));
+
+// Rate limiting - different limits for different endpoints
+const createRateLimit = (windowMs: number, max: number, message: string) => 
+  rateLimit({
+    windowMs,
+    max,
+    message: { error: message },
+    standardHeaders: true,
+    legacyHeaders: false,
+    handler: (req, res) => {
+      logger.warn(`Rate limit exceeded for IP: ${req.ip}`);
+      res.status(429).json({ error: message });
+    }
+  });
+
+// General API rate limiting
+app.use('/api/', createRateLimit(15 * 60 * 1000, 1000, 'Too many requests, please try again later'));
+
+// Stricter rate limiting for auth endpoints
+app.use('/api/auth/login', createRateLimit(15 * 60 * 1000, 5, 'Too many login attempts, please try again later'));
+app.use('/api/auth/register', createRateLimit(60 * 60 * 1000, 3, 'Too many registration attempts, please try again later'));
+
+// Upload rate limiting
+app.use('/api/upload', createRateLimit(5 * 60 * 1000, 20, 'Too many upload requests, please try again later'));
+
+// Slow down repeated requests
+app.use('/api/', slowDown({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  delayAfter: 100, // Allow 100 requests per windowMs without delay
+  delayMs: 500, // Add 500ms delay per request after delayAfter
+  maxDelayMs: 20000, // Maximum delay of 20 seconds
+}));
+
+// Request logging
+if (process.env.NODE_ENV === 'production') {
+  app.use(morgan('combined', {
+    stream: { write: (message) => logger.info(message.trim()) }
+  }));
+} else {
+  app.use(morgan('dev'));
+}
+
+// Body parsing with size limits
+app.use(express.json({ 
+  limit: '10mb',
+  verify: (req, res, buf) => {
+    // Store raw body for webhook verification if needed
+    (req as any).rawBody = buf;
+  }
+}));
+app.use(express.urlencoded({ 
+  extended: false, 
+  limit: '10mb' 
+}));
 
 app.use((req, res, next) => {
   const start = Date.now();
@@ -131,13 +256,56 @@ app.get("/icons/:filename", (req, res) => {
 (async () => {
   const server = await registerRoutes(app);
 
-  app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
+  // Enhanced error handling middleware
+  app.use((err: any, req: Request, res: Response, _next: NextFunction) => {
     const status = err.status || err.statusCode || 500;
     const message = err.message || "Internal Server Error";
+    
+    // Log error details
+    logger.error('Application Error', {
+      error: {
+        message: err.message,
+        stack: err.stack,
+        status: status
+      },
+      request: {
+        method: req.method,
+        url: req.url,
+        ip: req.ip,
+        userAgent: req.get('User-Agent')
+      }
+    });
 
-    res.status(status).json({ message });
-    throw err;
+    // Don't expose stack trace in production
+    const errorResponse = process.env.NODE_ENV === 'production' 
+      ? { message: status === 500 ? 'Internal Server Error' : message }
+      : { message, stack: err.stack };
+
+    res.status(status).json(errorResponse);
   });
+
+  // Handle uncaught exceptions and unhandled promise rejections
+  process.on('uncaughtException', (error) => {
+    logger.error('Uncaught Exception:', error);
+    process.exit(1);
+  });
+
+  process.on('unhandledRejection', (reason, promise) => {
+    logger.error('Unhandled Rejection at:', { promise, reason });
+    process.exit(1);
+  });
+
+  // Graceful shutdown handler
+  const gracefulShutdown = (signal: string) => {
+    logger.info(`Received ${signal}. Graceful shutdown initiated.`);
+    server.close(() => {
+      logger.info('HTTP server closed.');
+      process.exit(0);
+    });
+  };
+
+  process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
+  process.on('SIGINT', () => gracefulShutdown('SIGINT'));
 
   // importantly only setup vite in development and after
   // setting up all the other routes so the catch-all route
