@@ -112,21 +112,23 @@ export default function Login() {
                 />
                 <label htmlFor="terms-agreement" className="text-sm text-gray-600">
                   I agree to the{" "}
-                  <button
-                    type="button"
-                    onClick={() => setLocation('/terms-of-service')}
+                  <a
+                    href="/terms-of-service"
+                    target="_blank"
+                    rel="noopener noreferrer"
                     className="text-green-600 hover:text-green-700 underline"
                   >
                     Terms of Service
-                  </button>
+                  </a>
                   {" "}and{" "}
-                  <button
-                    type="button"
-                    onClick={() => setLocation('/privacy-policy')}
+                  <a
+                    href="/privacy-policy"
+                    target="_blank"
+                    rel="noopener noreferrer"
                     className="text-green-600 hover:text-green-700 underline"
                   >
                     Privacy Policy
-                  </button>
+                  </a>
                 </label>
               </div>
 
@@ -159,7 +161,42 @@ export default function Login() {
           </CardContent>
         </Card>
 
-        <Footer />
+        {/* Footer outside the card for better positioning */}
+        <div className="mt-8">
+          <div className="bg-white rounded-lg shadow-sm border p-4">
+            <div className="flex flex-col items-center gap-3">
+              <div className="text-xs text-gray-500">
+                © {new Date().getFullYear()} GreenPath Org. All rights reserved.
+              </div>
+              <div className="flex flex-wrap justify-center gap-4 text-xs">
+                <a
+                  href="/privacy-policy"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-gray-600 hover:text-green-600 transition-colors underline"
+                >
+                  Privacy Policy
+                </a>
+                <a
+                  href="/terms-of-service"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-gray-600 hover:text-green-600 transition-colors underline"
+                >
+                  Terms of Service
+                </a>
+                <a
+                  href="/data-protection"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-gray-600 hover:text-green-600 transition-colors underline"
+                >
+                  Data Protection
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );
