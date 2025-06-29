@@ -61,12 +61,17 @@
   },
   "auth": {
     "login": "लॉगिन",
-    "logout": "लॉगआउट",
-    "userId": "उपयोगकर्ता आईडी",
+    "logout": "लॉग आउट",
+    "userId": "यूजर आईडी",
     "password": "पासवर्ड",
     "loginButton": "साइन इन",
-    "loginError": "गलत प्रमाण-पत्र",
-    "unauthorized": "अनधिकृत पहुंच",
+    "loginError": "गलत क्रेडेंशियल",
+    "loginSuccess": "सफलतापूर्वक लॉग इन हो गए",
+    "loggingIn": "लॉग इन हो रहे हैं...",
+    "userIdPlaceholder": "अपनी यूजर आईडी दर्ज करें",
+    "passwordPlaceholder": "अपना पासवर्ड दर्ज करें",
+    "loginDescription": "अपने वेस्ट मैनेजमेंट डैशबोर्ड तक पहुंचने के लिए साइन इन करें",
+    "unauthorized": "अनधिकृत पहुँच",
     "sessionExpired": "सत्र समाप्त"
   },
   "roles": {

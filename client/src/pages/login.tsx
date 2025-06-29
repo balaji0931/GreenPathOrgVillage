@@ -11,6 +11,7 @@ import Footer from "@/components/Footer";
 import { useTranslation } from 'react-i18next';
 import { useToast } from "@/hooks/use-toast";
 import { useLocation } from "wouter";
+import { useState } from "react";
 
 export default function Login() {
   const [userId, setUserId] = useState("");
@@ -112,21 +113,23 @@ export default function Login() {
                   />
                   <label htmlFor="terms-agreement" className="text-sm text-gray-600">
                     I agree to the{" "}
-                    <button
-                      type="button"
-                      onClick={() => setLocation('/terms-of-service')}
+                    <a
+                      href="/terms-of-service"
+                      target="_blank"
+                      rel="noopener noreferrer"
                       className="text-green-600 hover:text-green-700 underline"
                     >
                       Terms of Service
-                    </button>
+                    </a>
                     {" "}and{" "}
-                    <button
-                      type="button"
-                      onClick={() => setLocation('/privacy-policy')}
+                    <a
+                      href="/privacy-policy"
+                      target="_blank"
+                      rel="noopener noreferrer"
                       className="text-green-600 hover:text-green-700 underline"
                     >
                       Privacy Policy
-                    </button>
+                    </a>
                   </label>
                 </div>
 

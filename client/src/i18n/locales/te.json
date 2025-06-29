@@ -66,6 +66,11 @@
     "password": "పాస్‌వర్డ్",
     "loginButton": "సైన్ ఇన్",
     "loginError": "తప్పు ఆధారాలు",
+    "loginSuccess": "విజయవంతంగా లాగిన్ అయ్యారు",
+    "loggingIn": "లాగిన్ అవుతోంది...",
+    "userIdPlaceholder": "మీ వినియోగదారు ID ని నమోదు చేయండి",
+    "passwordPlaceholder": "మీ పాస్‌వర్డ్ ని నమోదు చేయండి",
+    "loginDescription": "మీ వ్యర్థ పదార్థాల నిర్వహణ డ్యాష్‌బోర్డ్‌ను యాక్సెస్ చేయడానికి సైన్ ఇన్ చేయండి",
     "unauthorized": "అనధికార ప్రవేశం",
     "sessionExpired": "సెషన్ ముగిసింది"
   },

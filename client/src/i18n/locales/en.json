@@ -69,6 +69,11 @@
     "password": "Password",
     "loginButton": "Sign In",
     "loginError": "Invalid credentials",
+    "loginSuccess": "Logged in successfully",
+    "loggingIn": "Logging in...",
+    "userIdPlaceholder": "Enter your user ID",
+    "passwordPlaceholder": "Enter your password",
+    "loginDescription": "Sign in to access your waste management dashboard",
     "unauthorized": "Unauthorized access",
     "sessionExpired": "Session expired"
   },

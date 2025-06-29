@@ -66,6 +66,11 @@
     "password": "ಪಾಸ್‌ವರ್ಡ್",
     "loginButton": "ಸೈನ್ ಇನ್",
     "loginError": "ತಪ್ಪು ಪ್ರಮಾಣಪತ್ರಗಳು",
+    "loginSuccess": "ಯಶಸ್ವಿಯಾಗಿ ಲಾಗಿನ್ ಆಗಿದ್ದೀರಿ",
+    "loggingIn": "ಲಾಗಿನ್ ಆಗುತ್ತಿದೆ...",
+    "userIdPlaceholder": "ನಿಮ್ಮ ಬಳಕೆದಾರ ID ಅನ್ನು ನಮೂದಿಸಿ",
+    "passwordPlaceholder": "ನಿಮ್ಮ ಪಾಸ್‌ವರ್ಡ್ ಅನ್ನು ನಮೂದಿಸಿ",
+    "loginDescription": "ನಿಮ್ಮ ತ್ಯಾಜ್ಯ ನಿರ್ವಹಣೆ ಡ್ಯಾಶ್‌ಬೋರ್ಡ್ ಅನ್ನು ಪ್ರವೇಶಿಸಲು ಸೈನ್ ಇನ್ ಮಾಡಿ",
     "unauthorized": "ಅನಧಿಕೃತ ಪ್ರವೇಶ",
     "sessionExpired": "ಸೆಷನ್ ಮುಗಿದಿದೆ"
   },

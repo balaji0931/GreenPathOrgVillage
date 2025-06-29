@@ -64,10 +64,15 @@
     "logout": "வெளியேறு",
     "userId": "பயனர் ஐடி",
     "password": "கடவுச்சொல்",
-    "loginButton": "உள்நுழைக",
-    "loginError": "தவறான நற்சான்றிதழ்கள்",
+    "loginButton": "உள்நுழை",
+    "loginError": "தவறான விவரங்கள்",
+    "loginSuccess": "வெற்றிகரமாக உள்நுழைந்தீர்கள்",
+    "loggingIn": "உள்நுழைகிறது...",
+    "userIdPlaceholder": "உங்கள் பயனர் ஐடியை உள்ளிடவும்",
+    "passwordPlaceholder": "உங்கள் கடவுச்சொல்லை உள்ளிடவும்",
+    "loginDescription": "உங்கள் கழிவு மேலாண்மை டாஷ்போர்டை அணுக உள்நுழையவும்",
     "unauthorized": "அங்கீகரிக்கப்படாத அணுகல்",
-    "sessionExpired": "அமர்வு காலாவதியானது"
+    "sessionExpired": "அமர்வு காலாவதி"
   },
   "roles": {
     "admin": "நிர்வாகி",
