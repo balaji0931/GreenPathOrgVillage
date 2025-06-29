@@ -78,6 +78,7 @@ export default function GeneratorDashboard() {
   const [showFeedbackModal, setShowFeedbackModal] = useState(false);
   const [showPasswordModal, setShowPasswordModal] = useState(false);
   const [selectedCollection, setSelectedCollection] = useState<any>(null);
+  const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [issueFilter, setIssueFilter] = useState("All");
@@ -264,13 +265,14 @@ export default function GeneratorDashboard() {
   // Change password mutation
   const changePasswordMutation = useMutation({
     mutationFn: async (passwordData: any) => {
-      return apiRequest(`/api/auth/change-password`, {
-        method: "POST",
+      return apiRequest(`/api/profile`, {
+        method: "PUT",
         body: JSON.stringify(passwordData),
       });
     },
     onSuccess: () => {
       setShowPasswordModal(false);
+      setCurrentPassword("");
       setNewPassword("");
       setConfirmPassword("");
       toast({
@@ -366,6 +368,15 @@ export default function GeneratorDashboard() {
   };
 
   const handleChangePassword = () => {
+    if (!currentPassword) {
+      toast({
+        title: "Error",
+        description: "Please enter your current password",
+        variant: "destructive",
+      });
+      return;
+    }
+
     if (newPassword !== confirmPassword) {
       toast({
         title: "Error",
@@ -384,7 +395,11 @@ export default function GeneratorDashboard() {
       return;
     }
 
-    changePasswordMutation.mutate({ newPassword });
+    changePasswordMutation.mutate({ 
+      name: user?.name,  // Keep current name
+      currentPassword,
+      newPassword 
+    });
   };
 
   // Calculate stats from collection history
@@ -1546,6 +1561,17 @@ export default function GeneratorDashboard() {
           </DialogHeader>
           <div className="space-y-4">
             <div>
+              <Label htmlFor="currentPassword">Current Password</Label>
+              <Input
+                id="currentPassword"
+                type="password"
+                value={currentPassword}
+                onChange={(e) => setCurrentPassword(e.target.value)}
+                placeholder="Enter current password"
+              />
+            </div>
+
+            <div>
               <Label htmlFor="newPassword">New Password</Label>
               <Input
                 id="newPassword"
@@ -1570,7 +1596,12 @@ export default function GeneratorDashboard() {
             <div className="flex space-x-3">
               <Button
                 variant="outline"
-                onClick={() => setShowPasswordModal(false)}
+                onClick={() => {
+                  setShowPasswordModal(false);
+                  setCurrentPassword("");
+                  setNewPassword("");
+                  setConfirmPassword("");
+                }}
                 className="flex-1"
               >
                 Cancel
