@@ -324,6 +324,11 @@ export default function ManagerDashboard() {
   const [announcementMessage, setAnnouncementMessage] = useState("");
   const [announcementTarget, setAnnouncementTarget] = useState("generators");
   const [announcementPhotoFile, setAnnouncementPhotoFile] = useState<File | null>(null);
+  const [selectedMedia, setSelectedMedia] = useState<{
+    type: 'image' | 'audio';
+    url: string;
+    title: string;
+  } | null>(null);
 
   // Consolidated filters
   const [filters, setFilters] = useState<FilterState>({
@@ -1549,26 +1554,36 @@ export default function ManagerDashboard() {
                                                   </div>
                                                 </div>
 
-                                                <div className="flex gap-2 pt-2 border-t">
+                                                <div className="space-y-3 pt-3 border-t">
                                                   {targetCollection.photo && (
-                                                    <Button
-                                                      size="sm"
-                                                      variant="outline"
-                                                      onClick={() => window.open(targetCollection.photo, "_blank")}
-                                                    >
-                                                      <Camera className="h-4 w-4 mr-1" />
-                                                      View Photo
-                                                    </Button>
+                                                    <div className="space-y-2">
+                                                      <Label className="text-sm font-medium">Collection Photo:</Label>
+                                                      <div className="border rounded-lg overflow-hidden bg-gray-50">
+                                                        <img
+                                                          src={targetCollection.photo}
+                                                          alt="Collection photo"
+                                                          className="w-full max-h-64 object-contain"
+                                                          onError={(e) => {
+                                                            e.currentTarget.src = "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTIxIDEyVjdIMTlWNUMxOSAzLjg5NTQzIDE4LjEwNDYgMyAxNyAzSDdDNS44OTU0MyAzIDUgMy44OTU0MyA1IDVWMTlDNSAyMC4xMDQ2IDUuODk1NDMgMjEgNyAyMUgxMiIgc3Ryb2tlPSIjOTk5IiBzdHJva2Utd2lkdGg9IjIiLz4KPHBhdGggZD0iTTE0IDE0TDE3IDE3TDIxIDEzIiBzdHJva2U9IiM5OTkiIHN0cm9rZS13aWR0aD0iMiIvPgo8L3N2Zz4K";
+                                                          }}
+                                                        />
+                                                      </div>
+                                                    </div>
                                                   )}
                                                   {targetCollection.voiceUrl && (
-                                                    <Button
-                                                      size="sm"
-                                                      variant="outline"
-                                                      onClick={() => window.open(targetCollection.voiceUrl, "_blank")}
-                                                    >
-                                                      <Mic className="h-4 w-4 mr-1" />
-                                                      Play Voice
-                                                    </Button>
+                                                    <div className="space-y-2">
+                                                      <Label className="text-sm font-medium">Voice Recording:</Label>
+                                                      <audio
+                                                        controls
+                                                        className="w-full h-10"
+                                                        preload="metadata"
+                                                      >
+                                                        <source src={targetCollection.voiceUrl} type="audio/mpeg" />
+                                                        <source src={targetCollection.voiceUrl} type="audio/wav" />
+                                                        <source src={targetCollection.voiceUrl} type="audio/ogg" />
+                                                        Your browser does not support the audio element.
+                                                      </audio>
+                                                    </div>
                                                   )}
                                                 </div>
                                               </div>
@@ -1660,26 +1675,36 @@ export default function ManagerDashboard() {
                                                     </div>
                                                   </div>
 
-                                                  <div className="flex gap-2 pt-2 border-t">
+                                                  <div className="space-y-3 pt-3 border-t">
                                                     {collection.photo && (
-                                                      <Button
-                                                        size="sm"
-                                                        variant="outline"
-                                                        onClick={() => window.open(collection.photo, "_blank")}
-                                                      >
-                                                        <Camera className="h-4 w-4 mr-1" />
-                                                        View Photo
-                                                      </Button>
+                                                      <div className="space-y-2">
+                                                        <Label className="text-sm font-medium">Collection Photo:</Label>
+                                                        <div className="border rounded-lg overflow-hidden bg-gray-50">
+                                                          <img
+                                                            src={collection.photo}
+                                                            alt="Collection photo"
+                                                            className="w-full max-h-64 object-contain"
+                                                            onError={(e) => {
+                                                              e.currentTarget.src = "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTIxIDEyVjdIMTlWNUMxOSAzLjg5NTQzIDE4LjEwNDYgMyAxNyAzSDdDNS44OTU0MyAzIDUgMy44OTU0MyA1IDVWMTlDNSAyMC4xMDQ2IDUuODk1NDMgMjEgNyAyMUgxMiIgc3Ryb2tlPSIjOTk5IiBzdHJva2Utd2lkdGg9IjIiLz4KPHBhdGggZD0iTTE0IDE0TDE3IDE3TDIxIDEzIiBzdHJva2U9IiM5OTkiIHN0cm9rZS13aWR0aD0iMiIvPgo8L3N2Zz4K";
+                                                            }}
+                                                          />
+                                                        </div>
+                                                      </div>
                                                     )}
                                                     {collection.voiceUrl && (
-                                                      <Button
-                                                        size="sm"
-                                                        variant="outline"
-                                                        onClick={() => window.open(collection.voiceUrl, "_blank")}
-                                                      >
-                                                        <Mic className="h-4 w-4 mr-1" />
-                                                        Play Voice
-                                                      </Button>
+                                                      <div className="space-y-2">
+                                                        <Label className="text-sm font-medium">Voice Recording:</Label>
+                                                        <audio
+                                                          controls
+                                                          className="w-full h-10"
+                                                          preload="metadata"
+                                                        >
+                                                          <source src={collection.voiceUrl} type="audio/mpeg" />
+                                                          <source src={collection.voiceUrl} type="audio/wav" />
+                                                          <source src={collection.voiceUrl} type="audio/ogg" />
+                                                          Your browser does not support the audio element.
+                                                        </audio>
+                                                      </div>
                                                     )}
                                                   </div>
                                                 </div>
@@ -1714,12 +1739,15 @@ export default function ManagerDashboard() {
                             const householdCollections = allCollections
                               .filter(c => c.householdId === household.id)
                               .sort((a, b) => new Date(b.collectionDate).getTime() - new Date(a.collectionDate).getTime())
-                              .slice(0, 10);
+                              .slice(0, 10); // Last 10 collections for this household
                             
-                            const uncollectedCount = 10 - householdCollections.length;
-                            const lowRatingCount = householdCollections.filter(c => (c.segregationRating || 0) < 4).length;
+                            // Count collections where waste was not collected due to poor segregation or rating < 4
+                            const problemCollections = householdCollections.filter(c => 
+                              (c.segregationRating && c.segregationRating < 4) || 
+                              (c.status === "not_collected" && c.missedReason && c.missedReason.includes("segregat"))
+                            ).length;
                             
-                            return (uncollectedCount + lowRatingCount) >= 3;
+                            return problemCollections >= 3;
                           }).length;
                         })()}
                         icon={AlertTriangle}
@@ -1732,12 +1760,15 @@ export default function ManagerDashboard() {
                             const householdCollections = allCollections
                               .filter(c => c.householdId === household.id)
                               .sort((a, b) => new Date(b.collectionDate).getTime() - new Date(a.collectionDate).getTime())
-                              .slice(0, 10);
+                              .slice(0, 10); // Last 10 collections for this household
                             
-                            const uncollectedCount = 10 - householdCollections.length;
-                            const lowRatingCount = householdCollections.filter(c => (c.segregationRating || 0) < 4).length;
+                            // Count collections where waste was not collected due to poor segregation or rating < 4
+                            const problemCollections = householdCollections.filter(c => 
+                              (c.segregationRating && c.segregationRating < 4) || 
+                              (c.status === "not_collected" && c.missedReason && c.missedReason.includes("segregat"))
+                            ).length;
                             
-                            return (uncollectedCount + lowRatingCount) < 3;
+                            return problemCollections < 3;
                           }).length;
                         })()}
                         icon={CheckCircle}
@@ -1796,21 +1827,26 @@ export default function ManagerDashboard() {
                                   const householdCollections = allCollections
                                     .filter(c => c.householdId === household.id)
                                     .sort((a, b) => new Date(b.collectionDate).getTime() - new Date(a.collectionDate).getTime())
-                                    .slice(0, 10);
+                                    .slice(0, 10); // Last 10 collections for this household
                                   
-                                  const uncollectedCount = 10 - householdCollections.length;
-                                  const lowRatingCount = householdCollections.filter(c => (c.segregationRating || 0) < 4).length;
+                                  // Count collections where waste was not collected due to poor segregation or rating < 4
+                                  const problemCollections = householdCollections.filter(c => 
+                                    (c.segregationRating && c.segregationRating < 4) || 
+                                    (c.status === "not_collected" && c.missedReason && c.missedReason.includes("segregat"))
+                                  ).length;
                                   
-                                  return (uncollectedCount + lowRatingCount) >= 3;
+                                  return problemCollections >= 3;
                                 })
                                 .map((household) => {
                                   const householdCollections = allCollections
                                     .filter(c => c.householdId === household.id)
                                     .sort((a, b) => new Date(b.collectionDate).getTime() - new Date(a.collectionDate).getTime())
-                                    .slice(0, 10);
+                                    .slice(0, 10); // Last 10 collections for this household
                                   
-                                  const uncollectedCount = 10 - householdCollections.length;
-                                  const lowRatingCount = householdCollections.filter(c => (c.segregationRating || 0) < 4).length;
+                                  const problemCollections = householdCollections.filter(c => 
+                                    (c.segregationRating && c.segregationRating < 4) || 
+                                    (c.status === "not_collected" && c.missedReason && c.missedReason.includes("segregat"))
+                                  ).length;
                                   const avgRating = householdCollections.length > 0 
                                     ? (householdCollections.reduce((sum, c) => sum + (c.segregationRating || 0), 0) / householdCollections.length).toFixed(1)
                                     : "0.0";
@@ -1826,10 +1862,7 @@ export default function ManagerDashboard() {
                                             </p>
                                             <div className="mt-2 flex gap-4 text-sm">
                                               <span className="text-red-600">
-                                                Missed: {uncollectedCount} collections
-                                              </span>
-                                              <span className="text-orange-600">
-                                                Low ratings: {lowRatingCount} times
+                                                Problem collections: {problemCollections} out of {householdCollections.length}
                                               </span>
                                               <span className="text-blue-600">
                                                 Avg rating: {avgRating}/5
@@ -1838,10 +1871,10 @@ export default function ManagerDashboard() {
                                           </div>
                                           <div className="flex flex-col items-end gap-2">
                                             <Badge variant="destructive">
-                                              🚩 {uncollectedCount + lowRatingCount} Issues
+                                              🚩 {problemCollections} Issues
                                             </Badge>
                                             <div className="text-xs text-muted-foreground">
-                                              {householdCollections.length}/10 collections
+                                              {householdCollections.length} total collections
                                             </div>
                                           </div>
                                         </div>
@@ -1856,10 +1889,12 @@ export default function ManagerDashboard() {
                                 .sort((a, b) => new Date(b.collectionDate).getTime() - new Date(a.collectionDate).getTime())
                                 .slice(0, 10);
                               
-                              const uncollectedCount = 10 - householdCollections.length;
-                              const lowRatingCount = householdCollections.filter(c => (c.segregationRating || 0) < 4).length;
+                              const problemCollections = householdCollections.filter(c => 
+                                (c.segregationRating && c.segregationRating < 4) || 
+                                (c.status === "not_collected" && c.missedReason && c.missedReason.includes("segregat"))
+                              ).length;
                               
-                              return (uncollectedCount + lowRatingCount) >= 3;
+                              return problemCollections >= 3;
                             }).length === 0 && (
                               <div className="text-center py-8">
                                 <CheckCircle className="w-12 h-12 text-green-500 mx-auto mb-3" />
@@ -1888,21 +1923,26 @@ export default function ManagerDashboard() {
                                   const householdCollections = allCollections
                                     .filter(c => c.householdId === household.id)
                                     .sort((a, b) => new Date(b.collectionDate).getTime() - new Date(a.collectionDate).getTime())
-                                    .slice(0, 10);
+                                    .slice(0, 10); // Last 10 collections for this household
                                   
-                                  const uncollectedCount = 10 - householdCollections.length;
-                                  const lowRatingCount = householdCollections.filter(c => (c.segregationRating || 0) < 4).length;
+                                  // Count collections where waste was not collected due to poor segregation or rating < 4
+                                  const problemCollections = householdCollections.filter(c => 
+                                    (c.segregationRating && c.segregationRating < 4) || 
+                                    (c.status === "not_collected" && c.missedReason && c.missedReason.includes("segregat"))
+                                  ).length;
                                   
-                                  return (uncollectedCount + lowRatingCount) < 3;
+                                  return problemCollections < 3;
                                 })
                                 .map((household) => {
                                   const householdCollections = allCollections
                                     .filter(c => c.householdId === household.id)
                                     .sort((a, b) => new Date(b.collectionDate).getTime() - new Date(a.collectionDate).getTime())
-                                    .slice(0, 10);
+                                    .slice(0, 10); // Last 10 collections for this household
                                   
-                                  const uncollectedCount = 10 - householdCollections.length;
-                                  const lowRatingCount = householdCollections.filter(c => (c.segregationRating || 0) < 4).length;
+                                  const problemCollections = householdCollections.filter(c => 
+                                    (c.segregationRating && c.segregationRating < 4) || 
+                                    (c.status === "not_collected" && c.missedReason && c.missedReason.includes("segregat"))
+                                  ).length;
                                   const avgRating = householdCollections.length > 0 
                                     ? (householdCollections.reduce((sum, c) => sum + (c.segregationRating || 0), 0) / householdCollections.length).toFixed(1)
                                     : "0.0";
@@ -1918,7 +1958,7 @@ export default function ManagerDashboard() {
                                             </p>
                                             <div className="mt-2 flex gap-4 text-sm">
                                               <span className="text-green-600">
-                                                Collections: {householdCollections.length}/10
+                                                Collections: {householdCollections.length} total
                                               </span>
                                               <span className="text-blue-600">
                                                 Avg rating: {avgRating}/5
@@ -1933,7 +1973,7 @@ export default function ManagerDashboard() {
                                               🟢 Excellent
                                             </Badge>
                                             <div className="text-xs text-muted-foreground">
-                                              {uncollectedCount + lowRatingCount} issues only
+                                              {problemCollections} problem collections only
                                             </div>
                                           </div>
                                         </div>
