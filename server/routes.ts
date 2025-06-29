@@ -5,6 +5,8 @@ import { storage } from "./storage";
 import bcrypt from "bcrypt";
 import multer from "multer";
 import session from "express-session";
+import rateLimit from "express-rate-limit";
+import helmet from "helmet";
 import { insertUserSchema, insertVillageSchema, insertHouseholdSchema, insertCollectorSchema, insertWasteCollectionSchema, insertIssueSchema, insertAnnouncementSchema, insertAttendanceSchema, insertFeedbackSchema } from "@shared/schema";
 import { z } from "zod";
 import path from "path";
@@ -15,6 +17,25 @@ const upload = multer({
   dest: 'uploads/',
   limits: {
     fileSize: 5 * 1024 * 1024, // 5MB limit
+    files: 1, // Only allow 1 file per request
+  },
+  fileFilter: (req, file, cb) => {
+    // Allow only specific file types
+    const allowedMimes = [
+      'image/jpeg',
+      'image/jpg', 
+      'image/png',
+      'image/webp',
+      'audio/mpeg',
+      'audio/wav',
+      'audio/mp3'
+    ];
+    
+    if (allowedMimes.includes(file.mimetype)) {
+      cb(null, true);
+    } else {
+      cb(new Error('Invalid file type. Only images and audio files are allowed.'));
+    }
   },
 });
 
@@ -43,15 +64,45 @@ const requireRole = (roles: string[]) => (req: any, res: any, next: any) => {
 };
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Rate limiting
+  const limiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 100, // Limit each IP to 100 requests per windowMs
+    message: 'Too many requests, please try again later.',
+  });
+
+  const authLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 5, // Limit login attempts to 5 per 15 minutes
+    message: 'Too many login attempts, please try again later.',
+  });
+
+  app.use('/api/', limiter);
+  app.use('/api/auth/login', authLimiter);
+
+  // Security headers
+  app.use(helmet({
+    contentSecurityPolicy: {
+      directives: {
+        defaultSrc: ["'self'"],
+        styleSrc: ["'self'", "'unsafe-inline'"],
+        scriptSrc: ["'self'"],
+        imgSrc: ["'self'", "data:", "https://res.cloudinary.com"],
+        connectSrc: ["'self'"],
+      },
+    },
+  }));
+
   // Session configuration
   app.use(session({
     secret: process.env.SESSION_SECRET || 'your-secret-key',
     resave: false,
     saveUninitialized: false,
     cookie: {
-      secure: false, // Set to true in production with HTTPS
+      secure: process.env.NODE_ENV === 'production', // Enable in production
       httpOnly: true,
       maxAge: 24 * 60 * 60 * 1000, // 24 hours
+      sameSite: 'strict', // CSRF protection
     },
   }));
 

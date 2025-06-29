@@ -2,6 +2,10 @@ import dotenv from 'dotenv';
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
+import { validateEnv } from "./env-validation";
+
+// Validate environment variables on startup
+validateEnv();
 
 // Load environment variables from .env file
 dotenv.config();
@@ -106,7 +110,7 @@ app.get("/icons/:filename", (req, res) => {
   try {
     const filename = req.params.filename;
     const iconPath = path.join(process.cwd(), "public", "icons", filename);
-    
+
     if (!fs.existsSync(iconPath)) {
       return res.status(404).send("Icon not found");
     }
@@ -119,7 +123,7 @@ app.get("/icons/:filename", (req, res) => {
     } else if (filename.endsWith('.ico')) {
       res.setHeader("Content-Type", "image/x-icon");
     }
-    
+
     res.setHeader("Cache-Control", "public, max-age=31536000"); // Cache for 1 year
     res.sendFile(iconPath);
   } catch (error) {
