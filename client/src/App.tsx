@@ -47,6 +47,9 @@ function Router() {
     return (
       <Switch>
         <Route path="/login" component={Login} />
+        <Route path="/privacy-policy" component={PrivacyPolicy} />
+        <Route path="/terms-of-service" component={TermsOfService} />
+        <Route path="/data-protection" component={DataProtection} />
         <Route>
           {() => {
             setLocation("/login");
@@ -103,9 +106,6 @@ function Router() {
       <Route path="/">
         {() => getDashboardComponent()}
       </Route>
-      <Route path="/privacy-policy" component={PrivacyPolicy} />
-      <Route path="/terms-of-service" component={TermsOfService} />
-      <Route path="/data-protection" component={DataProtection} />
       <Route component={NotFound} />
     </Switch>
   );
