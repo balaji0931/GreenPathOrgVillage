@@ -10,6 +10,7 @@ import { InstallPWA } from "@/components/InstallPWA";
 import Footer from "@/components/Footer";
 import { useTranslation } from 'react-i18next';
 import { Leaf } from "lucide-react";
+import { useToast } from "@/hooks/use-toast"
 
 export default function Login() {
   const [userId, setUserId] = useState("");
