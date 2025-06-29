@@ -42,6 +42,12 @@ import {
   type InsertCollectorComplaint,
   type InsertModerator,
   type InsertModeratorVillageAssignment,
+  collectorTrackingSessions,
+  collectorLocationTracking,
+  type CollectorTrackingSession,
+  type CollectorLocationTracking,
+  type InsertCollectorTrackingSession,
+  type InsertCollectorLocationTracking,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, count, avg, sum, gte, lte, isNotNull, and, or, like, asc, sql, lt, inArray } from "drizzle-orm";
@@ -2119,6 +2125,113 @@ export class DatabaseStorage implements IStorage {
         segregationRateDistribution: [],
       };
     }
+  }
+
+  // Tracking methods
+  async startTrackingSession(collectorId: number): Promise<CollectorTrackingSession> {
+    const today = new Date().toISOString().split('T')[0];
+    const [session] = await db.insert(collectorTrackingSessions).values({
+      collectorId: collectorId,
+      sessionDate: today,
+      startTime: new Date(),
+      endTime: null,
+    }).returning();
+    return session;
+  }
+
+  async endTrackingSession(sessionId: number): Promise<CollectorTrackingSession> {
+    const [session] = await db.update(collectorTrackingSessions)
+      .set({ endTime: new Date(), status: 'completed' })
+      .where(eq(collectorTrackingSessions.id, sessionId))
+      .returning();
+    return session;
+  }
+
+  async getActiveTrackingSession(collectorId: number): Promise<CollectorTrackingSession | null> {
+    const [session] = await db.select()
+      .from(collectorTrackingSessions)
+      .where(and(
+        eq(collectorTrackingSessions.collectorId, collectorId),
+        sql`${collectorTrackingSessions.endTime} IS NULL`
+      ));
+    return session || null;
+  }
+
+  async saveLocationUpdate(sessionId: number, latitude: number, longitude: number, accuracy?: number): Promise<CollectorLocationTracking> {
+    // Get session to find collector ID
+    const [session] = await db.select()
+      .from(collectorTrackingSessions)
+      .where(eq(collectorTrackingSessions.id, sessionId));
+    
+    if (!session) {
+      throw new Error('Tracking session not found');
+    }
+
+    const [location] = await db.insert(collectorLocationTracking).values({
+      sessionId: sessionId,
+      collectorId: session.collectorId,
+      latitude: latitude.toString(),
+      longitude: longitude.toString(),
+      accuracy: accuracy || null,
+      timestamp: new Date(),
+    }).returning();
+    return location;
+  }
+
+  async getTrackingDataForManager(villageId: string): Promise<any[]> {
+    const fiveDaysAgo = new Date();
+    fiveDaysAgo.setDate(fiveDaysAgo.getDate() - 5);
+
+    const trackingSessions = await db
+      .select({
+        id: collectorTrackingSessions.id,
+        collectorId: collectorTrackingSessions.collectorId,
+        startTime: collectorTrackingSessions.startTime,
+        endTime: collectorTrackingSessions.endTime,
+        collectorName: collectors.name,
+        collectorUid: collectors.uid,
+      })
+      .from(collectorTrackingSessions)
+      .innerJoin(collectors, eq(collectorTrackingSessions.collectorId, collectors.id))
+      .where(and(
+        eq(collectors.villageId, villageId),
+        gte(collectorTrackingSessions.startTime, fiveDaysAgo)
+      ))
+      .orderBy(desc(collectorTrackingSessions.startTime));
+
+    const colors = ['#ff0000', '#00ff00', '#0000ff', '#ffff00', '#ff00ff'];
+    const trackingData = [];
+
+    for (const session of trackingSessions) {
+      const locations = await db
+        .select()
+        .from(collectorLocationTracking)
+        .where(eq(collectorLocationTracking.sessionId, session.id))
+        .orderBy(collectorLocationTracking.timestamp);
+
+      const dayIndex = Math.floor((Date.now() - new Date(session.startTime).getTime()) / (24 * 60 * 60 * 1000));
+      const dayLabel = dayIndex === 0 ? 'Today' : dayIndex === 1 ? 'Yesterday' : `${dayIndex} days ago`;
+
+      trackingData.push({
+        id: session.id,
+        collectorId: session.collectorId,
+        collector: { name: session.collectorName, uid: session.collectorUid },
+        sessionDate: new Date(session.startTime).toISOString().split('T')[0],
+        startTime: session.startTime,
+        endTime: session.endTime,
+        status: session.endTime ? 'completed' : 'active',
+        color: colors[dayIndex % colors.length],
+        dayLabel,
+        locationTracking: locations.map(loc => ({
+          id: loc.id,
+          latitude: loc.latitude,
+          longitude: loc.longitude,
+          timestamp: loc.timestamp
+        }))
+      });
+    }
+
+    return trackingData;
   }
 }
 
