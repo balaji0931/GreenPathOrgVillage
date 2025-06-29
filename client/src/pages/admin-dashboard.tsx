@@ -782,7 +782,6 @@ export default function AdminDashboard() {
                           size="sm"
                           variant="outline"
                           onClick={() => setSelectedVillage(village.villageId)}
-                          ```python
 className="p-1 sm:p-2"
                         >
                           <Eye className="h-3 w-3 sm:h-4 sm:w-4" />
@@ -2258,7 +2257,8 @@ className="p-1 sm:p-2"
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Users</SelectItem                <SelectItem value="managers">Managers Only</SelectItem>
+                <SelectItem value="all">All Users</SelectItem>                
+                <SelectItem value="managers">Managers Only</SelectItem>
                 <SelectItem value="generators">Generators Only</SelectItem>
               </SelectContent>
             </Select>

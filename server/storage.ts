@@ -911,7 +911,7 @@ export class DatabaseStorage implements IStorage {
     performanceRating?: number;
     markedBy: string;
   }): Promise<Attendance> {
-    const [newAttendance]```text
+    const [newAttendance]
  = await db.insert(attendance).values(attendanceData).returning();
     return newAttendance;
   }

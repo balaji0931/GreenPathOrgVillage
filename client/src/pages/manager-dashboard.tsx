@@ -2499,7 +2499,7 @@ export default function ManagerDashboard() {
               <Input id="newPassword" name="newPassword" type="password" required />
             </div>
             <div>
-              <Label htmlFor="confirmPassword">Confirm New Password</Input</Label>
+              <Label htmlFor="confirmPassword">Confirm New Password</Label>
               <Input id="confirmPassword" name="confirmPassword" type="password" required />
             </div>
             <Button type="submit" disabled={changePasswordMutation.isPending}>
