@@ -1756,7 +1756,7 @@ export default function ManagerDashboard() {
                         </CardHeader>
                         <CardContent>
                           <div className="space-y-3">
-                            {Array.from({ length: 7 }).map``((_, i) => {
+                            {Array.from({ length: 7 }).map((_, i) => {
                               const date = new Date();
                               date.setDate(date.getDate() - (6 - i));
                               const dateStr = date.toDateString();

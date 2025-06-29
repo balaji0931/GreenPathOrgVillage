@@ -49,17 +49,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     resave: false,
     saveUninitialized: false,
     cookie: {
-      secure: false, // Set to true in production with HTTPS
+      secure: true, // Set to true in production with HTTPS
       httpOnly: true,
-      maxAge: 24 * 60 * 60 * 1000, // 24 hours
+      maxAge: 30 * 24 * 60 * 60 * 1000, // 24 hours
     },
   }));
 
   // Initialize admin user if not exists
-  const adminUser = await storage.getUserByUserId('admin');
+  const adminUser = await storage.getUserByUserId('ADMIN');
   if (!adminUser) {
     await storage.createUser({
-      userId: 'admin',
+      userId: 'ADMIN',
       password: await bcrypt.hash('admin', 10),
       role: 'admin',
       name: 'Administrator',
