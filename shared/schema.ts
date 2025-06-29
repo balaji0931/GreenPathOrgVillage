@@ -160,28 +160,6 @@ export const collectorComplaints = pgTable("collector_complaints", {
   resolvedAt: timestamp("resolved_at"),
 });
 
-// Collector tracking sessions
-export const collectorTrackingSessions = pgTable("collector_tracking_sessions", {
-  id: serial("id").primaryKey(),
-  collectorId: integer("collector_id").notNull().references(() => collectors.id),
-  sessionDate: date("session_date").notNull(),
-  startTime: timestamp("start_time").notNull(),
-  endTime: timestamp("end_time"),
-  status: text("status", { enum: ["active", "completed"] }).default("active"),
-  createdAt: timestamp("created_at").defaultNow(),
-});
-
-// Collector location tracking
-export const collectorLocationTracking = pgTable("collector_location_tracking", {
-  id: serial("id").primaryKey(),
-  sessionId: integer("session_id").notNull().references(() => collectorTrackingSessions.id),
-  collectorId: integer("collector_id").notNull().references(() => collectors.id),
-  latitude: decimal("latitude", { precision: 10, scale: 8 }).notNull(),
-  longitude: decimal("longitude", { precision: 11, scale: 8 }).notNull(),
-  accuracy: real("accuracy"), // GPS accuracy in meters
-  timestamp: timestamp("timestamp").notNull().defaultNow(),
-});
-
 // Relations
 export const villagesRelations = relations(villages, ({ many }) => ({
   users: many(users),
@@ -279,25 +257,6 @@ export const collectorComplaintsRelations = relations(collectorComplaints, ({ on
   }),
 }));
 
-export const collectorTrackingSessionsRelations = relations(collectorTrackingSessions, ({ one, many }) => ({
-  collector: one(collectors, {
-    fields: [collectorTrackingSessions.collectorId],
-    references: [collectors.id],
-  }),
-  locationTracking: many(collectorLocationTracking),
-}));
-
-export const collectorLocationTrackingRelations = relations(collectorLocationTracking, ({ one }) => ({
-  session: one(collectorTrackingSessions, {
-    fields: [collectorLocationTracking.sessionId],
-    references: [collectorTrackingSessions.id],
-  }),
-  collector: one(collectors, {
-    fields: [collectorLocationTracking.collectorId],
-    references: [collectors.id],
-  }),
-}));
-
 // Insert schemas
 export const insertVillageSchema = createInsertSchema(villages).omit({
   id: true,
@@ -362,16 +321,6 @@ export const insertCollectorComplaintSchema = createInsertSchema(collectorCompla
   resolvedAt: true,
 });
 
-export const insertCollectorTrackingSessionSchema = createInsertSchema(collectorTrackingSessions).omit({
-  id: true,
-  createdAt: true,
-});
-
-export const insertCollectorLocationTrackingSchema = createInsertSchema(collectorLocationTracking).omit({
-  id: true,
-  timestamp: true,
-});
-
 // Moderators table
 export const moderators = pgTable("moderators", {
   id: serial("id").primaryKey(),
@@ -432,12 +381,10 @@ export type InsertAnnouncement = z.infer<typeof insertAnnouncementSchema>;
 export type InsertAttendance = z.infer<typeof insertAttendanceSchema>;
 export type InsertFeedback = z.infer<typeof insertFeedbackSchema>;
 export type InsertSegregator = z.infer<typeof insertSegregatorSchema>;
-export type InsertSegregatorAttendanceType = z.infer<typeof insertSegregatorAttendanceSchema>;
-export type InsertCollectorComplaintType = z.infer<typeof insertCollectorComplaintSchema>;
+export type InsertSegregatorAttendance = z.infer<typeof insertSegregatorAttendanceSchema>;
+export type InsertCollectorComplaint = z.infer<typeof insertCollectorComplaintSchema>;
 export type InsertModerator = z.infer<typeof insertModeratorSchema>;
 export type InsertModeratorVillageAssignment = z.infer<typeof insertModeratorVillageAssignmentSchema>;
-export type InsertCollectorTrackingSession = z.infer<typeof insertCollectorTrackingSessionSchema>;
-export type InsertCollectorLocationTracking = z.infer<typeof insertCollectorLocationTrackingSchema>;
 
 export type Village = typeof villages.$inferSelect;
 export type User = typeof users.$inferSelect;
@@ -449,9 +396,9 @@ export type Announcement = typeof announcements.$inferSelect;
 export type Attendance = typeof attendance.$inferSelect;
 export type Feedback = typeof feedback.$inferSelect;
 export type Segregator = typeof segregators.$inferSelect;
+export type InsertSegregatorAttendance = typeof segregatorAttendance.$inferInsert;
 export type SegregatorAttendance = typeof segregatorAttendance.$inferSelect;
 export type CollectorComplaint = typeof collectorComplaints.$inferSelect;
+export type InsertCollectorComplaint = typeof collectorComplaints.$inferInsert;
 export type Moderator = typeof moderators.$inferSelect;
 export type ModeratorVillageAssignment = typeof moderatorVillageAssignments.$inferSelect;
-export type CollectorTrackingSession = typeof collectorTrackingSessions.$inferSelect;
-export type CollectorLocationTracking = typeof collectorLocationTracking.$inferSelect;
