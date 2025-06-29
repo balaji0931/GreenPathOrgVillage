@@ -13,18 +13,6 @@ import ModeratorDashboard from "@/pages/moderator-dashboard";
 import NotFound from "@/pages/not-found";
 import "./i18n";
 
-function App() {
-  return (
-    <QueryClientProvider client={queryClient}>
-      <div className="min-h-screen bg-gray-50">
-        <Router />
-        <InstallPWA />
-      </div>
-      <Toaster />
-    </QueryClientProvider>
-  );
-}
-
 function Router() {
   const { user, isLoading, isAuthenticated } = useAuth();
   const [location, setLocation] = useLocation();
@@ -41,17 +29,7 @@ function Router() {
   }
 
   if (!isAuthenticated || !user) {
-    return (
-      <Switch>
-        <Route path="/login" component={Login} />
-        <Route>
-          {() => {
-            setLocation("/login");
-            return <Login />;
-          }}
-        </Route>
-      </Switch>
-    );
+    return <Login />;
   }
 
   // Determine the correct dashboard based on user role
@@ -68,7 +46,6 @@ function Router() {
       case 'generator':
         return <GeneratorDashboard />;
       default:
-        setLocation("/login");
         return <Login />;
     }
   };
@@ -76,11 +53,7 @@ function Router() {
   return (
     <Switch>
       <Route path="/login">
-        {() => {
-          // Redirect authenticated users to their dashboard
-          setLocation("/");
-          return getDashboardComponent();
-        }}
+        {() => getDashboardComponent()}
       </Route>
       <Route path="/admin">
         {() => user.role === 'admin' ? <AdminDashboard /> : getDashboardComponent()}
@@ -102,6 +75,18 @@ function Router() {
       </Route>
       <Route component={NotFound} />
     </Switch>
+  );
+}
+
+function App() {
+  return (
+    <QueryClientProvider client={queryClient}>
+      <div className="min-h-screen bg-gray-50">
+        <Router />
+        <InstallPWA />
+      </div>
+      <Toaster />
+    </QueryClientProvider>
   );
 }
 
