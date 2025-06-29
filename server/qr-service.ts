@@ -155,7 +155,7 @@ export const generateBulkQRCodesPDF = async (
     currentY += qrSize + 6;
     pdf.setTextColor(0, 0, 0);
     pdf.setFontSize(10);
-    pdf.text(`HouseUID: ${household.uid}`, centerX, currentY, { align: 'center' });
+    pdf.text(`HouseUID: GEN-${household.uid}`, centerX, currentY, { align: 'center' });
     currentY += 6;
     pdf.text(`Head: ${household.headName}`, centerX, currentY, { align: 'center' });
     currentY += 6;
