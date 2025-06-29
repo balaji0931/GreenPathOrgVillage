@@ -783,9 +783,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Announcements routes
   app.post('/api/announcements', requireAuth, requireRole(['admin', 'manager']), async (req, res) => {
     try {
-      const { message, targetAudience, photoUrl } = req.body;
+      const { message, targetAudience, villageId: requestVillageId, photoUrl } = req.body;
       const createdBy = req.session.userId!;
-      const villageId = req.session.role === 'admin' ? null : req.session.villageId!;
+      const villageId = req.session.role === 'admin' ? (requestVillageId || null) : req.session.villageId!;
 
       const announcement = await storage.createAnnouncement({
         message,

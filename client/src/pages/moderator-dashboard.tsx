@@ -224,7 +224,38 @@ export default function ModeratorDashboard() {
   // Create announcement mutation
   const createAnnouncementMutation = useMutation({
     mutationFn: async (data: typeof announcement) => {
-      const response = await apiRequest("POST", "/api/moderator/announcements", data);
+      let photoUrl = null;
+
+      // Upload photo first if provided
+      if (data.photoFile) {
+        try {
+          const formData = new FormData();
+          formData.append('file', data.photoFile);
+          
+          const uploadResponse = await fetch('/api/upload/photo', {
+            method: 'POST',
+            body: formData,
+            credentials: 'include'
+          });
+          
+          if (!uploadResponse.ok) {
+            throw new Error('Photo upload failed');
+          }
+          
+          const uploadResult = await uploadResponse.json();
+          photoUrl = uploadResult.url;
+        } catch (uploadError) {
+          console.error('Photo upload error:', uploadError);
+          // Continue without photo if upload fails
+        }
+      }
+
+      // Create announcement with photo URL
+      const response = await apiRequest("POST", "/api/moderator/announcements", {
+        message: data.message,
+        targetAudience: data.targetAudience,
+        photoUrl: photoUrl,
+      });
       return response.json();
     },
     onSuccess: (data) => {

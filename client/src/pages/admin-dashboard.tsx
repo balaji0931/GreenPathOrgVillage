@@ -194,15 +194,37 @@ export default function AdminDashboard() {
   // Create announcement mutation
   const createAnnouncementMutation = useMutation({
     mutationFn: async (data: any) => {
-      const formData = new FormData();
-      formData.append("message", data.message);
-      formData.append("targetAudience", data.targetAudience);
+      let photoUrl = null;
+
+      // Upload photo first if provided
       if (data.photoFile) {
-        formData.append("photo", data.photoFile);
+        try {
+          const formData = new FormData();
+          formData.append('file', data.photoFile);
+          
+          const uploadResponse = await fetch('/api/upload/photo', {
+            method: 'POST',
+            body: formData,
+            credentials: 'include'
+          });
+          
+          if (!uploadResponse.ok) {
+            throw new Error('Photo upload failed');
+          }
+          
+          const uploadResult = await uploadResponse.json();
+          photoUrl = uploadResult.url;
+        } catch (uploadError) {
+          console.error('Photo upload error:', uploadError);
+          // Continue without photo if upload fails
+        }
       }
 
-      const response = await apiRequest("POST", "/api/announcements", formData, {
-        "Content-Type": "multipart/form-data",
+      // Create announcement with photo URL
+      const response = await apiRequest("POST", "/api/announcements", {
+        message: data.message,
+        targetAudience: data.targetAudience,
+        photoUrl: photoUrl,
       });
       return response.json();
     },
