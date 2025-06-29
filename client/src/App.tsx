@@ -27,7 +27,7 @@ function App() {
 
 function Router() {
   const { user, isLoading, isAuthenticated } = useAuth();
-  const [, setLocation] = useLocation();
+  const [location, setLocation] = useLocation();
 
   if (isLoading) {
     return (
@@ -88,17 +88,42 @@ function Router() {
       <Route path="/generator" component={GeneratorDashboard} />
       <Route path="/">
         {() => {
-          // Route based on user role
+          if (isLoading) return <div>Loading...</div>;
+          if (!user) {
+            if (location !== "/login") {
+              setLocation("/login");
+            }
+            return <Login />;
+          }
+
+          // Handle role-based routing with explicit path checking
+          const currentPath = location || "/";
+
           switch (user.role) {
             case 'admin':
+              if (currentPath !== "/" && currentPath !== "/admin") {
+                setLocation("/");
+              }
               return <AdminDashboard />;
-            case 'moderator':
-              return <ModeratorDashboard />;
             case 'manager':
+              if (currentPath !== "/" && currentPath !== "/manager") {
+                setLocation("/");
+              }
               return <ManagerDashboard />;
+            case 'moderator':
+              if (currentPath !== "/" && currentPath !== "/moderator") {
+                setLocation("/");
+              }
+              return <ModeratorDashboard />;
             case 'collector':
+              if (currentPath !== "/" && currentPath !== "/collector") {
+                setLocation("/");
+              }
               return <CollectorDashboard />;
             case 'generator':
+              if (currentPath !== "/" && currentPath !== "/generator") {
+                setLocation("/");
+              }
               return <GeneratorDashboard />;
             default:
               setLocation("/login");
