@@ -125,41 +125,10 @@ export default function DataProtection() {
             </section>
 
             <section>
-              <h2 className="text-xl font-semibold mb-3 flex items-center">
-                <Trash2 className="h-5 w-5 mr-2" />
-                Data Retention Policy
-              </h2>
-              <div className="space-y-2 text-sm">
-                <div className="grid md:grid-cols-3 gap-4">
-                  <div className="text-center p-3 bg-blue-50 rounded-lg">
-                    <h3 className="font-medium">Personal Data</h3>
-                    <p className="text-2xl font-bold text-blue-600">2 Years</p>
-                    <p className="text-xs">After account closure</p>
-                  </div>
-                  <div className="text-center p-3 bg-green-50 rounded-lg">
-                    <h3 className="font-medium">Collection Records</h3>
-                    <p className="text-2xl font-bold text-green-600">5 Years</p>
-                    <p className="text-xs">For regulatory compliance</p>
-                  </div>
-                  <div className="text-center p-3 bg-purple-50 rounded-lg">
-                    <h3 className="font-medium">System Logs</h3>
-                    <p className="text-2xl font-bold text-purple-600">1 Year</p>
-                    <p className="text-xs">For security auditing</p>
-                  </div>
-                </div>
-              </div>
-            </section>
-
-            <section>
-              <h2 className="text-xl font-semibold mb-3">Contact Data Protection Officer</h2>
-              <div className="bg-gray-100 p-4 rounded-lg text-sm">
-                <p><strong>Data Protection Officer:</strong> [DPO Name]</p>
-                <p><strong>Email:</strong> dpo@greenpath.org</p>
-                <p><strong>Phone:</strong> [DPO Phone Number]</p>
-                <p><strong>Address:</strong> [Organization Address]</p>
-                <p className="mt-2 text-xs text-gray-600">
-                  Response time: Within 30 days of request submission
-                </p>
+              <h2 className="text-xl font-semibold mb-3">Contact Information</h2>
+              <div className="text-sm">
+                <p>For questions about data protection and compliance, contact:</p>
+                <p>Email: greenpathforgood@gmail.com</p>
               </div>
             </section>
 

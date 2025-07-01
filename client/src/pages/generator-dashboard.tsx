@@ -28,6 +28,8 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import {
   Home,
+  Languages,
+  Leaf,
   FileText,
   MessageSquare,
   AlertTriangle,
@@ -410,23 +412,16 @@ export default function GeneratorDashboard() {
   return (
     <div className="min-h-screen bg-gray-50 max-w-md mx-auto relative">
       {/* Mobile Header */}
-      <div className="bg-green-600 text-white p-4 sticky top-0 z-10">
+      <div className="bg-green-600 text-white px-4 py-3 sticky top-0 z-10">
         <div className="flex items-center justify-between">
           <div className="flex items-center">
-            <Home className="mr-3" size={24} />
+            <Leaf className="" size={24} strokeWidth={2.5}/>
             <div>
-              <h1 className="font-bold text-lg">{t('app.title')}</h1>
-              <p className="text-xs opacity-90">{t('roles.generator')}</p>
+              <h1 className="font-bold text-2xl">{t('app.title')}</h1>
             </div>
           </div>
           <div className="flex items-center space-x-2">
             <LanguageSwitcher />
-            <div className="text-right">
-              <p className="text-sm font-medium">
-                {user?.name?.split(" - ")[1] || user?.name}
-              </p>
-              <p className="text-xs opacity-90">{user?.userId}</p>
-            </div>
           </div>
         </div>
       </div>
@@ -1167,26 +1162,26 @@ export default function GeneratorDashboard() {
       </div>
 
       {/* Bottom Navigation */}
-      <div className="fixed bottom-0 left-1/2 transform -translate-x-1/2 w-full max-w-md bg-white border-t border-gray-200 px-4 py-2">
+      <div className="fixed bottom-0 left-1/2 transform -translate-x-1/2 w-full max-w-md bg-white border-t border-gray-200 px-2 py-2 rounded-lg">
         <div className="flex justify-around">
           {[
-            { id: "home", label: t('navigation.dashboard'), icon: Home },
-            { id: "reports", label: t('navigation.reports'), icon: BarChart3 },
-            { id: "collections", label: t('navigation.collections'), icon: FileText },
-            { id: "issues", label: t('navigation.issues'), icon: AlertTriangle },
-            { id: "announcements", label: t('navigation.announcements'), icon: Bell },
-            { id: "profile", label: t('navigation.profile'), icon: User },
+            { id: "home", icon: Home },
+            { id: "reports", icon: BarChart3 },
+            { id: "collections", icon: FileText },
+            { id: "issues", icon: AlertTriangle },
+            { id: "announcements", icon: Bell },
+            { id: "profile", icon: User },
           ].map((tab) => (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`flex flex-col items-center py-2 px-3 rounded-lg transition-colors ${
+              className={`flex flex-col items-center py-1 px-3 rounded-lg transition-colors ${
                 activeTab === tab.id
                   ? "text-green-600 bg-green-50"
                   : "text-gray-500 hover:text-gray-700"
               }`}
             >
-              <tab.icon className="w-5 h-5 mb-1" />
+              <tab.icon className="w-6 h-6 mb-1" strokeWidth={2.5} />
               <span className="text-xs font-medium">{tab.label}</span>
             </button>
           ))}

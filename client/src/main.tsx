@@ -1,4 +1,5 @@
 import React from "react";
+import { useLocation } from "wouter";
 import { createRoot } from "react-dom/client";
 import { Switch, Route } from "wouter";
 import "./index.css";
@@ -14,6 +15,9 @@ import ManagerDashboard from "./pages/manager-dashboard";
 import CollectorDashboard from "./pages/collector-dashboard";
 import GeneratorDashboard from "./pages/generator-dashboard";
 import ModeratorDashboard from "./pages/moderator-dashboard";
+import PrivacyPolicy from "@/pages/privacy-policy";
+import TermsOfService from "@/pages/terms-of-service";
+import DataProtection from "@/pages/data-protection";
 import NotFound from "./pages/not-found";
 import { InstallPWA } from "./components/InstallPWA";
 import { I18nextProvider } from 'react-i18next';
@@ -21,6 +25,7 @@ import i18n from './i18n';
 
 function Router() {
   const { user, isLoading } = useAuth();
+  const [location] = useLocation();
 
   if (isLoading) {
     return (
@@ -29,8 +34,20 @@ function Router() {
       </div>
     );
   }
+  const publicRoutes = ["/privacy-policy", "/terms-of-service", "/data-protection"];
+  if (publicRoutes.includes(location)) {
+    return (
+      <Switch>
+        <Route path="/privacy-policy" component={PrivacyPolicy} />
+        <Route path="/terms-of-service" component={TermsOfService} />
+        <Route path="/data-protection" component={DataProtection} />
+        <Route component={NotFound} />
+      </Switch>
+    );
+  }
 
   if (!user) {
+    
     return <LoginPage />;
   }
 

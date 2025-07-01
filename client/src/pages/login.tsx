@@ -52,12 +52,12 @@ export default function Login() {
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-green-pale to-white p-4">
       <div className="w-full max-w-md">
         {/* Language Switcher */}
-        <div className="flex justify-end mb-4">
+        <div className="flex justify-end">
           <LanguageSwitcher />
         </div>
 
         {/* Logo Section */}
-        <div className="text-center mb-8">
+        <div className="text-center mb-4">
           <div className="inline-flex items-center justify-center w-20 h-20 bg-green-primary rounded-full mb-4">
             <Leaf className="text-white text-3xl" size={36} />
           </div>
@@ -69,8 +69,8 @@ export default function Login() {
 
         {/* Login Form */}
         <Card className="shadow-lg">
-          <CardContent className="pt-6">
-            <form onSubmit={handleSubmit} className="space-y-6">
+          <CardContent className="pt-3">
+            <form onSubmit={handleSubmit} className="space-y-3">
               <div>
                 <Label htmlFor="userId" className="text-gray-700 font-medium">
                   {t('auth.userId')}
@@ -81,7 +81,7 @@ export default function Login() {
                   placeholder="V001-M1, V001-C1, V001-G1..."
                   value={userId}
                   onChange={(e) => setUserId(e.target.value)}
-                  className="mt-2 focus:ring-2 focus:ring-green-primary focus:border-transparent"
+                  className="mt-1 focus:ring-2 focus:ring-green-primary focus:border-transparent"
                   required
                 />
               </div>
@@ -110,8 +110,8 @@ export default function Login() {
                   className="mt-0.5 h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 rounded"
                   required
                 />
-                <label htmlFor="terms-agreement" className="text-sm text-gray-600">
-                  I agree to the{" "}
+                <label htmlFor="terms-agreement" className="text-[12px] md:text-sm text-gray-600">
+                  I agree to {" "}
                   <a
                     href="/terms-of-service"
                     target="_blank"

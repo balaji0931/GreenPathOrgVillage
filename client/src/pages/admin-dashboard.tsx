@@ -518,7 +518,7 @@ export default function AdminDashboard() {
     { id: "managers", label: "Managers", icon: Users },
     { id: "moderators", label: "Moderators", icon: UserPlus },
     { id: "reports", label: "Reports", icon: BarChart3 },
-    { id: "announcements", label: "Announcements", icon: Megaphone },
+    { id: "announcements", label: "Announcements", icon: Bell },
     { id: "profile", label: "Profile", icon: User },
   ];
 
@@ -782,7 +782,6 @@ export default function AdminDashboard() {
                   <TableHead className="text-xs sm:text-sm">Name</TableHead>
                   <TableHead className="text-xs sm:text-sm hidden sm:table-cell">Households</TableHead>
                   <TableHead className="text-xs sm:text-sm hidden sm:table-cell">Collectors</TableHead>
-                  <TableHead className="text-xs sm:text-sm">Issues</TableHead>
                   <TableHead className="text-xs sm:text-sm">Actions</TableHead>
                 </TableRow>
               </TableHeader>
@@ -794,14 +793,9 @@ export default function AdminDashboard() {
                     <TableCell className="text-xs sm:text-sm hidden sm:table-cell">{village.totalHouseholds || 0}</TableCell>
                     <TableCell className="text-xs sm:text-sm hidden sm:table-cell">{village.totalCollectors || 0}</TableCell>
                     <TableCell>
-                      <Badge variant={village.openIssues > 0 ? "destructive" : "secondary"} className="text-xs">
-                        {village.openIssues || 0}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex space-x-1 sm:space-x-2">
+                      <div className="flex space-x-3 sm:space-x-2">
                         <Button
-                          size="sm"
+                          size="md"
                           variant="outline"
                           onClick={() => setSelectedVillage(village.villageId)}
 className="p-1 sm:p-2"
@@ -1138,7 +1132,6 @@ className="p-1 sm:p-2"
                   <TableHead className="text-xs sm:text-sm">Name</TableHead>
                   <TableHead className="text-xs sm:text-sm hidden md:table-cell">Village</TableHead>
                   <TableHead className="text-xs sm:text-sm hidden sm:table-cell">Phone</TableHead>
-                  <TableHead className="text-xs sm:text-sm">Status</TableHead>
                   <TableHead className="text-xs sm:text-sm">Actions</TableHead>
                 </TableRow>
               </TableHeader>
@@ -1150,10 +1143,7 @@ className="p-1 sm:p-2"
                     <TableCell className="text-xs sm:text-sm hidden md:table-cell">{manager.villageId}</TableCell>
                     <TableCell className="text-xs sm:text-sm hidden sm:table-cell">{manager.phone}</TableCell>
                     <TableCell>
-                      <Badge variant="default" className="text-xs">Active</Badge>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex space-x-1 sm:space-x-2">
+                      <div className="flex space-x-3 sm:space-x-3">
                         <Button
                           size="sm"
                           variant="outline"
@@ -2465,31 +2455,22 @@ className="p-1 sm:p-2"
   return (
     <div className="min-h-screen bg-background flex flex-col">
       {/* Mobile Top Bar */}
-      <div className="md:hidden bg-white border-b px-3 py-3">
+      <div className="md:hidden bg-green-600 border-b px-3 py-3 sticky top-0 left-0 z-10">
         <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-3">
-            <Leaf className="h-6 w-6 text-green-600" />
+          <div className="flex items-center">
+            <Leaf className="h-6 w-6 text-white" strokeWidth={3}/>
             <div>
-              <h1 className="text-lg font-bold">GreenPath</h1>
-              <p className="text-xs text-muted-foreground">Admin Panel</p>
+              <h1 className="text-2xl text-white font-bold ">GreenPath</h1>
             </div>
           </div>
           <div className="flex items-center space-x-2">
             <Button 
-              onClick={() => setActiveTab("profile")} 
-              variant="ghost" 
-              size="sm"
-              className="p-2"
-            >
-              <Settings className="h-4 w-4" />
-            </Button>
-            <Button 
               onClick={logout} 
               variant="ghost" 
-              size="sm"
+              size="md"
               className="p-2"
             >
-              <LogOut className="h-4 w-4" />
+              <LogOut className="h-6 w-6 text-white" strokeWidth={3}/>
             </Button>
           </div>
         </div>
@@ -2497,7 +2478,7 @@ className="p-1 sm:p-2"
 
       <div className="flex flex-1 min-h-0">
         {/* Desktop Sidebar */}
-        <div className="hidden md:flex w-64 bg-white border-r flex-col">
+        <div className="hidden md:flex fixed top-0 h-screen w-64 bg-white border-r flex-col z-50">
           {/* Header */}
           <div className="p-6 border-b">
             <div className="flex items-center justify-between">
@@ -2571,7 +2552,7 @@ className="p-1 sm:p-2"
         </div>
 
         {/* Mobile Bottom Navigation */}
-        <div className="fixed bottom-0 left-0 right-0 bg-white border-t z-50 md:hidden">
+        <div className="fixed bottom-0 left-0 right-0 bg-green-100 border-t z-50 md:hidden px-3 py-1">
           <div className="grid grid-cols-7 gap-1">
             {navigationItems.map((item) => {
               const Icon = item.icon;
@@ -2586,8 +2567,7 @@ className="p-1 sm:p-2"
                       : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
                   )}
                 >
-                  <Icon className="h-5 w-5 mb-1" strokeWidth={2.5} />
-                  <span className="truncate">{item.label}</span>
+                  <Icon className="h-6 w-6 mb-1" strokeWidth={2.5} />
                 </button>
               );
             })}
@@ -2595,7 +2575,7 @@ className="p-1 sm:p-2"
         </div>
 
         {/* Main Content */}
-        <div className="flex-1 overflow-auto pb-20 md:pb-6">
+        <div className="flex-1 overflow-auto pb-20 md:pb-6 md:ml-64">
           <div className="p-3 sm:p-6">
             {renderContent()}
           </div>

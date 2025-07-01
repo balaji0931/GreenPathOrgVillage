@@ -1,6 +1,6 @@
 {
   "app": {
-    "title": "GreenPath Org",
+    "title": "GreenPath",
     "loading": "Loading...",
     "error": "An error occurred",
     "success": "Success!",
@@ -75,7 +75,8 @@
     "passwordPlaceholder": "Enter your password",
     "loginDescription": "Sign in to access your waste management dashboard",
     "unauthorized": "Unauthorized access",
-    "sessionExpired": "Session expired"
+    "sessionExpired": "Session expired",
+    "changePassword":"Change Password"
   },
   "roles": {
     "admin": "Administrator",

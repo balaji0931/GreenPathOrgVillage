@@ -36,7 +36,9 @@ import { useToast } from "@/hooks/use-toast";
 import {
   Plus,
   Users,
+  User,
   Home,
+  Languages,
   Star,
   Trash2,
   Edit,
@@ -57,6 +59,7 @@ import {
   CheckCircle,
   Bell,
   LayoutDashboard,
+  Leaf,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -757,43 +760,47 @@ export default function ManagerDashboard() {
     <>
       <div className="min-h-screen flex flex-col bg-gray-50">
         {/* Top Navbar */}
-        <div className="bg-white border-b px-3 sm:px-6 py-3 sm:py-4">
-          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 sm:gap-4">
-            <div className="flex-1 min-w-0">
-              <h1 className="text-lg sm:text-xl font-semibold truncate">
-                {t("navigation.dashboard")}
-              </h1>
-              <p className="text-xs sm:text-sm text-muted-foreground truncate">
-                Village: {user?.villageId} | Manager: {user?.name}
-              </p>
-            </div>
-            <div className="flex items-center gap-2 sm:gap-4 flex-wrap">
-              <LanguageSwitcher />
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setShowPasswordDialog(true)}
-                className="flex-1 sm:flex-none text-xs sm:text-sm"
-              >
-                <Settings className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
-                Password
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => logoutMutation.mutate()}
-                className="flex-1 sm:flex-none text-xs sm:text-sm"
-              >
-                <LogOut className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
-                {t("auth.logout")}
-              </Button>
+        <div className="bg-green-600 text-white px-4 py-3 sticky top-0 z-10">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center">
+              <Leaf className="" size={24} strokeWidth={2.5}/>
+            <div>
+              <h1 className="font-bold text-2xl">{t('app.title')}</h1>
             </div>
           </div>
+            <div className="flex items-center spae-x-1">
+                <button
+                  key={'announcements'}
+                  onClick={() => setActiveTab('announcements')}
+                  className={cn(
+                    "flex-1 flex items-center justify-center py-3 transition-colors",
+                    activeTab === 'announcements'
+                      ? "text-green-600 bg-blue-50 p-2 rounded-md"
+                      : "text-white hover:text-green-900 hover:bg-gray-50 p-2 rounded-md",
+                  )}
+                >
+                  <Bell className="h-5 w-5" strokeWidth={3}/>
+                </button>
+                                <button
+                  key={'profile'}
+                  onClick={() => setActiveTab('profile')}
+                  className={cn(
+                    "flex-1 flex items-center justify-center py-3 transition-colors",
+                    activeTab === 'profile'
+                      ? "text-green-600 bg-blue-50 p-2 rounded-md"
+                      : "text-white p-2 rounded-md",
+                  )}
+                >
+                  <User className="h-5 w-5" strokeWidth={3}/>
+                </button>
+
+            </div>
         </div>
+      </div>
 
         <div className="flex flex-1 min-h-0">
           {/* Mobile Bottom Navigation */}
-          <div className="fixed bottom-0 left-0 right-0 bg-white border-t z-50 md:hidden">
+          <div className="fixed bottom-0 left-0 right-0 bg-green-100 border-t z-50 md:hidden">
             <div className="flex">
               {[
                 { id: "overview", icon: LayoutDashboard },
@@ -809,18 +816,18 @@ export default function ManagerDashboard() {
                   className={cn(
                     "flex-1 flex items-center justify-center py-3 transition-colors",
                     activeTab === id
-                      ? "text-blue-600 bg-blue-50"
+                      ? "text-blue-600 bg-blue-50 rouded-lg"
                       : "text-gray-600 hover:text-gray-900 hover:bg-gray-50",
                   )}
                 >
-                  <Icon className="h-5 w-5" />
+                  <Icon className="h-6 w-6" strokeWidth={2.5}/>
                 </button>
               ))}
             </div>
           </div>
 
           {/* Desktop Sidebar Navigation */}
-          <div className="hidden md:block w-64 bg-white border-r">
+          <div className="hidden md:block w-64 bg-white border-r sticky top-[64px] h-[calc(100vh-64px)] overflow-y-auto">
             <div className="p-4">
               <nav className="space-y-2">
                 {[
@@ -831,6 +838,7 @@ export default function ManagerDashboard() {
                   { id: "issues", icon: AlertTriangle, label: "Issues" },
                   { id: "reports", icon: BarChart3, label: "Reports" },
                   { id: "announcements", icon: Bell, label: "Announcements" },
+                  { id: "profile", icon: User, label: "Profile" },
                 ].map(({ id, icon: Icon, label }) => (
                   <button
                     key={id}
@@ -943,23 +951,40 @@ export default function ManagerDashboard() {
                     <CardTitle>Filter Analytics</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <div className="flex gap-4 items-center">
-                      <div className="flex-1">
-                        <Label htmlFor="analytics-date">Filter by Date</Label>
+                    <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
+                      
+                      {/* Date Input */}
+                      <div className="flex-1 w-full">
+                        <Label htmlFor="analytics-date" className="text-sm mb-1 block">
+                          Filter by Date
+                        </Label>
                         <Input
                           id="analytics-date"
                           type="date"
                           value={filters.date}
                           onChange={(e) => updateFilter("date", e.target.value)}
                           placeholder="Select date to filter analytics"
+                          className="w-full"
                         />
                       </div>
-                      <Button variant="outline" onClick={clearFilters}>
-                        Clear Filter
-                      </Button>
+
+                      {/* Clear Button */}
+                      <div className="w-full sm:w-auto">
+                        <Button
+                          variant="outline"
+                          onClick={clearFilters}
+                          className="w-full sm:w-auto"
+                        >
+                          Clear Filter
+                        </Button>
+                      </div>
                     </div>
+
+                    {/* Info Text */}
                     <p className="text-xs text-muted-foreground mt-2">
-                      {filters.date ? `Showing analytics for ${new Date(filters.date).toLocaleDateString()}` : "Showing overall analytics"}
+                      {filters.date
+                        ? `Showing analytics for ${new Date(filters.date).toLocaleDateString()}`
+                        : "Showing overall analytics"}
                     </p>
                   </CardContent>
                 </Card>
@@ -986,35 +1011,38 @@ export default function ManagerDashboard() {
                         <DialogTrigger asChild>
                           <Card className="cursor-pointer hover:shadow-md transition-shadow">
                             <CardContent className="p-4">
-                              <div className="flex items-center justify-between">
+                              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                                
+                                {/* Left: Collector Info */}
                                 <div className="flex-1">
-                                  <h3 className="font-semibold">{collector.name}</h3>
-                                  <p className="text-sm text-muted-foreground">
+                                  <h3 className="font-semibold break-words">{collector.name}</h3>
+                                  <p className="text-sm text-muted-foreground break-words">
                                     ID: {collector.uid} | Phone: {collector.phone}
                                   </p>
-                                  <div className="grid grid-cols-3 gap-4 text-center mt-3">
+
+                                  {/* Stats Grid */}
+                                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 text-center mt-3">
                                     <div>
-                                      <div className="text-lg font-bold">
-                                        {totalCollections}
-                                      </div>
+                                      <div className="text-lg font-bold">{totalCollections}</div>
                                       <div className="text-xs text-muted-foreground">Collections</div>
                                     </div>
                                     <div>
-                                      <div className="text-lg font-bold">
-                                        {averageRating}
-                                      </div>
+                                      <div className="text-lg font-bold">{averageRating}</div>
                                       <div className="text-xs text-muted-foreground">Avg Rating</div>
                                     </div>
                                   </div>
                                 </div>
-                                <div className="flex items-center gap-2">
-                                  <Badge className="text-xs">
+
+                                {/* Right: Badge */}
+                                <div className="sm:self-start">
+                                  <Badge className="text-xs whitespace-nowrap">
                                     Click to view feedbacks
                                   </Badge>
                                 </div>
                               </div>
                             </CardContent>
                           </Card>
+
                         </DialogTrigger>
 
                         <DialogContent className="max-w-6xl max-h-[80vh] overflow-y-auto">
@@ -1048,7 +1076,7 @@ export default function ManagerDashboard() {
                 </div>
 
                 <Tabs value={householdSubTab} onValueChange={setHouseholdSubTab} className="w-full">
-                  <TabsList className="grid w-full grid-cols-3">
+                  <TabsList className="grid w-full grid-cols-3 gap-2">
                     <TabsTrigger value="list">View All</TabsTrigger>
                     <TabsTrigger value="bulk">Add HouseHold</TabsTrigger>
                     <TabsTrigger value="qr-download">Download QR</TabsTrigger>
@@ -1300,27 +1328,42 @@ export default function ManagerDashboard() {
                         <CardTitle>Search & Filter</CardTitle>
                       </CardHeader>
                       <CardContent>
-                        <div className="flex gap-4">
+                        <div className="flex flex-col sm:flex-row gap-4">
+                          
+                          {/* Search Input */}
                           <div className="flex-1">
                             <Input
+                              className="w-full"
                               placeholder="Search by name, UID, or house number..."
                               value={filters.search}
                               onChange={(e) => updateFilter("search", e.target.value)}
                             />
                           </div>
-                          <div>
+
+                          {/* Date Picker */}
+                          <div className="w-full sm:w-auto">
                             <Input
+                              className="w-full"
                               type="date"
                               value={filters.date}
                               onChange={(e) => updateFilter("date", e.target.value)}
                             />
                           </div>
-                          <Button variant="outline" onClick={clearFilters}>
-                            Clear
-                          </Button>
+
+                          {/* Clear Button */}
+                          <div className="w-full sm:w-auto">
+                            <Button
+                              variant="outline"
+                              onClick={clearFilters}
+                              className="w-full sm:w-auto"
+                            >
+                              Clear
+                            </Button>
+                          </div>
                         </div>
                       </CardContent>
                     </Card>
+
 
                 <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
                       <StatCard
@@ -1991,6 +2034,71 @@ export default function ManagerDashboard() {
               </div>
             )}
 
+          {activeTab === "profile" && (
+          <div className="space-y-4 p-4">
+            {/* User Info */}
+            <Card>
+              <CardHeader className="pb-3 items-center">
+                <CardTitle className="flex items-center text-2xl font-bold">
+                  <User className="w-6 h-6 mr-2" strokeWidth={3}/>
+                  Profile Information
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3 text-center">
+                <div>
+                  <Label className="text-xs text-gray-600">Name</Label>
+                  <p className="font-medium">{user?.name}</p>
+                </div>
+                <div>
+                  <Label className="text-xs text-gray-600">User ID</Label>
+                  <p className="font-medium">{user?.userId}</p>
+                </div>
+                <div>
+                  <Label className="text-xs text-gray-600">Village</Label>
+                  <p className="font-medium">{user?.villageId}</p>
+                </div>
+                <div>
+                  <Label className="text-xs text-gray-600 pr-3">Role</Label>
+                  <Badge variant="secondary">{user?.role}</Badge>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Settings */}
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="flex items-center text-lg">
+                  <Settings className="w-5 h-5 mr-2" />
+                  Settings
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                            {/* Password Button */}
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowPasswordDialog(true)}
+                className="flex items-center justify-center gap-1 sm:gap-2 flex-1 sm:flex-none text-xs sm:text-sm w-full"
+              >
+                <Settings className="h-3 w-3 sm:h-4 sm:w-4" />
+                <span className="">Change Password</span>
+              </Button>
+
+              {/* Logout Button */}
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => logoutMutation.mutate()}
+                className="flex items-center justify-center gap-1 sm:gap-2 flex-1 sm:flex-none text-xs sm:text-sm w-full"
+              >
+                <LogOut className="h-3 w-3 sm:h-4 sm:w-4" />
+                <span className="">{t("auth.logout")}</span>
+              </Button>
+              </CardContent>
+            </Card>
+          </div>
+        )}
+
             {/* Issues Tab */}
             {activeTab === "issues" && (
               <div className="space-y-6">
@@ -2050,10 +2158,11 @@ export default function ManagerDashboard() {
                         .map((issue) => (
                           <Card key={issue.id}>
                             <CardContent className="p-4">
-                              <div className="flex justify-between items-start gap-3">
-                                <div className="flex-1">
-                                  <div className="flex items-center gap-2 mb-2">
-                                    <h4 className="font-semibold">{issue.title}</h4>
+                              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+                                {/* Left: Issue Info */}
+                                <div className="flex-1 w-full">
+                                  <div className="flex flex-wrap items-center gap-2 mb-2">
+                                    <h4 className="font-semibold break-words">{issue.title}</h4>
                                     <Badge
                                       variant={
                                         issue.status === "open" ? "destructive" :
@@ -2064,19 +2173,21 @@ export default function ManagerDashboard() {
                                     </Badge>
                                     <Badge variant="outline">{issue.category}</Badge>
                                   </div>
-                                  <p className="text-sm text-muted-foreground mb-2">
+                                  <p className="text-sm text-muted-foreground mb-2 break-words">
                                     Reported by: {issue.reportedBy} on {new Date(issue.createdAt).toLocaleDateString()}
                                   </p>
-                                  <p className="text-sm">{issue.description}</p>
+                                  <p className="text-sm break-words">{issue.description}</p>
                                   {issue.managerReply && (
                                     <div className="mt-3 p-3 bg-blue-50 rounded-lg">
-                                      <p className="text-sm">
+                                      <p className="text-sm break-words">
                                         <strong>Manager Reply:</strong> {issue.managerReply}
                                       </p>
                                     </div>
                                   )}
                                 </div>
-                                <div className="flex gap-2">
+
+                                {/* Right: Action Buttons */}
+                                <div className="flex gap-2 mt-3 sm:mt-0 self-end sm:self-auto">
                                   {issue.photoUrl && (
                                     <Button
                                       size="sm"
@@ -2102,6 +2213,7 @@ export default function ManagerDashboard() {
                         ))}
                     </div>
                   </CardContent>
+
                 </Card>
               </div>
             )}

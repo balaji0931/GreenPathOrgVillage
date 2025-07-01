@@ -18,12 +18,13 @@ import { QRScanner } from "@/components/qr-scanner";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import { useOfflineStorage } from "@/lib/offline-storage";
 import { 
-  Home, 
+  Home,
   QrCode, 
   User, 
   Star, 
   Camera, 
   Check, 
+  ScanLine,
   AlertTriangle,
   X, 
   LogOut, 
@@ -40,7 +41,8 @@ import {
   Settings,
   Bell,
   MapPin,
-  Upload
+  Upload,
+  Leaf
 } from "lucide-react";
 
 interface CollectionForm {
@@ -345,17 +347,6 @@ export default function CollectorDashboard() {
       });
     },
   });
-
-
-  // Auto-slide announcements every 5 seconds
-  useEffect(() => {
-    if (announcements && announcements.length > 1) {
-      const interval = setInterval(() => {
-        setCurrentAnnouncementIndex(prev => (prev + 1) % Math.min(announcements.length, 3));
-      }, 5000);
-      return () => clearInterval(interval);
-    }
-  }, [announcements]);
 
   const resetForm = () => {
     setCollectionForm({
@@ -749,33 +740,16 @@ export default function CollectorDashboard() {
   return (
     <div className="min-h-screen bg-gray-50 max-w-md mx-auto relative">
       {/* Mobile Header */}
-      <div className="bg-green-600 text-white p-4 sticky top-0 z-10">
+      <div className="bg-green-600 text-white p-3 sticky top-0 z-10 ">
         <div className="flex items-center justify-between">
           <div className="flex items-center">
-            <Package className="mr-3" size={24} />
+            <Leaf className="" size={24} strokeWidth={2.5}/>
             <div>
-              <h1 className="font-bold text-lg">{t('app.title')}</h1>
-              <div className="flex items-center space-x-2">
-                <p className="text-xs opacity-90">{t('roles.collector')}</p>
-                <div className={`flex items-center text-xs px-2 py-1 rounded-full ${
-                  isOnline ? 'bg-green-500' : 'bg-red-500'
-                }`}>
-                  {isOnline ? '🟢 Online' : '🔴 Offline'}
-                </div>
-                {pendingCount > 0 && (
-                  <div className="bg-orange-500 text-white text-xs px-2 py-1 rounded-full">
-                    {pendingCount} pending
-                  </div>
-                )}
-              </div>
+              <h1 className="font-bold text-2xl">{t('app.title')}</h1>
             </div>
           </div>
           <div className="flex items-center space-x-2">
             <LanguageSwitcher />
-            <div className="text-right">
-              <p className="text-sm font-medium">{user?.name}</p>
-              <p className="text-xs opacity-90">{user?.userId}</p>
-            </div>
           </div>
         </div>
       </div>
@@ -847,89 +821,7 @@ export default function CollectorDashboard() {
                   </Button>
                 </div>
               </div>
-            )}
-
-            {/* Sliding Announcements */}
-            <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="flex items-center justify-between text-lg">
-                  <div className="flex items-center">
-                    <Bell className="w-5 h-5 mr-2 text-blue-600" />
-                    {t('announcements.title')}
-                  </div>
-                  {announcements && announcements.length > 3 && (
-                    <Button 
-                      size="sm" 
-                      variant="outline"
-                      onClick={() => setActiveTab('announcements')}
-                      className="text-xs"
-                    >
-                      {t('app.viewAll')}
-                    </Button>
-                  )}
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                {announcementsLoading ? (
-                  <div className="text-center py-4">
-                    <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-green-600 mx-auto"></div>
-                  </div>
-                ) : announcements && announcements.length > 0 ? (
-                  <div className="relative overflow-hidden">
-                    <div 
-                      className="flex transition-transform duration-500 ease-in-out"
-                      style={{ 
-                        transform: `translateX(-${(currentAnnouncementIndex % Math.min(announcements.length, 3)) * 100}%)`,
-                        width: `${Math.min(announcements.length, 3) * 100}%`
-                      }}
-                    >
-                      {announcements.slice(0, 3).map((announcement: any, index: number) => (
-                        <div 
-                          key={announcement.id} 
-                          className="w-full flex-shrink-0 px-1"
-                        >
-                          <div className="p-3 bg-blue-50 rounded-lg border-l-4 border-blue-400">
-                            <p className="text-sm text-gray-800 font-medium line-clamp-2">{announcement.message}</p>
-                            {announcement.photoUrl && (
-                              <div className="mt-2">
-                                <img 
-                                  src={announcement.photoUrl} 
-                                  alt="Announcement" 
-                                  className="max-w-full h-24 object-cover rounded border"
-                                />
-                              </div>
-                            )}
-                            <p className="text-xs text-gray-500 mt-1">
-                              {new Date(announcement.createdAt).toLocaleDateString()}
-                            </p>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                    {announcements.length > 1 && (
-                      <div className="flex justify-center mt-3 space-x-1">
-                        {announcements.slice(0, 3).map((_, index) => (
-                          <button
-                            key={index}
-                            onClick={() => setCurrentAnnouncementIndex(index)}
-                            className={`w-2 h-2 rounded-full transition-colors ${
-                              index === (currentAnnouncementIndex % Math.min(announcements.length, 3)) 
-                                ? 'bg-blue-600' 
-                                : 'bg-gray-300'
-                            }`}
-                          />
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                ) : (
-                  <div className="text-center py-4">
-                    <Bell className="w-8 h-8 text-gray-300 mx-auto mb-2" />
-                    <p className="text-gray-500 text-sm">No announcements</p>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+            )}           
 
             {/* Search Bar */}
             <div className="relative">
@@ -1094,7 +986,7 @@ export default function CollectorDashboard() {
               <h2 className="text-lg font-bold">{t('issues.title')}</h2>
               <Button
                 onClick={() => setShowIssueModal(true)}
-                className="h-16 flex-col space-y-1 bg-red-50 text-red-700 hover:bg-red-100"
+                className="h-10 flex space-y-1 bg-red-50 text-red-700 hover:bg-red-100"
                 variant="outline"
               >
                 <Plus className="w-6 h-6" />
@@ -1103,7 +995,7 @@ export default function CollectorDashboard() {
             </div>
 
             {/* Filter Tabs */}
-            <div className="flex space-x-2 overflow-x-auto pb-2">
+            <div className="flex justify-evenly space-x-2 overflow-x-auto pb-2">
               {[
                 { key: 'All', label: t('app.all') },
                 { key: 'Open', label: t('issues.open') },
@@ -1275,24 +1167,6 @@ export default function CollectorDashboard() {
                   <LogOut className="mr-3" size={20} />
 {t('auth.logout')}
                 </Button>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg">{t('dashboard.todaySummary')}</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-2 gap-4 text-center">
-                  <div>
-                    <div className="text-2xl font-bold text-green-600">{dailyStats.completed}</div>
-                    <div className="text-sm text-gray-600">{t('collections.title')}</div>
-                  </div>
-                  <div>
-                    <div className="text-2xl font-bold text-orange-500">{dailyStats.missed}</div>
-                    <div className="text-sm text-gray-600">{t('dashboard.missed')}</div>
-                  </div>
-                </div>
               </CardContent>
             </Card>
           </div>
@@ -2055,18 +1929,17 @@ export default function CollectorDashboard() {
       </Dialog>
 
       {/* Bottom Navigation */}
-      <div className="fixed bottom-0 left-1/2 transform -translate-x-1/2 w-full max-w-md bg-white border-t border-gray-200 z-20">
+      <div className="fixed bottom-0 left-1/2 transform -translate-x-1/2 w-full max-w-md bg-green-100 border-t border-gray-200 z-20 rounded-lg">
         <div className="grid grid-cols-5 gap-1 p-2">
           <button
             className={`flex flex-col items-center py-2 px-1 rounded-lg transition-colors ${
               activeTab === 'home' 
-                ? 'bg-green-100 text-green-600' 
+                ? 'bg-green-200 text-green-600' 
                 : 'text-gray-500 hover:text-green-600 hover:bg-gray-50'
             }`}
             onClick={() => setActiveTab('home')}
           >
-            <Home size={18} />
-            <span className="text-xs mt-1">{t('navigation.dashboard')}</span>
+            <Home size={24} strokeWidth={2.5}/>
           </button>
           <button
             className={`flex flex-col items-center py-2 px-1 rounded-lg transition-colors ${
@@ -2079,8 +1952,7 @@ export default function CollectorDashboard() {
               setShowScanner(true);
             }}
           >
-            <QrCode size={18} />
-            <span className="text-xs mt-1">{t('collections.scanQR')}</span>
+            <ScanLine size={24} strokeWidth={2.5}/>
           </button>
           <button
             className={`flex flex-col items-center py-2 px-1 rounded-lg transition-colors ${
@@ -2090,8 +1962,7 @@ export default function CollectorDashboard() {
             }`}
             onClick={() => setActiveTab('announcements')}
           >
-            <Bell size={18} />
-            <span className="text-xs mt-1">{t('navigation.announcements')}</span>
+            <Bell size={24} strokeWidth={2.5}/>
           </button>
           <button
             className={`flex flex-col items-center py-2 px-1 rounded-lg transition-colors ${
@@ -2101,8 +1972,7 @@ export default function CollectorDashboard() {
             }`}
             onClick={() => setActiveTab('issues')}
           >
-            <AlertCircle size={18} />
-            <span className="text-xs mt-1">{t('navigation.issues')}</span>
+            <AlertCircle size={24} strokeWidth={2.5}/>
           </button>
           <button
             className={`flex flex-col items-center py-2 px-1 rounded-lg transition-colors ${
@@ -2112,8 +1982,7 @@ export default function CollectorDashboard() {
             }`}
             onClick={() => setActiveTab('profile')}
           >
-            <User size={18} />
-            <span className="text-xs mt-1">{t('navigation.profile')}</span>
+            <User size={24} strokeWidth={2.5}/>
           </button>
         </div>
       </div>
