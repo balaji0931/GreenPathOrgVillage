@@ -12,6 +12,7 @@ import {
   segregators,
   segregatorAttendance,
   collectorComplaints,
+  householdActions,
   moderators,
   moderatorVillageAssignments,
   type Village,
@@ -26,6 +27,7 @@ import {
   type Segregator,
   type SegregatorAttendance,
   type CollectorComplaint,
+  type HouseholdAction,
   type Moderator,
   type ModeratorVillageAssignment,
   type InsertVillage,
@@ -40,6 +42,7 @@ import {
   type InsertSegregator,
   type InsertSegregatorAttendance,
   type InsertCollectorComplaint,
+  type InsertHouseholdAction,
   type InsertModerator,
   type InsertModeratorVillageAssignment,
 } from "@shared/schema";
@@ -236,6 +239,11 @@ export interface IStorage {
   getDetailedAttendanceByVillageAndDate(villageId: string, date: Date): Promise<DetailedAttendance[]>;
   getHouseholdByGeneratorUserId(generatorUserId: string): Promise<Household | undefined>;
   getComplaintsByVillage(villageId: string): Promise<any[]>;
+
+  // Household Actions (Red Flag Management)
+  createHouseholdAction(action: InsertHouseholdAction): Promise<HouseholdAction>;
+  getHouseholdActions(householdId: number): Promise<HouseholdAction[]>;
+  getRedFlagCount(householdId: number): Promise<number>;
 
   // Moderator operations
   createModerator(moderator: InsertModerator): Promise<Moderator>;
@@ -2119,6 +2127,39 @@ export class DatabaseStorage implements IStorage {
         segregationRateDistribution: [],
       };
     }
+  }
+  // Household Actions (Red Flag Management)
+  async createHouseholdAction(insertAction: InsertHouseholdAction): Promise<HouseholdAction> {
+    const [action] = await db
+      .insert(householdActions)
+      .values(insertAction)
+      .returning();
+    return action;
+  }
+
+  async getHouseholdActions(householdId: number): Promise<HouseholdAction[]> {
+    return await db
+      .select()
+      .from(householdActions)
+      .where(eq(householdActions.householdId, householdId))
+      .orderBy(desc(householdActions.createdAt));
+  }
+
+  async getRedFlagCount(householdId: number): Promise<number> {
+    // Calculate red flag count based on collections - 3+ missed collections or rating < 4
+    const householdCollections = await db
+      .select()
+      .from(wasteCollections)
+      .where(eq(wasteCollections.householdId, householdId))
+      .orderBy(desc(wasteCollections.collectionDate))
+      .limit(10); // Last 10 collections
+
+    const problemCollections = householdCollections.filter(c => 
+      (c.segregationRating && c.segregationRating < 4) || 
+      (c.status === "not_collected" && c.missedReason && c.missedReason.includes("segregat"))
+    ).length;
+
+    return problemCollections;
   }
 }
 

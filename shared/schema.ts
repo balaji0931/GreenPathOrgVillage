@@ -161,6 +161,17 @@ export const collectorComplaints = pgTable("collector_complaints", {
   resolvedAt: timestamp("resolved_at"),
 });
 
+// Household Actions (Red Flag Management)
+export const householdActions = pgTable("household_actions", {
+  id: serial("id").primaryKey(),
+  householdId: integer("household_id").notNull().references(() => households.id),
+  actionType: text("action_type").notNull(), // "warning", "penalty", "notice", "resolved"
+  actionNote: text("action_note").notNull(),
+  takenBy: text("taken_by").notNull(), // Manager UID
+  redFlagCount: integer("red_flag_count").default(1), // Count of red flags at time of action
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
 // Relations
 export const villagesRelations = relations(villages, ({ many }) => ({
   users: many(users),
@@ -258,6 +269,13 @@ export const collectorComplaintsRelations = relations(collectorComplaints, ({ on
   }),
 }));
 
+export const householdActionsRelations = relations(householdActions, ({ one }) => ({
+  household: one(households, {
+    fields: [householdActions.householdId],
+    references: [households.id],
+  }),
+}));
+
 // Insert schemas
 export const insertVillageSchema = createInsertSchema(villages).omit({
   id: true,
@@ -322,6 +340,11 @@ export const insertCollectorComplaintSchema = createInsertSchema(collectorCompla
   resolvedAt: true,
 });
 
+export const insertHouseholdActionSchema = createInsertSchema(householdActions).omit({
+  id: true,
+  createdAt: true,
+});
+
 // Moderators table
 export const moderators = pgTable("moderators", {
   id: serial("id").primaryKey(),
@@ -384,6 +407,7 @@ export type InsertFeedback = z.infer<typeof insertFeedbackSchema>;
 export type InsertSegregator = z.infer<typeof insertSegregatorSchema>;
 export type InsertSegregatorAttendance = z.infer<typeof insertSegregatorAttendanceSchema>;
 export type InsertCollectorComplaint = z.infer<typeof insertCollectorComplaintSchema>;
+export type InsertHouseholdAction = z.infer<typeof insertHouseholdActionSchema>;
 export type InsertModerator = z.infer<typeof insertModeratorSchema>;
 export type InsertModeratorVillageAssignment = z.infer<typeof insertModeratorVillageAssignmentSchema>;
 
@@ -399,5 +423,6 @@ export type Feedback = typeof feedback.$inferSelect;
 export type Segregator = typeof segregators.$inferSelect;
 export type SegregatorAttendance = typeof segregatorAttendance.$inferSelect;
 export type CollectorComplaint = typeof collectorComplaints.$inferSelect;
+export type HouseholdAction = typeof householdActions.$inferSelect;
 export type Moderator = typeof moderators.$inferSelect;
 export type ModeratorVillageAssignment = typeof moderatorVillageAssignments.$inferSelect;
