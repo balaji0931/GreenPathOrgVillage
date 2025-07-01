@@ -244,6 +244,8 @@ export interface IStorage {
   createHouseholdAction(action: InsertHouseholdAction): Promise<HouseholdAction>;
   getHouseholdActions(householdId: number): Promise<HouseholdAction[]>;
   getRedFlagCount(householdId: number): Promise<number>;
+  getAllHouseholdsWithRedFlagData(villageId: string): Promise<any[]>;
+  getHouseholdRedFlagHistory(householdId: number): Promise<any>;
 
   // Moderator operations
   createModerator(moderator: InsertModerator): Promise<Moderator>;
@@ -902,7 +904,8 @@ export class DatabaseStorage implements IStorage {
       createdAt: segregatorAttendance.createdAt,
       segregatorName: segregators.name,
     })
-    .from(segregatorAttendance)
+    ```text
+.from(segregatorAttendance)
     .innerJoin(segregators, eq(segregatorAttendance.segregatorId, segregators.id))    .where(
       and(
         eq(segregators.villageId, villageId),
@@ -1758,8 +1761,7 @@ export class DatabaseStorage implements IStorage {
           collections: count(wasteCollections.id),
           avgRating: sql<number>`COALESCE(AVG(CAST(${wasteCollections.segregationRating} AS DECIMAL(3,2))), 0)`
         })
-        .from(wasteCollections)
-        .innerJoin(households, eq(wasteCollections.householdId, households.id))
+        .from(wasteCollections        .innerJoin(households, eq(wasteCollections.householdId, households.id))
         .innerJoin(villages, eq(households.villageId, villages.villageId))
         .where(inArray(households.villageId, targetVillageIds))
         .groupBy(households.villageId, villages.name)
@@ -2156,7 +2158,7 @@ export class DatabaseStorage implements IStorage {
       .from(wasteCollections)
       .where(eq(wasteCollections.householdId, householdId))
       .orderBy(desc(wasteCollections.collectionDate))
-      .limit(10); // Last 10 collections
+      .limit(10); // Last 10 collections for this household
 
     const problemCollections = householdCollections.filter(c => 
       (c.segregationRating && c.segregationRating < 4) || 
@@ -2164,6 +2166,106 @@ export class DatabaseStorage implements IStorage {
     ).length;
 
     return problemCollections;
+  }
+
+  async getAllHouseholdsWithRedFlagData(villageId: string): Promise<any[]> {
+    try {
+      // Get all households for the village
+      const households = await db
+        .select()
+        .from(households)
+        .where(eq(households.villageId, villageId))
+        .orderBy(households.uid);
+
+      const householdsWithFlags = await Promise.all(
+        households.map(async (household) => {
+          // Get last 10 collections for this household
+          const recentCollections = await db
+            .select()
+            .from(wasteCollections)
+            .where(eq(wasteCollections.householdId, household.id))
+            .orderBy(desc(wasteCollections.collectionDate))
+            .limit(10);
+
+          // Count problem collections (poor segregation or missed due to segregation issues)
+          const problemCollections = recentCollections.filter(c => 
+            (c.segregationRating && c.segregationRating < 4) || 
+            (c.status === "not_collected" && c.missedReason && c.missedReason.includes("segregat"))
+          );
+
+          const currentRedFlagCount = problemCollections.length;
+          const isRedFlag = currentRedFlagCount >= 3; // 3+ problem collections = red flag
+
+          // Get household actions (management history)
+          const actions = await db
+            .select()
+            .from(householdActions)
+            .where(eq(householdActions.householdId, household.id))
+            .orderBy(desc(householdActions.createdAt))
+            .limit(5); // Last 5 actions
+
+          // Count total actions taken
+          const totalActions = await db
+            .select({ count: count() })
+            .from(householdActions)
+            .where(eq(householdActions.householdId, household.id));
+
+          return {
+            ...household,
+            isRedFlag,
+            currentRedFlagCount,
+            totalRedFlagOccurrences: totalActions[0]?.count || 0,
+            recentActions: actions,
+            lastCollectionRating: recentCollections[0]?.segregationRating || null,
+            missedCollections: recentCollections.filter(c => c.status === "not_collected").length,
+            avgRating: recentCollections.length > 0 
+              ? (recentCollections.reduce((sum, c) => sum + (c.segregationRating || 0), 0) / recentCollections.length).toFixed(1)
+              : "0.0"
+          };
+        })
+      );
+
+      return householdsWithFlags;
+    } catch (error) {
+      console.error("Get households with red flag data error:", error);
+      throw error;
+    }
+  }
+
+  async getHouseholdRedFlagHistory(householdId: number): Promise<any> {
+    try {
+      // Get current red flag count
+      const currentRedFlagCount = await this.getRedFlagCount(householdId);
+
+      // Get all actions for this household
+      const actions = await db
+        .select({
+          id: householdActions.id,
+          actionType: householdActions.actionType,
+          actionNote: householdActions.actionNote,
+          takenBy: householdActions.takenBy,
+          redFlagCount: householdActions.redFlagCount,
+          createdAt: householdActions.createdAt,
+        })
+        .from(householdActions)
+        .where(eq(householdActions.householdId, householdId))
+        .orderBy(desc(householdActions.createdAt));
+
+      // Count total actions
+      const totalActions = await db
+        .select({ count: count() })
+        .from(householdActions)
+        .where(eq(householdActions.householdId, householdId));
+
+      return {
+        currentRedFlagCount,
+        totalRedFlagOccurrences: totalActions[0]?.count || 0,
+        actions,
+      };
+    } catch (error) {
+      console.error("Get household red flag history error:", error);
+      throw error;
+    }
   }
 }
 
