@@ -904,9 +904,9 @@ export class DatabaseStorage implements IStorage {
       createdAt: segregatorAttendance.createdAt,
       segregatorName: segregators.name,
     })
-    ```text
-.from(segregatorAttendance)
-    .innerJoin(segregators, eq(segregatorAttendance.segregatorId, segregators.id))    .where(
+    .from(segregatorAttendance)
+    .innerJoin(segregators, eq(segregatorAttendance.segregatorId, segregators.id))
+    .where(
       and(
         eq(segregators.villageId, villageId),
         eq(segregatorAttendance.date, date)
@@ -1761,7 +1761,8 @@ export class DatabaseStorage implements IStorage {
           collections: count(wasteCollections.id),
           avgRating: sql<number>`COALESCE(AVG(CAST(${wasteCollections.segregationRating} AS DECIMAL(3,2))), 0)`
         })
-        .from(wasteCollections        .innerJoin(households, eq(wasteCollections.householdId, households.id))
+        .from(wasteCollections)
+        .innerJoin(households, eq(wasteCollections.householdId, households.id))
         .innerJoin(villages, eq(households.villageId, villages.villageId))
         .where(inArray(households.villageId, targetVillageIds))
         .groupBy(households.villageId, villages.name)
@@ -2152,7 +2153,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getRedFlagCount(householdId: number): Promise<number> {
-    // Calculate red flag count based on collections - 3+ missed collections or rating < 4
+    // Calculate red flag count based on recent collections
     const householdCollections = await db
       .select()
       .from(wasteCollections)
@@ -2160,10 +2161,22 @@ export class DatabaseStorage implements IStorage {
       .orderBy(desc(wasteCollections.collectionDate))
       .limit(10); // Last 10 collections for this household
 
-    const problemCollections = householdCollections.filter(c => 
-      (c.segregationRating && c.segregationRating < 4) || 
-      (c.status === "not_collected" && c.missedReason && c.missedReason.includes("segregat"))
-    ).length;
+    const problemCollections = householdCollections.filter(c => {
+      // Poor segregation rating (less than 3)
+      const poorRating = c.segregationRating !== null && c.segregationRating < 3;
+      
+      // Missed collection due to segregation issues
+      const missedDueToSegregation = c.status === "not_collected" && 
+        c.missedReason && 
+        (c.missedReason.toLowerCase().includes("segregat") || 
+         c.missedReason.toLowerCase().includes("sorting") ||
+         c.missedReason.toLowerCase().includes("mixed"));
+      
+      // Very low rating (below 2)
+      const veryLowRating = c.segregationRating !== null && c.segregationRating < 2;
+
+      return poorRating || missedDueToSegregation || veryLowRating;
+    }).length;
 
     return problemCollections;
   }
@@ -2171,14 +2184,14 @@ export class DatabaseStorage implements IStorage {
   async getAllHouseholdsWithRedFlagData(villageId: string): Promise<any[]> {
     try {
       // Get all households for the village
-      const households = await db
+      const allHouseholds = await db
         .select()
         .from(households)
         .where(eq(households.villageId, villageId))
         .orderBy(households.uid);
 
       const householdsWithFlags = await Promise.all(
-        households.map(async (household) => {
+        allHouseholds.map(async (household) => {
           // Get last 10 collections for this household
           const recentCollections = await db
             .select()
@@ -2187,11 +2200,23 @@ export class DatabaseStorage implements IStorage {
             .orderBy(desc(wasteCollections.collectionDate))
             .limit(10);
 
-          // Count problem collections (poor segregation or missed due to segregation issues)
-          const problemCollections = recentCollections.filter(c => 
-            (c.segregationRating && c.segregationRating < 4) || 
-            (c.status === "not_collected" && c.missedReason && c.missedReason.includes("segregat"))
-          );
+          // Count problem collections (poor segregation, missed collections, or low ratings)
+          const problemCollections = recentCollections.filter(c => {
+            // Poor segregation rating (less than 3)
+            const poorRating = c.segregationRating !== null && c.segregationRating < 3;
+            
+            // Missed collection due to segregation issues
+            const missedDueToSegregation = c.status === "not_collected" && 
+              c.missedReason && 
+              (c.missedReason.toLowerCase().includes("segregat") || 
+               c.missedReason.toLowerCase().includes("sorting") ||
+               c.missedReason.toLowerCase().includes("mixed"));
+            
+            // Very low rating (below 2)
+            const veryLowRating = c.segregationRating !== null && c.segregationRating < 2;
+
+            return poorRating || missedDueToSegregation || veryLowRating;
+          });
 
           const currentRedFlagCount = problemCollections.length;
           const isRedFlag = currentRedFlagCount >= 3; // 3+ problem collections = red flag
@@ -2210,6 +2235,12 @@ export class DatabaseStorage implements IStorage {
             .from(householdActions)
             .where(eq(householdActions.householdId, household.id));
 
+          // Calculate average rating from collections with ratings
+          const collectionsWithRating = recentCollections.filter(c => c.segregationRating !== null);
+          const avgRating = collectionsWithRating.length > 0 
+            ? (collectionsWithRating.reduce((sum, c) => sum + (c.segregationRating || 0), 0) / collectionsWithRating.length).toFixed(1)
+            : "0.0";
+
           return {
             ...household,
             isRedFlag,
@@ -2218,12 +2249,18 @@ export class DatabaseStorage implements IStorage {
             recentActions: actions,
             lastCollectionRating: recentCollections[0]?.segregationRating || null,
             missedCollections: recentCollections.filter(c => c.status === "not_collected").length,
-            avgRating: recentCollections.length > 0 
-              ? (recentCollections.reduce((sum, c) => sum + (c.segregationRating || 0), 0) / recentCollections.length).toFixed(1)
-              : "0.0"
+            avgRating,
+            problemCollections: problemCollections.length,
+            totalCollections: recentCollections.length
           };
         })
       );
+
+      console.log(`Red flag analysis for village ${villageId}:`, {
+        totalHouseholds: householdsWithFlags.length,
+        redFlags: householdsWithFlags.filter(h => h.isRedFlag).length,
+        greenFlags: householdsWithFlags.filter(h => !h.isRedFlag).length
+      });
 
       return householdsWithFlags;
     } catch (error) {

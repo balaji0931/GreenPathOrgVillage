@@ -2081,6 +2081,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get('/api/red-flags/village', requireAuth, requireRole(['manager']), async (req, res) => {
+    try {
+      const villageId = req.session.villageId!;
+      const householdsWithRedFlags = await storage.getAllHouseholdsWithRedFlagData(villageId);
+      res.json(householdsWithRedFlags);
+    } catch (error) {
+      console.error("Get red flags error:", error);
+      res.status(500).json({ message: "Failed to get red flag data" });
+    }
+  });
+
   app.get('/api/red-flags/household/:householdId/history', requireAuth, requireRole(['manager']), async (req, res) => {
     try {
       const { householdId } = req.params;
