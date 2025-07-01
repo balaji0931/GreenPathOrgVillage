@@ -79,8 +79,9 @@ export const issues = pgTable("issues", {
   reportedBy: text("reported_by").notNull(), // UID of reporter
   villageId: text("village_id").notNull().references(() => villages.villageId),
   status: text("status").default("open"), // open, in_progress, resolved
-  photoUrl: text("photo_url"),
+  photoUrl: text("photo_url"), // Photo uploaded by reporter
   managerReply: text("manager_reply"),
+  managerProofPhotoUrl: text("manager_proof_photo_url"), // Proof photo required from manager when updating status
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
@@ -396,9 +397,7 @@ export type Announcement = typeof announcements.$inferSelect;
 export type Attendance = typeof attendance.$inferSelect;
 export type Feedback = typeof feedback.$inferSelect;
 export type Segregator = typeof segregators.$inferSelect;
-export type InsertSegregatorAttendance = typeof segregatorAttendance.$inferInsert;
 export type SegregatorAttendance = typeof segregatorAttendance.$inferSelect;
 export type CollectorComplaint = typeof collectorComplaints.$inferSelect;
-export type InsertCollectorComplaint = typeof collectorComplaints.$inferInsert;
 export type Moderator = typeof moderators.$inferSelect;
 export type ModeratorVillageAssignment = typeof moderatorVillageAssignments.$inferSelect;

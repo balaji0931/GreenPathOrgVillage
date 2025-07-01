@@ -826,6 +826,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Manager proof photo upload for issue updates
+  app.post('/api/upload/manager-proof', requireAuth, requireRole(['manager', 'admin']), upload.single('file'), async (req, res) => {
+    try {
+      if (!req.file) {
+        return res.status(400).json({ message: "No file uploaded" });
+      }
+
+      const { uploadToCloudinary } = await import('./cloudinary');
+      const fs = await import('fs');
+      const buffer = fs.readFileSync(req.file.path);
+
+      const result = await uploadToCloudinary(buffer, {
+        folder: 'manager-proof-photos',
+        resource_type: 'image'
+      });
+
+      // Clean up temporary file
+      fs.unlinkSync(req.file.path);
+
+      res.json({ url: result.secure_url, public_id: result.public_id });
+    } catch (error) {
+      console.error("Manager proof photo upload error:", error);
+      res.status(500).json({ message: "Failed to upload manager proof photo" });
+    }
+  });
+
   // Issues routes
   app.post('/api/issues', requireAuth, requireRole(['generator','collector']), async (req, res) => {
     try {
@@ -914,7 +940,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.patch('/api/issues/:id', requireAuth, requireRole(['manager', 'admin']), async (req, res) => {
     try {
       const { id } = req.params;
-      const updates = req.body;
+      const { status, managerReply, managerProofPhotoUrl } = req.body;
+
+      // If status is being changed to in_progress or resolved, require proof photo
+      if ((status === 'in_progress' || status === 'resolved') && !managerProofPhotoUrl) {
+        return res.status(400).json({ 
+          message: "Proof photo is required when updating issue status to 'In Progress' or 'Resolved'" 
+        });
+      }
+
+      const updates = {
+        status,
+        managerReply,
+        ...(managerProofPhotoUrl && { managerProofPhotoUrl }),
+        updatedAt: new Date()
+      };
 
       const issue = await storage.updateIssue(parseInt(id), updates);
       res.json(issue);

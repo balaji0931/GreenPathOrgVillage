@@ -125,6 +125,7 @@ interface Issue {
   villageId: string;
   photoUrl?: string;
   managerReply?: string;
+  managerProofPhotoUrl?: string;
   createdAt: string;
   updatedAt?: string;
 }
@@ -399,18 +400,55 @@ export default function ManagerDashboard() {
 
   // Mutations
   const updateIssueMutation = useMutation({
-    mutationFn: ({ issueId, status, managerReply }: {
+    mutationFn: async ({ issueId, status, managerReply, proofPhotoFile }: {
       issueId: number;
       status: string;
       managerReply?: string;
-    }) => apiRequest("PUT", `/api/issues/${issueId}`, { status, managerReply }),
+      proofPhotoFile?: File | null;
+    }) => {
+      let managerProofPhotoUrl = null;
+
+      // If status is changing to in_progress or resolved, upload proof photo
+      if ((status === 'in_progress' || status === 'resolved') && proofPhotoFile) {
+        try {
+          const formData = new FormData();
+          formData.append('file', proofPhotoFile);
+          
+          const uploadResponse = await fetch('/api/upload/manager-proof', {
+            method: 'POST',
+            body: formData,
+            credentials: 'include'
+          });
+          
+          if (!uploadResponse.ok) {
+            throw new Error('Proof photo upload failed');
+          }
+          
+          const uploadResult = await uploadResponse.json();
+          managerProofPhotoUrl = uploadResult.url;
+        } catch (uploadError) {
+          console.error('Proof photo upload error:', uploadError);
+          throw new Error('Failed to upload proof photo. Please try again.');
+        }
+      }
+
+      return apiRequest("PATCH", `/api/issues/${issueId}`, { 
+        status, 
+        managerReply,
+        managerProofPhotoUrl
+      });
+    },
     onSuccess: () => {
       toast({ title: "Issue updated successfully" });
       queryClient.invalidateQueries({ queryKey: ["/api/issues"] });
       setShowIssueDialog(false);
     },
-    onError: () => {
-      toast({ title: "Failed to update issue", variant: "destructive" });
+    onError: (error: any) => {
+      toast({ 
+        title: "Failed to update issue", 
+        description: error.message || "Please try again",
+        variant: "destructive" 
+      });
     },
   });
 
@@ -2177,26 +2215,43 @@ export default function ManagerDashboard() {
                                     Reported by: {issue.reportedBy} on {new Date(issue.createdAt).toLocaleDateString()}
                                   </p>
                                   <p className="text-sm break-words">{issue.description}</p>
+                                  
+                                  {/* Show reporter's image if available */}
+                                  {issue.photoUrl && (
+                                    <div className="mt-2">
+                                      <p className="text-xs font-medium mb-1">Reported with image:</p>
+                                      <img 
+                                        src={issue.photoUrl} 
+                                        alt="Issue photo" 
+                                        className="w-16 h-16 object-cover rounded cursor-pointer"
+                                        onClick={() => window.open(issue.photoUrl, "_blank")}
+                                      />
+                                    </div>
+                                  )}
+
                                   {issue.managerReply && (
                                     <div className="mt-3 p-3 bg-blue-50 rounded-lg">
                                       <p className="text-sm break-words">
                                         <strong>Manager Reply:</strong> {issue.managerReply}
                                       </p>
+                                      {/* Show manager's proof photo if available */}
+                                      {issue.managerProofPhotoUrl && (
+                                        <div className="mt-2">
+                                          <p className="text-xs font-medium mb-1">Manager proof:</p>
+                                          <img 
+                                            src={issue.managerProofPhotoUrl} 
+                                            alt="Manager proof photo" 
+                                            className="w-16 h-16 object-cover rounded cursor-pointer"
+                                            onClick={() => window.open(issue.managerProofPhotoUrl, "_blank")}
+                                          />
+                                        </div>
+                                      )}
                                     </div>
                                   )}
                                 </div>
 
                                 {/* Right: Action Buttons */}
                                 <div className="flex gap-2 mt-3 sm:mt-0 self-end sm:self-auto">
-                                  {issue.photoUrl && (
-                                    <Button
-                                      size="sm"
-                                      variant="outline"
-                                      onClick={() => window.open(issue.photoUrl, "_blank")}
-                                    >
-                                      <Eye className="h-4 w-4" />
-                                    </Button>
-                                  )}
                                   <Button
                                     size="sm"
                                     onClick={() => {
@@ -3101,10 +3156,25 @@ export default function ManagerDashboard() {
                 e.preventDefault();
                 const form = e.target as HTMLFormElement;
                 const formData = new FormData(form);
+                const status = formData.get("status") as string;
+                const fileInput = form.querySelector('input[type="file"]') as HTMLInputElement;
+                const proofPhotoFile = fileInput?.files?.[0] || null;
+
+                // Check if proof photo is required
+                if ((status === 'in_progress' || status === 'resolved') && !proofPhotoFile) {
+                  toast({
+                    title: "Proof photo required",
+                    description: "Please upload a proof photo when changing status to 'In Progress' or 'Resolved'",
+                    variant: "destructive"
+                  });
+                  return;
+                }
+
                 updateIssueMutation.mutate({
                   issueId: selectedIssue.id,
-                  status: formData.get("status") as string,
+                  status,
                   managerReply: formData.get("managerReply") as string,
+                  proofPhotoFile,
                 });
               }}
               className="space-y-4"
@@ -3115,6 +3185,18 @@ export default function ManagerDashboard() {
                 <p className="text-xs text-muted-foreground mt-2">
                   By: {selectedIssue.reportedBy} | {selectedIssue.category}
                 </p>
+                {/* Show original reporter's image if available */}
+                {selectedIssue.photoUrl && (
+                  <div className="mt-2">
+                    <p className="text-xs font-medium mb-1">Reported with image:</p>
+                    <img 
+                      src={selectedIssue.photoUrl} 
+                      alt="Issue photo" 
+                      className="w-20 h-20 object-cover rounded cursor-pointer"
+                      onClick={() => window.open(selectedIssue.photoUrl, "_blank")}
+                    />
+                  </div>
+                )}
               </div>
               <div>
                 <Label htmlFor="status">Status</Label>
@@ -3138,6 +3220,32 @@ export default function ManagerDashboard() {
                   rows={3}
                 />
               </div>
+              <div>
+                <Label htmlFor="proofPhoto">
+                  Proof Photo *
+                  <span className="text-xs text-muted-foreground ml-1">
+                    (Required when changing status to In Progress or Resolved)
+                  </span>
+                </Label>
+                <Input
+                  type="file"
+                  accept="image/*"
+                  name="proofPhoto"
+                  className="cursor-pointer"
+                />
+              </div>
+              {/* Show existing manager proof photo if available */}
+              {selectedIssue.managerProofPhotoUrl && (
+                <div>
+                  <Label className="text-xs font-medium">Current Proof Photo:</Label>
+                  <img 
+                    src={selectedIssue.managerProofPhotoUrl} 
+                    alt="Manager proof photo" 
+                    className="w-20 h-20 object-cover rounded cursor-pointer mt-1"
+                    onClick={() => window.open(selectedIssue.managerProofPhotoUrl, "_blank")}
+                  />
+                </div>
+              )}
               <div className="flex gap-2">
                 <Button type="button" variant="outline" onClick={() => setShowIssueDialog(false)} className="flex-1">
                   Cancel

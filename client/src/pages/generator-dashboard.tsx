@@ -1045,6 +1045,18 @@ export default function GeneratorDashboard() {
                             <p className="text-xs text-green-700 leading-relaxed">
                               {issue.managerReply}
                             </p>
+                            {/* Show manager's proof photo if available */}
+                            {issue.managerProofPhotoUrl && (
+                              <div className="mt-2">
+                                <p className="text-xs font-medium text-green-800 mb-1">Manager proof photo:</p>
+                                <img 
+                                  src={issue.managerProofPhotoUrl} 
+                                  alt="Manager proof photo" 
+                                  className="w-16 h-16 object-cover rounded cursor-pointer"
+                                  onClick={() => window.open(issue.managerProofPhotoUrl, "_blank")}
+                                />
+                              </div>
+                            )}
                             {issue.updatedAt && (
                               <p className="text-xs text-green-600 mt-1">
                                 Updated:{" "}
