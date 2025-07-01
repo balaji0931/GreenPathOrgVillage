@@ -314,6 +314,11 @@ export class DatabaseStorage implements IStorage {
     return household || undefined;
   }
 
+  async getHouseholdById(id: number): Promise<Household | undefined> {
+    const [household] = await db.select().from(households).where(eq(households.id, id));
+    return household || undefined;
+  }
+
   async createCollector(insertCollector: InsertCollector): Promise<Collector> {
     const [collector] = await db
       .insert(collectors)
@@ -898,8 +903,7 @@ export class DatabaseStorage implements IStorage {
       segregatorName: segregators.name,
     })
     .from(segregatorAttendance)
-    .innerJoin(segregators, eq(segregatorAttendance.segregatorId, segregators.id))
-    .where(
+    .innerJoin(segregators, eq(segregatorAttendance.segregatorId, segregators.id))    .where(
       and(
         eq(segregators.villageId, villageId),
         eq(segregatorAttendance.date, date)
