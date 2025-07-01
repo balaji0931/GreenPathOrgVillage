@@ -1110,16 +1110,16 @@ export default function ManagerDashboard() {
               <div className="space-y-6">
                 <div className="flex justify-between items-center">
                   <div>
-                    <h2 className="text-2xl font-bold">Households Management</h2>
-                    <p className="text-muted-foreground">Manage households and QR codes</p>
+                    <h2 className="text-2xl font-bold">{t("manager.householdsManagement")}</h2>
+                    <p className="text-muted-foreground">{t("manager.manageHouseholdsQR")}</p>
                   </div>
                 </div>
 
                 <Tabs value={householdSubTab} onValueChange={setHouseholdSubTab} className="w-full">
                   <TabsList className="grid w-full grid-cols-3 gap-2">
-                    <TabsTrigger value="list">View All</TabsTrigger>
-                    <TabsTrigger value="bulk">Add HouseHold</TabsTrigger>
-                    <TabsTrigger value="qr-download">Download QR</TabsTrigger>
+                    <TabsTrigger value="list">{t("manager.viewAll")}</TabsTrigger>
+                    <TabsTrigger value="bulk">{t("manager.addHousehold")}</TabsTrigger>
+                    <TabsTrigger value="qr-download">{t("manager.downloadQR")}</TabsTrigger>
                   </TabsList>
 
                   <TabsContent value="list" className="space-y-4">
@@ -1136,7 +1136,7 @@ export default function ManagerDashboard() {
                                 {household.qrCodeUrl && (
                                   <Badge variant="secondary" className="mt-2">
                                     <QrCode className="h-3 w-3 mr-1" />
-                                    QR Code Available
+                                    {t("manager.qrCodeAvailable")}
                                   </Badge>
                                 )}
                               </div>
@@ -1150,8 +1150,8 @@ export default function ManagerDashboard() {
                   <TabsContent value="bulk" className="space-y-4">
                     <Card>
                       <CardHeader>
-                        <CardTitle>Add Multiple Households</CardTitle>
-                        <CardDescription>Create multiple households at once with automatic QR code generation</CardDescription>
+                        <CardTitle>{t("manager.addMultipleHouseholds")}</CardTitle>
+                        <CardDescription>{t("manager.createMultipleDesc")}</CardDescription>
                       </CardHeader>
                       <CardContent>
                         <div className="space-y-4">
@@ -1162,7 +1162,7 @@ export default function ManagerDashboard() {
                               onClick={() => setBulkHouseholds([...bulkHouseholds, { headName: "", houseNumber: "", phone: "", address: "" }])}
                             >
                               <Plus className="h-4 w-4 mr-2" />
-                              Add Row
+                              {t("manager.addRow")}
                             </Button>
                             <Button
                               onClick={() => {
@@ -1177,7 +1177,7 @@ export default function ManagerDashboard() {
                               }}
                               disabled={createBulkHouseholdsMutation.isPending || bulkHouseholds.every(h => !h.headName.trim())}
                             >
-                              {createBulkHouseholdsMutation.isPending ? "Creating..." : `Create ${bulkHouseholds.filter(h => h.headName.trim() && h.houseNumber.trim() && h.phone.trim()).length} Households`}
+                              {createBulkHouseholdsMutation.isPending ? t("manager.creating") : `${t("manager.createHouseholds")} ${bulkHouseholds.filter(h => h.headName.trim() && h.houseNumber.trim() && h.phone.trim()).length} ${t("navigation.households")}`}
                             </Button>
                           </div>
 
@@ -1186,7 +1186,7 @@ export default function ManagerDashboard() {
                               <Card key={index} className="p-4">
                                 <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
                                   <div>
-                                    <Label htmlFor={`headName-${index}`}>Head Name *</Label>
+                                    <Label htmlFor={`headName-${index}`}>{t("manager.headNameRequired")}</Label>
                                     <Input
                                       id={`headName-${index}`}
                                       value={household.headName}
@@ -1195,11 +1195,11 @@ export default function ManagerDashboard() {
                                         updated[index].headName = e.target.value;
                                         setBulkHouseholds(updated);
                                       }}
-                                      placeholder="Enter head name"
+                                      placeholder={t("manager.enterHeadName")}
                                     />
                                   </div>
                                   <div>
-                                    <Label htmlFor={`houseNumber-${index}`}>House Number *</Label>
+                                    <Label htmlFor={`houseNumber-${index}`}>{t("manager.houseNumberRequired")}</Label>
                                     <Input
                                       id={`houseNumber-${index}`}
                                       value={household.houseNumber}
@@ -1208,11 +1208,11 @@ export default function ManagerDashboard() {
                                         updated[index].houseNumber = e.target.value;
                                         setBulkHouseholds(updated);
                                       }}
-                                      placeholder="House number"
+                                      placeholder={t("manager.houseNumber")}
                                     />
                                   </div>
                                   <div>
-                                    <Label htmlFor={`phone-${index}`}>Phone *</Label>
+                                    <Label htmlFor={`phone-${index}`}>{t("manager.phoneRequired")}</Label>
                                     <Input
                                       id={`phone-${index}`}
                                       value={household.phone}
@@ -1221,7 +1221,7 @@ export default function ManagerDashboard() {
                                         updated[index].phone = e.target.value;
                                         setBulkHouseholds(updated);
                                       }}
-                                      placeholder="Phone number"
+                                      placeholder={t("manager.phoneNumber")}
                                     />
                                   </div>
                                   <div className="flex items-end">
@@ -1242,7 +1242,7 @@ export default function ManagerDashboard() {
                                   </div>
                                 </div>
                                 <div className="mt-3">
-                                  <Label htmlFor={`address-${index}`}>Address (Optional)</Label>
+                                  <Label htmlFor={`address-${index}`}>{t("manager.addressOptional")}</Label>
                                   <Input
                                     id={`address-${index}`}
                                     value={household.address}
@@ -1251,7 +1251,7 @@ export default function ManagerDashboard() {
                                       updated[index].address = e.target.value;
                                       setBulkHouseholds(updated);
                                     }}
-                                    placeholder="Full address"
+                                    placeholder={t("manager.fullAddress")}
                                   />
                                 </div>
                               </Card>
@@ -1260,7 +1260,7 @@ export default function ManagerDashboard() {
 
                           {bulkHouseholds.length === 0 && (
                             <div className="text-center py-8">
-                              <p className="text-muted-foreground">Click "Add Row" to start adding households</p>
+                              <p className="text-muted-foreground">{t("manager.clickAddRow")}</p>
                             </div>
                           )}
                         </div>
@@ -1271,8 +1271,8 @@ export default function ManagerDashboard() {
                   <TabsContent value="qr-download" className="space-y-4">
                     <Card>
                       <CardHeader>
-                        <CardTitle>Download QR Codes</CardTitle>
-                        <CardDescription>Download household QR codes as PDF</CardDescription>
+                        <CardTitle>{t("manager.downloadQRCodes")}</CardTitle>
+                        <CardDescription>{t("manager.downloadQRDesc")}</CardDescription>
                       </CardHeader>
                       <CardContent>
                         <div className="space-y-4">
@@ -1282,22 +1282,22 @@ export default function ManagerDashboard() {
                               variant="outline" 
                               onClick={() => setSelectedDownloadHouseholds(households.filter(h => h.qrCodeUrl).map(h => h.id))}
                             >
-                              Select All ({households.filter(h => h.qrCodeUrl).length})
+                              {t("manager.selectAll")} ({households.filter(h => h.qrCodeUrl).length})
                             </Button>
                             <Button
                               onClick={() => downloadPDFMutation.mutate(selectedDownloadHouseholds)}
                               disabled={selectedDownloadHouseholds.length === 0 || downloadPDFMutation.isPending}
                             >
                               <Download className="h-4 w-4 mr-2" />
-                              {downloadPDFMutation.isPending ? "Generating..." : `Download PDF (${selectedDownloadHouseholds.length})`}
+                              {downloadPDFMutation.isPending ? t("manager.generating") : `${t("manager.downloadPDF")} (${selectedDownloadHouseholds.length})`}
                             </Button>
                           </div>
 
                           {households.filter(h => h.qrCodeUrl).length === 0 ? (
                             <div className="text-center py-8">
                               <QrCode className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-                              <p className="text-muted-foreground">No QR codes available yet</p>
-                              <p className="text-sm text-muted-foreground">Add households to generate QR codes automatically</p>
+                              <p className="text-muted-foreground">{t("manager.noQRAvailable")}</p>
+                              <p className="text-sm text-muted-foreground">{t("manager.addHouseholdsForQR")}</p>
                             </div>
                           ) : (
                             <div className="space-y-2">
@@ -1352,20 +1352,20 @@ export default function ManagerDashboard() {
             {activeTab === "collections" && (
               <div className="space-y-6">
                 <div>
-                  <h2 className="text-2xl font-bold">Collections Management</h2>
-                  <p className="text-muted-foreground">View household collection status</p>
+                  <h2 className="text-2xl font-bold">{t("manager.collectionsManagement")}</h2>
+                  <p className="text-muted-foreground">{t("manager.viewHouseholdStatus")}</p>
                 </div>
 
                 <Tabs defaultValue="collections" className="w-full">
                   <TabsList className="grid w-full grid-cols-2">
-                    <TabsTrigger value="collections">Collections</TabsTrigger>
-                    <TabsTrigger value="attention">Needs Attention</TabsTrigger>
+                    <TabsTrigger value="collections">{t("manager.collections")}</TabsTrigger>
+                    <TabsTrigger value="attention">{t("manager.needsAttention")}</TabsTrigger>
                   </TabsList>
 
                   <TabsContent value="collections" className="space-y-4">
                     <Card>
                       <CardHeader>
-                        <CardTitle>Search & Filter</CardTitle>
+                        <CardTitle>{t("manager.searchFilter")}</CardTitle>
                       </CardHeader>
                       <CardContent>
                         <div className="flex flex-col sm:flex-row gap-4">
@@ -1374,7 +1374,7 @@ export default function ManagerDashboard() {
                           <div className="flex-1">
                             <Input
                               className="w-full"
-                              placeholder="Search by name, UID, or house number..."
+                              placeholder={t("manager.searchPlaceholder")}
                               value={filters.search}
                               onChange={(e) => updateFilter("search", e.target.value)}
                             />
@@ -1397,7 +1397,7 @@ export default function ManagerDashboard() {
                               onClick={clearFilters}
                               className="w-full sm:w-auto"
                             >
-                              Clear
+                              {t("manager.clear")}
                             </Button>
                           </div>
                         </div>
