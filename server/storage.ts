@@ -244,8 +244,6 @@ export interface IStorage {
   createHouseholdAction(action: InsertHouseholdAction): Promise<HouseholdAction>;
   getHouseholdActions(householdId: number): Promise<HouseholdAction[]>;
   getRedFlagCount(householdId: number): Promise<number>;
-  getAllHouseholdsWithRedFlagData(villageId: string): Promise<any[]>;
-  getHouseholdRedFlagHistory(householdId: number): Promise<any>;
 
   // Moderator operations
   createModerator(moderator: InsertModerator): Promise<Moderator>;
@@ -313,11 +311,6 @@ export class DatabaseStorage implements IStorage {
 
   async getHouseholdByUid(uid: string): Promise<Household | undefined> {
     const [household] = await db.select().from(households).where(eq(households.uid, uid));
-    return household || undefined;
-  }
-
-  async getHouseholdById(id: number): Promise<Household | undefined> {
-    const [household] = await db.select().from(households).where(eq(households.id, id));
     return household || undefined;
   }
 
@@ -2153,156 +2146,20 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getRedFlagCount(householdId: number): Promise<number> {
-    // Calculate red flag count based on recent collections
+    // Calculate red flag count based on collections - 3+ missed collections or rating < 4
     const householdCollections = await db
       .select()
       .from(wasteCollections)
       .where(eq(wasteCollections.householdId, householdId))
       .orderBy(desc(wasteCollections.collectionDate))
-      .limit(10); // Last 10 collections for this household
+      .limit(10); // Last 10 collections
 
-    const problemCollections = householdCollections.filter(c => {
-      // Poor segregation rating (less than 3)
-      const poorRating = c.segregationRating !== null && c.segregationRating < 3;
-      
-      // Missed collection due to segregation issues
-      const missedDueToSegregation = c.status === "not_collected" && 
-        c.missedReason && 
-        (c.missedReason.toLowerCase().includes("segregat") || 
-         c.missedReason.toLowerCase().includes("sorting") ||
-         c.missedReason.toLowerCase().includes("mixed"));
-      
-      // Very low rating (below 2)
-      const veryLowRating = c.segregationRating !== null && c.segregationRating < 2;
-
-      return poorRating || missedDueToSegregation || veryLowRating;
-    }).length;
+    const problemCollections = householdCollections.filter(c => 
+      (c.segregationRating && c.segregationRating < 4) || 
+      (c.status === "not_collected" && c.missedReason && c.missedReason.includes("segregat"))
+    ).length;
 
     return problemCollections;
-  }
-
-  async getAllHouseholdsWithRedFlagData(villageId: string): Promise<any[]> {
-    try {
-      // Get all households for the village
-      const allHouseholds = await db
-        .select()
-        .from(households)
-        .where(eq(households.villageId, villageId))
-        .orderBy(households.uid);
-
-      const householdsWithFlags = await Promise.all(
-        allHouseholds.map(async (household) => {
-          // Get last 10 collections for this household
-          const recentCollections = await db
-            .select()
-            .from(wasteCollections)
-            .where(eq(wasteCollections.householdId, household.id))
-            .orderBy(desc(wasteCollections.collectionDate))
-            .limit(10);
-
-          // Count problem collections (poor segregation, missed collections, or low ratings)
-          const problemCollections = recentCollections.filter(c => {
-            // Poor segregation rating (less than 3)
-            const poorRating = c.segregationRating !== null && c.segregationRating < 3;
-            
-            // Missed collection due to segregation issues
-            const missedDueToSegregation = c.status === "not_collected" && 
-              c.missedReason && 
-              (c.missedReason.toLowerCase().includes("segregat") || 
-               c.missedReason.toLowerCase().includes("sorting") ||
-               c.missedReason.toLowerCase().includes("mixed"));
-            
-            // Very low rating (below 2)
-            const veryLowRating = c.segregationRating !== null && c.segregationRating < 2;
-
-            return poorRating || missedDueToSegregation || veryLowRating;
-          });
-
-          const currentRedFlagCount = problemCollections.length;
-          const isRedFlag = currentRedFlagCount >= 3; // 3+ problem collections = red flag
-
-          // Get household actions (management history)
-          const actions = await db
-            .select()
-            .from(householdActions)
-            .where(eq(householdActions.householdId, household.id))
-            .orderBy(desc(householdActions.createdAt))
-            .limit(5); // Last 5 actions
-
-          // Count total actions taken
-          const totalActions = await db
-            .select({ count: count() })
-            .from(householdActions)
-            .where(eq(householdActions.householdId, household.id));
-
-          // Calculate average rating from collections with ratings
-          const collectionsWithRating = recentCollections.filter(c => c.segregationRating !== null);
-          const avgRating = collectionsWithRating.length > 0 
-            ? (collectionsWithRating.reduce((sum, c) => sum + (c.segregationRating || 0), 0) / collectionsWithRating.length).toFixed(1)
-            : "0.0";
-
-          return {
-            ...household,
-            isRedFlag,
-            currentRedFlagCount,
-            totalRedFlagOccurrences: totalActions[0]?.count || 0,
-            recentActions: actions,
-            lastCollectionRating: recentCollections[0]?.segregationRating || null,
-            missedCollections: recentCollections.filter(c => c.status === "not_collected").length,
-            avgRating,
-            problemCollections: problemCollections.length,
-            totalCollections: recentCollections.length
-          };
-        })
-      );
-
-      console.log(`Red flag analysis for village ${villageId}:`, {
-        totalHouseholds: householdsWithFlags.length,
-        redFlags: householdsWithFlags.filter(h => h.isRedFlag).length,
-        greenFlags: householdsWithFlags.filter(h => !h.isRedFlag).length
-      });
-
-      return householdsWithFlags;
-    } catch (error) {
-      console.error("Get households with red flag data error:", error);
-      throw error;
-    }
-  }
-
-  async getHouseholdRedFlagHistory(householdId: number): Promise<any> {
-    try {
-      // Get current red flag count
-      const currentRedFlagCount = await this.getRedFlagCount(householdId);
-
-      // Get all actions for this household
-      const actions = await db
-        .select({
-          id: householdActions.id,
-          actionType: householdActions.actionType,
-          actionNote: householdActions.actionNote,
-          takenBy: householdActions.takenBy,
-          redFlagCount: householdActions.redFlagCount,
-          createdAt: householdActions.createdAt,
-        })
-        .from(householdActions)
-        .where(eq(householdActions.householdId, householdId))
-        .orderBy(desc(householdActions.createdAt));
-
-      // Count total actions
-      const totalActions = await db
-        .select({ count: count() })
-        .from(householdActions)
-        .where(eq(householdActions.householdId, householdId));
-
-      return {
-        currentRedFlagCount,
-        totalRedFlagOccurrences: totalActions[0]?.count || 0,
-        actions,
-      };
-    } catch (error) {
-      console.error("Get household red flag history error:", error);
-      throw error;
-    }
   }
 }
 

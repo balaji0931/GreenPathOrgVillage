@@ -334,12 +334,6 @@ export default function ManagerDashboard() {
     title: string;
   } | null>(null);
 
-  // Red flag management state
-  const [selectedHouseholdForAction, setSelectedHouseholdForAction] = useState<any | null>(null);
-  const [showRedFlagActionDialog, setShowRedFlagActionDialog] = useState(false);
-  const [redFlagActionType, setRedFlagActionType] = useState<string>("");
-  const [redFlagActionNote, setRedFlagActionNote] = useState<string>("");
-
   // Consolidated filters
   const [filters, setFilters] = useState<FilterState>({
     search: "",
@@ -401,13 +395,6 @@ export default function ManagerDashboard() {
 
   const { data: announcements = [] } = useQuery<any[]>({
     queryKey: ["/api/announcements", user?.villageId],
-    enabled: !!user?.villageId,
-  });
-
-  // Red flag data
-  const { data: redFlagHouseholds = [], refetch: refetchRedFlags } = useQuery<any[]>({
-    queryKey: ["/api/red-flags/village", user?.villageId],
-    queryFn: () => apiRequest("GET", `/api/red-flags/village/${user?.villageId}`),
     enabled: !!user?.villageId,
   });
 
@@ -594,38 +581,6 @@ export default function ManagerDashboard() {
     },
   });
 
-  // Red flag action mutation
-  const redFlagActionMutation = useMutation({
-    mutationFn: ({ householdId, actionType, actionNote }: {
-      householdId: number;
-      actionType: string;
-      actionNote: string;
-    }) => apiRequest("POST", `/api/red-flags/household/${householdId}/action`, {
-      actionType,
-      actionNote,
-    }),
-    onSuccess: () => {
-      toast({
-        title: "Action Recorded",
-        description: "Action has been recorded and household has been notified.",
-      });
-      queryClient.invalidateQueries({ queryKey: ["/api/red-flags/village"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/announcements"] });
-      setShowRedFlagActionDialog(false);
-      setRedFlagActionType("");
-      setRedFlagActionNote("");
-      setSelectedHouseholdForAction(null);
-      refetchRedFlags();
-    },
-    onError: (error: any) => {
-      toast({
-        title: "Failed to record action",
-        description: error.message,
-        variant: "destructive",
-      });
-    },
-  });
-
   // Helper functions
   const updateFilter = (key: keyof FilterState, value: string) => {
     setFilters(prev => ({ ...prev, [key]: value }));
@@ -651,84 +606,6 @@ export default function ManagerDashboard() {
       </CardContent>
     </Card>
   );
-
-  const RedFlagHistoryModal = ({ householdId }: { householdId: number }) => {
-    const { data: redFlagHistory, isLoading } = useQuery<any>({
-      queryKey: ["/api/red-flags/household", householdId, "history"],
-      queryFn: () => apiRequest("GET", `/api/red-flags/household/${householdId}/history`),
-    });
-
-    if (isLoading) {
-      return <div className="text-center py-4">Loading history...</div>;
-    }
-
-    return (
-      <div className="space-y-4">
-        <div className="grid grid-cols-3 gap-4 text-center">
-          <Card>
-            <CardContent className="p-3">
-              <div className="text-2xl font-bold text-red-600">
-                {redFlagHistory?.currentRedFlagCount || 0}
-              </div>
-              <div className="text-xs text-muted-foreground">Current Red Flags</div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-3">
-              <div className="text-2xl font-bold text-blue-600">
-                {redFlagHistory?.totalRedFlagOccurrences || 0}
-              </div>
-              <div className="text-xs text-muted-foreground">Total Actions</div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-3">
-              <div className="text-2xl font-bold text-green-600">
-                {redFlagHistory?.actions?.filter((a: any) => a.actionType === 'resolved').length || 0}
-              </div>
-              <div className="text-xs text-muted-foreground">Resolved</div>
-            </CardContent>
-          </Card>
-        </div>
-
-        <div className="space-y-3 max-h-96 overflow-y-auto">
-          <h4 className="font-medium">Action History:</h4>
-          {redFlagHistory?.actions && redFlagHistory.actions.length > 0 ? (
-            redFlagHistory.actions.map((action: any) => (
-              <Card key={action.id} className={`border-l-4 ${
-                action.actionType === 'resolved' ? 'border-l-green-500' : 
-                action.actionType === 'penalty' ? 'border-l-red-500' : 
-                action.actionType === 'warning' ? 'border-l-yellow-500' : 'border-l-blue-500'
-              }`}>
-                <CardContent className="p-3">
-                  <div className="flex justify-between items-start mb-2">
-                    <Badge variant={
-                      action.actionType === 'resolved' ? 'default' : 
-                      action.actionType === 'penalty' ? 'destructive' : 
-                      action.actionType === 'warning' ? 'secondary' : 'outline'
-                    }>
-                      {action.actionType.toUpperCase()}
-                    </Badge>
-                    <span className="text-xs text-muted-foreground">
-                      {new Date(action.createdAt).toLocaleDateString()}
-                    </span>
-                  </div>
-                  <p className="text-sm mb-2">{action.actionNote}</p>
-                  <div className="text-xs text-muted-foreground">
-                    Red flags at time: {action.redFlagCount} | Taken by: {action.takenBy}
-                  </div>
-                </CardContent>
-              </Card>
-            ))
-          ) : (
-            <div className="text-center py-4 text-muted-foreground">
-              No actions recorded yet.
-            </div>
-          )}
-        </div>
-      </div>
-    );
-  };
 
   const CollectorFeedbackModal = ({ collector, allCollections, feedbacks }: {
     collector: Collector;
@@ -1938,29 +1815,72 @@ export default function ManagerDashboard() {
                     <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
                       <StatCard
                         title="Red Flags"
-                        value={redFlagHouseholds.filter(h => h.isRedFlag).length}
+                        value={(() => {
+                          return households.filter(household => {
+                            const householdCollections = allCollections
+                              .filter(c => c.householdId === household.id)
+                              .sort((a, b) => new Date(b.collectionDate).getTime() - new Date(a.collectionDate).getTime())
+                              .slice(0, 10); // Last 10 collections for this household
+                            
+                            // Count collections where waste was not collected due to poor segregation or rating < 4
+                            const problemCollections = householdCollections.filter(c => 
+                              (c.segregationRating && c.segregationRating < 4) || 
+                              (c.status === "not_collected" && c.missedReason && c.missedReason.includes("segregat"))
+                            ).length;
+                            
+                            return problemCollections >= 3;
+                          }).length;
+                        })()}
                         icon={AlertTriangle}
                         description="Need immediate attention"
                       />
                       <StatCard
                         title="Green Flags"
-                        value={redFlagHouseholds.filter(h => !h.isRedFlag).length}
+                        value={(() => {
+                          return households.filter(household => {
+                            const householdCollections = allCollections
+                              .filter(c => c.householdId === household.id)
+                              .sort((a, b) => new Date(b.collectionDate).getTime() - new Date(a.collectionDate).getTime())
+                              .slice(0, 10); // Last 10 collections for this household
+                            
+                            // Count collections where waste was not collected due to poor segregation or rating < 4
+                            const problemCollections = householdCollections.filter(c => 
+                              (c.segregationRating && c.segregationRating < 4) || 
+                              (c.status === "not_collected" && c.missedReason && c.missedReason.includes("segregat"))
+                            ).length;
+                            
+                            return problemCollections < 3;
+                          }).length;
+                        })()}
                         icon={CheckCircle}
                         description="Performing well"
                       />
                       <StatCard
-                        title="Total Actions"
-                        value={redFlagHouseholds.reduce((sum, h) => sum + h.totalRedFlagOccurrences, 0)}
-                        icon={Award}
-                        description="Management actions taken"
+                        title="Total Households"
+                        value={households.length}
+                        icon={Home}
+                        description="Registered"
                       />
                       <StatCard
-                        title="Resolved Cases"
-                        value={redFlagHouseholds.reduce((sum, h) => 
-                          sum + (h.recentActions?.filter((a: any) => a.actionType === 'resolved').length || 0), 0
-                        )}
-                        icon={CheckCircle}
-                        description="Successfully resolved"
+                        title="Avg Performance"
+                        value={(() => {
+                          const totalScore = households.reduce((sum, household) => {
+                            const householdCollections = allCollections
+                              .filter(c => c.householdId === household.id)
+                              .sort((a, b) => new Date(b.collectionDate).getTime() - new Date(a.collectionDate).getTime())
+                              .slice(0, 10);
+                            
+                            const uncollectedCount = 10 - householdCollections.length;
+                            const lowRatingCount = householdCollections.filter(c => (c.segregationRating || 0) < 4).length;
+                            const issues = uncollectedCount + lowRatingCount;
+                            
+                            return sum + Math.max(0, (10 - issues) * 10);
+                          }, 0);
+                          
+                          return households.length > 0 ? Math.round(totalScore / households.length) : 0;
+                        })()}
+                        icon={Award}
+                        description="Performance score"
                       />
                     </div>
 
@@ -1975,87 +1895,91 @@ export default function ManagerDashboard() {
                           <CardHeader>
                             <CardTitle className="flex items-center gap-2">
                               <AlertTriangle className="w-5 h-5 text-red-500" />
-                              Red Flag Households Management
+                              Households Needing Immediate Attention
                             </CardTitle>
                             <CardDescription>
-                              Households with 3+ missed collections or poor ratings. Take action and track management history.
+                              Households with 3+ missed collections or poor ratings (below 4 stars) in last 10 collections
                             </CardDescription>
                           </CardHeader>
                           <CardContent>
                             <div className="space-y-3">
-                              {redFlagHouseholds
-                                .filter(household => household.isRedFlag)
-                                .map((household) => (
-                                  <Card key={household.id} className="border-l-4 border-l-red-500">
-                                    <CardContent className="p-4">
-                                      <div className="flex items-center justify-between">
-                                        <div className="flex-1">
-                                          <div className="flex items-center gap-2 mb-2">
+                              {households
+                                .filter(household => {
+                                  const householdCollections = allCollections
+                                    .filter(c => c.householdId === household.id)
+                                    .sort((a, b) => new Date(b.collectionDate).getTime() - new Date(a.collectionDate).getTime())
+                                    .slice(0, 10); // Last 10 collections for this household
+                                  
+                                  // Count collections where waste was not collected due to poor segregation or rating < 4
+                                  const problemCollections = householdCollections.filter(c => 
+                                    (c.segregationRating && c.segregationRating < 4) || 
+                                    (c.status === "not_collected" && c.missedReason && c.missedReason.includes("segregat"))
+                                  ).length;
+                                  
+                                  return problemCollections >= 3;
+                                })
+                                .map((household) => {
+                                  const householdCollections = allCollections
+                                    .filter(c => c.householdId === household.id)
+                                    .sort((a, b) => new Date(b.collectionDate).getTime() - new Date(a.collectionDate).getTime())
+                                    .slice(0, 10); // Last 10 collections for this household
+                                  
+                                  const problemCollections = householdCollections.filter(c => 
+                                    (c.segregationRating && c.segregationRating < 4) || 
+                                    (c.status === "not_collected" && c.missedReason && c.missedReason.includes("segregat"))
+                                  ).length;
+                                  const avgRating = householdCollections.length > 0 
+                                    ? (householdCollections.reduce((sum, c) => sum + (c.segregationRating || 0), 0) / householdCollections.length).toFixed(1)
+                                    : "0.0";
+
+                                  return (
+                                    <Card key={household.id} className="border-l-4 border-l-red-500">
+                                      <CardContent className="p-4">
+                                        <div className="flex items-center justify-between">
+                                          <div className="flex-1">
                                             <h3 className="font-semibold">{household.headName}</h3>
-                                            <Badge variant="destructive">
-                                              🚩 {household.currentRedFlagCount} Current Issues
-                                            </Badge>
-                                            <Badge variant="outline">
-                                              📊 {household.totalRedFlagOccurrences} Total Actions
-                                            </Badge>
-                                          </div>
-                                          <p className="text-sm text-muted-foreground">
-                                            {household.uid} • House: {household.houseNumber} • Phone: {household.phone}
-                                          </p>
-                                          
-                                          {/* Recent Actions History */}
-                                          {household.recentActions && household.recentActions.length > 0 && (
-                                            <div className="mt-2 p-2 bg-gray-50 rounded">
-                                              <p className="text-xs font-medium mb-1">Recent Actions:</p>
-                                              {household.recentActions.slice(0, 2).map((action: any, index: number) => (
-                                                <div key={action.id} className="text-xs text-gray-600 mb-1">
-                                                  • {action.actionType.toUpperCase()}: {action.actionNote.substring(0, 50)}
-                                                  {action.actionNote.length > 50 && "..."}
-                                                  <span className="text-gray-400 ml-1">
-                                                    ({new Date(action.createdAt).toLocaleDateString()})
-                                                  </span>
-                                                </div>
-                                              ))}
+                                            <p className="text-sm text-muted-foreground">
+                                              {household.uid} • House: {household.houseNumber}
+                                            </p>
+                                            <div className="mt-2 flex gap-4 text-sm">
+                                              <span className="text-red-600">
+                                                Problem collections: {problemCollections} out of {householdCollections.length}
+                                              </span>
+                                              <span className="text-blue-600">
+                                                Avg rating: {avgRating}/5
+                                              </span>
                                             </div>
-                                          )}
+                                          </div>
+                                          <div className="flex flex-col items-end gap-2">
+                                            <Badge variant="destructive">
+                                              🚩 {problemCollections} Issues
+                                            </Badge>
+                                            <div className="text-xs text-muted-foreground">
+                                              {householdCollections.length} total collections
+                                            </div>
+                                          </div>
                                         </div>
-                                        <div className="flex flex-col gap-2">
-                                          <Button
-                                            size="sm"
-                                            onClick={() => {
-                                              setSelectedHouseholdForAction(household);
-                                              setShowRedFlagActionDialog(true);
-                                            }}
-                                            className="bg-red-600 hover:bg-red-700"
-                                          >
-                                            Take Action
-                                          </Button>
-                                          <Dialog>
-                                            <DialogTrigger asChild>
-                                              <Button size="sm" variant="outline">
-                                                View History
-                                              </Button>
-                                            </DialogTrigger>
-                                            <DialogContent className="max-w-2xl">
-                                              <DialogHeader>
-                                                <DialogTitle>Red Flag History - {household.headName}</DialogTitle>
-                                              </DialogHeader>
-                                              <RedFlagHistoryModal householdId={household.id} />
-                                            </DialogContent>
-                                          </Dialog>
-                                        </div>
-                                      </div>
-                                    </CardContent>
-                                  </Card>
-                                ))}
+                                      </CardContent>
+                                    </Card>
+                                  );
+                                })}
                             </div>
-                            {redFlagHouseholds.filter(h => h.isRedFlag).length === 0 && (
+                            {households.filter(household => {
+                              const householdCollections = allCollections
+                                .filter(c => c.householdId === household.id)
+                                .sort((a, b) => new Date(b.collectionDate).getTime() - new Date(a.collectionDate).getTime())
+                                .slice(0, 10);
+                              
+                              const problemCollections = householdCollections.filter(c => 
+                                (c.segregationRating && c.segregationRating < 4) || 
+                                (c.status === "not_collected" && c.missedReason && c.missedReason.includes("segregat"))
+                              ).length;
+                              
+                              return problemCollections >= 3;
+                            }).length === 0 && (
                               <div className="text-center py-8">
                                 <CheckCircle className="w-12 h-12 text-green-500 mx-auto mb-3" />
-                                <p className="text-muted-foreground">No red flag households at the moment!</p>
-                                <p className="text-sm text-muted-foreground mt-2">
-                                  All households are performing well with waste segregation.
-                                </p>
+                                <p className="text-muted-foreground">All households are performing well!</p>
                               </div>
                             )}
                           </CardContent>
@@ -3328,111 +3252,6 @@ export default function ManagerDashboard() {
                 </Button>
                 <Button type="submit" disabled={updateIssueMutation.isPending} className="flex-1">
                   {updateIssueMutation.isPending ? "Updating..." : "Update"}
-                </Button>
-              </div>
-            </form>
-          )}
-        </DialogContent>
-      </Dialog>
-
-      {/* Red Flag Action Dialog */}
-      <Dialog open={showRedFlagActionDialog} onOpenChange={setShowRedFlagActionDialog}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Take Action on Red Flag Household</DialogTitle>
-          </DialogHeader>
-          {selectedHouseholdForAction && (
-            <form
-              onSubmit={(e) => {
-                e.preventDefault();
-                if (!redFlagActionType || !redFlagActionNote.trim()) {
-                  toast({
-                    title: "Missing Information",
-                    description: "Please select action type and provide notes",
-                    variant: "destructive"
-                  });
-                  return;
-                }
-
-                redFlagActionMutation.mutate({
-                  householdId: selectedHouseholdForAction.id,
-                  actionType: redFlagActionType,
-                  actionNote: redFlagActionNote,
-                });
-              }}
-              className="space-y-4"
-            >
-              <div className="p-3 bg-red-50 rounded-lg border-l-4 border-l-red-500">
-                <h4 className="font-medium mb-1">{selectedHouseholdForAction.headName}</h4>
-                <p className="text-sm text-muted-foreground">
-                  {selectedHouseholdForAction.uid} • House: {selectedHouseholdForAction.houseNumber}
-                </p>
-                <div className="mt-2 flex gap-2">
-                  <Badge variant="destructive">
-                    🚩 {selectedHouseholdForAction.currentRedFlagCount} Current Issues
-                  </Badge>
-                  <Badge variant="outline">
-                    📊 {selectedHouseholdForAction.totalRedFlagOccurrences} Total Actions
-                  </Badge>
-                </div>
-              </div>
-
-              <div>
-                <Label htmlFor="actionType">Action Type *</Label>
-                <Select value={redFlagActionType} onValueChange={setRedFlagActionType}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select action type" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="warning">⚠️ Warning Notice</SelectItem>
-                    <SelectItem value="penalty">🚨 Penalty Applied</SelectItem>
-                    <SelectItem value="notice">📢 Important Notice</SelectItem>
-                    <SelectItem value="resolved">✅ Issue Resolved</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div>
-                <Label htmlFor="actionNote">Action Notes *</Label>
-                <Textarea
-                  value={redFlagActionNote}
-                  onChange={(e) => setRedFlagActionNote(e.target.value)}
-                  placeholder="Describe the action taken, penalties applied, or guidance provided..."
-                  rows={4}
-                  className="resize-none"
-                />
-                <p className="text-xs text-muted-foreground mt-1">
-                  This note will be included in the automatic notification sent to the household.
-                </p>
-              </div>
-
-              <div className="p-3 bg-blue-50 rounded-lg">
-                <p className="text-sm font-medium mb-1">📱 Automatic Notification:</p>
-                <p className="text-xs text-muted-foreground">
-                  The household will automatically receive a notification about this action through the announcement system.
-                </p>
-              </div>
-
-              <div className="flex gap-2">
-                <Button 
-                  type="button" 
-                  variant="outline" 
-                  onClick={() => {
-                    setShowRedFlagActionDialog(false);
-                    setRedFlagActionType("");
-                    setRedFlagActionNote("");
-                    setSelectedHouseholdForAction(null);
-                  }} 
-                  className="flex-1"
-                >
-                  Cancel
-                </Button>
-                <Button 
-                  type="submit" 
-                  disabled={redFlagActionMutation.isPending || !redFlagActionType || !redFlagActionNote.trim()} 
-                  className="flex-1"
-                >
-                  {redFlagActionMutation.isPending ? "Recording..." : "Record Action & Notify"}
                 </Button>
               </div>
             </form>
