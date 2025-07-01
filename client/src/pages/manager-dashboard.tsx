@@ -144,12 +144,13 @@ const CreateCollectorDialog = ({ villageId }: { villageId: string }) => {
   const [formData, setFormData] = useState({ name: "", phone: "" });
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { t } = useTranslation();
 
   const collectorMutation = useMutation({
     mutationFn: (data: { name: string; phone: string }) =>
       apiRequest("POST", "/api/collectors", { ...data, villageId }),
     onSuccess: () => {
-      toast({ title: "Collector created successfully" });
+      toast({ title: t("messages.operationSuccess") });
       queryClient.invalidateQueries({ queryKey: ["/api/collectors"] });
       queryClient.invalidateQueries({ queryKey: ["/api/manager/stats"] });
       setFormData({ name: "", phone: "" });
@@ -157,7 +158,7 @@ const CreateCollectorDialog = ({ villageId }: { villageId: string }) => {
     },
     onError: (error: any) => {
       toast({
-        title: "Failed to create collector",
+        title: t("messages.operationFailed"),
         description: error.message,
         variant: "destructive",
       });
@@ -167,7 +168,7 @@ const CreateCollectorDialog = ({ villageId }: { villageId: string }) => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.name.trim() || !formData.phone.trim()) {
-      toast({ title: "Please fill all required fields", variant: "destructive" });
+      toast({ title: t("validation.required"), variant: "destructive" });
       return;
     }
     collectorMutation.mutate(formData);
@@ -178,41 +179,41 @@ const CreateCollectorDialog = ({ villageId }: { villageId: string }) => {
       <DialogTrigger asChild>
         <Button>
           <Plus className="h-4 w-4 mr-2" />
-          Add Collector
+          {t("collectors.addCollector")}
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>Add New Collector</DialogTitle>
+          <DialogTitle>{t("collectors.addCollector")}</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <Label htmlFor="collector-name">Name *</Label>
+            <Label htmlFor="collector-name">{t("collectors.collectorName")} *</Label>
             <Input
               id="collector-name"
               value={formData.name}
               onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-              placeholder="Enter collector name"
+              placeholder={t("collectors.collectorName")}
               required
             />
           </div>
           <div>
-            <Label htmlFor="collector-phone">Phone *</Label>
+            <Label htmlFor="collector-phone">{t("collectors.phone")} *</Label>
             <Input
               id="collector-phone"
               type="tel"
               value={formData.phone}
               onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
-              placeholder="Enter phone number"
+              placeholder={t("collectors.phone")}
               required
             />
           </div>
           <div className="flex gap-2 pt-4">
             <Button type="button" variant="outline" onClick={() => setOpen(false)} className="flex-1">
-              Cancel
+              {t("app.cancel")}
             </Button>
             <Button type="submit" disabled={collectorMutation.isPending} className="flex-1">
-              {collectorMutation.isPending ? "Adding..." : "Add Collector"}
+              {collectorMutation.isPending ? t("app.submitting") : t("collectors.addCollector")}
             </Button>
           </div>
         </form>
@@ -226,12 +227,13 @@ const CreateHouseholdDialog = ({ villageId }: { villageId: string }) => {
   const [formData, setFormData] = useState({ headName: "", houseNumber: "", phone: "" });
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { t } = useTranslation();
 
   const householdMutation = useMutation({
     mutationFn: (data: { headName: string; houseNumber: string; phone: string }) =>
       apiRequest("POST", "/api/households", { ...data, villageId }),
     onSuccess: () => {
-      toast({ title: "Household created successfully" });
+      toast({ title: t("messages.operationSuccess") });
       queryClient.invalidateQueries({ queryKey: ["/api/households"] });
       queryClient.invalidateQueries({ queryKey: ["/api/manager/stats"] });
       setFormData({ headName: "", houseNumber: "", phone: "" });
@@ -239,7 +241,7 @@ const CreateHouseholdDialog = ({ villageId }: { villageId: string }) => {
     },
     onError: (error: any) => {
       toast({
-        title: "Failed to create household",
+        title: t("messages.operationFailed"),
         description: error.message,
         variant: "destructive",
       });
@@ -249,7 +251,7 @@ const CreateHouseholdDialog = ({ villageId }: { villageId: string }) => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.headName.trim() || !formData.houseNumber.trim() || !formData.phone.trim()) {
-      toast({ title: "Please fill all required fields", variant: "destructive" });
+      toast({ title: t("validation.required"), variant: "destructive" });
       return;
     }
     householdMutation.mutate(formData);
@@ -260,51 +262,51 @@ const CreateHouseholdDialog = ({ villageId }: { villageId: string }) => {
       <DialogTrigger asChild>
         <Button>
           <Plus className="h-4 w-4 mr-2" />
-          Add Household
+          {t("households.addHousehold")}
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>Add New Household</DialogTitle>
+          <DialogTitle>{t("households.addHousehold")}</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <Label htmlFor="household-headName">Head of Household *</Label>
+            <Label htmlFor="household-headName">{t("households.headName")} *</Label>
             <Input
               id="household-headName"
               value={formData.headName}
               onChange={(e) => setFormData(prev => ({ ...prev, headName: e.target.value }))}
-              placeholder="Enter head of household name"
+              placeholder={t("households.headName")}
               required
             />
           </div>
           <div>
-            <Label htmlFor="household-houseNumber">House Number *</Label>
+            <Label htmlFor="household-houseNumber">{t("households.houseNumber")} *</Label>
             <Input
               id="household-houseNumber"
               value={formData.houseNumber}
               onChange={(e) => setFormData(prev => ({ ...prev, houseNumber: e.target.value }))}
-              placeholder="Enter house number"
+              placeholder={t("households.houseNumber")}
               required
             />
           </div>
           <div>
-            <Label htmlFor="household-phone">Phone *</Label>
+            <Label htmlFor="household-phone">{t("households.phone")} *</Label>
             <Input
               id="household-phone"
               type="tel"
               value={formData.phone}
               onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
-              placeholder="Enter phone number"
+              placeholder={t("households.phone")}
               required
             />
           </div>
           <div className="flex gap-2 pt-4">
             <Button type="button" variant="outline" onClick={() => setOpen(false)} className="flex-1">
-              Cancel
+              {t("app.cancel")}
             </Button>
             <Button type="submit" disabled={householdMutation.isPending} className="flex-1">
-              {householdMutation.isPending ? "Adding..." : "Add Household"}
+              {householdMutation.isPending ? t("app.submitting") : t("households.addHousehold")}
             </Button>
           </div>
         </form>
@@ -613,6 +615,7 @@ export default function ManagerDashboard() {
     feedbacks: any[];
   }) => {
     const [feedbackDateFilter, setFeedbackDateFilter] = useState("");
+    const { t } = useTranslation();
 
     // Get feedbacks for this collector
     const collectorFeedbacks = feedbacks.filter(feedback => feedback.toCollectorId === collector.id);
@@ -640,7 +643,7 @@ export default function ManagerDashboard() {
               <div>
                 <h3 className="text-lg font-semibold text-blue-900">{collector.name}</h3>
                 <p className="text-sm text-blue-700">
-                  ID: {collector.uid} | Phone: {collector.phone}
+                  ID: {collector.uid} | {t("collectors.phone")}: {collector.phone}
                 </p>
               </div>
               <div className="grid grid-cols-3 gap-4 text-center">
@@ -648,19 +651,19 @@ export default function ManagerDashboard() {
                   <div className="text-lg font-bold text-blue-900">
                     {collectorCollections.length}
                   </div>
-                  <div className="text-xs text-blue-700">Total Collections</div>
+                  <div className="text-xs text-blue-700">{t("collections.totalCollections")}</div>
                 </div>
                 <div>
                   <div className="text-lg font-bold text-blue-900">
                     {avgRating}
                   </div>
-                  <div className="text-xs text-blue-700">Avg Rating</div>
+                  <div className="text-xs text-blue-700">{t("app.rating")}</div>
                 </div>
                 <div>
                   <div className="text-lg font-bold text-blue-900">
                     {filteredFeedbacks.length}
                   </div>
-                  <div className="text-xs text-blue-700">Feedbacks</div>
+                  <div className="text-xs text-blue-700">{t("feedback.title")}</div>
                 </div>
               </div>
             </div>
@@ -670,28 +673,27 @@ export default function ManagerDashboard() {
         {/* Date Filter for Feedbacks */}
         <Card>
           <CardHeader>
-            <CardTitle>Filter Feedbacks</CardTitle>
+            <CardTitle>{t("app.filter")} {t("feedback.title")}</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="flex gap-4 items-center">
               <div className="flex-1">
-                <Label htmlFor="feedback-date">Filter by Date</Label>
+                <Label htmlFor="feedback-date">{t("filters.startDate")}</Label>
                 <Input
                   id="feedback-date"
                   type="date"
                   value={feedbackDateFilter}
                   onChange={(e) => setFeedbackDateFilter(e.target.value)}
-                  placeholder="Select date to filter feedbacks"
                 />
               </div>
               <Button variant="outline" onClick={() => setFeedbackDateFilter("")}>
-                Clear Filter
+                {t("app.clear")}
               </Button>
             </div>
             <p className="text-xs text-muted-foreground mt-2">
               {feedbackDateFilter 
-                ? `Showing feedbacks for ${new Date(feedbackDateFilter).toLocaleDateString()}` 
-                : "Showing all feedbacks"}
+                ? `${t("app.filter")} ${new Date(feedbackDateFilter).toLocaleDateString()}` 
+                : t("app.all")}
             </p>
           </CardContent>
         </Card>
@@ -699,9 +701,9 @@ export default function ManagerDashboard() {
         {/* Generator Feedbacks List */}
         <Card>
           <CardHeader>
-            <CardTitle>Generator Feedbacks ({filteredFeedbacks.length} feedbacks)</CardTitle>
+            <CardTitle>{t("feedback.title")} ({filteredFeedbacks.length})</CardTitle>
             <p className="text-sm text-muted-foreground">
-              Feedbacks given by households to {collector.name} for waste collection service
+              {t("feedback.fromHousehold")} {t("feedback.toCollector")} {collector.name}
             </p>
           </CardHeader>
           <CardContent>
@@ -719,9 +721,9 @@ export default function ManagerDashboard() {
                           <div className="space-y-3">
                             <div className="flex items-center justify-between">
                               <div>
-                                <h4 className="font-medium">{household?.headName || "Unknown Household"}</h4>
+                                <h4 className="font-medium">{household?.headName || t("messages.noData")}</h4>
                                 <p className="text-sm text-muted-foreground">
-                                  House: {household?.houseNumber || "N/A"} | UID: {household?.uid || "N/A"}
+                                  {t("households.houseNumber")}: {household?.houseNumber || "N/A"} | UID: {household?.uid || "N/A"}
                                 </p>
                               </div>
                               <div className="flex items-center gap-2">
@@ -733,7 +735,7 @@ export default function ManagerDashboard() {
 
                             {/* Feedback Rating */}
                             <div className="flex items-center justify-between p-3 bg-purple-50 rounded-lg">
-                              <span className="text-sm font-medium">Service Rating:</span>
+                              <span className="text-sm font-medium">{t("app.rating")}:</span>
                               <div className="flex items-center gap-1">
                                 {Array.from({ length: 5 }).map((_, i) => (
                                   <Star
@@ -750,7 +752,7 @@ export default function ManagerDashboard() {
                             {/* Feedback Remarks */}
                             {feedback.remarks && (
                               <div className="p-3 bg-gray-50 rounded-lg">
-                                <span className="text-sm font-medium block mb-2">Generator's Comments:</span>
+                                <span className="text-sm font-medium block mb-2">{t("feedback.comments")}:</span>
                                 <p className="text-sm text-gray-700 italic">"{feedback.remarks}"</p>
                               </div>
                             )}
@@ -758,17 +760,17 @@ export default function ManagerDashboard() {
                             {/* Rating Description */}
                             <div className="p-2 bg-yellow-50 rounded text-center">
                               <span className="text-sm font-medium">
-                                {feedback.rating === 1 && "😞 Very Poor Service"}
-                                {feedback.rating === 2 && "😐 Poor Service"}
-                                {feedback.rating === 3 && "😊 Average Service"}
-                                {feedback.rating === 4 && "😄 Good Service"}
-                                {feedback.rating === 5 && "🤩 Excellent Service"}
-                                {!feedback.rating && "No rating given"}
+                                {feedback.rating === 1 && `😞 ${t("collections.veryPoor")}`}
+                                {feedback.rating === 2 && `😐 ${t("collections.poor")}`}
+                                {feedback.rating === 3 && `😊 ${t("collections.average")}`}
+                                {feedback.rating === 4 && `😄 ${t("collections.good")}`}
+                                {feedback.rating === 5 && `🤩 ${t("collections.excellent")}`}
+                                {!feedback.rating && t("messages.noData")}
                               </span>
                             </div>
 
                             <div className="flex justify-between items-center pt-2 border-t text-xs text-muted-foreground">
-                              <span>Feedback ID: {feedback.id}</span>
+                              <span>{t("feedback.title")} ID: {feedback.id}</span>
                               <span>{new Date(feedback.createdAt).toLocaleTimeString()}</span>
                             </div>
                           </div>
@@ -781,10 +783,10 @@ export default function ManagerDashboard() {
               <div className="text-center py-8">
                 <MessageSquare className="w-12 h-12 text-gray-300 mx-auto mb-3" />
                 <p className="text-muted-foreground">
-                  {feedbackDateFilter ? "No feedbacks found for selected date" : "No feedbacks received yet"}
+                  {feedbackDateFilter ? t("messages.noData") : t("feedback.title")}
                 </p>
                 <p className="text-sm text-muted-foreground mt-2">
-                  Feedbacks will appear here when households rate this collector's service
+                  {t("feedback.fromHousehold")} {t("feedback.toCollector")}
                 </p>
               </div>
             )}
@@ -806,7 +808,8 @@ export default function ManagerDashboard() {
               <h1 className="font-bold text-2xl">{t('app.title')}</h1>
             </div>
           </div>
-            <div className="flex items-center spae-x-1">
+            <div className="flex items-center space-x-1">
+              <LanguageSwitcher />
                 <button
                   key={'announcements'}
                   onClick={() => setActiveTab('announcements')}
@@ -869,14 +872,14 @@ export default function ManagerDashboard() {
             <div className="p-4">
               <nav className="space-y-2">
                 {[
-                  { id: "overview", icon: LayoutDashboard, label: "Overview" },
-                  { id: "collectors", icon: Users, label: "Collectors" },
-                  { id: "households", icon: Home, label: "Households" },
-                  { id: "collections", icon: Package, label: "Collections" },
-                  { id: "issues", icon: AlertTriangle, label: "Issues" },
-                  { id: "reports", icon: BarChart3, label: "Reports" },
-                  { id: "announcements", icon: Bell, label: "Announcements" },
-                  { id: "profile", icon: User, label: "Profile" },
+                  { id: "overview", icon: LayoutDashboard, label: t("dashboard.overview") },
+                  { id: "collectors", icon: Users, label: t("navigation.collectors") },
+                  { id: "households", icon: Home, label: t("navigation.households") },
+                  { id: "collections", icon: Package, label: t("navigation.collections") },
+                  { id: "issues", icon: AlertTriangle, label: t("navigation.issues") },
+                  { id: "reports", icon: BarChart3, label: t("navigation.reports") },
+                  { id: "announcements", icon: Bell, label: t("navigation.announcements") },
+                  { id: "profile", icon: User, label: t("navigation.profile") },
                 ].map(({ id, icon: Icon, label }) => (
                   <button
                     key={id}
@@ -902,34 +905,34 @@ export default function ManagerDashboard() {
             {activeTab === "overview" && (
               <div className="space-y-6">
                 <div>
-                  <h2 className="text-2xl font-bold mb-2">Dashboard Overview</h2>
-                  <p className="text-muted-foreground">Village statistics and insights</p>
+                  <h2 className="text-2xl font-bold mb-2">{t("dashboard.overview")}</h2>
+                  <p className="text-muted-foreground">{t("villages.villageStats")}</p>
                 </div>
 
                 <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
                   <StatCard
-                    title="Total Households"
+                    title={t("households.totalHouseholds")}
                     value={stats?.totalHouseholds || 0}
                     icon={Home}
-                    description="Registered households"
+                    description={t("households.active")}
                   />
                   <StatCard
-                    title="Total Collectors"
+                    title={t("collectors.totalCollectors")}
                     value={stats?.totalCollectors || 0}
                     icon={Users}
-                    description="Active collectors"
+                    description={t("collectors.activeCollectors")}
                   />
                   <StatCard
-                    title="Collections Today"
+                    title={t("collections.todayCollections")}
                     value={stats?.collectionsToday || 0}
                     icon={Package}
-                    description="Completed today"
+                    description={t("reports.today")}
                   />
                   <StatCard
-                    title="Open Issues"
+                    title={t("issues.openIssues")}
                     value={stats?.openIssues || 0}
                     icon={AlertTriangle}
-                    description="Pending resolution"
+                    description={t("app.pending")}
                   />
                 </div>
 
@@ -938,7 +941,7 @@ export default function ManagerDashboard() {
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
                       <Bell className="w-5 h-5 text-blue-600" />
-                      Recent Announcements
+                      {t("app.recentActivity")} {t("announcements.title")}
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
@@ -962,7 +965,7 @@ export default function ManagerDashboard() {
                       </div>
                     ) : (
                       <p className="text-center text-muted-foreground py-4">
-                        No announcements yet
+                        {t("announcements.checkLater")}
                       </p>
                     )}
                   </CardContent>
@@ -975,8 +978,8 @@ export default function ManagerDashboard() {
               <div className="space-y-6">
                 <div className="flex justify-between items-center">
                   <div>
-                    <h2 className="text-2xl font-bold">Collectors Management</h2>
-                    <p className="text-muted-foreground">Manage waste collectors</p>
+                    <h2 className="text-2xl font-bold">{t("collectors.title")}</h2>
+                    <p className="text-muted-foreground">{t("collectors.title")}</p>
                   </div>
                   <div className="flex gap-2">
                     <CreateCollectorDialog villageId={user?.villageId || ""} />
@@ -986,7 +989,7 @@ export default function ManagerDashboard() {
                 {/* Date Filter */}
                 <Card>
                   <CardHeader>
-                    <CardTitle>Filter Analytics</CardTitle>
+                    <CardTitle>{t("app.filter")} {t("dashboard.stats")}</CardTitle>
                   </CardHeader>
                   <CardContent>
                     <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
@@ -994,14 +997,13 @@ export default function ManagerDashboard() {
                       {/* Date Input */}
                       <div className="flex-1 w-full">
                         <Label htmlFor="analytics-date" className="text-sm mb-1 block">
-                          Filter by Date
+                          {t("filters.startDate")}
                         </Label>
                         <Input
                           id="analytics-date"
                           type="date"
                           value={filters.date}
                           onChange={(e) => updateFilter("date", e.target.value)}
-                          placeholder="Select date to filter analytics"
                           className="w-full"
                         />
                       </div>
@@ -1013,7 +1015,7 @@ export default function ManagerDashboard() {
                           onClick={clearFilters}
                           className="w-full sm:w-auto"
                         >
-                          Clear Filter
+                          {t("app.clear")}
                         </Button>
                       </div>
                     </div>
@@ -1021,8 +1023,8 @@ export default function ManagerDashboard() {
                     {/* Info Text */}
                     <p className="text-xs text-muted-foreground mt-2">
                       {filters.date
-                        ? `Showing analytics for ${new Date(filters.date).toLocaleDateString()}`
-                        : "Showing overall analytics"}
+                        ? `${t("app.filter")} ${new Date(filters.date).toLocaleDateString()}`
+                        : t("app.all")}
                     </p>
                   </CardContent>
                 </Card>
@@ -2079,24 +2081,24 @@ export default function ManagerDashboard() {
               <CardHeader className="pb-3 items-center">
                 <CardTitle className="flex items-center text-2xl font-bold">
                   <User className="w-6 h-6 mr-2" strokeWidth={3}/>
-                  Profile Information
+                  {t("profile.title")}
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-3 text-center">
                 <div>
-                  <Label className="text-xs text-gray-600">Name</Label>
+                  <Label className="text-xs text-gray-600">{t("households.headName")}</Label>
                   <p className="font-medium">{user?.name}</p>
                 </div>
                 <div>
-                  <Label className="text-xs text-gray-600">User ID</Label>
+                  <Label className="text-xs text-gray-600">{t("auth.userId")}</Label>
                   <p className="font-medium">{user?.userId}</p>
                 </div>
                 <div>
-                  <Label className="text-xs text-gray-600">Village</Label>
+                  <Label className="text-xs text-gray-600">{t("villages.title")}</Label>
                   <p className="font-medium">{user?.villageId}</p>
                 </div>
                 <div>
-                  <Label className="text-xs text-gray-600 pr-3">Role</Label>
+                  <Label className="text-xs text-gray-600 pr-3">{t("roles.manager")}</Label>
                   <Badge variant="secondary">{user?.role}</Badge>
                 </div>
               </CardContent>
@@ -2107,7 +2109,7 @@ export default function ManagerDashboard() {
               <CardHeader className="pb-3">
                 <CardTitle className="flex items-center text-lg">
                   <Settings className="w-5 h-5 mr-2" />
-                  Settings
+                  {t("navigation.settings")}
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
@@ -2119,7 +2121,7 @@ export default function ManagerDashboard() {
                 className="flex items-center justify-center gap-1 sm:gap-2 flex-1 sm:flex-none text-xs sm:text-sm w-full"
               >
                 <Settings className="h-3 w-3 sm:h-4 sm:w-4" />
-                <span className="">Change Password</span>
+                <span className="">{t("app.changePassword")}</span>
               </Button>
 
               {/* Logout Button */}
@@ -3106,7 +3108,7 @@ export default function ManagerDashboard() {
       <Dialog open={showPasswordDialog} onOpenChange={setShowPasswordDialog}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Change Password</DialogTitle>
+            <DialogTitle>{t("app.changePassword")}</DialogTitle>
           </DialogHeader>
           <form
             onSubmit={(e) => {
@@ -3118,7 +3120,7 @@ export default function ManagerDashboard() {
               const confirmPassword = formData.get("confirmPassword") as string;
 
               if (newPassword !== confirmPassword) {
-                toast({ title: "Passwords don't match", variant: "destructive" });
+                toast({ title: t("validation.passwordsDoNotMatch"), variant: "destructive" });
                 return;
               }
               changePasswordMutation.mutate({ currentPassword, newPassword });
@@ -3126,19 +3128,19 @@ export default function ManagerDashboard() {
             className="space-y-4"
           >
             <div>
-              <Label htmlFor="currentPassword">Current Password</Label>
+              <Label htmlFor="currentPassword">{t("profile.currentPassword")}</Label>
               <Input id="currentPassword" name="currentPassword" type="password" required />
             </div>
             <div>
-              <Label htmlFor="newPassword">New Password</Label>
+              <Label htmlFor="newPassword">{t("profile.newPassword")}</Label>
               <Input id="newPassword" name="newPassword" type="password" required />
             </div>
             <div>
-              <Label htmlFor="confirmPassword">Confirm New Password</Label>
+              <Label htmlFor="confirmPassword">{t("profile.confirmPassword")}</Label>
               <Input id="confirmPassword" name="confirmPassword" type="password" required />
             </div>
             <Button type="submit" disabled={changePasswordMutation.isPending}>
-              {changePasswordMutation.isPending ? "Changing..." : "Change Password"}
+              {changePasswordMutation.isPending ? t("app.changing") : t("app.changePassword")}
             </Button>
           </form>
         </DialogContent>
