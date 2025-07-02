@@ -44,6 +44,8 @@ export default function AdminDashboard() {
     villageIds: [] as string[],
   });
 
+  const [bulkAssignVillages, setBulkAssignVillages] = useState<string[]>([]);
+
   const [announcement, setAnnouncement] = useState<any>({
     message: "",
     targetAudience: "all",
@@ -443,6 +445,34 @@ export default function AdminDashboard() {
       toast({
         title: "Error",
         description: "Failed to remove village from moderator",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Bulk assign villages to moderator mutation
+  const bulkAssignVillagesToModeratorMutation = useMutation({
+    mutationFn: async ({ moderatorId, villageIds }: { moderatorId: string; villageIds: string[] }) => {
+      const results = [];
+      for (const villageId of villageIds) {
+        const response = await apiRequest("POST", `/api/moderators/${moderatorId}/villages`, { villageId });
+        const result = await response.json();
+        results.push(result);
+      }
+      return results;
+    },
+    onSuccess: (results) => {
+      toast({
+        title: "Success",
+        description: `${results.length} villages assigned successfully`,
+      });
+      setBulkAssignVillages([]);
+      queryClient.invalidateQueries({ queryKey: ["/api/moderators"] });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to assign villages",
         variant: "destructive",
       });
     },
@@ -1332,27 +1362,90 @@ className="p-1 sm:p-2"
                                 </div>
                               </div>
                               <div>
-                                <Label>Assign New Village</Label>
-                                <div className="space-y-2">
-                                  <Select onValueChange={(villageId) => {
-                                    assignVillageToModeratorMutation.mutate({
-                                      moderatorId: moderator.moderatorId,
-                                      villageId
-                                    });
-                                  }}>
-                                    <SelectTrigger>
-                                      <SelectValue placeholder="Select village to assign" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                      {villages?.filter((village: any) => 
-                                        !moderator.villages?.some((mv: any) => mv.villageId === village.villageId)
-                                      ).map((village: any) => (
-                                        <SelectItem key={village.villageId} value={village.villageId}>
+                                <Label>Assign New Villages</Label>
+                                <div className="space-y-3">
+                                  <div className="space-y-2 max-h-32 overflow-y-auto border rounded p-2">
+                                    {villages?.filter((village: any) => 
+                                      !moderator.villages?.some((mv: any) => mv.villageId === village.villageId)
+                                    ).map((village: any) => (
+                                      <div key={village.villageId} className="flex items-center space-x-2">
+                                        <input
+                                          type="checkbox"
+                                          id={`bulk-assign-village-${village.villageId}-${moderator.moderatorId}`}
+                                          checked={bulkAssignVillages.includes(village.villageId)}
+                                          onChange={(e) => {
+                                            if (e.target.checked) {
+                                              setBulkAssignVillages(prev => [...prev, village.villageId]);
+                                            } else {
+                                              setBulkAssignVillages(prev => prev.filter(id => id !== village.villageId));
+                                            }
+                                          }}
+                                          className="rounded"
+                                        />
+                                        <label htmlFor={`bulk-assign-village-${village.villageId}-${moderator.moderatorId}`} className="text-sm">
                                           {village.name} ({village.villageId})
-                                        </SelectItem>
-                                      ))}
-                                    </SelectContent>
-                                  </Select>
+                                        </label>
+                                      </div>
+                                    ))}
+                                    {villages?.filter((village: any) => 
+                                      !moderator.villages?.some((mv: any) => mv.villageId === village.villageId)
+                                    ).length === 0 && (
+                                      <p className="text-muted-foreground text-sm">All villages are already assigned</p>
+                                    )}
+                                  </div>
+                                  
+                                  {bulkAssignVillages.length > 0 && (
+                                    <div className="flex items-center justify-between p-2 bg-blue-50 rounded">
+                                      <span className="text-sm text-blue-700">
+                                        {bulkAssignVillages.length} village{bulkAssignVillages.length > 1 ? 's' : ''} selected
+                                      </span>
+                                      <div className="space-x-2">
+                                        <Button
+                                          size="sm"
+                                          variant="outline"
+                                          onClick={() => setBulkAssignVillages([])}
+                                        >
+                                          Clear
+                                        </Button>
+                                        <Button
+                                          size="sm"
+                                          onClick={() => {
+                                            bulkAssignVillagesToModeratorMutation.mutate({
+                                              moderatorId: moderator.moderatorId,
+                                              villageIds: bulkAssignVillages
+                                            });
+                                          }}
+                                          disabled={bulkAssignVillagesToModeratorMutation.isPending}
+                                        >
+                                          {bulkAssignVillagesToModeratorMutation.isPending ? 'Assigning...' : 'Assign Selected'}
+                                        </Button>
+                                      </div>
+                                    </div>
+                                  )}
+
+                                  <div className="flex space-x-2">
+                                    <Button
+                                      size="sm"
+                                      variant="outline"
+                                      onClick={() => {
+                                        const availableVillages = villages?.filter((village: any) => 
+                                          !moderator.villages?.some((mv: any) => mv.villageId === village.villageId)
+                                        ) || [];
+                                        setBulkAssignVillages(availableVillages.map(v => v.villageId));
+                                      }}
+                                      className="flex-1"
+                                    >
+                                      Select All
+                                    </Button>
+                                    <Button
+                                      size="sm"
+                                      variant="outline"
+                                      onClick={() => setBulkAssignVillages([])}
+                                      className="flex-1"
+                                    >
+                                      Clear All
+                                    </Button>
+                                  </div>
                                 </div>
                               </div>
                             </div>
