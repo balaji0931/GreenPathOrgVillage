@@ -2121,29 +2121,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Serve manifest.json
-  app.get("/manifest.json", (req, res) => {
-    res.setHeader("Content-Type", "application/manifest+json");
-    res.sendFile(path.resolve("public/manifest.json"));
-  });
-
-  // Serve PWA icons
-  app.get("/icons/:iconName", (req, res) => {
-    const iconName = req.params.iconName;
-    const iconPath = path.resolve(`public/icons/${iconName}`);
-
-    try {
-      const iconBuffer = readFileSync(iconPath);
-      res.setHeader("Content-Type", "image/png");
-      res.setHeader("Cache-Control", "public, max-age=31536000, immutable");
-      res.setHeader("Content-Length", iconBuffer.length.toString());
-      res.setHeader("Access-Control-Allow-Origin", "*");
-      res.send(iconBuffer);
-    } catch (error) {
-      console.error(`Icon not found: ${iconPath}`);
-      res.status(404).json({ error: "Icon not found" });
-    }
-  });
+  // Note: manifest.json and icon routes are handled in server/index.ts to avoid conflicts
 
   // Serve uploaded files
   app.use('/uploads', express.static('uploads'));

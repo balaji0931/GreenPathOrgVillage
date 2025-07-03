@@ -213,11 +213,17 @@ app.get("/.well-known/assetlinks.json", (_req, res) => {
 app.get("/manifest.json", (_req, res) => {
   try {
     res.setHeader("Content-Type", "application/manifest+json; charset=utf-8");
-    res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
+    res.setHeader("Cache-Control", "public, max-age=86400"); // Cache for 24 hours for better TWA performance
+    res.setHeader("Access-Control-Allow-Origin", "*");
+    res.setHeader("Cross-Origin-Resource-Policy", "cross-origin");
+    
     const manifestPath = path.join(process.cwd(), "public", "manifest.json");
     if (fs.existsSync(manifestPath)) {
-      res.sendFile(manifestPath);
+      const manifestBuffer = fs.readFileSync(manifestPath);
+      res.setHeader("Content-Length", manifestBuffer.length.toString());
+      res.send(manifestBuffer);
     } else {
+      console.error("Manifest not found at:", manifestPath);
       res.status(404).json({ error: "Manifest not found" });
     }
   } catch (error) {
@@ -226,30 +232,88 @@ app.get("/manifest.json", (_req, res) => {
   }
 });
 
-// Serve icon files with correct MIME types
+// Serve icon files with correct MIME types - Enhanced for TWA compatibility
 app.get("/icons/:filename", (req, res) => {
   try {
     const filename = req.params.filename;
     const iconPath = path.join(process.cwd(), "public", "icons", filename);
     
     if (!fs.existsSync(iconPath)) {
-      return res.status(404).send("Icon not found");
+      console.error(`Icon not found: ${iconPath}`);
+      return res.status(404).json({ error: "Icon not found" });
     }
 
-    // Set correct MIME type based on file extension
-    if (filename.endsWith('.png')) {
-      res.setHeader("Content-Type", "image/png");
-    } else if (filename.endsWith('.svg')) {
-      res.setHeader("Content-Type", "image/svg+xml");
-    } else if (filename.endsWith('.ico')) {
-      res.setHeader("Content-Type", "image/x-icon");
-    }
+    // Enhanced headers for TWA and PWA compatibility
+    res.setHeader("Content-Type", "image/png");
+    res.setHeader("Cache-Control", "public, max-age=31536000, immutable");
+    res.setHeader("Access-Control-Allow-Origin", "*");
+    res.setHeader("Access-Control-Allow-Methods", "GET, HEAD, OPTIONS");
+    res.setHeader("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
+    res.setHeader("Cross-Origin-Resource-Policy", "cross-origin");
     
-    res.setHeader("Cache-Control", "public, max-age=31536000"); // Cache for 1 year
-    res.sendFile(iconPath);
+    // Read file and set content length for better compatibility
+    const iconBuffer = fs.readFileSync(iconPath);
+    res.setHeader("Content-Length", iconBuffer.length.toString());
+    
+    res.send(iconBuffer);
   } catch (error) {
     console.error("Icon route error:", error);
-    res.status(500).send("Icon error");
+    res.status(500).json({ error: "Icon error" });
+  }
+});
+
+// Serve favicon.ico
+app.get("/favicon.ico", (_req, res) => {
+  try {
+    const faviconPath = path.join(process.cwd(), "public", "icons", "icon-96x96.png");
+    if (fs.existsSync(faviconPath)) {
+      res.setHeader("Content-Type", "image/png");
+      res.setHeader("Cache-Control", "public, max-age=31536000");
+      res.sendFile(faviconPath);
+    } else {
+      res.status(204).end(); // No content
+    }
+  } catch (error) {
+    console.error("Favicon error:", error);
+    res.status(204).end();
+  }
+});
+
+// PWA/TWA health check endpoint
+app.get("/api/pwa/health", (_req, res) => {
+  try {
+    const manifestPath = path.join(process.cwd(), "public", "manifest.json");
+    const iconsPath = path.join(process.cwd(), "public", "icons");
+    
+    const manifestExists = fs.existsSync(manifestPath);
+    const iconsExist = fs.existsSync(iconsPath);
+    
+    const iconFiles = fs.readdirSync(iconsPath).filter(file => file.endsWith('.png'));
+    
+    res.json({
+      status: "healthy",
+      manifest: {
+        exists: manifestExists,
+        path: "/manifest.json"
+      },
+      icons: {
+        directory: iconsExist,
+        count: iconFiles.length,
+        files: iconFiles,
+        basePath: "/icons/"
+      },
+      assetLinks: {
+        path: "/.well-known/assetlinks.json"
+      },
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    console.error("PWA health check error:", error);
+    res.status(500).json({ 
+      status: "error", 
+      error: "PWA health check failed",
+      timestamp: new Date().toISOString()
+    });
   }
 });
 

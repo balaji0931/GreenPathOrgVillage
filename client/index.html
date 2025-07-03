@@ -12,8 +12,10 @@
       content="Comprehensive waste management system for villages with real-time tracking, multilingual support, and offline capabilities."
     />
 
-    <!-- PWA Meta Tags -->
+    <!-- PWA & TWA Meta Tags -->
     <meta name="theme-color" content="#16a34a" />
+    <meta name="theme-color" media="(prefers-color-scheme: light)" content="#16a34a" />
+    <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#15803d" />
     <meta name="background-color" content="#ffffff" />
     <meta name="application-name" content="GreenPath" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -23,25 +25,31 @@
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="msapplication-TileColor" content="#16a34a" />
     <meta name="msapplication-tap-highlight" content="no" />
+    <meta name="msapplication-TileImage" content="/icons/icon-144x144.png" />
+    <meta name="msapplication-config" content="none" />
 
     <!-- Manifest -->
-    <link rel="manifest" href="/manifest.json" />
+    <link rel="manifest" href="/manifest.json" crossorigin="use-credentials" />
 
     <!-- Icons -->
-    <link
-      rel="icon"
-      type="image/png"
-      sizes="32x32"
-      href="/icons/icon-96x96.png"
-    />
-    <link
-      rel="icon"
-      type="image/png"
-      sizes="16x16"
-      href="/icons/icon-72x72.png"
-    />
+    <link rel="icon" type="image/png" sizes="32x32" href="/icons/icon-96x96.png" />
+    <link rel="icon" type="image/png" sizes="16x16" href="/icons/icon-72x72.png" />
+    <link rel="shortcut icon" href="/icons/icon-96x96.png" />
+    
+    <!-- Apple Touch Icons -->
     <link rel="apple-touch-icon" href="/icons/icon-152x152.png" />
     <link rel="apple-touch-icon" sizes="72x72" href="/icons/icon-72x72.png" />
+    <link rel="apple-touch-icon" sizes="96x96" href="/icons/icon-96x96.png" />
+    <link rel="apple-touch-icon" sizes="128x128" href="/icons/icon-128x128.png" />
+    <link rel="apple-touch-icon" sizes="144x144" href="/icons/icon-144x144.png" />
+    <link rel="apple-touch-icon" sizes="152x152" href="/icons/icon-152x152.png" />
+    <link rel="apple-touch-icon" sizes="192x192" href="/icons/icon-192x192.png" />
+    <link rel="apple-touch-icon" sizes="384x384" href="/icons/icon-384x384.png" />
+    <link rel="apple-touch-icon" sizes="512x512" href="/icons/icon-512x512.png" />
+
+    <!-- Android Chrome Icons -->
+    <link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192x192.png" />
+    <link rel="icon" type="image/png" sizes="512x512" href="/icons/icon-512x512.png" />
     <link rel="apple-touch-icon" sizes="96x96" href="/icons/icon-96x96.png" />
     <link
       rel="apple-touch-icon"
