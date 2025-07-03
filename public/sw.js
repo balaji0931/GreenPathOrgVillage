@@ -24,8 +24,9 @@ const MAX_CACHE_SIZE = {
 // Assets to cache immediately
 const STATIC_ASSETS = [
   "/",
-  "/manifest.json",
   "/index.html",
+  "/manifest.json",
+  "/favicon.ico",
   "/icons/icon-72x72.png",
   "/icons/icon-96x96.png",
   "/icons/icon-128x128.png",
@@ -34,6 +35,15 @@ const STATIC_ASSETS = [
   "/icons/icon-192x192.png",
   "/icons/icon-384x384.png",
   "/icons/icon-512x512.png"
+];
+
+// Runtime assets that will be cached as they are accessed
+const DYNAMIC_CACHE_PATTERNS = [
+  /\/src\/.+\.(js|jsx|ts|tsx)$/,
+  /\/src\/.+\.css$/,
+  /\/@fs\/.+$/,
+  /\/@vite\/.+$/,
+  /\/@react-refresh$/
 ];
 
 // API endpoints to cache
@@ -301,20 +311,22 @@ self.addEventListener("fetch", (event) => {
   event.respondWith(
     (async () => {
       try {
-        // Priority 1: Static assets - cache first with offline fallback
-        if (isStaticAsset(request)) {
+        // Priority 1: Static assets and development files - cache first with offline fallback
+        if (isStaticAsset(request) || isDevelopmentAsset(request)) {
           const cachedResponse = await caches.match(request);
           if (cachedResponse) {
-            console.log("[Service Worker] Serving cached static asset (offline ready)");
+            console.log("[Service Worker] Serving cached asset (offline ready)");
             return cachedResponse;
           }
           try {
             const networkResponse = await fetch(request);
-            const cache = await caches.open(STATIC_CACHE);
-            cache.put(request, networkResponse.clone());
+            if (networkResponse.ok) {
+              const cache = await caches.open(DYNAMIC_CACHE);
+              cache.put(request, networkResponse.clone());
+            }
             return networkResponse;
           } catch {
-            console.log("[Service Worker] Network failed for static asset, serving offline fallback");
+            console.log("[Service Worker] Network failed for asset, serving offline fallback");
             return createOfflineAssetResponse(url.pathname);
           }
         }
@@ -342,19 +354,26 @@ self.addEventListener("fetch", (event) => {
 
         // Priority 3: Navigation requests - serve app shell for offline SPA functionality
         if (request.mode === "navigate") {
-          const cachedResponse = await caches.match("/");
-          if (cachedResponse) {
-            console.log("[Service Worker] Serving offline app shell for navigation");
-            return cachedResponse;
-          }
           try {
             const networkResponse = await fetch(request);
-            const cache = await caches.open(DYNAMIC_CACHE);
-            cache.put(request, networkResponse.clone());
-            return networkResponse;
-          } catch {
-            return createOfflineAppShell();
+            if (networkResponse.ok) {
+              const cache = await caches.open(DYNAMIC_CACHE);
+              cache.put(request, networkResponse.clone());
+              return networkResponse;
+            }
+          } catch (error) {
+            console.log("[Service Worker] Network failed for navigation, serving cached app shell");
           }
+          
+          // Try to serve cached HTML first
+          const cachedResponse = await caches.match("/") || await caches.match("/index.html");
+          if (cachedResponse) {
+            console.log("[Service Worker] Serving cached app shell for offline navigation");
+            return cachedResponse;
+          }
+          
+          // Fallback to basic offline shell
+          return createOfflineAppShell();
         }
 
         // Default: try cache first, then network, then offline fallback
@@ -485,6 +504,20 @@ async function handleNavigationRequest(request) {
 function isStaticAsset(request) {
   const url = new URL(request.url);
   return url.pathname.match(/\.(css|js|png|jpg|jpeg|svg|ico|woff|woff2|ttf)$/);
+}
+
+function isDevelopmentAsset(request) {
+  const url = new URL(request.url);
+  return (
+    url.pathname.startsWith('/src/') ||
+    url.pathname.startsWith('/@vite/') ||
+    url.pathname.startsWith('/@fs/') ||
+    url.pathname.startsWith('/@react-refresh') ||
+    url.pathname.includes('.tsx') ||
+    url.pathname.includes('.ts') ||
+    url.pathname.includes('.jsx') ||
+    url.pathname.includes('.json')
+  );
 }
 
 function shouldCacheApiResponse(pathname) {
@@ -876,7 +909,7 @@ function createFallbackResponse(url) {
 
 // Additional offline support functions
 function createOfflineAssetResponse(pathname) {
-  if (pathname.endsWith('.css')) {
+  if (pathname.endsWith('.css') || pathname.includes('css')) {
     return new Response(`
       /* Offline CSS - Basic styling for offline mode */
       body { 
@@ -884,6 +917,7 @@ function createOfflineAssetResponse(pathname) {
         margin: 0; 
         padding: 1rem;
         background: #f8fafc;
+        color: #1f2937;
       }
       .offline-indicator {
         background: #fef3c7;
@@ -893,21 +927,55 @@ function createOfflineAssetResponse(pathname) {
         margin-bottom: 1rem;
         text-align: center;
       }
+      .offline-message {
+        text-align: center;
+        padding: 2rem;
+        background: white;
+        border-radius: 0.5rem;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+      }
     `, {
       headers: { "Content-Type": "text/css" }
     });
   }
-  if (pathname.endsWith('.js')) {
+  
+  if (pathname.endsWith('.js') || pathname.endsWith('.tsx') || pathname.endsWith('.ts') || pathname.includes('vite') || pathname.includes('react')) {
     return new Response(`
-      console.log("[Offline] JavaScript file not available - ${pathname}");
-      // Basic offline functionality
+      console.log("[Offline] Asset not cached - ${pathname}");
+      // Offline mode indicator
       window.offlineMode = true;
+      
+      // If this is the main module, show offline message
+      if ("${pathname}".includes("main.tsx") || "${pathname}".includes("src/")) {
+        document.addEventListener('DOMContentLoaded', function() {
+          const root = document.getElementById('root');
+          if (root && !root.innerHTML.trim()) {
+            root.innerHTML = \`
+              <div style="min-height: 100vh; display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg, #16a34a, #15803d); color: white; font-family: system-ui;">
+                <div style="text-align: center; background: rgba(255,255,255,0.1); padding: 2rem; border-radius: 1rem; max-width: 400px;">
+                  <div style="font-size: 4rem; margin-bottom: 1rem;">🌱</div>
+                  <h1>GreenPath</h1>
+                  <p style="margin: 1rem 0;">Working Offline</p>
+                  <div style="background: rgba(254,243,199,0.2); padding: 1rem; border-radius: 0.5rem; margin: 1rem 0;">
+                    <strong>App is cached for offline use</strong><br>
+                    Please check your internet connection
+                  </div>
+                  <button onclick="window.location.reload()" style="background: white; color: #16a34a; border: none; padding: 0.75rem 1.5rem; border-radius: 0.5rem; cursor: pointer; font-weight: 600;">
+                    Try Again
+                  </button>
+                </div>
+              </div>
+            \`;
+          }
+        });
+      }
     `, {
       headers: { "Content-Type": "application/javascript" }
     });
   }
+  
   return new Response('Asset temporarily unavailable offline', {
-    status: 404,
+    status: 503,
     headers: { "Content-Type": "text/plain" }
   });
 }
