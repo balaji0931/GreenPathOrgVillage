@@ -22,17 +22,19 @@ export function OfflineIndicator() {
     // Also check connection status by trying to fetch
     const checkConnection = async () => {
       try {
-        const response = await fetch('/api/auth/user', { 
+        const response = await fetch('/manifest.json', { 
           method: 'HEAD',
           cache: 'no-cache'
         });
-        setIsOnline(response.ok);
+        // Any response means we're online
+        setIsOnline(true);
       } catch {
         setIsOnline(false);
       }
     };
 
-    // Check connection every 30 seconds
+    // Check connection immediately and then every 30 seconds
+    checkConnection();
     const interval = setInterval(checkConnection, 30000);
 
     return () => {
