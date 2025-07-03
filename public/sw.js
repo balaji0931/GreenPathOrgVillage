@@ -241,21 +241,23 @@ async function getOfflineHouseholds() {
   });
 }
 
-// Install event - cache static assets and initialize DB
+// Install event - cache static assets and initialize DB for offline support
 self.addEventListener("install", (event) => {
-  console.log("[Service Worker] Installing...");
+  console.log("[Service Worker] Installing with offline capabilities...");
   event.waitUntil(
     Promise.all([
       caches.open(STATIC_CACHE).then((cache) => {
-        console.log("[Service Worker] Caching static assets");
+        console.log("[Service Worker] Caching essential assets for offline use");
         return cache.addAll(STATIC_ASSETS).catch((error) => {
           console.warn("[Service Worker] Failed to cache some assets:", error);
           return Promise.resolve();
         });
       }),
-      initOfflineDB()
+      initOfflineDB().then(() => {
+        console.log("[Service Worker] Offline database initialized");
+      })
     ]).then(() => {
-      console.log("[Service Worker] Installation complete");
+      console.log("[Service Worker] Installation complete - App now supports offline mode!");
       return self.skipWaiting();
     }).catch((error) => {
       console.error("[Service Worker] Installation failed:", error);
