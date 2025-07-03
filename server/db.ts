@@ -67,7 +67,6 @@ pool.on('release', () => {
 
 pool.on('error', (err) => {
   console.error('💥 Unexpected database pool error:', err);
-  process.exit(-1);
 });
 
 // Graceful shutdown handler
