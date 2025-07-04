@@ -295,7 +295,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Generate village ID
       const villages = await storage.getVillages();
-      const villageId = `V${String(villages.length + 1).padStart(3, '0')}`;
+
+      // Extract just the numeric parts from all village IDs (e.g., 'V013' → 13)
+      const maxIdNumber = villages.reduce((max, v) => {
+        const num = parseInt(v.villageId?.slice(1) || "0");
+        return num > max ? num : max;
+      }, 0);
+
+      // Assign the next unique ID
+      const villageId = `V${String(maxIdNumber + 1).padStart(3, '0')}`;
+
 
       // Create village
       const village = await storage.createVillage({
@@ -1784,10 +1793,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { name, phone, email, villageIds = [] } = req.body;
       const createdBy = req.session.userId!;
 
-      // Generate moderator ID
+      // Generate moderator ID safely
       const existingModerators = await storage.getModeratorsList();
-      const moderatorNumber = existingModerators.length + 1;
+
+      // Extract existing numbers from IDs like "MOD-001"
+      const usedNumbers = existingModerators
+        .map((mod) => {
+          const match = mod.moderatorId.match(/MOD-(\d+)/);
+          return match ? parseInt(match[1], 10) : null;
+        })
+        .filter((n): n is number => n !== null)
+        .sort((a, b) => a - b);
+
+      // Find the first available number
+      let moderatorNumber = 1;
+      for (const n of usedNumbers) {
+        if (n === moderatorNumber) {
+          moderatorNumber++;
+        } else {
+          break;
+        }
+      }
+
       const moderatorId = `MOD-${String(moderatorNumber).padStart(3, '0')}`;
+
 
       // Create moderator
       const moderator = await storage.createModerator({

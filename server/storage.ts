@@ -725,10 +725,11 @@ export class DatabaseStorage implements IStorage {
 
     // 2. Delete feedback and attendance for this village's collectors
     await db.delete(feedback)
-      .where(sql`collector_id IN (SELECT id FROM collectors WHERE village_id = ${villageId})`);
+      .where(sql`to_collector_id IN (SELECT id FROM collectors WHERE village_id = ${villageId})`);
+    
+    await db.delete(moderatorVillageAssignments)
+    .where(sql`village_id = ${villageId}`);
 
-    await db.delete(attendance)
-      .where(sql`collector_id IN (SELECT id FROM collectors WHERE village_id = ${villageId})`);
 
     // 3. Delete main tables
     await db.delete(households).where(eq(households.villageId, villageId));
@@ -814,30 +815,56 @@ export class DatabaseStorage implements IStorage {
     };
   }
 
-  async addManagerToVillage(villageData: { villageId: string; managerName: string; managerPhone: string }): Promise<User> {
-    const { villageId, managerName, managerPhone } = villageData;
+  async addManagerToVillage(villageData: {
+  villageId: string;
+  managerName: string;
+  managerPhone: string;
+}): Promise<User> {
+  const { villageId, managerName, managerPhone } = villageData;
 
-    const existingManagers = await db.select().from(users)
-      .where(and(eq(users.villageId, villageId), eq(users.role, 'manager')));
+  // Get all existing managers for the village
+  const existingManagers = await db
+    .select({ userId: users.userId })
+    .from(users)
+    .where(and(eq(users.villageId, villageId), eq(users.role, 'manager')));
 
-    const managerNumber = existingManagers.length + 1;
-    const managerId = `${villageId}-M${managerNumber}`;
-    const hashedPassword = await bcrypt.hash(managerId, 10);
+  // Extract and parse manager numbers from user IDs like "V001-M3"
+  const usedNumbers = existingManagers
+    .map((u) => {
+      const match = u.userId.match(/-M(\d+)$/);
+      return match ? parseInt(match[1], 10) : 0;
+    })
+    .sort((a, b) => a - b);
 
-    const [manager] = await db
-      .insert(users)
-      .values({
-        userId: managerId,
-        password: hashedPassword,
-        role: 'manager',
-        name: managerName,
-        phone: managerPhone,
-        villageId,
-      })
-      .returning();
-
-    return manager;
+  // Find the smallest unused manager number
+  let managerNumber = 1;
+  for (const num of usedNumbers) {
+    if (num === managerNumber) {
+      managerNumber++;
+    } else {
+      break;
+    }
   }
+
+  const managerId = `${villageId}-M${managerNumber}`;
+  const hashedPassword = await bcrypt.hash(managerId, 10);
+
+  // Insert new manager
+  const [manager] = await db
+    .insert(users)
+    .values({
+      userId: managerId,
+      password: hashedPassword,
+      role: 'manager',
+      name: managerName,
+      phone: managerPhone,
+      villageId,
+    })
+    .returning();
+
+  return manager;
+}
+
 
   async deleteUser(userId: string): Promise<void> {
     await db.delete(users).where(eq(users.userId, userId));

@@ -155,11 +155,17 @@ export const generateBulkQRCodesPDF = async (
     currentY += qrSize + 6;
     pdf.setTextColor(0, 0, 0);
     pdf.setFontSize(10);
-    pdf.text(`HouseUID: GEN-${household.uid}`, centerX, currentY, { align: 'center' });
+    pdf.text(`House UID: GEN-${household.uid}`, centerX, currentY, { align: 'center' });
     currentY += 6;
     pdf.text(`Head: ${household.headName}`, centerX, currentY, { align: 'center' });
     currentY += 6;
     pdf.text(`No: ${household.houseNumber}`, centerX, currentY, { align: 'center' });
+    currentY += 6;
+    pdf.text('Login & manage at: ', centerX, currentY, { align: 'center' });
+    currentY += 6;
+    pdf.setFontSize(12);
+    pdf.setTextColor(0, 128, 0);
+    pdf.text('www.greenpathorg.social', centerX, currentY, { align: 'center' });
   }
 
   try {

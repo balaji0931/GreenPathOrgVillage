@@ -89,6 +89,8 @@ const ISSUE_CATEGORIES = [
 ];
 
 export default function CollectorDashboard() {
+  const [isSubmitLocked, setIsSubmitLocked] = useState(false);
+
   const { user, logout } = useAuth();
   const { toast } = useToast();
   const { t } = useTranslation();
@@ -571,12 +573,14 @@ export default function CollectorDashboard() {
       }
 
       setShowConfirmSubmit(false);
+      setIsSubmitLocked(false);
     } catch (error) {
       toast({
         title: "Error",
         description: "Failed to submit collection. Please try again.",
         variant: "destructive",
       });
+      setIsSubmitLocked(false);
     }
   };
 
@@ -1841,11 +1845,15 @@ export default function CollectorDashboard() {
                 ❌ Cancel
               </Button>
               <Button
-                onClick={handleSubmitCollection}
-                className="flex-1 py-3 text-lg bg-green-600 hover:bg-green-700 text-white"
-                disabled={createCollectionMutation.isPending}
+                onClick={() => {
+                  if (isSubmitLocked || createCollectionMutation.isPending) return; // 💥 Stop if already clicked
+                  setIsSubmitLocked(true); // 🔒 Lock after first click
+                  handleSubmitCollection();
+                }}
+                className="flex-1 py-3 text-lg bg-green-600 hover:bg-green-700 text-white disabled:opacity-60 disabled:cursor-not-allowed"
+                disabled={isSubmitLocked || createCollectionMutation.isPending}
               >
-                {createCollectionMutation.isPending ? (
+                {(isSubmitLocked || createCollectionMutation.isPending) ? (
                   <>
                     <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent mr-2" />
                     Submitting...
@@ -1854,6 +1862,8 @@ export default function CollectorDashboard() {
                   <>✅ OK, SUBMIT</>
                 )}
               </Button>
+
+
             </div>
           </div>
         </DialogContent>

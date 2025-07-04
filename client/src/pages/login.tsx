@@ -71,6 +71,9 @@ export default function Login() {
         <Card className="shadow-lg">
           <CardContent className="pt-3">
             <form onSubmit={handleSubmit} className="space-y-3">
+              <p className="text-xs text-gray-500 mb-1 text-center">
+                For first-time login, your User ID and Password are the same.
+              </p>
               <div>
                 <Label htmlFor="userId" className="text-gray-700 font-medium">
                   {t('auth.userId')}
@@ -131,7 +134,9 @@ export default function Login() {
                   </a>
                 </label>
               </div>
-
+              <p className="text-xs text-gray-500 text-center">
+                Please change your password after logging in from the Profile section.
+              </p>
               <Button
                 type="submit"
                 className="w-full bg-green-primary hover:bg-green-dark text-white font-medium py-3"
@@ -154,7 +159,7 @@ export default function Login() {
             </form>
 
             <div className="mt-6 text-center">
-              <p className="text-xs text-gray-500">
+              <p className="text-xs text-gray-500 mb-1">
                 New users are created by administrators only
               </p>
             </div>

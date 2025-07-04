@@ -568,7 +568,7 @@ export default function ManagerDashboard() {
       const successCount = Array.isArray(response) ? response.length : 0;
       toast({
         title: "Success",
-        description: `${successCount} households created successfully with QR codes!`,
+        description: `households created successfully with QR codes!`,
       });
       queryClient.invalidateQueries({ queryKey: ["/api/households"] });
       queryClient.invalidateQueries({ queryKey: ["/api/manager/stats"] });
@@ -1177,7 +1177,7 @@ export default function ManagerDashboard() {
                               }}
                               disabled={createBulkHouseholdsMutation.isPending || bulkHouseholds.every(h => !h.headName.trim())}
                             >
-                              {createBulkHouseholdsMutation.isPending ? t("manager.creating") : `${t("manager.createHouseholds")} ${bulkHouseholds.filter(h => h.headName.trim() && h.houseNumber.trim() && h.phone.trim()).length} ${t("navigation.households")}`}
+                              {createBulkHouseholdsMutation.isPending ? t("manager.creating") : `${t("manager.createHouseholds")} ${bulkHouseholds.filter(h => h.headName.trim() && h.houseNumber.trim() && h.phone.trim()).length}`}
                             </Button>
                           </div>
 
