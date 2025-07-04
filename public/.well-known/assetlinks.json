@@ -1,8 +1,8 @@
 [{
-  "relation": ["delegate_permission/common.handle_all_urls"],
-  "target": {
-    "namespace": "android_app",
-    "package_name": "dev.replit.sisko.app_3a0c2350_a0d5_4bde_83c6_29eb9cbf1c47_00_1zb54z9up9avb.twa",
-    "sha256_cert_fingerprints": ["B2:AB:A5:AD:08:11:01:F0:C8:8F:97:06:CD:32:90:58:F5:45:3F:7E:3E:CD:3E:06:AF:A9:FA:38:0D:67:6B:51"]
-  }
-}]
+      "relation": ["delegate_permission/common.handle_all_urls"],
+      "target": {
+        "namespace": "android_app",
+        "package_name": "social.greenpathorg.www.twa",
+        "sha256_cert_fingerprints": ["EF:D4:05:F3:86:CD:F5:9F:91:A1:2A:A9:32:B9:42:01:BB:39:6D:E5:25:EE:32:F7:60:B9:92:93:A6:1C:F2:BB"]
+      }
+    }]
