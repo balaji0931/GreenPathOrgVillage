@@ -60,7 +60,7 @@ app.use(helmet({
 // CORS configuration
 const corsOptions = {
   origin: process.env.NODE_ENV === 'production' 
-    ? [process.env.CLIENT_URL || 'https://your-domain.replit.app']
+    ? [process.env.CLIENT_URL || 'https:www.greenpathorg.social']
     : true,
   credentials: true,
   optionsSuccessStatus: 200,
