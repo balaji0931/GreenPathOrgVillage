@@ -8,7 +8,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useTranslation } from 'react-i18next';
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import { InstallPWA } from "@/components/InstallPWA";
-import { Leaf } from "lucide-react";
+import { Leaf, Eye, EyeOff } from "lucide-react";
 import Footer from "@/components/Footer";
 import { useLocation } from 'wouter';
 
@@ -16,6 +16,7 @@ export default function Login() {
   const [userId, setUserId] = useState("");
   const [password, setPassword] = useState("");
   const [agreedToTerms, setAgreedToTerms] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const { login, isLoginPending } = useAuth();
   const { toast } = useToast();
   const { t } = useTranslation();
@@ -51,12 +52,10 @@ export default function Login() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-green-pale to-white p-4">
       <div className="w-full max-w-md">
-        {/* Language Switcher */}
         <div className="flex justify-end">
           <LanguageSwitcher />
         </div>
 
-        {/* Logo Section */}
         <div className="text-center mb-4">
           <div className="inline-flex items-center justify-center w-20 h-20 bg-green-primary rounded-full mb-4">
             <Leaf className="text-white text-3xl" size={36} />
@@ -67,13 +66,13 @@ export default function Login() {
           </p>
         </div>
 
-        {/* Login Form */}
         <Card className="shadow-lg">
           <CardContent className="pt-3">
             <form onSubmit={handleSubmit} className="space-y-3">
               <p className="text-xs text-gray-500 mb-1 text-center">
                 For first-time login, your User ID and Password are the same.
               </p>
+
               <div>
                 <Label htmlFor="userId" className="text-gray-700 font-medium">
                   {t('auth.userId')}
@@ -89,19 +88,28 @@ export default function Login() {
                 />
               </div>
 
-              <div>
+              {/* ✅ Password input with show/hide toggle */}
+              <div className="relative">
                 <Label htmlFor="password" className="text-gray-700 font-medium">
                   {t('auth.password')}
                 </Label>
                 <Input
                   id="password"
-                  type="password"
+                  type={showPassword ? "text" : "password"}
                   placeholder={t('auth.password')}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="mt-2 focus:ring-2 focus:ring-green-primary focus:border-transparent"
+                  className="mt-2 pr-14 focus:ring-2 focus:ring-green-primary focus:border-transparent"
                   required
                 />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute top-[42px] right-3 text-sm text-gray-500 hover:text-gray-700"
+                >
+                  {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+
+                </button>
               </div>
 
               <div className="flex items-start space-x-2 py-2">
@@ -114,7 +122,7 @@ export default function Login() {
                   required
                 />
                 <label htmlFor="terms-agreement" className="text-[12px] md:text-sm text-gray-600">
-                  I agree to {" "}
+                  I agree to{" "}
                   <a
                     href="/terms-of-service"
                     target="_blank"
@@ -122,8 +130,8 @@ export default function Login() {
                     className="text-green-600 hover:text-green-700 underline"
                   >
                     Terms of Service
-                  </a>
-                  {" "}and{" "}
+                  </a>{" "}
+                  and{" "}
                   <a
                     href="/privacy-policy"
                     target="_blank"
@@ -134,9 +142,11 @@ export default function Login() {
                   </a>
                 </label>
               </div>
+
               <p className="text-xs text-gray-500 text-center">
                 Please change your password after logging in from the Profile section.
               </p>
+
               <Button
                 type="submit"
                 className="w-full bg-green-primary hover:bg-green-dark text-white font-medium py-3"
@@ -152,7 +162,6 @@ export default function Login() {
                 )}
               </Button>
 
-              {/* PWA Install Button */}
               <div className="mt-4">
                 <InstallPWA showInline={true} />
               </div>
@@ -166,7 +175,6 @@ export default function Login() {
           </CardContent>
         </Card>
 
-        {/* Footer outside the card for better positioning */}
         <div className="mt-8">
           <div className="bg-white rounded-lg shadow-sm border p-4">
             <div className="flex flex-col items-center gap-3">
