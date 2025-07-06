@@ -7,10 +7,7 @@ import {
   wasteCollections,
   issues,
   announcements,
-  attendance,
   feedback,
-  segregators,
-  segregatorAttendance,
   collectorComplaints,
   householdActions,
   moderators,
@@ -22,10 +19,7 @@ import {
   type WasteCollection,
   type Issue,
   type Announcement,
-  type Attendance,
   type Feedback,
-  type Segregator,
-  type SegregatorAttendance,
   type CollectorComplaint,
   type HouseholdAction,
   type Moderator,
@@ -37,10 +31,7 @@ import {
   type InsertWasteCollection,
   type InsertIssue,
   type InsertAnnouncement,
-  type InsertAttendance,
   type InsertFeedback,
-  type InsertSegregator,
-  type InsertSegregatorAttendance,
   type InsertCollectorComplaint,
   type InsertHouseholdAction,
   type InsertModerator,
@@ -48,24 +39,6 @@ import {
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, count, avg, sum, gte, lte, isNotNull, and, or, like, asc, sql, lt, inArray } from "drizzle-orm";
-
-interface DetailedAttendance {
-  id: number;
-  collectorId?: number;
-  segregatorId?: number;
-  date: string | Date;
-  isPresent?: boolean;
-  status?: 'present' | 'absent' | 'half_day';
-  startTime?: string;
-  endTime?: string;
-  workHours?: number;
-  workRating?: number;
-  dailyReview?: string;
-  performanceRating?: number;
-  remarks?: string;
-  markedBy: string;
-  name: string;
-}
 
 export interface IStorage {
   // User operations
@@ -110,11 +83,6 @@ export interface IStorage {
   getAnnouncementsByVillage(villageId: string): Promise<Announcement[]>;
   getGlobalAnnouncements(): Promise<Announcement[]>;
 
-  // Attendance operations
-  createAttendance(attendance: InsertAttendance): Promise<Attendance>;
-  getAttendanceByCollectorAndDate(collectorId: number, date: Date): Promise<Attendance | undefined>;
-  getAttendanceByVillageAndDate(villageId: string, date: Date): Promise<Attendance[]>;
-
   // Feedback operations
   createFeedback(feedback: InsertFeedback): Promise<Feedback>;
   getFeedbackByCollector(collectorId: number): Promise<Feedback[]>;
@@ -149,17 +117,6 @@ export interface IStorage {
   getVillageDetails(villageId: string): Promise<any>;
   addManagerToVillage(villageData: { villageId: string; managerName: string; managerPhone: string }): Promise<User>;
 
-  // Segregator operations
-  createSegregator(segregator: InsertSegregator): Promise<Segregator>;
-  getSegregatorsByVillage(villageId: string): Promise<Segregator[]>;
-  updateSegregator(id: number, updates: Partial<Segregator>): Promise<Segregator>;
-  deleteSegregator(id: number): Promise<void>;
-
-  // Segregator attendance operations
-  markSegregatorAttendance(attendance: InsertSegregatorAttendance): Promise<SegregatorAttendance>;
-  getSegregatorAttendance(segregatorId: number, startDate?: Date, endDate?: Date): Promise<SegregatorAttendance[]>;
-  getVillageSegregatorAttendance(villageId: string, date: Date): Promise<SegregatorAttendance[]>;
-
 
 
   // Enhanced collector operations
@@ -167,24 +124,8 @@ export interface IStorage {
   getCollectorStats(collectorId: number): Promise<{
     totalCollections: number;
     averageRating: number;
-    attendanceRate: number;
     complaintsCount: number;
   }>;
-
-  // Enhanced attendance operations
-  markDetailedAttendance(attendance: {
-    collectorId: number;
-    date: Date;
-    isPresent: boolean;
-    startTime?: string;
-    endTime?: string;
-    workHours?: number;
-    dailyReview?: string;
-    performanceRating?: number;
-    markedBy: string;
-  }): Promise<Attendance>;
-
-  getCollectorAttendanceHistory(collectorId: number, startDate?: Date, endDate?: Date): Promise<Attendance[]>;
 
   // Collector complaints operations
   createCollectorComplaint(complaint: {
@@ -196,19 +137,6 @@ export interface IStorage {
   getCollectorComplaints(collectorId: number): Promise<any[]>;
   resolveCollectorComplaint(complaintId: number, managerResponse: string): Promise<void>;
 
-  // Enhanced segregator operations  
-  markSegregatorDetailedAttendance(attendance: {
-    segregatorId: number;
-    date: Date;
-    status: "present" | "absent" | "half_day";
-    startTime?: string;
-    endTime?: string;
-    workHours?: number;
-    workRating?: number;
-    dailyReview?: string;
-    remarks?: string;
-    markedBy: string;
-  }): Promise<any>;
 
   // Enhanced household operations
   updateHousehold(id: number, updates: Partial<Household>): Promise<Household>;
@@ -235,8 +163,6 @@ export interface IStorage {
     collectionTimeline: any[];
     villagePerformance: any[];
   }>;
-
-  getDetailedAttendanceByVillageAndDate(villageId: string, date: Date): Promise<DetailedAttendance[]>;
   getHouseholdByGeneratorUserId(generatorUserId: string): Promise<Household | undefined>;
   getComplaintsByVillage(villageId: string): Promise<any[]>;
 
@@ -422,59 +348,6 @@ export class DatabaseStorage implements IStorage {
       .from(announcements)
       .where(sql`${announcements.villageId} IS NULL`)
       .orderBy(desc(announcements.createdAt));
-  }
-
-  async createAttendance(insertAttendance: InsertAttendance): Promise<Attendance> {
-    const [attendanceRecord] = await db
-      .insert(attendance)
-      .values(insertAttendance)
-      .returning();
-    return attendanceRecord;
-  }
-
-  async getAttendanceByCollectorAndDate(collectorId: number, date: Date): Promise<Attendance | undefined> {
-    const startOfDay = new Date(date);
-    startOfDay.setHours(0, 0, 0, 0);
-    const endOfDay = new Date(date);
-    endOfDay.setHours(23, 59, 59, 999);
-
-    const [attendanceRecord] = await db
-      .select()
-      .from(attendance)
-      .where(
-        and(
-          eq(attendance.collectorId, collectorId),
-          sql`${attendance.date} >= ${startOfDay} AND ${attendance.date} <= ${endOfDay}`
-        )
-      );
-    return attendanceRecord || undefined;
-  }
-
-  async getAttendanceByVillageAndDate(villageId: string, date: Date): Promise<Attendance[]> {
-    const startOfDay = new Date(date);
-    startOfDay.setHours(0, 0, 0, 0);
-    const endOfDay = new Date(date);
-    endOfDay.setHours(23, 59, 59, 999);
-
-    const attendanceRecords = await db
-      .select({
-        id: attendance.id,
-        collectorId: attendance.collectorId,
-        date: attendance.date,
-        isPresent: attendance.isPresent,
-        markedBy: attendance.markedBy,
-        createdAt: attendance.createdAt,
-      })
-      .from(attendance)
-      .innerJoin(collectors, eq(attendance.collectorId, collectors.id))
-      .where(
-        and(
-          eq(collectors.villageId, villageId),
-          sql`${attendance.date} >= ${startOfDay} AND ${attendance.date} <= ${endOfDay}`
-        )
-      );
-
-    return attendanceRecords as Attendance[];
   }
 
   async createFeedback(insertFeedback: InsertFeedback): Promise<Feedback> {
@@ -723,7 +596,7 @@ export class DatabaseStorage implements IStorage {
     await db.delete(wasteCollections)
       .where(sql`household_id IN (SELECT id FROM households WHERE village_id = ${villageId})`);
 
-    // 2. Delete feedback and attendance for this village's collectors
+    // 2. Delete feedback and for this village's collectors
     await db.delete(feedback)
       .where(sql`to_collector_id IN (SELECT id FROM collectors WHERE village_id = ${villageId})`);
     
@@ -870,103 +743,6 @@ export class DatabaseStorage implements IStorage {
     await db.delete(users).where(eq(users.userId, userId));
   }
 
-  // Segregator operations
-  async createSegregator(insertSegregator: InsertSegregator): Promise<Segregator> {
-    const [segregator] = await db.insert(segregators).values(insertSegregator).returning();
-    return segregator;
-  }
-
-  async getSegregatorsByVillage(villageId: string): Promise<Segregator[]> {
-    return db.select().from(segregators).where(eq(segregators.villageId, villageId));
-  }
-
-  async updateSegregator(id: number, updates: Partial<Segregator>): Promise<Segregator> {
-    const [segregator] = await db.update(segregators)
-      .set(updates)
-      .where(eq(segregators.id, id))
-      .returning();
-    return segregator;
-  }
-
-  async deleteSegregator(id: number): Promise<void> {
-    await db.delete(segregators).where(eq(segregators.id, id));
-  }
-
-  // Segregator attendance operations
-  async markSegregatorAttendance(insertAttendance: InsertSegregatorAttendance): Promise<SegregatorAttendance> {
-    const [attendance] = await db.insert(segregatorAttendance).values(insertAttendance).returning();
-    return attendance;
-  }
-
-  async getSegregatorAttendance(segregatorId: number, startDate?: Date, endDate?: Date): Promise<SegregatorAttendance[]> {
-    if (startDate && endDate) {
-      return db.select().from(segregatorAttendance).where(
-        and(
-          eq(segregatorAttendance.segregatorId, segregatorId),
-          sql`${segregatorAttendance.date} >= ${startDate}`,
-          sql`${segregatorAttendance.date} <= ${endDate}`
-        )
-      );
-    }
-
-    return db.select().from(segregatorAttendance).where(eq(segregatorAttendance.segregatorId, segregatorId));
-  }
-
-  async getVillageSegregatorAttendance(villageId: string, date: Date): Promise<SegregatorAttendance[]> {
-    return db.select({
-      id: segregatorAttendance.id,
-      segregatorId: segregatorAttendance.segregatorId,
-      date: segregatorAttendance.date,
-      status: segregatorAttendance.status,
-      workRating: segregatorAttendance.workRating,
-      remarks: segregatorAttendance.remarks,
-      markedBy: segregatorAttendance.markedBy,
-      createdAt: segregatorAttendance.createdAt,
-      segregatorName: segregators.name,
-    })
-    .from(segregatorAttendance)
-    .innerJoin(segregators, eq(segregatorAttendance.segregatorId, segregators.id))
-    .where(
-      and(
-        eq(segregators.villageId, villageId),
-        eq(segregatorAttendance.date, date)
-      )
-    );
-  }
-
-  // Enhanced collector management operations
-  async markDetailedAttendance(attendanceData: {
-    collectorId: number;
-    date: Date;
-    isPresent: boolean;
-    startTime?: string;
-    endTime?: string;
-    workHours?: number;
-    dailyReview?: string;
-    performanceRating?: number;
-    markedBy: string;
-  }): Promise<Attendance> {
-    const [newAttendance]
- = await db.insert(attendance).values(attendanceData).returning();
-    return newAttendance;
-  }
-
-  async getCollectorAttendanceHistory(collectorId: number, startDate?: Date, endDate?: Date): Promise<Attendance[]> {
-    let whereConditions = [eq(attendance.collectorId, collectorId)];
-
-    if (startDate) {
-      whereConditions.push(sql`${attendance.date} >= ${startDate}`);
-    }
-    if (endDate) {
-      whereConditions.push(sql`${attendance.date} <= ${endDate}`);
-    }
-
-    return db.select()
-      .from(attendance)
-      .where(and(...whereConditions))
-      .orderBy(desc(attendance.date));
-  }
-
   async createCollectorComplaint(complaint: {
     collectorId: number;
     householdId: number;
@@ -1005,22 +781,6 @@ export class DatabaseStorage implements IStorage {
       .where(eq(collectorComplaints.id, complaintId));
   }
 
-  async markSegregatorDetailedAttendance(attendanceData: {
-    segregatorId: number;
-    date: Date;
-    status: "present" | "absent" | "half_day";
-    startTime?: string;
-    endTime?: string;
-    workHours?: number;
-    workRating?: number;
-    dailyReview?: string;
-    remarks?: string;
-    markedBy: string;
-  }): Promise<any> {
-    const [attendance] = await db.insert(segregatorAttendance).values(attendanceData).returning();
-    return attendance;
-  }
-
   // Enhanced collector operations
   async deleteCollector(id: number): Promise<void> {
     await db.delete(collectors).where(eq(collectors.id, id));
@@ -1029,7 +789,6 @@ export class DatabaseStorage implements IStorage {
   async getCollectorStats(collectorId: number): Promise<{
     totalCollections: number;
     averageRating: number;
-    attendanceRate: number;
     complaintsCount: number;
   }> {
     // Get total collections
@@ -1051,26 +810,10 @@ export class DatabaseStorage implements IStorage {
       : 0;
 
     const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
-    const [attendanceCount] = await db.select({ count: count() })
-      .from(attendance)
-      .where(and(
-        eq(attendance.collectorId, collectorId),
-        sql`${attendance.date} >= ${thirtyDaysAgo}`
-      ));
-
-    // Get attendance data for rate calculation
-    const [presentCount] = await db.select({ count: count() })
-      .from(attendance)
-      .where(and(
-        eq(attendance.collectorId, collectorId),
-        eq(attendance.isPresent, true),
-        sql`${attendance.date} >= ${thirtyDaysAgo}`
-      ));
 
     return {
       totalCollections: collectionCount.count || 0,
       averageRating: avgRating,
-      attendanceRate: attendanceCount.count > 0 ? (presentCount.count / attendanceCount.count) * 100 : 0,
       complaintsCount: complaintsCount.count || 0,
     };
   }
@@ -1086,71 +829,6 @@ export class DatabaseStorage implements IStorage {
 
   async deleteHousehold(id: number): Promise<void> {
     await db.delete(households).where(eq(households.id, id));
-  }
-
-  async getDetailedAttendanceByVillageAndDate(villageId: string, date: Date): Promise<DetailedAttendance[]> {
-    const startOfDay = new Date(date);
-    startOfDay.setHours(0, 0, 0, 0);
-    const endOfDay = new Date(date);
-    endOfDay.setHours(23, 59, 59, 999);
-
-    // Get collector attendance
-    const collectorAttendance = await db
-      .select({
-        id: attendance.id,
-        collectorId: attendance.collectorId,
-        segregatorId: sql<number | null>`NULL`,
-        date: attendance.date,
-        isPresent: attendance.isPresent,
-        status: sql<string | null>`NULL`,
-        startTime: attendance.startTime,
-        endTime: attendance.endTime,
-        workHours: attendance.workHours,
-        workRating: sql<number | null>`NULL`,
-        dailyReview: attendance.dailyReview,
-        performanceRating: attendance.performanceRating,
-        remarks: sql<string | null>`NULL`,
-        markedBy: attendance.markedBy,
-        name: collectors.name,
-      })
-      .from(attendance)
-      .innerJoin(collectors, eq(attendance.collectorId, collectors.id))
-      .where(
-        and(
-          eq(collectors.villageId, villageId),
-          sql`${attendance.date} >= ${startOfDay} AND ${attendance.date} <= ${endOfDay}`
-        )
-      );
-
-    // Get segregator attendance
-    const segregatorAttendanceData = await db
-      .select({
-        id: segregatorAttendance.id,
-        collectorId: sql<number | null>`NULL`,
-        segregatorId: segregatorAttendance.segregatorId,
-        date: segregatorAttendance.date,
-        isPresent: sql<boolean | null>`CASE WHEN ${segregatorAttendance.status} = 'present' THEN true ELSE false END`,
-        status: segregatorAttendance.status,
-        startTime: segregatorAttendance.startTime,
-        endTime: segregatorAttendance.endTime,
-        workHours: segregatorAttendance.workHours,
-        workRating: segregatorAttendance.workRating,
-        dailyReview: segregatorAttendance.dailyReview,
-        performanceRating: sql<number | null>`NULL`,
-        remarks: segregatorAttendance.remarks,
-        markedBy: segregatorAttendance.markedBy,
-        name: segregators.name,
-      })
-      .from(segregatorAttendance)
-      .innerJoin(segregators, eq(segregatorAttendance.segregatorId, segregators.id))
-      .where(
-        and(
-          eq(segregators.villageId, villageId),
-          sql`${segregatorAttendance.date} >= ${startOfDay} AND ${segregatorAttendance.date} <= ${endOfDay}`
-        )
-      );
-
-    return [...collectorAttendance, ...segregatorAttendanceData] as any[];
   }
 
   async getHouseholdByGeneratorUserId(generatorUserId: string): Promise<Household | undefined> {

@@ -5,7 +5,7 @@ import { storage } from "./storage";
 import bcrypt from "bcrypt";
 import multer from "multer";
 import session from "express-session";
-import { insertUserSchema, insertVillageSchema, insertHouseholdSchema, insertCollectorSchema, insertWasteCollectionSchema, insertIssueSchema, insertAnnouncementSchema, insertAttendanceSchema, insertFeedbackSchema } from "@shared/schema";
+import { insertUserSchema, insertVillageSchema, insertHouseholdSchema, insertCollectorSchema, insertWasteCollectionSchema, insertIssueSchema, insertAnnouncementSchema, insertFeedbackSchema } from "@shared/schema";
 import { z } from "zod";
 import path from "path";
 import { readFileSync } from "fs";
@@ -1967,43 +1967,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Get collector stats error:", error);
       res.status(500).json({ message: "Failed to get collector stats" });
-    }
-  });
-
-  // Detailed attendance routes
-  app.post('/api/attendance/detailed', requireAuth, requireRole(['manager']), async (req, res) => {
-    try {
-      const attendanceData = req.body;
-      const attendance = await storage.markDetailedAttendance(attendanceData);
-      res.json(attendance);
-    } catch (error) {
-      console.error("Mark detailed attendance error:", error);
-      res.status(500).json({ message: "Failed to mark detailed attendance" });
-    }
-  });
-
-  app.get('/api/attendance/detailed/:villageId/:date', requireAuth, requireRole(['manager']), async (req, res) => {
-    try {
-      const { villageId, date } = req.params;
-
-      // Parse date more safely
-      const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
-      if (!dateRegex.test(date)) {
-        return res.status(400).json({ message: "Invalid date format. Use YYYY-MM-DD" });
-      }
-
-      const parsedDate = new Date(date + 'T00:00:00.000Z');
-
-      // Validate date
-      if (isNaN(parsedDate.getTime())) {
-        return res.status(400).json({ message: "Invalid date format" });
-      }
-
-      const attendance = await storage.getDetailedAttendanceByVillageAndDate(villageId, parsedDate);
-      res.json(attendance);
-    } catch (error) {
-      console.error("Get detailed attendance error:", error);
-      res.status(500).json({ message: "Failed to get detailed attendance" });
     }
   });
 

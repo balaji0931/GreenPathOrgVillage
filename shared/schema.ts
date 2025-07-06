@@ -97,21 +97,6 @@ export const announcements = pgTable("announcements", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
-// Attendance
-export const attendance = pgTable("attendance", {
-  id: serial("id").primaryKey(),
-  collectorId: integer("collector_id").notNull().references(() => collectors.id),
-  date: timestamp("date").notNull(),
-  isPresent: boolean("is_present").default(false),
-  startTime: text("start_time"),
-  endTime: text("end_time"),
-  workHours: real("work_hours"),
-  dailyReview: text("daily_review"),
-  performanceRating: integer("performance_rating"),
-  markedBy: text("marked_by").notNull(), // Manager UID
-  createdAt: timestamp("created_at").defaultNow(),
-});
-
 // Feedback (from generators to collectors for specific collections)
 export const feedback = pgTable("feedback", {
   id: serial("id").primaryKey(),
@@ -119,33 +104,6 @@ export const feedback = pgTable("feedback", {
   toCollectorId: integer("to_collector_id").notNull().references(() => collectors.id),
   rating: integer("rating").notNull(), // 1-5 stars
   remarks: text("remarks"),
-  createdAt: timestamp("created_at").defaultNow(),
-});
-
-// Segregators (workers who sort waste - no accounts, just tracking)
-export const segregators = pgTable("segregators", {
-  id: serial("id").primaryKey(),
-  name: text("name").notNull(),
-  villageId: text("village_id").notNull().references(() => villages.villageId),
-  phone: text("phone").notNull(),
-  address: text("address"),
-  isActive: boolean("is_active").default(true),
-  createdAt: timestamp("created_at").defaultNow(),
-});
-
-// Segregator attendance tracking by managers
-export const segregatorAttendance = pgTable("segregator_attendance", {
-  id: serial("id").primaryKey(),
-  segregatorId: integer("segregator_id").notNull().references(() => segregators.id),
-  date: timestamp("date").notNull(),
-  status: text("status", { enum: ["present", "absent", "half_day"] }).notNull(),
-  startTime: text("start_time"),
-  endTime: text("end_time"),
-  workHours: real("work_hours"),
-  workRating: integer("work_rating"), // 1-5 rating for daily work
-  dailyReview: text("daily_review"), // Manager's review
-  remarks: text("remarks"),
-  markedBy: text("marked_by").notNull(), // Manager UID
   createdAt: timestamp("created_at").defaultNow(),
 });
 
@@ -202,7 +160,6 @@ export const collectorsRelations = relations(collectors, ({ one, many }) => ({
     references: [villages.villageId],
   }),
   wasteCollections: many(wasteCollections),
-  attendance: many(attendance),
   feedback: many(feedback),
   complaints: many(collectorComplaints),
 }));
@@ -225,13 +182,6 @@ export const issuesRelations = relations(issues, ({ one }) => ({
   }),
 }));
 
-export const attendanceRelations = relations(attendance, ({ one }) => ({
-  collector: one(collectors, {
-    fields: [attendance.collectorId],
-    references: [collectors.id],
-  }),
-}));
-
 export const feedbackRelations = relations(feedback, ({ one }) => ({
   household: one(households, {
     fields: [feedback.fromHouseholdId],
@@ -240,21 +190,6 @@ export const feedbackRelations = relations(feedback, ({ one }) => ({
   collector: one(collectors, {
     fields: [feedback.toCollectorId],
     references: [collectors.id],
-  }),
-}));
-
-export const segregatorsRelations = relations(segregators, ({ one, many }) => ({
-  village: one(villages, {
-    fields: [segregators.villageId],
-    references: [villages.villageId],
-  }),
-  attendance: many(segregatorAttendance),
-}));
-
-export const segregatorAttendanceRelations = relations(segregatorAttendance, ({ one }) => ({
-  segregator: one(segregators, {
-    fields: [segregatorAttendance.segregatorId],
-    references: [segregators.id],
   }),
 }));
 
@@ -314,22 +249,7 @@ export const insertAnnouncementSchema = createInsertSchema(announcements).omit({
   createdAt: true,
 });
 
-export const insertAttendanceSchema = createInsertSchema(attendance).omit({
-  id: true,
-  createdAt: true,
-});
-
 export const insertFeedbackSchema = createInsertSchema(feedback).omit({
-  id: true,
-  createdAt: true,
-});
-
-export const insertSegregatorSchema = createInsertSchema(segregators).omit({
-  id: true,
-  createdAt: true,
-});
-
-export const insertSegregatorAttendanceSchema = createInsertSchema(segregatorAttendance).omit({
   id: true,
   createdAt: true,
 });
@@ -402,10 +322,7 @@ export type InsertCollector = z.infer<typeof insertCollectorSchema>;
 export type InsertWasteCollection = z.infer<typeof insertWasteCollectionSchema>;
 export type InsertIssue = z.infer<typeof insertIssueSchema>;
 export type InsertAnnouncement = z.infer<typeof insertAnnouncementSchema>;
-export type InsertAttendance = z.infer<typeof insertAttendanceSchema>;
 export type InsertFeedback = z.infer<typeof insertFeedbackSchema>;
-export type InsertSegregator = z.infer<typeof insertSegregatorSchema>;
-export type InsertSegregatorAttendance = z.infer<typeof insertSegregatorAttendanceSchema>;
 export type InsertCollectorComplaint = z.infer<typeof insertCollectorComplaintSchema>;
 export type InsertHouseholdAction = z.infer<typeof insertHouseholdActionSchema>;
 export type InsertModerator = z.infer<typeof insertModeratorSchema>;
@@ -418,10 +335,7 @@ export type Collector = typeof collectors.$inferSelect;
 export type WasteCollection = typeof wasteCollections.$inferSelect;
 export type Issue = typeof issues.$inferSelect;
 export type Announcement = typeof announcements.$inferSelect;
-export type Attendance = typeof attendance.$inferSelect;
 export type Feedback = typeof feedback.$inferSelect;
-export type Segregator = typeof segregators.$inferSelect;
-export type SegregatorAttendance = typeof segregatorAttendance.$inferSelect;
 export type CollectorComplaint = typeof collectorComplaints.$inferSelect;
 export type HouseholdAction = typeof householdActions.$inferSelect;
 export type Moderator = typeof moderators.$inferSelect;
