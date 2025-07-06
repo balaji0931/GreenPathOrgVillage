@@ -107,29 +107,6 @@ export const feedback = pgTable("feedback", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
-// Collector complaints from generators
-export const collectorComplaints = pgTable("collector_complaints", {
-  id: serial("id").primaryKey(),
-  collectorId: integer("collector_id").notNull().references(() => collectors.id),
-  householdId: integer("household_id").notNull().references(() => households.id),
-  complaint: text("complaint").notNull(),
-  status: text("status", { enum: ["open", "investigating", "resolved"] }).default("open"),
-  managerResponse: text("manager_response"),
-  createdAt: timestamp("created_at").defaultNow(),
-  resolvedAt: timestamp("resolved_at"),
-});
-
-// Household Actions (Red Flag Management)
-export const householdActions = pgTable("household_actions", {
-  id: serial("id").primaryKey(),
-  householdId: integer("household_id").notNull().references(() => households.id),
-  actionType: text("action_type").notNull(), // "warning", "penalty", "notice", "resolved"
-  actionNote: text("action_note").notNull(),
-  takenBy: text("taken_by").notNull(), // Manager UID
-  redFlagCount: integer("red_flag_count").default(1), // Count of red flags at time of action
-  createdAt: timestamp("created_at").defaultNow(),
-});
-
 // Relations
 export const villagesRelations = relations(villages, ({ many }) => ({
   users: many(users),
@@ -161,7 +138,6 @@ export const collectorsRelations = relations(collectors, ({ one, many }) => ({
   }),
   wasteCollections: many(wasteCollections),
   feedback: many(feedback),
-  complaints: many(collectorComplaints),
 }));
 
 export const wasteCollectionsRelations = relations(wasteCollections, ({ one }) => ({
@@ -190,24 +166,6 @@ export const feedbackRelations = relations(feedback, ({ one }) => ({
   collector: one(collectors, {
     fields: [feedback.toCollectorId],
     references: [collectors.id],
-  }),
-}));
-
-export const collectorComplaintsRelations = relations(collectorComplaints, ({ one }) => ({
-  collector: one(collectors, {
-    fields: [collectorComplaints.collectorId],
-    references: [collectors.id],
-  }),
-  household: one(households, {
-    fields: [collectorComplaints.householdId],
-    references: [households.id],
-  }),
-}));
-
-export const householdActionsRelations = relations(householdActions, ({ one }) => ({
-  household: one(households, {
-    fields: [householdActions.householdId],
-    references: [households.id],
   }),
 }));
 
@@ -250,17 +208,6 @@ export const insertAnnouncementSchema = createInsertSchema(announcements).omit({
 });
 
 export const insertFeedbackSchema = createInsertSchema(feedback).omit({
-  id: true,
-  createdAt: true,
-});
-
-export const insertCollectorComplaintSchema = createInsertSchema(collectorComplaints).omit({
-  id: true,
-  createdAt: true,
-  resolvedAt: true,
-});
-
-export const insertHouseholdActionSchema = createInsertSchema(householdActions).omit({
   id: true,
   createdAt: true,
 });
@@ -323,8 +270,6 @@ export type InsertWasteCollection = z.infer<typeof insertWasteCollectionSchema>;
 export type InsertIssue = z.infer<typeof insertIssueSchema>;
 export type InsertAnnouncement = z.infer<typeof insertAnnouncementSchema>;
 export type InsertFeedback = z.infer<typeof insertFeedbackSchema>;
-export type InsertCollectorComplaint = z.infer<typeof insertCollectorComplaintSchema>;
-export type InsertHouseholdAction = z.infer<typeof insertHouseholdActionSchema>;
 export type InsertModerator = z.infer<typeof insertModeratorSchema>;
 export type InsertModeratorVillageAssignment = z.infer<typeof insertModeratorVillageAssignmentSchema>;
 
@@ -336,7 +281,5 @@ export type WasteCollection = typeof wasteCollections.$inferSelect;
 export type Issue = typeof issues.$inferSelect;
 export type Announcement = typeof announcements.$inferSelect;
 export type Feedback = typeof feedback.$inferSelect;
-export type CollectorComplaint = typeof collectorComplaints.$inferSelect;
-export type HouseholdAction = typeof householdActions.$inferSelect;
 export type Moderator = typeof moderators.$inferSelect;
 export type ModeratorVillageAssignment = typeof moderatorVillageAssignments.$inferSelect;

@@ -8,8 +8,6 @@ import {
   issues,
   announcements,
   feedback,
-  collectorComplaints,
-  householdActions,
   moderators,
   moderatorVillageAssignments,
   type Village,
@@ -127,16 +125,6 @@ export interface IStorage {
     complaintsCount: number;
   }>;
 
-  // Collector complaints operations
-  createCollectorComplaint(complaint: {
-    collectorId: number;
-    householdId: number;
-    complaint: string;
-  }): Promise<any>;
-
-  getCollectorComplaints(collectorId: number): Promise<any[]>;
-  resolveCollectorComplaint(complaintId: number, managerResponse: string): Promise<void>;
-
 
   // Enhanced household operations
   updateHousehold(id: number, updates: Partial<Household>): Promise<Household>;
@@ -165,11 +153,6 @@ export interface IStorage {
   }>;
   getHouseholdByGeneratorUserId(generatorUserId: string): Promise<Household | undefined>;
   getComplaintsByVillage(villageId: string): Promise<any[]>;
-
-  // Household Actions (Red Flag Management)
-  createHouseholdAction(action: InsertHouseholdAction): Promise<HouseholdAction>;
-  getHouseholdActions(householdId: number): Promise<HouseholdAction[]>;
-  getRedFlagCount(householdId: number): Promise<number>;
 
   // Moderator operations
   createModerator(moderator: InsertModerator): Promise<Moderator>;
@@ -743,44 +726,6 @@ export class DatabaseStorage implements IStorage {
     await db.delete(users).where(eq(users.userId, userId));
   }
 
-  async createCollectorComplaint(complaint: {
-    collectorId: number;
-    householdId: number;
-    complaint: string;
-  }): Promise<any> {
-    const [newComplaint] = await db.insert(collectorComplaints).values(complaint).returning();
-    return newComplaint;
-  }
-
-  async getCollectorComplaints(collectorId: number): Promise<any[]> {
-    return db.select({
-      id: collectorComplaints.id,
-      complaint: collectorComplaints.complaint,
-      status: collectorComplaints.status,
-      managerResponse: collectorComplaints.managerResponse,
-      createdAt: collectorComplaints.createdAt,
-      resolvedAt: collectorComplaints.resolvedAt,
-      householdId: collectorComplaints.householdId,
-      householdUid: households.uid,
-      headName: households.headName,
-      houseNumber: households.houseNumber,
-    })
-    .from(collectorComplaints)
-    .innerJoin(households, eq(collectorComplaints.householdId, households.id))
-    .where(eq(collectorComplaints.collectorId, collectorId))
-    .orderBy(desc(collectorComplaints.createdAt));
-  }
-
-  async resolveCollectorComplaint(complaintId: number, managerResponse: string): Promise<void> {
-    await db.update(collectorComplaints)
-      .set({ 
-        status: "resolved", 
-        managerResponse, 
-        resolvedAt: new Date() 
-      })
-      .where(eq(collectorComplaints.id, complaintId));
-  }
-
   // Enhanced collector operations
   async deleteCollector(id: number): Promise<void> {
     await db.delete(collectors).where(eq(collectors.id, id));
@@ -796,10 +741,6 @@ export class DatabaseStorage implements IStorage {
       .from(wasteCollections)
       .where(eq(wasteCollections.collectorId, collectorId));
 
-    // Get complaints count
-    const [complaintsCount] = await db.select({ count: count() })
-      .from(collectorComplaints)
-      .where(eq(collectorComplaints.collectorId, collectorId));
 
     const feedbackResults = await db.select()
       .from(feedback)
@@ -814,7 +755,6 @@ export class DatabaseStorage implements IStorage {
     return {
       totalCollections: collectionCount.count || 0,
       averageRating: avgRating,
-      complaintsCount: complaintsCount.count || 0,
     };
   }
 
@@ -834,26 +774,6 @@ export class DatabaseStorage implements IStorage {
   async getHouseholdByGeneratorUserId(generatorUserId: string): Promise<Household | undefined> {
     const [household] = await db.select().from(households).where(eq(households.generatorUserId, generatorUserId));
     return household || undefined;
-  }
-
-  async getComplaintsByVillage(villageId: string): Promise<any[]> {
-    return db.select({
-      id: collectorComplaints.id,
-      collectorId: collectorComplaints.collectorId,
-      householdId: collectorComplaints.householdId,
-      complaint: collectorComplaints.complaint,
-      status: collectorComplaints.status,
-      managerResponse: collectorComplaints.managerResponse,
-      createdAt: collectorComplaints.createdAt,
-      resolvedAt: collectorComplaints.resolvedAt,
-      collectorName: collectors.name,
-      householdUid: households.uid,
-    })
-    .from(collectorComplaints)
-    .innerJoin(collectors, eq(collectorComplaints.collectorId, collectors.id))
-    .innerJoin(households, eq(collectorComplaints.householdId, households.id))
-    .where(eq(collectors.villageId, villageId))
-    .orderBy(desc(collectorComplaints.createdAt));
   }
 
   async getRecentCollectionsByVillage(villageId: string, days: number = 7): Promise<any[]> {
@@ -1832,22 +1752,6 @@ export class DatabaseStorage implements IStorage {
         segregationRateDistribution: [],
       };
     }
-  }
-  // Household Actions (Red Flag Management)
-  async createHouseholdAction(insertAction: InsertHouseholdAction): Promise<HouseholdAction> {
-    const [action] = await db
-      .insert(householdActions)
-      .values(insertAction)
-      .returning();
-    return action;
-  }
-
-  async getHouseholdActions(householdId: number): Promise<HouseholdAction[]> {
-    return await db
-      .select()
-      .from(householdActions)
-      .where(eq(householdActions.householdId, householdId))
-      .orderBy(desc(householdActions.createdAt));
   }
 
   async getRedFlagCount(householdId: number): Promise<number> {
