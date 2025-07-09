@@ -48,6 +48,7 @@ import {
   MessageSquare,
   QrCode,
   Download,
+  Upload,
   Eye,
   AlertCircle,
   TrendingUp,
@@ -64,6 +65,7 @@ import {
   XCircle,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import * as XLSX from 'xlsx';
 
 interface Collector {
   id: number;
@@ -325,7 +327,7 @@ export default function ManagerDashboard() {
 
   // Simplified state management
   const [activeTab, setActiveTab] = useState("overview");
-  const [householdSubTab, setHouseholdSubTab] = useState("list");
+  const [householdSubTab, setHouseholdSubTab] = useState("excel-upload");
   const [showPasswordDialog, setShowPasswordDialog] = useState(false);
   const [selectedIssue, setSelectedIssue] = useState<Issue | null>(null);
   const [showIssueDialog, setShowIssueDialog] = useState(false);
@@ -371,6 +373,17 @@ export default function ManagerDashboard() {
   const [bulkHouseholds, setBulkHouseholds] = useState([
     { headName: "", houseNumber: "", phone: "", address: "" }
   ]);
+
+  // Excel upload state
+  const [showExcelPreview, setShowExcelPreview] = useState(false);
+  const [excelHouseholds, setExcelHouseholds] = useState<Array<{
+    headName: string;
+    houseNumber: string;
+    phone: string;
+    address: string;
+    familySize?: number;
+  }>>([]);
+  const [excelFile, setExcelFile] = useState<File | null>(null);
 
   // Logout mutation
   const logoutMutation = useMutation({
@@ -594,6 +607,25 @@ export default function ManagerDashboard() {
     },
   });
 
+  const syncPaymentRecordsMutation = useMutation({
+    mutationFn: (month: string) =>
+      apiRequest("POST", "/api/payments/sync-records", { month }),
+    onSuccess: (response: any) => {
+      toast({ 
+        title: "Payment records synced successfully",
+        description: `Created ${response.created} new payment records out of ${response.total} total households.`
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/payments/village"] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Failed to sync payment records",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
   const updatePaymentStatusMutation = useMutation({
     mutationFn: ({ paymentId, status }: { paymentId: number; status: string }) =>
       apiRequest("PATCH", `/api/payments/${paymentId}/status`, { status }),
@@ -665,6 +697,11 @@ export default function ManagerDashboard() {
       queryClient.invalidateQueries({ queryKey: ["/api/households"] });
       queryClient.invalidateQueries({ queryKey: ["/api/manager/stats"] });
       setBulkHouseholds([{ headName: "", houseNumber: "", phone: "", address: "" }]);
+      
+      // Close Excel preview and reset state
+      setShowExcelPreview(false);
+      setExcelHouseholds([]);
+      setExcelFile(null);
     },
     onError: (error: any) => {
       toast({
@@ -672,12 +709,68 @@ export default function ManagerDashboard() {
         description: error.message || "Failed to create households",
         variant: "destructive",
       });
+      // Don't close preview on error so user can try again
     },
   });
 
   // Helper functions
   const updateFilter = (key: keyof FilterState, value: string) => {
     setFilters(prev => ({ ...prev, [key]: value }));
+  };
+
+  // Excel file processing
+  const handleExcelFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const data = new Uint8Array(e.target?.result as ArrayBuffer);
+        const workbook = XLSX.read(data, { type: 'array' });
+        const firstSheetName = workbook.SheetNames[0];
+        const worksheet = workbook.Sheets[firstSheetName];
+        const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+
+        // Skip header row and process data
+        const householdsData = jsonData.slice(1).map((row: any[]) => ({
+          headName: row[0]?.toString().trim() || '',
+          houseNumber: row[1]?.toString().trim() || '',
+          phone: row[2]?.toString().trim() || '',
+          address: row[3]?.toString().trim() || '',
+          familySize: row[4] ? parseInt(row[4].toString()) || 1 : 1,
+        })).filter(household => 
+          household.headName && household.houseNumber && household.phone
+        );
+
+        if (householdsData.length === 0) {
+          toast({
+            title: "No valid data found",
+            description: "Please ensure your Excel file has the required columns: Head Name, House Number, Phone, Address, Family Size",
+            variant: "destructive"
+          });
+          return;
+        }
+
+        setExcelHouseholds(householdsData);
+        setExcelFile(file);
+        setShowExcelPreview(true);
+      } catch (error) {
+        toast({
+          title: "Error reading Excel file",
+          description: "Please ensure you've uploaded a valid Excel file",
+          variant: "destructive"
+        });
+      }
+    };
+    reader.readAsArrayBuffer(file);
+  };
+
+  const confirmExcelUpload = () => {
+    if (excelHouseholds.length > 0) {
+      createBulkHouseholdsMutation.mutate(excelHouseholds);
+      // Don't close preview immediately - let the mutation success handler close it
+    }
   };
 
   const clearFilters = () => {
@@ -1211,35 +1304,10 @@ export default function ManagerDashboard() {
 
                 <Tabs value={householdSubTab} onValueChange={setHouseholdSubTab} className="w-full">
                   <TabsList className="grid w-full grid-cols-3 gap-2">
-                    <TabsTrigger value="list">{t("manager.viewAll")}</TabsTrigger>
                     <TabsTrigger value="bulk">{t("manager.addHousehold")}</TabsTrigger>
+                    <TabsTrigger value="excel-upload">Excel Upload</TabsTrigger>
                     <TabsTrigger value="qr-download">{t("manager.downloadQR")}</TabsTrigger>
                   </TabsList>
-
-                  <TabsContent value="list" className="space-y-4">
-                    <div className="space-y-4">
-                      {households.map((household) => (
-                        <Card key={household.id}>
-                          <CardContent className="p-4">
-                            <div className="flex items-center justify-between">
-                              <div>
-                                <h3 className="font-semibold">{household.headName}</h3>
-                                <p className="text-sm text-muted-foreground">
-                                  House: {household.houseNumber} | ID: {household.uid} | Phone: {household.phone}
-                                </p>
-                                {household.qrCodeUrl && (
-                                  <Badge variant="secondary" className="mt-2">
-                                    <QrCode className="h-3 w-3 mr-1" />
-                                    {t("manager.qrCodeAvailable")}
-                                  </Badge>
-                                )}
-                              </div>
-                            </div>
-                          </CardContent>
-                        </Card>
-                      ))}
-                    </div>
-                  </TabsContent>
 
                   <TabsContent value="bulk" className="space-y-4">
                     <Card>
@@ -1355,6 +1423,68 @@ export default function ManagerDashboard() {
                           {bulkHouseholds.length === 0 && (
                             <div className="text-center py-8">
                               <p className="text-muted-foreground">{t("manager.clickAddRow")}</p>
+                            </div>
+                          )}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </TabsContent>
+
+                  <TabsContent value="excel-upload" className="space-y-4">
+                    <Card>
+                      <CardHeader>
+                        <CardTitle>Upload Excel File</CardTitle>
+                        <CardDescription>Upload an Excel file with household data to create multiple households at once</CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="space-y-4">
+                          <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
+                            <h4 className="font-medium text-blue-900 mb-2">Excel File Format Requirements:</h4>
+                            <p className="text-sm text-blue-800 mb-2">Your Excel file should have the following columns in order:</p>
+                            <div className="grid grid-cols-1 md:grid-cols-5 gap-2 text-xs">
+                              <div className="bg-blue-100 p-2 rounded">
+                                <strong>Column A:</strong> Head Name (Required)
+                              </div>
+                              <div className="bg-blue-100 p-2 rounded">
+                                <strong>Column B:</strong> House Number (Required)
+                              </div>
+                              <div className="bg-blue-100 p-2 rounded">
+                                <strong>Column C:</strong> Phone (Required)
+                              </div>
+                              <div className="bg-blue-100 p-2 rounded">
+                                <strong>Column D:</strong> Address (Optional)
+                              </div>
+                              <div className="bg-blue-100 p-2 rounded">
+                                <strong>Column E:</strong> Family Size (Optional)
+                              </div>
+                            </div>
+                            <p className="text-xs text-blue-700 mt-2">
+                              Note: The first row should contain headers and will be skipped during processing.
+                            </p>
+                          </div>
+
+                          <div>
+                            <Label htmlFor="excel-upload">Upload Excel File</Label>
+                            <Input
+                              id="excel-upload"
+                              type="file"
+                              accept=".xlsx,.xls"
+                              onChange={handleExcelFileUpload}
+                              className="cursor-pointer"
+                            />
+                          </div>
+
+                          {excelFile && (
+                            <div className="p-3 bg-green-50 rounded-lg border border-green-200">
+                              <div className="flex items-center gap-2">
+                                <div className="w-4 h-4 bg-green-500 rounded-full"></div>
+                                <span className="text-sm font-medium text-green-800">
+                                  File uploaded: {excelFile.name}
+                                </span>
+                              </div>
+                              <p className="text-xs text-green-700 mt-1">
+                                {excelHouseholds.length} valid households found. Click preview to review before creating.
+                              </p>
                             </div>
                           )}
                         </div>
@@ -2341,6 +2471,42 @@ export default function ManagerDashboard() {
                         </div>
                       </CardContent>
                     </Card>
+
+                    {/* Sync Payment Records */}
+                    {villageData?.paymentLink && villageData?.monthlyFee && (
+                      <Card>
+                        <CardHeader>
+                          <CardTitle>Sync Payment Records</CardTitle>
+                          <CardDescription>Ensure all households have payment records for the current month</CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                          <div className="space-y-4">
+                            <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
+                              <h4 className="font-medium text-blue-900 mb-2">What this does:</h4>
+                              <ul className="text-sm text-blue-800 space-y-1">
+                                <li>• Checks all households in your village</li>
+                                <li>• Creates payment records with "due" status for households missing records for {new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}</li>
+                                <li>• Ensures no household is missed during payment collection</li>
+                              </ul>
+                            </div>
+                            
+                            <Button
+                              onClick={() => {
+                                const currentMonth = new Date().toISOString().slice(0, 7); // YYYY-MM format
+                                syncPaymentRecordsMutation.mutate(currentMonth);
+                              }}
+                              disabled={syncPaymentRecordsMutation.isPending}
+                              className="w-full bg-blue-600 hover:bg-blue-700"
+                            >
+                              {syncPaymentRecordsMutation.isPending 
+                                ? "Syncing Payment Records..." 
+                                : `Sync Payment Records for ${new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}`
+                              }
+                            </Button>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    )}
                   </TabsContent>
 
                   <TabsContent value="manage" className="space-y-4">
@@ -3743,6 +3909,133 @@ export default function ManagerDashboard() {
             <div className="flex justify-end mt-4">
               <Button variant="outline" onClick={() => setShowImageModal(false)}>
                 Close
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Excel Preview Dialog */}
+      <Dialog
+        open={showExcelPreview}
+        onOpenChange={!createBulkHouseholdsMutation.isPending ? setShowExcelPreview : undefined}
+      >
+        <DialogContent className="max-w-6xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>
+              {createBulkHouseholdsMutation.isPending
+                ? "Creating Households..."
+                : "Preview Households from Excel"}
+            </DialogTitle>
+            <p className="text-sm text-muted-foreground">
+              {createBulkHouseholdsMutation.isPending
+                ? "Please wait while households are being created. Do not close this window."
+                : "Review the households that will be created from your Excel file. Only valid entries are shown."}
+            </p>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            {createBulkHouseholdsMutation.isPending ? (
+              <div className="flex items-center justify-center p-8 bg-yellow-50 rounded-lg border border-yellow-200">
+                <div className="text-center">
+                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-yellow-600 mx-auto mb-4"></div>
+                  <h4 className="font-medium text-yellow-900 mb-2">
+                    Creating {excelHouseholds.length} households...
+                  </h4>
+                  <p className="text-sm text-yellow-700">
+                    Please wait while households are being created with QR codes and login credentials.
+                  </p>
+                  <p className="text-xs text-yellow-600 mt-2">
+                    This may take a few moments. Do not close this window.
+                  </p>
+                </div>
+              </div>
+            ) : (
+              <div className="flex items-center justify-between p-3 bg-blue-50 rounded-lg">
+                <div>
+                  <h4 className="font-medium text-blue-900">
+                    {excelHouseholds.length} households ready to be created
+                  </h4>
+                  <p className="text-sm text-blue-700">
+                    Each household will get unique ID, QR code, and login credentials
+                  </p>
+                </div>
+                <Button
+                  onClick={confirmExcelUpload}
+                  disabled={createBulkHouseholdsMutation.isPending}
+                  className="bg-green-600 hover:bg-green-700"
+                >
+                  {createBulkHouseholdsMutation.isPending
+                    ? "Creating..."
+                    : `Confirm & Create ${excelHouseholds.length} Households`}
+                </Button>
+              </div>
+            )}
+
+            <div className="border rounded-lg overflow-hidden">
+              <div className="max-h-96 overflow-y-auto">
+                <table className="w-full border-collapse">
+                  <thead className="bg-gray-50 sticky top-0">
+                    <tr>
+                      <th className="border border-gray-200 px-3 py-2 text-left text-xs font-medium text-gray-700">
+                        S.No
+                      </th>
+                      <th className="border border-gray-200 px-3 py-2 text-left text-xs font-medium text-gray-700">
+                        Head Name
+                      </th>
+                      <th className="border border-gray-200 px-3 py-2 text-left text-xs font-medium text-gray-700">
+                        House Number
+                      </th>
+                      <th className="border border-gray-200 px-3 py-2 text-left text-xs font-medium text-gray-700">
+                        Phone
+                      </th>
+                      <th className="border border-gray-200 px-3 py-2 text-left text-xs font-medium text-gray-700">
+                        Address
+                      </th>
+                      <th className="border border-gray-200 px-3 py-2 text-left text-xs font-medium text-gray-700">
+                        Family Size
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {excelHouseholds.map((household, index) => (
+                      <tr key={index} className="hover:bg-gray-50">
+                        <td className="border border-gray-200 px-3 py-2 text-sm">{index + 1}</td>
+                        <td className="border border-gray-200 px-3 py-2 text-sm font-medium">
+                          {household.headName}
+                        </td>
+                        <td className="border border-gray-200 px-3 py-2 text-sm">{household.houseNumber}</td>
+                        <td className="border border-gray-200 px-3 py-2 text-sm">{household.phone}</td>
+                        <td className="border border-gray-200 px-3 py-2 text-sm">
+                          {household.address || "N/A"}
+                        </td>
+                        <td className="border border-gray-200 px-3 py-2 text-sm">
+                          {household.familySize || 1}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <div className="flex gap-2 pt-4">
+              <Button
+                variant="outline"
+                onClick={() => setShowExcelPreview(false)}
+                disabled={createBulkHouseholdsMutation.isPending}
+                className="flex-1"
+              >
+                {createBulkHouseholdsMutation.isPending ? "Please Wait..." : "Cancel"}
+              </Button>
+              <Button
+                onClick={confirmExcelUpload}
+                disabled={createBulkHouseholdsMutation.isPending}
+                className="flex-1 bg-green-600 hover:bg-green-700"
+              >
+                {createBulkHouseholdsMutation.isPending
+                  ? "Creating Households..."
+                  : `Create ${excelHouseholds.length} Households`}
               </Button>
             </div>
           </div>

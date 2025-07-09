@@ -1289,6 +1289,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.post('/api/payments/sync-records', requireAuth, requireRole(['manager']), async (req, res) => {
+    try {
+      const { month } = req.body;
+      const villageId = req.session.villageId!;
+
+      if (!month) {
+        return res.status(400).json({ message: "Month is required (format: YYYY-MM)" });
+      }
+
+      const result = await storage.syncPaymentRecordsForVillage(villageId, month);
+
+      res.json({
+        message: `Payment records synced successfully. Created ${result.created} new payment records out of ${result.total} total households.`,
+        created: result.created,
+        total: result.total,
+      });
+    } catch (error) {
+      console.error("Sync payment records error:", error);
+      res.status(500).json({ 
+        message: error.message || "Failed to sync payment records" 
+      });
+    }
+  });
   // Get moderator stats (only for assigned villages)
   app.get('/api/moderator/stats', requireAuth, requireRole(['moderator']), async (req, res) => {
     try {

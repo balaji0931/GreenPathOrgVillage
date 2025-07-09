@@ -1663,7 +1663,53 @@ export class DatabaseStorage implements IStorage {
       .orderBy(desc(payments.createdAt));
   }
 
-  async getPaymentByHouseholdAndMonth(householdId: number, month: string): Promise<any | undefined> {
+    async syncPaymentRecordsForVillage(villageId: string, month: string): Promise<{ created: number, total: number }> {
+      // Get village payment info
+      const village = await this.getVillageByVillageId(villageId);
+      if (!village?.paymentLink || !village?.monthlyFee) {
+        throw new Error('Village payment system not configured');
+      }
+
+      // Get all households in the village
+      const allHouseholds = await db
+        .select({ id: households.id })
+        .from(households)
+        .where(eq(households.villageId, villageId));
+
+      // Get existing payment records for this month
+      const existingPayments = await db
+        .select({ householdId: payments.householdId })
+        .from(payments)
+        .where(and(
+          eq(payments.villageId, villageId),
+          eq(payments.month, month)
+        ));
+
+      const existingHouseholdIds = new Set(existingPayments.map(p => p.householdId));
+
+      // Find households without payment records for this month
+      const householdsNeedingPayments = allHouseholds.filter(h => !existingHouseholdIds.has(h.id));
+
+      // Create payment records for missing households
+      if (householdsNeedingPayments.length > 0) {
+        const newPayments = householdsNeedingPayments.map(household => ({
+          householdId: household.id,
+          villageId,
+          month,
+          amount: village.monthlyFee,
+          status: 'due' as const,
+        }));
+
+        await db.insert(payments).values(newPayments);
+      }
+
+      return {
+        created: householdsNeedingPayments.length,
+        total: allHouseholds.length
+      };
+    }
+
+    async getPaymentByHouseholdAndMonth(householdId: number, month: string): Promise<any | undefined> {
     const [payment] = await db
       .select()
       .from(payments)
