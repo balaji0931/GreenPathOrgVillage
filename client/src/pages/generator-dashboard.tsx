@@ -57,6 +57,7 @@ import {
   Lock,
   History,
   Search,
+  CreditCard,
 } from "lucide-react";
 
 const ISSUE_CATEGORIES = [
@@ -86,6 +87,9 @@ export default function GeneratorDashboard() {
   const [searchQuery, setSearchQuery] = useState("");
   const [showAllCollections, setShowAllCollections] = useState(false);
   const [currentAnnouncementIndex, setCurrentAnnouncementIndex] = useState(0);
+  const [showPaymentProofModal, setShowPaymentProofModal] = useState(false);
+  const [selectedPaymentId, setSelectedPaymentId] = useState<number | null>(null);
+  const [paymentProofFile, setPaymentProofFile] = useState<File | null>(null);
 
   const [newIssue, setNewIssue] = useState({
     title: "",
@@ -116,6 +120,23 @@ export default function GeneratorDashboard() {
   const { data: announcements, isLoading: announcementsLoading } = useQuery({
     queryKey: ["/api/announcements"],
     refetchInterval: 60000, // Refetch every minute
+  });
+
+  // Fetch village data to check if payments are enabled
+  const { data: villageData } = useQuery({
+    queryKey: ["/api/villages", user?.villageId],
+    enabled: !!user?.villageId,
+    queryFn: async () => {
+      const response = await apiRequest("GET", `/api/villages/${user?.villageId}`);
+      return response.json();
+    },
+  });
+
+  // Fetch payments - Always enabled when payments are enabled, not just when tab is active
+  const { data: paymentsData, isLoading: paymentsLoading } = useQuery({
+    queryKey: ["/api/payments/household"],
+    enabled: villageData?.paymentsEnabled,
+    refetchInterval: 30000, // Refetch every 30 seconds
   });
 
   // Auto-slide announcements every 5 seconds
@@ -282,6 +303,42 @@ export default function GeneratorDashboard() {
       toast({
         title: "Error",
         description: error.message || "Failed to change password",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Upload payment proof mutation
+  const uploadPaymentProofMutation = useMutation({
+    mutationFn: async ({ paymentId, proofFile }: { paymentId: number; proofFile: File }) => {
+      const formData = new FormData();
+      formData.append('file', proofFile);
+      
+      const response = await fetch(`/api/payments/${paymentId}/proof`, {
+        method: 'POST',
+        body: formData,
+        credentials: 'include'
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to upload payment proof');
+      }
+      
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Success",
+        description: "Payment proof uploaded successfully! Awaiting verification.",
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/payments/household"] });
+      setPaymentProofFile(null);
+      setShowPaymentProofModal(false);
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to upload payment proof",
         variant: "destructive",
       });
     },
@@ -1171,19 +1228,194 @@ export default function GeneratorDashboard() {
             </Card>
           </div>
         )}
+          {/* PAYMENTS TAB */}
+        {activeTab === "payments" && (
+          <div className="space-y-4 p-4">
+            <div className="flex items-center justify-between">
+              <h2 className="text-lg font-bold">Monthly Payments</h2>
+            </div>
+
+            {paymentsLoading ? (
+              <div className="text-center py-8">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600 mx-auto"></div>
+                <p className="text-sm text-gray-500 mt-2">Loading payments...</p>
+              </div>
+            ) : paymentsData ? (
+              <div className="space-y-4">
+                {/* Current Month Payment */}
+                {paymentsData.currentPayment && (
+                  <Card>
+                    <CardHeader className="pb-3">
+                      <CardTitle className="flex items-center text-lg">
+                        <CreditCard className="w-5 h-5 mr-2" />
+                        Current Month Payment
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-3">
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <Label className="text-xs text-gray-600">Month</Label>
+                          <p className="font-medium">{paymentsData.currentPayment.month}</p>
+                        </div>
+                        <div>
+                          <Label className="text-xs text-gray-600">Amount</Label>
+                          <p className="font-medium">₹{paymentsData.currentPayment.amount}</p>
+                        </div>
+                      </div>
+                      
+                      <div>
+                        <Label className="text-xs text-gray-600">Status</Label>
+                        <div className="mt-1">
+                          <Badge
+                            variant={
+                              paymentsData.currentPayment.status === "paid" ? "default" :
+                              paymentsData.currentPayment.status === "verification_pending" ? "secondary" :
+                              "destructive"
+                            }
+                          >
+                            {paymentsData.currentPayment.status === "paid" ? "✅ Paid" :
+                             paymentsData.currentPayment.status === "verification_pending" ? "⏳ Verification Pending" :
+                             "❌ Due"}
+                          </Badge>
+                        </div>
+                      </div>
+
+                      {paymentsData.currentPayment.status === "due" && paymentsData.village.paymentLink && (
+                        <div className="space-y-2">
+                          <Button
+                            className="w-full bg-green-600 hover:bg-green-700"
+                            onClick={() => {
+                              window.open(paymentsData.village.paymentLink, '_blank');
+                            }}
+                          >
+                            💳 Pay Now - ₹{paymentsData.currentPayment.amount}
+                          </Button>
+                          
+                          <Button
+                            variant="outline"
+                            className="w-full text-blue-600 hover:text-blue-700"
+                            onClick={() => {
+                              setSelectedPaymentId(paymentsData.currentPayment.id);
+                              setShowPaymentProofModal(true);
+                            }}
+                          >
+                            📸 Verify Payment
+                          </Button>
+                        </div>
+                      )}
+
+                      {paymentsData.currentPayment.status === "verification_pending" && (
+                        <div className="p-3 bg-yellow-50 rounded-lg border-l-4 border-yellow-400">
+                          <p className="text-sm text-yellow-800">
+                            🕐 Your payment proof has been submitted and is awaiting manager verification.
+                          </p>
+                          {paymentsData.currentPayment.submittedAt && (
+                            <p className="text-xs text-yellow-600 mt-1">
+                              Submitted: {new Date(paymentsData.currentPayment.submittedAt).toLocaleString()}
+                            </p>
+                          )}
+                        </div>
+                      )}
+
+                      {paymentsData.currentPayment.status === "paid" && (
+                        <div className="p-3 bg-green-50 rounded-lg border-l-4 border-green-400">
+                          <p className="text-sm text-green-800">
+                            ✅ Payment verified and confirmed!
+                          </p>
+                          {paymentsData.currentPayment.verifiedAt && (
+                            <p className="text-xs text-green-600 mt-1">
+                              Verified: {new Date(paymentsData.currentPayment.verifiedAt).toLocaleString()}
+                            </p>
+                          )}
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                )}
+
+                {/* Payment History */}
+                {paymentsData.allPayments && paymentsData.allPayments.length > 0 && (
+                  <Card>
+                    <CardHeader className="pb-3">
+                      <CardTitle className="text-lg">Payment History</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-3">
+                        {paymentsData.allPayments.slice(0, 5).map((payment: any) => (
+                          <div
+                            key={payment.id}
+                            className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
+                          >
+                            <div>
+                              <p className="text-sm font-medium">{payment.month}</p>
+                              <p className="text-xs text-gray-600">₹{payment.amount}</p>
+                            </div>
+                            <Badge
+                              variant={
+                                payment.status === "paid" ? "default" :
+                                payment.status === "verification_pending" ? "secondary" :
+                                "destructive"
+                              }
+                              className="text-xs"
+                            >
+                              {payment.status === "paid" ? "Paid" :
+                               payment.status === "verification_pending" ? "Pending" :
+                               "Due"}
+                            </Badge>
+                          </div>
+                        ))}
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
+
+                {/* Village Payment Info */}
+                {paymentsData.village.monthlyFee && (
+                  <Card>
+                    <CardHeader className="pb-3">
+                      <CardTitle className="text-lg">Payment Information</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div>
+                        <Label className="text-xs text-gray-600">Monthly Fee</Label>
+                        <p className="font-medium">₹{paymentsData.village.monthlyFee}</p>
+                        <p className="text-xs text-gray-500 mt-1">
+                          Waste collection service fee
+                        </p>
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
+              </div>
+            ) : (
+              <div className="text-center py-12">
+                <CreditCard className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+                <h3 className="text-lg font-medium text-gray-900 mb-2">
+                  No Payment Setup
+                </h3>
+                <p className="text-gray-500 mb-4">
+                  Payment system has not been configured for your village yet.
+                </p>
+                <p className="text-sm text-gray-400">
+                  Contact your village manager for more information.
+                </p>
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Bottom Navigation */}
       <div className="fixed bottom-0 left-1/2 transform -translate-x-1/2 w-full max-w-md bg-white border-t border-gray-200 px-2 py-2 rounded-lg">
-        <div className="flex justify-around">
-          {[
-            { id: "home", icon: Home },
-            { id: "reports", icon: BarChart3 },
-            { id: "collections", icon: FileText },
-            { id: "issues", icon: AlertTriangle },
-            { id: "announcements", icon: Bell },
-            { id: "profile", icon: User },
-          ].map((tab) => (
+          <div className="flex justify-around">
+            {[
+              { id: "home", icon: Home },
+              { id: "reports", icon: BarChart3 },
+              { id: "collections", icon: FileText },
+              { id: "issues", icon: AlertTriangle },
+              ...(villageData?.paymentsEnabled ? [{ id: "payments", icon: CreditCard }] : []),
+              { id: "profile", icon: User },
+            ].map((tab) => (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
@@ -1197,7 +1429,7 @@ export default function GeneratorDashboard() {
               <span className="text-xs font-medium">{tab.label}</span>
             </button>
           ))}
-        </div>
+          </div>
       </div>
 
       {/* Issue Report Modal - Enhanced Mobile-First Design */}
@@ -1582,6 +1814,117 @@ export default function GeneratorDashboard() {
                 "Change Password"
               )}
             </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Payment Proof Upload Modal */}
+      <Dialog open={showPaymentProofModal} onOpenChange={setShowPaymentProofModal}>
+        <DialogContent className="w-[96vw] max-w-lg max-h-[90vh] overflow-y-auto p-4 mx-auto">
+          <DialogHeader className="pb-4">
+            <DialogTitle className="text-xl font-bold text-center text-gray-900">
+              📸 Upload Payment Proof
+            </DialogTitle>
+            <p className="text-sm text-gray-600 text-center mt-1">
+              Upload a clear photo of your payment receipt or screenshot
+            </p>
+          </DialogHeader>
+
+          <div className="space-y-5">
+            {/* Payment Proof Upload Field */}
+            <div className="space-y-2">
+              <Label className="text-sm font-semibold text-gray-800 flex items-center">
+                📷 Payment Receipt/Screenshot <span className="text-red-500 ml-1">*</span>
+              </Label>
+              <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center">
+                <Input
+                  type="file"
+                  accept="image/*,image/heic,image/heif"
+                  onChange={(e) => setPaymentProofFile(e.target.files?.[0] || null)}
+                  className="hidden"
+                  id="payment-proof-upload"
+                />
+                <label
+                  htmlFor="payment-proof-upload"
+                  className="cursor-pointer flex flex-col items-center space-y-2"
+                >
+                  {paymentProofFile ? (
+                    <div className="text-center">
+                      <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-2">
+                        <Camera className="w-8 h-8 text-green-600" />
+                      </div>
+                      <p className="text-sm font-medium text-green-700">
+                        📷 {paymentProofFile.name}
+                      </p>
+                      <p className="text-xs text-gray-500">Tap to change photo</p>
+                    </div>
+                  ) : (
+                    <div className="text-center">
+                      <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-2">
+                        <Upload className="w-8 h-8 text-gray-400" />
+                      </div>
+                      <p className="text-sm font-medium text-gray-700">
+                        Tap to upload payment proof
+                      </p>
+                      <p className="text-xs text-gray-500">
+                        Clear photos help verify payments faster
+                      </p>
+                    </div>
+                  )}
+                </label>
+              </div>
+            </div>
+
+            {/* Instructions */}
+            <div className="p-3 bg-blue-50 rounded-lg border-l-4 border-blue-400">
+              <h4 className="text-sm font-semibold text-blue-800 mb-2">📋 Upload Guidelines:</h4>
+              <ul className="text-xs text-blue-700 space-y-1">
+                <li>• Include transaction ID and amount</li>
+                <li>• Ensure image is clear and readable</li>
+                <li>• Upload within 24 hours of payment</li>
+                <li>• Supported formats: JPG, PNG, HEIC</li>
+              </ul>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="flex flex-col space-y-3 pt-4 border-t">
+              <Button
+                onClick={() => {
+                  if (selectedPaymentId && paymentProofFile) {
+                    uploadPaymentProofMutation.mutate({
+                      paymentId: selectedPaymentId,
+                      proofFile: paymentProofFile
+                    });
+                  }
+                }}
+                disabled={uploadPaymentProofMutation.isPending || !paymentProofFile}
+                className="w-full h-12 bg-blue-600 hover:bg-blue-700 text-base font-semibold"
+              >
+                {uploadPaymentProofMutation.isPending ? (
+                  <div className="flex items-center space-x-2">
+                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                    <span>Uploading Proof...</span>
+                  </div>
+                ) : (
+                  <div className="flex items-center space-x-2">
+                    <Camera className="w-5 h-5" />
+                    <span>Submit Payment Proof</span>
+                  </div>
+                )}
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setShowPaymentProofModal(false);
+                  setPaymentProofFile(null);
+                  setSelectedPaymentId(null);
+                }}
+                className="w-full h-12 border-2 text-base font-medium"
+                disabled={uploadPaymentProofMutation.isPending}
+              >
+                Cancel
+              </Button>
+            </div>
           </div>
         </DialogContent>
       </Dialog>

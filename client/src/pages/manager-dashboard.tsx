@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import React from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -60,6 +60,8 @@ import {
   Bell,
   LayoutDashboard,
   Leaf,
+  CreditCard,
+  XCircle,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -335,6 +337,25 @@ export default function ManagerDashboard() {
     url: string;
     title: string;
   } | null>(null);
+  
+  // Image modal state
+  const [showImageModal, setShowImageModal] = useState(false);
+  const [selectedImageUrl, setSelectedImageUrl] = useState<string>('');
+  
+  // Payment state
+  const [paymentSetup, setPaymentSetup] = useState({
+    upiId: "",
+    confirmUpiId: "",
+    monthlyFee: "",
+  });
+  const [paymentSubTab, setPaymentSubTab] = useState("setup");
+  
+  // Payment filtering state
+  const [paymentFilters, setPaymentFilters] = useState({
+    search: "",
+    status: "all", // all, due, verification_pending, paid
+    month: new Date().toISOString().slice(0, 7), // Current month YYYY-MM
+  });
 
   // Consolidated filters
   const [filters, setFilters] = useState<FilterState>({
@@ -363,6 +384,15 @@ export default function ManagerDashboard() {
   const { data: stats } = useQuery<VillageStats>({
     queryKey: ["/api/manager/stats", user?.villageId],
     enabled: !!user?.villageId,
+  });
+
+  const { data: villageData } = useQuery({
+    queryKey: ["/api/villages", user?.villageId],
+    enabled: !!user?.villageId,
+    queryFn: async () => {
+      const response = await apiRequest("GET", `/api/villages/${user?.villageId}`);
+      return response.json();
+    },
   });
 
   const { data: collectors = [] } = useQuery<Collector[]>({
@@ -399,6 +429,35 @@ export default function ManagerDashboard() {
     queryKey: ["/api/announcements", user?.villageId],
     enabled: !!user?.villageId,
   });
+
+  const { data: payments = [] } = useQuery<any[]>({
+    queryKey: ["/api/payments/village", user?.villageId],
+    enabled: !!user?.villageId && activeTab === "payments",
+  });
+
+  // Helper function to extract UPI ID from payment link
+  const extractUpiId = (paymentLink: string) => {
+    if (!paymentLink) return null;
+    try {
+      const url = new URL(paymentLink);
+      return url.searchParams.get('pa') || null;
+    } catch {
+      return null;
+    }
+  };
+
+  // Update payment setup state when village data loads
+  useEffect(() => {
+    if (villageData) {
+      const currentUpiId = extractUpiId(villageData.paymentLink || '');
+      setPaymentSetup(prev => ({
+        ...prev,
+        upiId: currentUpiId || '',
+        confirmUpiId: currentUpiId || '',
+        monthlyFee: villageData.monthlyFee || '',
+      }));
+    }
+  }, [villageData]);
 
   // Mutations
   const updateIssueMutation = useMutation({
@@ -514,6 +573,39 @@ export default function ManagerDashboard() {
         title: "Failed to change password",
         description: error.message,
         variant: "destructive"
+      });
+    },
+  });
+
+  const setupPaymentMutation = useMutation({
+    mutationFn: (data: { upiId: string; monthlyFee: string }) =>
+      apiRequest("POST", "/api/payments/setup", data),
+    onSuccess: () => {
+      toast({ title: "Payment setup completed successfully" });
+      setPaymentSetup({ upiId: "", confirmUpiId: "", monthlyFee: "" });
+      queryClient.invalidateQueries({ queryKey: ["/api/villages"] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Failed to setup payment",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const updatePaymentStatusMutation = useMutation({
+    mutationFn: ({ paymentId, status }: { paymentId: number; status: string }) =>
+      apiRequest("PATCH", `/api/payments/${paymentId}/status`, { status }),
+    onSuccess: () => {
+      toast({ title: "Payment status updated successfully" });
+      queryClient.invalidateQueries({ queryKey: ["/api/payments/village"] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Failed to update payment status",
+        description: error.message,
+        variant: "destructive",
       });
     },
   });
@@ -849,6 +941,7 @@ export default function ManagerDashboard() {
                 { id: "households", icon: Home },
                 { id: "collections", icon: Package },
                 { id: "issues", icon: AlertTriangle },
+                ...(villageData?.paymentsEnabled ? [{ id: "payments", icon: CreditCard }] : []),
                 { id: "reports", icon: BarChart3 },
               ].map(({ id, icon: Icon }) => (
                 <button
@@ -877,6 +970,7 @@ export default function ManagerDashboard() {
                   { id: "households", icon: Home, label: t("navigation.households") },
                   { id: "collections", icon: Package, label: t("navigation.collections") },
                   { id: "issues", icon: AlertTriangle, label: t("navigation.issues") },
+                  ...(villageData?.paymentsEnabled ? [{ id: "payments", icon: CreditCard, label: t("navigation.payments") }] : []),
                   { id: "reports", icon: BarChart3, label: t("navigation.reports") },
                   { id: "announcements", icon: Bell, label: t("navigation.announcements") },
                   { id: "profile", icon: User, label: t("navigation.profile") },
@@ -2139,6 +2233,374 @@ export default function ManagerDashboard() {
           </div>
         )}
 
+            {/* Payments Tab */}
+            {activeTab === "payments" && (
+              <div className="space-y-6">
+                <div>
+                  <h2 className="text-2xl font-bold">Payment Management</h2>
+                  <p className="text-muted-foreground">Setup and manage monthly waste collection fees</p>
+                </div>
+
+                <Tabs value={paymentSubTab} onValueChange={setPaymentSubTab} className="w-full">
+                  <TabsList className="grid w-full grid-cols-2">
+                    <TabsTrigger value="setup">Setup Payments</TabsTrigger>
+                    <TabsTrigger value="manage">Manage Payments</TabsTrigger>
+                  </TabsList>
+
+                  <TabsContent value="setup" className="space-y-4">
+                    {/* Current Payment Configuration */}
+                    <Card>
+                      <CardHeader>
+                        <CardTitle>Current Payment Configuration</CardTitle>
+                        <CardDescription>View existing payment setup for your village</CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div>
+                            <Label className="text-sm font-medium text-gray-600">Current UPI ID</Label>
+                            <div className="p-3 bg-gray-50 rounded-md border">
+                              <p className="text-sm">
+                                {extractUpiId(villageData?.paymentLink) || (
+                                  <span className="text-gray-500">UPI ID is not linked yet</span>
+                                )}
+                              </p>
+                            </div>
+                          </div>
+                          <div>
+                            <Label className="text-sm font-medium text-gray-600">Monthly Fee</Label>
+                            <div className="p-3 bg-gray-50 rounded-md border">
+                              <p className="text-sm">
+                                {villageData?.monthlyFee ? (
+                                  <span>₹{villageData.monthlyFee}</span>
+                                ) : (
+                                  <span className="text-gray-500">No monthly fee added</span>
+                                )}
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+
+                    {/* Update Payment Configuration */}
+                    <Card>
+                      <CardHeader>
+                        <CardTitle>Update Payment Setup</CardTitle>
+                        <CardDescription>Configure or update UPI payment details for monthly waste collection fees</CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="space-y-4">
+                          <div>
+                            <Label htmlFor="upi-id">UPI ID *</Label>
+                            <Input
+                              id="upi-id"
+                              value={paymentSetup.upiId}
+                              onChange={(e) => setPaymentSetup(prev => ({ ...prev, upiId: e.target.value }))}
+                              placeholder="example@paytm"
+                            />
+                          </div>
+                          <div>
+                            <Label htmlFor="confirm-upi-id">Confirm UPI ID *</Label>
+                            <Input
+                              id="confirm-upi-id"
+                              value={paymentSetup.confirmUpiId}
+                              onChange={(e) => setPaymentSetup(prev => ({ ...prev, confirmUpiId: e.target.value }))}
+                              placeholder="example@paytm"
+                            />
+                          </div>
+                          <div>
+                            <Label htmlFor="monthly-fee">Monthly Fee (₹) *</Label>
+                            <Input
+                              id="monthly-fee"
+                              type="number"
+                              value={paymentSetup.monthlyFee}
+                              onChange={(e) => setPaymentSetup(prev => ({ ...prev, monthlyFee: e.target.value }))}
+                              placeholder="100"
+                            />
+                          </div>
+                          <Button
+                            onClick={() => {
+                              if (!paymentSetup.upiId || !paymentSetup.confirmUpiId || !paymentSetup.monthlyFee) {
+                                toast({ title: "Please fill all required fields", variant: "destructive" });
+                                return;
+                              }
+                              if (paymentSetup.upiId !== paymentSetup.confirmUpiId) {
+                                toast({ title: "UPI IDs do not match", variant: "destructive" });
+                                return;
+                              }
+                              setupPaymentMutation.mutate({
+                                upiId: paymentSetup.upiId,
+                                monthlyFee: paymentSetup.monthlyFee,
+                              });
+                            }}
+                            disabled={setupPaymentMutation.isPending}
+                            className="w-full"
+                          >
+                            {setupPaymentMutation.isPending ? "Updating..." : "Update Payment Configuration"}
+                          </Button>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </TabsContent>
+
+                  <TabsContent value="manage" className="space-y-4">
+                    {/* Nested tabs for Payment Management */}
+                    <Tabs defaultValue="verification" className="w-full">
+                      <TabsList className="grid w-full grid-cols-2">
+                        <TabsTrigger value="verification">Payment Verification</TabsTrigger>
+                        <TabsTrigger value="all-payments">All Payments</TabsTrigger>
+                      </TabsList>
+
+                      {/* Payment Verification Tab */}
+                      <TabsContent value="verification" className="space-y-4">
+                        <Card>
+                          <CardHeader>
+                            <CardTitle>Payment Verification</CardTitle>
+                            <CardDescription>Verify payment proofs submitted by generators</CardDescription>
+                          </CardHeader>
+                          <CardContent>
+                            <div className="space-y-4">
+                              {payments.length > 0 ? (
+                                payments
+                                  .filter((payment: any) => payment.status === 'verification_pending')
+                                  .map((payment: any) => (
+                                    <Card key={payment.id} className="border-l-4 border-l-yellow-400">
+                                      <CardContent className="p-4">
+                                        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                                          <div className="flex-1">
+                                            <h4 className="font-semibold">{payment.headName}</h4>
+                                            <p className="text-sm text-muted-foreground">
+                                              House: {payment.houseNumber} | Month: {payment.month}
+                                            </p>
+                                            <p className="text-sm">Amount: ₹{payment.amount}</p>
+                                            {payment.submittedAt && (
+                                              <p className="text-xs text-muted-foreground">
+                                                Submitted: {new Date(payment.submittedAt).toLocaleString()}
+                                              </p>
+                                            )}
+                                          </div>
+                                          <div className="flex flex-col gap-2">
+                                            {payment.paymentProofUrl && (
+                                              <Button
+                                                size="sm"
+                                                variant="outline"
+                                                onClick={() => {
+                                                  setSelectedImageUrl(payment.paymentProofUrl);
+                                                  setShowImageModal(true);
+                                                }}
+                                              >
+                                                <Eye className="h-4 w-4 mr-1" />
+                                                View Proof
+                                              </Button>
+                                            )}
+                                            <div className="flex gap-2">
+                                              <Button
+                                                size="sm"
+                                                onClick={() => updatePaymentStatusMutation.mutate({
+                                                  paymentId: payment.id,
+                                                  status: 'paid'
+                                                })}
+                                                disabled={updatePaymentStatusMutation.isPending}
+                                              >
+                                                <CheckCircle className="h-4 w-4 mr-1" />
+                                                Accept
+                                              </Button>
+                                              <Button
+                                                size="sm"
+                                                variant="destructive"
+                                                onClick={() => updatePaymentStatusMutation.mutate({
+                                                  paymentId: payment.id,
+                                                  status: 'due'
+                                                })}
+                                                disabled={updatePaymentStatusMutation.isPending}
+                                              >
+                                                <XCircle className="h-4 w-4 mr-1" />
+                                                Reject
+                                              </Button>
+                                            </div>
+                                          </div>
+                                        </div>
+                                      </CardContent>
+                                    </Card>
+                                  ))
+                              ) : (
+                                <div className="text-center py-8">
+                                  <CreditCard className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+                                  <p className="text-muted-foreground">No payment verifications pending</p>
+                                </div>
+                              )}
+                            </div>
+                          </CardContent>
+                        </Card>
+                      </TabsContent>
+
+                      {/* All Payments Tab */}
+                      <TabsContent value="all-payments" className="space-y-4">
+                        <Card>
+                          <CardHeader>
+                            <CardTitle>All Payments</CardTitle>
+                            <CardDescription>Filter and search payments by status, month, and household</CardDescription>
+                          </CardHeader>
+                          <CardContent>
+                            {/* Payment Filters */}
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                              <div>
+                                <Label htmlFor="payment-search">Search Household</Label>
+                                <Input
+                                  id="payment-search"
+                                  placeholder="Search by name or house number..."
+                                  value={paymentFilters.search}
+                                  onChange={(e) => setPaymentFilters(prev => ({ ...prev, search: e.target.value }))}
+                                />
+                              </div>
+                              <div>
+                                <Label htmlFor="payment-status">Payment Status</Label>
+                                <Select 
+                                  value={paymentFilters.status} 
+                                  onValueChange={(value) => setPaymentFilters(prev => ({ ...prev, status: value }))}
+                                >
+                                  <SelectTrigger>
+                                    <SelectValue placeholder="Select status" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="all">All Statuses</SelectItem>
+                                    <SelectItem value="due">Due</SelectItem>
+                                    <SelectItem value="verification_pending">Pending Verification</SelectItem>
+                                    <SelectItem value="paid">Paid</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                              </div>
+                              <div>
+                                <Label htmlFor="payment-month">Month</Label>
+                                <Input
+                                  id="payment-month"
+                                  type="month"
+                                  value={paymentFilters.month}
+                                  onChange={(e) => setPaymentFilters(prev => ({ ...prev, month: e.target.value }))}
+                                />
+                              </div>
+                            </div>
+
+                            {/* Filtered Payments List */}
+                            <div className="space-y-3">
+                              {payments.length > 0 ? (
+                                payments
+                                  .filter((payment: any) => {
+                                    // Status filter
+                                    if (paymentFilters.status !== 'all' && payment.status !== paymentFilters.status) {
+                                      return false;
+                                    }
+                                    
+                                    // Month filter
+                                    if (paymentFilters.month && payment.month !== paymentFilters.month) {
+                                      return false;
+                                    }
+                                    
+                                    // Search filter
+                                    if (paymentFilters.search) {
+                                      const searchTerm = paymentFilters.search.toLowerCase();
+                                      const headName = (payment.headName || '').toLowerCase();
+                                      const houseNumber = (payment.houseNumber || '').toLowerCase();
+                                      return headName.includes(searchTerm) || houseNumber.includes(searchTerm);
+                                    }
+                                    
+                                    return true;
+                                  })
+                                  .map((payment: any) => (
+                                    <Card key={payment.id}>
+                                      <CardContent className="p-4">
+                                        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                                          <div className="flex-1">
+                                            <h4 className="font-semibold">{payment.headName}</h4>
+                                            <p className="text-sm text-muted-foreground">
+                                              House: {payment.houseNumber} | Month: {payment.month}
+                                            </p>
+                                            <p className="text-sm">Amount: ₹{payment.amount}</p>
+                                            {payment.submittedAt && (
+                                              <p className="text-xs text-muted-foreground">
+                                                Submitted: {new Date(payment.submittedAt).toLocaleString()}
+                                              </p>
+                                            )}
+                                            {payment.verifiedAt && (
+                                              <p className="text-xs text-muted-foreground">
+                                                Verified: {new Date(payment.verifiedAt).toLocaleString()}
+                                              </p>
+                                            )}
+                                          </div>
+                                          <div className="flex flex-col gap-2">
+                                            <Badge
+                                              variant={
+                                                payment.status === 'paid' ? 'default' :
+                                                payment.status === 'verification_pending' ? 'secondary' : 'destructive'
+                                              }
+                                            >
+                                              {payment.status === 'paid' ? 'Paid' :
+                                               payment.status === 'verification_pending' ? 'Pending Verification' : 'Due'}
+                                            </Badge>
+                                            
+                                            {/* Show proof image button for all payments that have proof */}
+                                            {payment.paymentProofUrl && (
+                                              <Button
+                                                size="sm"
+                                                variant="outline"
+                                                onClick={() => {
+                                                  setSelectedImageUrl(payment.paymentProofUrl);
+                                                  setShowImageModal(true);
+                                                }}
+                                              >
+                                                <Eye className="h-4 w-4 mr-1" />
+                                                View Proof
+                                              </Button>
+                                            )}
+                                            
+                                            {/* Action buttons for verification pending payments */}
+                                            {payment.status === 'verification_pending' && (
+                                              <div className="flex gap-2">
+                                                <Button
+                                                  size="sm"
+                                                  onClick={() => updatePaymentStatusMutation.mutate({
+                                                    paymentId: payment.id,
+                                                    status: 'paid'
+                                                  })}
+                                                  disabled={updatePaymentStatusMutation.isPending}
+                                                >
+                                                  <CheckCircle className="h-4 w-4 mr-1" />
+                                                  Accept
+                                                </Button>
+                                                <Button
+                                                  size="sm"
+                                                  variant="destructive"
+                                                  onClick={() => updatePaymentStatusMutation.mutate({
+                                                    paymentId: payment.id,
+                                                    status: 'due'
+                                                  })}
+                                                  disabled={updatePaymentStatusMutation.isPending}
+                                                >
+                                                  <XCircle className="h-4 w-4 mr-1" />
+                                                  Reject
+                                                </Button>
+                                              </div>
+                                            )}
+                                          </div>
+                                        </div>
+                                      </CardContent>
+                                    </Card>
+                                  ))
+                              ) : (
+                                <div className="text-center py-8">
+                                  <p className="text-muted-foreground">No payments found for the selected filters</p>
+                                </div>
+                              )}
+                            </div>
+                          </CardContent>
+                        </Card>
+                      </TabsContent>
+                    </Tabs>
+                  </TabsContent>
+                </Tabs>
+              </div>
+            )}
+
             {/* Issues Tab */}
             {activeTab === "issues" && (
               <div className="space-y-6">
@@ -3258,6 +3720,32 @@ export default function ManagerDashboard() {
               </div>
             </form>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Image Modal Dialog */}
+      <Dialog open={showImageModal} onOpenChange={setShowImageModal}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden p-0">
+          <DialogHeader className="p-6 pb-0">
+            <DialogTitle>Payment Proof</DialogTitle>
+          </DialogHeader>
+          <div className="p-6 pt-4">
+            <div className="w-full max-h-[70vh] overflow-auto">
+              <img
+                src={selectedImageUrl}
+                alt="Payment proof"
+                className="w-full h-auto object-contain rounded-lg"
+                onError={(e) => {
+                  e.currentTarget.src = "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTIxIDEyVjdIMTlWNUMxOSAzLjg5NTQzIDE4LjEwNDYgMyAxNyAzSDdDNS44OTU0MyAzIDUgMy44OTU0MyA1IDVWMTlDNSAyMC4xMDQ2IDUuODk1NDMgMjEgNyAyMUgxMiIgc3Ryb2tlPSIjOTk5IiBzdHJva2Utd2lkdGg9IjIiLz4KPHBhdGggZD0iTTE0IDE0TDE3IDE3TDIxIDEzIiBzdHJva2U9IiM5OTkiIHN0cm9rZS13aWR0aD0iMiIvPgo8L3N2Zz4K";
+                }}
+              />
+            </div>
+            <div className="flex justify-end mt-4">
+              <Button variant="outline" onClick={() => setShowImageModal(false)}>
+                Close
+              </Button>
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
     </>

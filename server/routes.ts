@@ -357,6 +357,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get('/api/villages/:villageId', requireAuth, requireRole(['admin', 'manager', 'generator']), async (req, res) => {
+    try {
+      const { villageId } = req.params;
+      const village = await storage.getVillageByVillageId(villageId);
+      
+      if (!village) {
+        return res.status(404).json({ message: "Village not found" });
+      }
+      
+      res.json(village);
+    } catch (error) {
+      console.error("Get village error:", error);
+      res.status(500).json({ message: "Failed to get village" });
+    }
+  });
+
   // Household routes
   app.post('/api/households', requireAuth, requireRole(['manager']), async (req, res) => {
     try {
@@ -1120,6 +1136,159 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Payment routes
+  app.post('/api/payments/setup', requireAuth, requireRole(['manager']), async (req, res) => {
+    try {
+      const { upiId, monthlyFee } = req.body;
+      const villageId = req.session.villageId!;
+
+      if (!upiId || !monthlyFee) {
+        return res.status(400).json({ message: "UPI ID and monthly fee are required" });
+      }
+
+      // Get village name for payment link
+      const village = await storage.getVillageById(villageId);
+      if (!village) {
+        return res.status(404).json({ message: "Village not found" });
+      }
+
+      // Create UPI payment link
+      const paymentLink = `upi://pay?pa=${encodeURIComponent(upiId)}&pn=${encodeURIComponent(village.name)}&am=${encodeURIComponent(monthlyFee)}&cu=INR&tn=${encodeURIComponent('waste collection fee')}`;
+
+      // Update village with payment link and monthly fee
+      const updatedVillage = await storage.updateVillagePaymentLink(villageId, paymentLink, monthlyFee);
+
+      res.json({
+        message: "Payment setup completed successfully",
+        village: updatedVillage,
+      });
+    } catch (error) {
+      console.error("Setup payment error:", error);
+      res.status(500).json({ message: "Failed to setup payment" });
+    }
+  });
+
+  app.get('/api/payments/village', requireAuth, requireRole(['manager']), async (req, res) => {
+    try {
+      const villageId = req.session.villageId!;
+      const { month } = req.query;
+
+      let paymentsData = await storage.getPaymentsByVillage(villageId);
+
+      // Filter by month if provided
+      if (month) {
+        paymentsData = paymentsData.filter(p => p.month === month);
+      }
+
+      res.json(paymentsData);
+    } catch (error) {
+      console.error("Get village payments error:", error);
+      res.status(500).json({ message: "Failed to get payments" });
+    }
+  });
+
+  app.patch('/api/payments/:paymentId/status', requireAuth, requireRole(['manager']), async (req, res) => {
+    try {
+      const { paymentId } = req.params;
+      const { status } = req.body;
+      const verifiedBy = req.session.userId!;
+
+      if (!['paid', 'due'].includes(status)) {
+        return res.status(400).json({ message: "Invalid payment status" });
+      }
+
+      const payment = await storage.updatePaymentStatus(parseInt(paymentId), status, verifiedBy);
+      res.json(payment);
+    } catch (error) {
+      console.error("Update payment status error:", error);
+      res.status(500).json({ message: "Failed to update payment status" });
+    }
+  });
+
+  app.get('/api/payments/household', requireAuth, requireRole(['generator']), async (req, res) => {
+    try {
+      const generatorUserId = req.session.userId!;
+      const household = await storage.getHouseholdByGeneratorUserId(generatorUserId);
+
+      if (!household) {
+        return res.status(404).json({ message: "Household not found" });
+      }
+
+      // Get current month payment
+      const currentMonth = new Date().toISOString().slice(0, 7); // YYYY-MM format
+      let currentPayment = await storage.getPaymentByHouseholdAndMonth(household.id, currentMonth);
+
+      // Get village payment info
+      const village = await storage.getVillageById(household.villageId);
+
+      // Create payment record if doesn't exist and village has payment setup
+      if (!currentPayment && village?.paymentLink && village?.monthlyFee) {
+        currentPayment = await storage.createPayment({
+          householdId: household.id,
+          villageId: household.villageId,
+          month: currentMonth,
+          amount: village.monthlyFee,
+          status: 'due',
+        });
+      }
+
+      // Get all payments for this household
+      const allPayments = await storage.getPaymentsByHousehold(household.id);
+
+      res.json({
+        currentPayment,
+        allPayments,
+        village: {
+          paymentLink: village?.paymentLink,
+          monthlyFee: village?.monthlyFee,
+        },
+      });
+    } catch (error) {
+      console.error("Get household payments error:", error);
+      res.status(500).json({ message: "Failed to get payments" });
+    }
+  });
+
+  app.post('/api/payments/:paymentId/proof', requireAuth, requireRole(['generator']), upload.single('file'), async (req, res) => {
+    try {
+      const { paymentId } = req.params;
+      const generatorUserId = req.session.userId!;
+
+      if (!req.file) {
+        return res.status(400).json({ message: "Payment proof image is required" });
+      }
+
+      const household = await storage.getHouseholdByGeneratorUserId(generatorUserId);
+      if (!household) {
+        return res.status(404).json({ message: "Household not found" });
+      }
+
+      // Upload image to Cloudinary
+      const { uploadToCloudinary } = await import('./cloudinary');
+      const fs = await import('fs');
+      const buffer = fs.readFileSync(req.file.path);
+
+      const result = await uploadToCloudinary(buffer, {
+        folder: 'payment-proofs',
+        resource_type: 'image'
+      });
+
+      // Clean up temporary file
+      fs.unlinkSync(req.file.path);
+
+      // Update payment with proof
+      const payment = await storage.updatePaymentProof(parseInt(paymentId), result.secure_url);
+
+      res.json({
+        message: "Payment proof uploaded successfully",
+        payment,
+      });
+    } catch (error) {
+      console.error("Upload payment proof error:", error);
+      res.status(500).json({ message: "Failed to upload payment proof" });
+    }
+  });
+
   // Get moderator stats (only for assigned villages)
   app.get('/api/moderator/stats', requireAuth, requireRole(['moderator']), async (req, res) => {
     try {
@@ -1303,6 +1472,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Delete village error:", error);
       res.status(500).json({ message: "Failed to delete village" });
+    }
+  });
+
+  app.patch('/api/villages/:villageId/payments', requireAuth, requireRole(['admin']), async (req, res) => {
+    try {
+      const { villageId } = req.params;
+      const { paymentsEnabled } = req.body;
+
+      const village = await storage.updateVillagePaymentSettings(villageId, paymentsEnabled);
+
+      res.json({ message: "Village payment settings updated successfully", village });
+    } catch (error) {
+      console.error("Update village payment settings error:", error);
+      res.status(500).json({ message: "Failed to update village payment settings" });
     }
   });
 

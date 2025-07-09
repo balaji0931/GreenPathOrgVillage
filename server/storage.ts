@@ -8,6 +8,7 @@ import {
   issues,
   announcements,
   feedback,
+  payments,
   moderators,
   moderatorVillageAssignments,
   type Village,
@@ -200,6 +201,15 @@ export class DatabaseStorage implements IStorage {
   async getVillageByVillageId(villageId: string): Promise<Village | undefined> {
     const [village] = await db.select().from(villages).where(eq(villages.villageId, villageId));
     return village || undefined;
+  }
+
+  async updateVillagePaymentSettings(villageId: string, paymentsEnabled: boolean): Promise<Village> {
+    const [village] = await db
+      .update(villages)
+      .set({ paymentsEnabled, updatedAt: new Date() })
+      .where(eq(villages.villageId, villageId))
+      .returning();
+    return village;
   }
 
   async createHousehold(insertHousehold: InsertHousehold): Promise<Household> {
@@ -582,7 +592,7 @@ export class DatabaseStorage implements IStorage {
     // 2. Delete feedback and for this village's collectors
     await db.delete(feedback)
       .where(sql`to_collector_id IN (SELECT id FROM collectors WHERE village_id = ${villageId})`);
-    
+
     await db.delete(moderatorVillageAssignments)
     .where(sql`village_id = ${villageId}`);
 
@@ -893,8 +903,7 @@ export class DatabaseStorage implements IStorage {
         and(
           sql`${wasteCollections.collectionDate} >= ${targetDate} AND ${wasteCollections.collectionDate} < ${nextDay}`,
           villageId && villageId !== 'all' ? eq(households.villageId, villageId) : sql`1=1`
-        )
-      );
+        )      );
 
     // Village/Collector performance
     let performanceQuery;
@@ -1602,6 +1611,101 @@ export class DatabaseStorage implements IStorage {
         compostingData: { composting: 0, notComposting: 0, total: 0 },
       };
     }
+  }
+
+  // Payment related methods
+  async getVillageById(villageId: string): Promise<Village | undefined> {
+    const [village] = await db.select().from(villages).where(eq(villages.villageId, villageId));
+    return village || undefined;
+  }
+
+  async updateVillagePaymentLink(villageId: string, paymentLink: string, monthlyFee: string): Promise<Village> {
+    const [village] = await db
+      .update(villages)
+      .set({ 
+        paymentLink, 
+        monthlyFee,
+        updatedAt: new Date()
+      })
+      .where(eq(villages.villageId, villageId))
+      .returning();
+    return village;
+  }
+
+  async getPaymentsByVillage(villageId: string): Promise<any[]> {
+    return await db
+      .select({
+        id: payments.id,
+        householdId: payments.householdId,
+        month: payments.month,
+        amount: payments.amount,
+        status: payments.status,
+        paymentProofUrl: payments.paymentProofUrl,
+        submittedAt: payments.submittedAt,
+        verifiedAt: payments.verifiedAt,
+        verifiedBy: payments.verifiedBy,
+        createdAt: payments.createdAt,
+        householdUid: households.uid,
+        headName: households.headName,
+        houseNumber: households.houseNumber,
+      })
+      .from(payments)
+      .innerJoin(households, eq(payments.householdId, households.id))
+      .where(eq(payments.villageId, villageId))
+      .orderBy(desc(payments.createdAt));
+  }
+
+  async getPaymentsByHousehold(householdId: number): Promise<any[]> {
+    return await db
+      .select()
+      .from(payments)
+      .where(eq(payments.householdId, householdId))
+      .orderBy(desc(payments.createdAt));
+  }
+
+  async getPaymentByHouseholdAndMonth(householdId: number, month: string): Promise<any | undefined> {
+    const [payment] = await db
+      .select()
+      .from(payments)
+      .where(and(eq(payments.householdId, householdId), eq(payments.month, month)))
+      .limit(1);
+    return payment || undefined;
+  }
+
+  async createPayment(paymentData: any): Promise<any> {
+    const [payment] = await db
+      .insert(payments)
+      .values(paymentData)
+      .returning();
+    return payment;
+  }
+
+  async updatePaymentStatus(paymentId: number, status: string, verifiedBy: string): Promise<any> {
+    const [payment] = await db
+      .update(payments)
+      .set({ 
+        status, 
+        verifiedBy,
+        verifiedAt: new Date(),
+        updatedAt: new Date()
+      })
+      .where(eq(payments.id, paymentId))
+      .returning();
+    return payment;
+  }
+
+  async updatePaymentProof(paymentId: number, paymentProofUrl: string): Promise<any> {
+    const [payment] = await db
+      .update(payments)
+      .set({ 
+        paymentProofUrl,
+        status: 'verification_pending',
+        submittedAt: new Date(),
+        updatedAt: new Date()
+      })
+      .where(eq(payments.id, paymentId))
+      .returning();
+    return payment;
   }
 
   async getSystemAnalytics(villageFilter?: string): Promise<{
