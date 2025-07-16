@@ -69,6 +69,7 @@ const OBSERVATION_OPTIONS = [
 ];
 
 const NOT_COLLECTED_REASONS = [
+  "Waste Not segregated",
   "House locked",
   "No one home",
   "No waste to collect",
@@ -1280,7 +1281,7 @@ export default function CollectorDashboard() {
             </div>
 
             {/* Plastic Reduced? */}
-            <div className="p-3 border border-gray-200 bg-gray-50 rounded-xl">
+            {/* <div className="p-3 border border-gray-200 bg-gray-50 rounded-xl">
               <Label className="text-base font-bold text-center block mb-3">
                 ♻️ {t('collections.isPlasticReduced')}
               </Label>
@@ -1308,7 +1309,7 @@ export default function CollectorDashboard() {
                   ❌ {t('app.no')}
                 </Button>
               </div>
-            </div>
+            </div> */}
 
             {/* Wet Waste Composting */}
             <div className="p-3 border border-gray-200 bg-gray-50 rounded-xl">
@@ -1342,7 +1343,7 @@ export default function CollectorDashboard() {
             </div>
 
             {/* Cleanliness Rating */}
-            <div className="p-3 border border-gray-200 bg-gray-50 rounded-xl">
+            {/* <div className="p-3 border border-gray-200 bg-gray-50 rounded-xl">
               <Label className="text-base font-bold text-center block mb-3">
                 🧹 {t('collections.howCleanArea')}
               </Label>
@@ -1364,7 +1365,7 @@ export default function CollectorDashboard() {
                   </button>
                 ))}
               </div>
-            </div>
+            </div> */}
 
             {/* Observations */}
             <div className="p-3 border border-gray-200 bg-gray-50 rounded-xl">
