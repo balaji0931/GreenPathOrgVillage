@@ -138,26 +138,12 @@ app.use(express.urlencoded({
 app.use((req, res, next) => {
   const start = Date.now();
   const path = req.path;
-  let capturedJsonResponse: Record<string, any> | undefined = undefined;
-
-  const originalResJson = res.json;
-  res.json = function (bodyJson, ...args) {
-    capturedJsonResponse = bodyJson;
-    return originalResJson.apply(res, [bodyJson, ...args]);
-  };
 
   res.on("finish", () => {
     const duration = Date.now() - start;
-    if (path.startsWith("/api")) {
-      let logLine = `${req.method} ${path} ${res.statusCode} in ${duration}ms`;
-      if (capturedJsonResponse) {
-        logLine += ` :: ${JSON.stringify(capturedJsonResponse)}`;
-      }
-
-      if (logLine.length > 80) {
-        logLine = logLine.slice(0, 79) + "…";
-      }
-
+    // Only log errors and slow requests in production
+    if (path.startsWith("/api") && (res.statusCode >= 400 || duration > 5000)) {
+      const logLine = `${req.method} ${path} ${res.statusCode} in ${duration}ms`;
       log(logLine);
     }
   });
@@ -178,7 +164,6 @@ app.get("/sw.js", (_req, res) => {
     res.setHeader("Access-Control-Allow-Origin", "*");
     const swPath = path.join(process.cwd(), "public", "sw.js");
     if (fs.existsSync(swPath)) {
-      console.log("Serving service worker from:", swPath);
       res.sendFile(swPath);
     } else {
       console.error("Service worker not found at:", swPath);
@@ -198,7 +183,6 @@ app.get("/.well-known/assetlinks.json", (_req, res) => {
     res.setHeader("Access-Control-Allow-Origin", "*");
     const assetLinksPath = path.join(process.cwd(), "public", ".well-known", "assetlinks.json");
     if (fs.existsSync(assetLinksPath)) {
-      console.log("Serving assetlinks.json from:", assetLinksPath);
       res.sendFile(assetLinksPath);
     } else {
       console.error("assetlinks.json not found at:", assetLinksPath);
@@ -239,7 +223,6 @@ app.get("/icons/:filename", (req, res) => {
     const iconPath = path.join(process.cwd(), "public", "icons", filename);
     
     if (!fs.existsSync(iconPath)) {
-      console.error(`Icon not found: ${iconPath}`);
       return res.status(404).json({ error: "Icon not found" });
     }
 
@@ -383,7 +366,7 @@ app.get("/api/pwa/health", (_req, res) => {
   // ALWAYS serve the app on port 5000
   // this serves both the API and the client.
   // It is the only port that is not firewalled.
-  const port = 5001;
+  const port = 5000;
   server.listen({
     port,
     host: "0.0.0.0",

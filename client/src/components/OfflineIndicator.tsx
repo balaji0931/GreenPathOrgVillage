@@ -8,12 +8,10 @@ export function OfflineIndicator() {
   useEffect(() => {
     const handleOnline = () => {
       setIsOnline(true);
-      console.log('[PWA] Back online - syncing data...');
     };
 
     const handleOffline = () => {
       setIsOnline(false);
-      console.log('[PWA] Gone offline - switching to offline mode...');
     };
 
     window.addEventListener('online', handleOnline);

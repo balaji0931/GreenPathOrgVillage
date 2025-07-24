@@ -58,6 +58,7 @@ import {
   History,
   Search,
   CreditCard,
+  QrCode,
 } from "lucide-react";
 
 const ISSUE_CATEGORIES = [
@@ -130,6 +131,21 @@ export default function GeneratorDashboard() {
       const response = await apiRequest("GET", `/api/villages/${user?.villageId}`);
       return response.json();
     },
+  });
+
+  // Fetch household data for QR code display
+  const { data: householdData, isLoading: householdLoading, error: householdError } = useQuery({
+    queryKey: ["/api/generator/household"],
+    enabled: !!user?.userId,
+    queryFn: async () => {
+      console.log('Fetching household data for user:', user?.userId);
+      const response = await apiRequest("GET", "/api/generator/household");
+      const data = await response.json();
+      console.log('Household data received:', data);
+      return data;
+    },
+    retry: 3,
+    retryDelay: 1000,
   });
 
   // Fetch payments - Always enabled when payments are enabled, not just when tab is active
@@ -1165,6 +1181,177 @@ export default function GeneratorDashboard() {
             )}
           </div>
         )}
+        {/* QR CODE TAB */}
+        {activeTab === "qr-code" && (
+          <div className="space-y-4 p-4">
+            <div className="flex items-center justify-between">
+              <h2 className="text-lg font-bold">My QR Code</h2>
+            </div>
+
+            {householdLoading ? (
+              <div className="text-center py-12">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600 mx-auto mb-4"></div>
+                <h3 className="text-lg font-medium text-gray-900 mb-2">
+                  Loading Household Data
+                </h3>
+                <p className="text-gray-500">
+                  Please wait while we fetch your household information...
+                </p>
+              </div>
+            ) : householdError ? (
+              <div className="text-center py-12">
+                <XCircle className="w-16 h-16 text-red-300 mx-auto mb-4" />
+                <h3 className="text-lg font-medium text-gray-900 mb-2">
+                  Error Loading Data
+                </h3>
+                <p className="text-gray-500 mb-4">
+                  Unable to load your household information. Please try refreshing the page.
+                </p>
+                <Button 
+                  onClick={() => queryClient.invalidateQueries({ queryKey: ["/api/generator/household"] })}
+                  variant="outline"
+                  size="sm"
+                >
+                  Try Again
+                </Button>
+              </div>
+            ) : householdData ? (
+              <div className="space-y-4">
+                {/* QR Code Display */}
+                <Card>
+                  <CardHeader className="pb-3">
+                    <CardTitle className="flex items-center text-lg">
+                      <QrCode className="w-5 h-5 mr-2 text-green-600" />
+                      Household QR Code
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="text-center space-y-4">
+                    {householdData.qrCodeUrl ? (
+                      <div className="flex flex-col items-center space-y-4">
+                        <div className="p-4 bg-white border-2 border-gray-200 rounded-lg shadow-sm">
+                          <img
+                            src={householdData.qrCodeUrl}
+                            alt="Household QR Code"
+                            className="w-48 h-48 mx-auto"
+                          />
+                        </div>
+                        
+                        <div className="space-y-2 text-center">
+                          <div className="p-3 bg-green-50 rounded-lg border-l-4 border-green-400">
+                            <p className="text-sm text-green-800 font-medium">
+                              📱 Show this QR code to the waste collector during pickup
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="text-center py-8">
+                        <QrCode className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+                        <h3 className="text-lg font-medium text-gray-900 mb-2">
+                          QR Code Not Available
+                        </h3>
+                        <p className="text-gray-500 mb-4">
+                          Your QR code hasn't been generated yet. Contact your village manager.
+                        </p>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+
+                {/* Household Information */}
+                <Card>
+                  <CardHeader className="pb-3">
+                    <CardTitle className="flex items-center text-lg">
+                      <Home className="w-5 h-5 mr-2 text-blue-600" />
+                      Household Information
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    <div className="grid grid-cols-1 gap-3">
+                      <div className="p-3 bg-gray-50 rounded-lg">
+                        <Label className="text-xs text-gray-600">Household Head</Label>
+                        <p className="font-medium text-gray-900">{householdData.headName}</p>
+                      </div>
+                      
+                      <div className="p-3 bg-gray-50 rounded-lg">
+                        <Label className="text-xs text-gray-600">House ID</Label>
+                        <p className="font-medium text-gray-900">{householdData.uid}</p>
+                      </div>
+                      
+                      <div className="p-3 bg-gray-50 rounded-lg">
+                        <Label className="text-xs text-gray-600">House Number</Label>
+                        <p className="font-medium text-gray-900">{householdData.houseNumber || 'Not specified'}</p>
+                      </div>
+                      
+                      {householdData.phone && (
+                        <div className="p-3 bg-gray-50 rounded-lg">
+                          <Label className="text-xs text-gray-600">Phone</Label>
+                          <p className="font-medium text-gray-900">{householdData.phone}</p>
+                        </div>
+                      )}
+                      
+                      {householdData.address && (
+                        <div className="p-3 bg-gray-50 rounded-lg">
+                          <Label className="text-xs text-gray-600">Address</Label>
+                          <p className="font-medium text-gray-900">{householdData.address}</p>
+                        </div>
+                      )}
+                      
+                      <div className="p-3 bg-gray-50 rounded-lg">
+                        <Label className="text-xs text-gray-600">Family Size</Label>
+                        <p className="font-medium text-gray-900">{householdData.familySize || 1} members</p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Usage Instructions */}
+                <Card>
+                  <CardHeader className="pb-3">
+                    <CardTitle className="flex items-center text-lg">
+                      <Bell className="w-5 h-5 mr-2 text-orange-600" />
+                      How to Use
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-3 text-sm">
+                      <div className="flex items-start space-x-3">
+                        <div className="w-6 h-6 bg-green-100 text-green-600 rounded-full flex items-center justify-center text-xs font-bold">1</div>
+                        <p className="text-gray-700">Show your QR code to the waste collector when they arrive for pickup</p>
+                      </div>
+                      
+                      <div className="flex items-start space-x-3">
+                        <div className="w-6 h-6 bg-green-100 text-green-600 rounded-full flex items-center justify-center text-xs font-bold">2</div>
+                        <p className="text-gray-700">The collector will scan it to record your waste collection</p>
+                      </div>
+                      
+                      <div className="flex items-start space-x-3">
+                        <div className="w-6 h-6 bg-green-100 text-green-600 rounded-full flex items-center justify-center text-xs font-bold">3</div>
+                        <p className="text-gray-700">You'll receive a rating based on waste segregation quality</p>
+                      </div>
+                      
+                      <div className="flex items-start space-x-3">
+                        <div className="w-6 h-6 bg-green-100 text-green-600 rounded-full flex items-center justify-center text-xs font-bold">4</div>
+                        <p className="text-gray-700">Track your collection history in the Collections tab</p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            ) : (
+              <div className="text-center py-12">
+                <Home className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+                <h3 className="text-lg font-medium text-gray-900 mb-2">
+                  No Household Data
+                </h3>
+                <p className="text-gray-500">
+                  Your household information is not available. Please contact your village manager.
+                </p>
+              </div>
+            )}
+          </div>
+        )}
+
         {/* PROFILE TAB */}
         {activeTab === "profile" && (
           <div className="space-y-4 p-4">
@@ -1412,6 +1599,7 @@ export default function GeneratorDashboard() {
               { id: "home", icon: Home },
               { id: "reports", icon: BarChart3 },
               { id: "collections", icon: FileText },
+              { id: "qr-code", icon: QrCode },
               { id: "issues", icon: AlertTriangle },
               ...(villageData?.paymentsEnabled ? [{ id: "payments", icon: CreditCard }] : []),
               { id: "profile", icon: User },

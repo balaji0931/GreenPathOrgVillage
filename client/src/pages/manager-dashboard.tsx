@@ -84,6 +84,7 @@ interface Household {
   houseNumber: string;
   phone: string;
   villageId: string;
+  ward: string;
   qrCodeUrl: string;
   createdAt: string;
 }
@@ -228,19 +229,19 @@ const CreateCollectorDialog = ({ villageId }: { villageId: string }) => {
 
 const CreateHouseholdDialog = ({ villageId }: { villageId: string }) => {
   const [open, setOpen] = useState(false);
-  const [formData, setFormData] = useState({ headName: "", houseNumber: "", phone: "" });
+  const [formData, setFormData] = useState({ headName: "", houseNumber: "", phone: "", ward: "" });
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const { t } = useTranslation();
 
   const householdMutation = useMutation({
-    mutationFn: (data: { headName: string; houseNumber: string; phone: string }) =>
+    mutationFn: (data: { headName: string; houseNumber: string; phone: string; ward: string }) =>
       apiRequest("POST", "/api/households", { ...data, villageId }),
     onSuccess: () => {
       toast({ title: t("messages.operationSuccess") });
       queryClient.invalidateQueries({ queryKey: ["/api/households"] });
       queryClient.invalidateQueries({ queryKey: ["/api/manager/stats"] });
-      setFormData({ headName: "", houseNumber: "", phone: "" });
+      setFormData({ headName: "", houseNumber: "", phone: "", ward: "" });
       setOpen(false);
     },
     onError: (error: any) => {
@@ -254,8 +255,8 @@ const CreateHouseholdDialog = ({ villageId }: { villageId: string }) => {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.headName.trim() || !formData.houseNumber.trim() || !formData.phone.trim()) {
-      toast({ title: t("validation.required"), variant: "destructive" });
+    if (!formData.headName.trim() || !formData.houseNumber.trim() || !formData.phone.trim() || !formData.ward.trim()) {
+      toast({ title: "Please fill all required fields including Ward/Sub-village", variant: "destructive" });
       return;
     }
     householdMutation.mutate(formData);
@@ -302,6 +303,16 @@ const CreateHouseholdDialog = ({ villageId }: { villageId: string }) => {
               value={formData.phone}
               onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
               placeholder={t("households.phone")}
+              required
+            />
+          </div>
+          <div>
+            <Label htmlFor="household-ward">Ward/Sub-village *</Label>
+            <Input
+              id="household-ward"
+              value={formData.ward}
+              onChange={(e) => setFormData(prev => ({ ...prev, ward: e.target.value }))}
+              placeholder="Enter ward or sub-village name"
               required
             />
           </div>
@@ -359,6 +370,9 @@ export default function ManagerDashboard() {
     month: new Date().toISOString().slice(0, 7), // Current month YYYY-MM
   });
 
+  // Ward filtering for QR download
+  const [wardFilter, setWardFilter] = useState("all");
+
   // Consolidated filters
   const [filters, setFilters] = useState<FilterState>({
     search: "",
@@ -371,7 +385,7 @@ export default function ManagerDashboard() {
   const [selectedQRHouseholds, setSelectedQRHouseholds] = useState<number[]>([]);
   const [selectedDownloadHouseholds, setSelectedDownloadHouseholds] = useState<number[]>([]);
   const [bulkHouseholds, setBulkHouseholds] = useState([
-    { headName: "", houseNumber: "", phone: "", address: "" }
+    { headName: "", houseNumber: "", phone: "", address: "", ward: "" }
   ]);
 
   // Excel upload state
@@ -381,6 +395,7 @@ export default function ManagerDashboard() {
     houseNumber: string;
     phone: string;
     address: string;
+    ward: string;
     familySize?: number;
   }>>([]);
   const [excelFile, setExcelFile] = useState<File | null>(null);
@@ -416,6 +431,12 @@ export default function ManagerDashboard() {
   const { data: households = [] } = useQuery<Household[]>({
     queryKey: ["/api/households", user?.villageId],
     enabled: !!user?.villageId,
+  });
+
+  // Filtered households for QR download
+  const filteredHouseholdsForDownload = households.filter(household => {
+    if (wardFilter === "all") return true;
+    return household.ward === wardFilter;
   });
 
   const { data: collectorStats = [] } = useQuery<CollectorStats[]>({
@@ -696,7 +717,7 @@ export default function ManagerDashboard() {
       });
       queryClient.invalidateQueries({ queryKey: ["/api/households"] });
       queryClient.invalidateQueries({ queryKey: ["/api/manager/stats"] });
-      setBulkHouseholds([{ headName: "", houseNumber: "", phone: "", address: "" }]);
+      setBulkHouseholds([{ headName: "", houseNumber: "", phone: "", address: "", ward: "" }]);
       
       // Close Excel preview and reset state
       setShowExcelPreview(false);
@@ -737,16 +758,17 @@ export default function ManagerDashboard() {
           headName: row[0]?.toString().trim() || '',
           houseNumber: row[1]?.toString().trim() || '',
           phone: row[2]?.toString().trim() || '',
-          address: row[3]?.toString().trim() || '',
-          familySize: row[4] ? parseInt(row[4].toString()) || 1 : 1,
+          ward: row[3]?.toString().trim() || '',
+          address: row[4]?.toString().trim() || '',
+          familySize: row[5] ? parseInt(row[5].toString()) || 1 : 1,
         })).filter(household => 
-          household.headName && household.houseNumber && household.phone
+          household.headName && household.houseNumber && household.phone && household.ward
         );
 
         if (householdsData.length === 0) {
           toast({
             title: "No valid data found",
-            description: "Please ensure your Excel file has the required columns: Head Name, House Number, Phone, Address, Family Size",
+            description: "Please ensure your Excel file has the required columns: Head Name, House Number, Phone, Ward, Address, Family Size",
             variant: "destructive"
           });
           return;
@@ -1321,7 +1343,7 @@ export default function ManagerDashboard() {
                             <Button 
                               size="sm" 
                               variant="outline" 
-                              onClick={() => setBulkHouseholds([...bulkHouseholds, { headName: "", houseNumber: "", phone: "", address: "" }])}
+                              onClick={() => setBulkHouseholds([...bulkHouseholds, { headName: "", houseNumber: "", phone: "", address: "", ward: "" }])}
                             >
                               <Plus className="h-4 w-4 mr-2" />
                               {t("manager.addRow")}
@@ -1329,7 +1351,7 @@ export default function ManagerDashboard() {
                             <Button
                               onClick={() => {
                                 const validHouseholds = bulkHouseholds.filter(h => 
-                                  h.headName.trim() && h.houseNumber.trim() && h.phone.trim()
+                                  h.headName.trim() && h.houseNumber.trim() && h.phone.trim() && h.ward.trim()
                                 );
                                 if (validHouseholds.length === 0) {
                                   toast({ title: "Please fill at least one complete household", variant: "destructive" });
@@ -1339,14 +1361,14 @@ export default function ManagerDashboard() {
                               }}
                               disabled={createBulkHouseholdsMutation.isPending || bulkHouseholds.every(h => !h.headName.trim())}
                             >
-                              {createBulkHouseholdsMutation.isPending ? t("manager.creating") : `${t("manager.createHouseholds")} ${bulkHouseholds.filter(h => h.headName.trim() && h.houseNumber.trim() && h.phone.trim()).length}`}
+                              {createBulkHouseholdsMutation.isPending ? t("manager.creating") : `${t("manager.createHouseholds")} ${bulkHouseholds.filter(h => h.headName.trim() && h.houseNumber.trim() && h.phone.trim() && h.ward.trim()).length}`}
                             </Button>
                           </div>
 
                           <div className="space-y-3 max-h-96 overflow-y-auto">
                             {bulkHouseholds.map((household, index) => (
                               <Card key={index} className="p-4">
-                                <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+                                <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
                                   <div>
                                     <Label htmlFor={`headName-${index}`}>{t("manager.headNameRequired")}</Label>
                                     <Input
@@ -1384,6 +1406,19 @@ export default function ManagerDashboard() {
                                         setBulkHouseholds(updated);
                                       }}
                                       placeholder={t("manager.phoneNumber")}
+                                    />
+                                  </div>
+                                  <div>
+                                    <Label htmlFor={`ward-${index}`}>Ward/Sub-village *</Label>
+                                    <Input
+                                      id={`ward-${index}`}
+                                      value={household.ward}
+                                      onChange={(e) => {
+                                        const updated = [...bulkHouseholds];
+                                        updated[index].ward = e.target.value;
+                                        setBulkHouseholds(updated);
+                                      }}
+                                      placeholder="Enter ward name"
                                     />
                                   </div>
                                   <div className="flex items-end">
@@ -1441,7 +1476,7 @@ export default function ManagerDashboard() {
                           <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
                             <h4 className="font-medium text-blue-900 mb-2">Excel File Format Requirements:</h4>
                             <p className="text-sm text-blue-800 mb-2">Your Excel file should have the following columns in order:</p>
-                            <div className="grid grid-cols-1 md:grid-cols-5 gap-2 text-xs">
+                            <div className="grid grid-cols-1 md:grid-cols-6 gap-2 text-xs">
                               <div className="bg-blue-100 p-2 rounded">
                                 <strong>Column A:</strong> Head Name (Required)
                               </div>
@@ -1451,11 +1486,14 @@ export default function ManagerDashboard() {
                               <div className="bg-blue-100 p-2 rounded">
                                 <strong>Column C:</strong> Phone (Required)
                               </div>
-                              <div className="bg-blue-100 p-2 rounded">
-                                <strong>Column D:</strong> Address (Optional)
+                              <div className="bg-red-100 p-2 rounded">
+                                <strong>Column D:</strong> Ward/Sub-village (Required)
                               </div>
                               <div className="bg-blue-100 p-2 rounded">
-                                <strong>Column E:</strong> Family Size (Optional)
+                                <strong>Column E:</strong> Address (Optional)
+                              </div>
+                              <div className="bg-blue-100 p-2 rounded">
+                                <strong>Column F:</strong> Family Size (Optional)
                               </div>
                             </div>
                             <p className="text-xs text-blue-700 mt-2">
@@ -1500,13 +1538,31 @@ export default function ManagerDashboard() {
                       </CardHeader>
                       <CardContent>
                         <div className="space-y-4">
+                          {/* Ward Filter */}
+                          <div className="flex items-center gap-4">
+                            <div className="flex-1">
+                              <Label htmlFor="ward-filter">Filter by Ward/Sub-village</Label>
+                              <Select value={wardFilter} onValueChange={setWardFilter}>
+                                <SelectTrigger>
+                                  <SelectValue placeholder="All Wards" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="all">All Wards</SelectItem>
+                                  {Array.from(new Set(households.map(h => h.ward).filter(Boolean))).sort().map(ward => (
+                                    <SelectItem key={ward} value={ward}>{ward}</SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            </div>
+                          </div>
+
                           <div className="flex justify-between items-center">
                             <Button 
                               size="sm" 
                               variant="outline" 
-                              onClick={() => setSelectedDownloadHouseholds(households.filter(h => h.qrCodeUrl).map(h => h.id))}
+                              onClick={() => setSelectedDownloadHouseholds(filteredHouseholdsForDownload.filter(h => h.qrCodeUrl).map(h => h.id))}
                             >
-                              {t("manager.selectAll")} ({households.filter(h => h.qrCodeUrl).length})
+                              {t("manager.selectAll")} ({filteredHouseholdsForDownload.filter(h => h.qrCodeUrl).length})
                             </Button>
                             <Button
                               onClick={() => downloadPDFMutation.mutate(selectedDownloadHouseholds)}
@@ -1517,7 +1573,7 @@ export default function ManagerDashboard() {
                             </Button>
                           </div>
 
-                          {households.filter(h => h.qrCodeUrl).length === 0 ? (
+                          {filteredHouseholdsForDownload.filter(h => h.qrCodeUrl).length === 0 ? (
                             <div className="text-center py-8">
                               <QrCode className="w-12 h-12 text-gray-300 mx-auto mb-3" />
                               <p className="text-muted-foreground">{t("manager.noQRAvailable")}</p>
@@ -1525,7 +1581,7 @@ export default function ManagerDashboard() {
                             </div>
                           ) : (
                             <div className="space-y-2">
-                              {households.filter(h => h.qrCodeUrl).map((household) => (
+                              {filteredHouseholdsForDownload.filter(h => h.qrCodeUrl).map((household) => (
                                 <Card
                                   key={household.id}
                                   className="cursor-pointer hover:bg-gray-50"
@@ -1548,7 +1604,7 @@ export default function ManagerDashboard() {
                                         <div>
                                           <h4 className="font-medium">{household.headName}</h4>
                                           <p className="text-sm text-muted-foreground">
-                                            House: {household.houseNumber} | ID: {household.uid}
+                                            House: {household.houseNumber} | Ward: {household.ward} | ID: {household.uid}
                                           </p>
                                         </div>
                                       </div>
@@ -1862,18 +1918,46 @@ export default function ManagerDashboard() {
                                                 </div>
 
                                                 <div className="space-y-3 pt-3 border-t">
-                                                  {targetCollection.photo && (
+                                                  {targetCollection.photoUrl && (
                                                     <div className="space-y-2">
                                                       <Label className="text-sm font-medium">Collection Photo:</Label>
-                                                      <div className="border rounded-lg overflow-hidden bg-gray-50">
-                                                        <img
-                                                          src={targetCollection.photo}
-                                                          alt="Collection photo"
-                                                          className="w-full max-h-64 object-contain"
-                                                          onError={(e) => {
-                                                            e.currentTarget.src = "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTIxIDEyVjdIMTlWNUMxOSAzLjg5NTQzIDE4LjEwNDYgMyAxNyAzSDdDNS44OTU0MyAzIDUgMy44OTU0MyA1IDVWMTlDNSAyMC4xMDQ2IDUuODk1NDMgMjEgNyAyMUgxMiIgc3Ryb2tlPSIjOTk5IiBzdHJva2Utd2lkdGg9IjIiLz4KPHBhdGggZD0iTTE0IDE0TDE3IDE3TDIxIDEzIiBzdHJva2U9IiM5OTkiIHN0cm9rZS13aWR0aD0iMiIvPgo8L3N2Zz4K";
-                                                          }}
-                                                        />
+                                                      <div className="flex items-center gap-3">
+                                                        <div className="border rounded-lg overflow-hidden bg-gray-50 flex-1">
+                                                          <img
+                                                            src={targetCollection.photoUrl}
+                                                            alt="Collection photo"
+                                                            className="w-full max-h-32 object-contain"
+                                                            onError={(e) => {
+                                                              e.currentTarget.src = "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTIxIDEyVjdIMTlWNUMxOSAzLjg5NTQzIDE4LjEwNDYgMyAxNyAzSDdDNS44OTU0MyAzIDUgMy44OTU0MyA1IDVWMTlDNSAyMC4xMDQ2IDUuODk1NDMgMjEgNyAyMUgxMiIgc3Ryb2tlPSIjOTk5IiBzdHJva2Utd2lkdGg9IjIiLz4KPHBhdGggZD0iTTE0IDE0TDE3IDE3TDIxIDEzIiBzdHJva2U9IiM5OTkiIHN0cm9rZS13aWR0aD0iMiIvPgo8L3N2Zz4K";
+                                                            }}
+                                                          />
+                                                        </div>
+                                                        <Dialog>
+                                                          <DialogTrigger asChild>
+                                                            <Button variant="outline" size="sm">
+                                                              <Eye className="h-4 w-4 mr-2" />
+                                                              View Photo
+                                                            </Button>
+                                                          </DialogTrigger>
+                                                          <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden">
+                                                            <DialogHeader>
+                                                              <DialogTitle>Collection Photo - {household.headName}</DialogTitle>
+                                                              <p className="text-sm text-muted-foreground">
+                                                                Collected on {new Date(targetCollection.collectionDate).toLocaleString()}
+                                                              </p>
+                                                            </DialogHeader>
+                                                            <div className="flex items-center justify-center p-4 bg-gray-50 rounded-lg">
+                                                              <img
+                                                                src={targetCollection.photoUrl}
+                                                                alt="Collection photo - full size"
+                                                                className="max-w-full max-h-[70vh] object-contain rounded"
+                                                                onError={(e) => {
+                                                                  e.currentTarget.src = "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTIxIDEyVjdIMTlWNUMxOSAzLjg5NTQzIDE4LjEwNDYgMyAxNyAzSDdDNS44OTU0MyAzIDUgMy44OTU0MyA1IDVWMTlDNSAyMC4xMDQ2IDUuODk1NDMgMjEgNyAyMUgxMiIgc3Ryb2tlPSIjOTk5IiBzdHJva2Utd2lkdGg9IjIiLz4KUHBhdGggZD0iTTE0IDE0TDE3IDE3TDIxIDEzIiBzdHJva2U9IiM5OTkiIHN0cm9rZS13aWR0aD0iMiIvPgo8L3N2Zz4K";
+                                                                }}
+                                                              />
+                                                            </div>
+                                                          </DialogContent>
+                                                        </Dialog>
                                                       </div>
                                                     </div>
                                                   )}
@@ -1983,18 +2067,46 @@ export default function ManagerDashboard() {
                                                   </div>
 
                                                   <div className="space-y-3 pt-3 border-t">
-                                                    {collection.photo && (
+                                                    {collection.photoUrl && (
                                                       <div className="space-y-2">
                                                         <Label className="text-sm font-medium">Collection Photo:</Label>
-                                                        <div className="border rounded-lg overflow-hidden bg-gray-50">
-                                                          <img
-                                                            src={collection.photo}
-                                                            alt="Collection photo"
-                                                            className="w-full max-h-64 object-contain"
-                                                            onError={(e) => {
-                                                              e.currentTarget.src = "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTIxIDEyVjdIMTlWNUMxOSAzLjg5NTQzIDE4LjEwNDYgMyAxNyAzSDdDNS44OTU0MyAzIDUgMy44OTU0MyA1IDVWMTlDNSAyMC4xMDQ2IDUuODk1NDMgMjEgNyAyMUgxMiIgc3Ryb2tlPSIjOTk5IiBzdHJva2Utd2lkdGg9IjIiLz4KPHBhdGggZD0iTTE0IDE0TDE3IDE3TDIxIDEzIiBzdHJva2U9IiM5OTkiIHN0cm9rZS13aWR0aD0iMiIvPgo8L3N2Zz4K";
-                                                            }}
-                                                          />
+                                                        <div className="flex items-center gap-3">
+                                                          <div className="border rounded-lg overflow-hidden bg-gray-50 flex-1">
+                                                            <img
+                                                              src={collection.photoUrl}
+                                                              alt="Collection photo"
+                                                              className="w-full max-h-32 object-contain"
+                                                              onError={(e) => {
+                                                                e.currentTarget.src = "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTIxIDEyVjdIMTlWNUMxOSAzLjg5NTQzIDE4LjEwNDYgMyAxNyAzSDdDNS44OTU0MyAzIDUgMy44OTU0MyA1IDVWMTlDNSAyMC4xMDQ2IDUuODk1NDMgMjEgNyAyMUgxMiIgc3Ryb2tlPSIjOTk5IiBzdHJva2Utd2lkdGg9IjIiLz4KPHBhdGggZD0iTTE0IDE0TDE3IDE3TDIxIDEzIiBzdHJva2U9IiM5OTkiIHN0cm9rZS13aWR0aD0iMiIvPgo8L3N2Zz4K";
+                                                              }}
+                                                            />
+                                                          </div>
+                                                          <Dialog>
+                                                            <DialogTrigger asChild>
+                                                              <Button variant="outline" size="sm">
+                                                                <Eye className="h-4 w-4 mr-2" />
+                                                                View Photo
+                                                              </Button>
+                                                            </DialogTrigger>
+                                                            <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden">
+                                                              <DialogHeader>
+                                                                <DialogTitle>Collection Photo - {household.headName}</DialogTitle>
+                                                                <p className="text-sm text-muted-foreground">
+                                                                  Collected on {new Date(collection.collectionDate).toLocaleString()}
+                                                                </p>
+                                                              </DialogHeader>
+                                                              <div className="flex items-center justify-center p-4 bg-gray-50 rounded-lg">
+                                                                <img
+                                                                  src={collection.photoUrl}
+                                                                  alt="Collection photo - full size"
+                                                                  className="max-w-full max-h-[70vh] object-contain rounded"
+                                                                  onError={(e) => {
+                                                                    e.currentTarget.src = "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTIxIDEyVjdIMTlWNUMxOSAzLjg5NTQzIDE4LjEwNDYgMyAxNyAzSDdDNS44OTU0MyAzIDUgMy44OTU0MyA1IDVWMTlDNSAyMC4xMDQ2IDUuODk1NDMgMjEgNyAyMUgxMiIgc3Ryb2tlPSIjOTk5IiBzdHJva2Utd2lkdGg9IjIiLz4KPHBhdGggZD0iTTE0IDE0TDE3IDE3TDIxIDEzIiBzdHJva2U9IiM5OTkiIHN0cm9rZS13aWR0aD0iMiIvPgo8L3N2Zz4K";
+                                                                  }}
+                                                                />
+                                                              </div>
+                                                            </DialogContent>
+                                                          </Dialog>
                                                         </div>
                                                       </div>
                                                     )}
@@ -3990,6 +4102,9 @@ export default function ManagerDashboard() {
                         Phone
                       </th>
                       <th className="border border-gray-200 px-3 py-2 text-left text-xs font-medium text-gray-700">
+                        Ward/Sub-village
+                      </th>
+                      <th className="border border-gray-200 px-3 py-2 text-left text-xs font-medium text-gray-700">
                         Address
                       </th>
                       <th className="border border-gray-200 px-3 py-2 text-left text-xs font-medium text-gray-700">
@@ -4006,6 +4121,9 @@ export default function ManagerDashboard() {
                         </td>
                         <td className="border border-gray-200 px-3 py-2 text-sm">{household.houseNumber}</td>
                         <td className="border border-gray-200 px-3 py-2 text-sm">{household.phone}</td>
+                        <td className="border border-gray-200 px-3 py-2 text-sm font-medium">
+                          {household.ward}
+                        </td>
                         <td className="border border-gray-200 px-3 py-2 text-sm">
                           {household.address || "N/A"}
                         </td>

@@ -62,7 +62,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         try {
           const RedisStore = require('connect-redis').default;
           const { createClient } = require('redis');
-          
+
           const redisClient = createClient({
             url: process.env.REDIS_URL,
             retry_strategy: (options: any) => {
@@ -79,7 +79,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
               return Math.min(options.attempt * 100, 3000);
             }
           });
-          
+
           redisClient.connect().catch(console.error);
           return new RedisStore({ client: redisClient });
         } catch (error) {
@@ -95,15 +95,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Health check endpoints for load balancers and monitoring
   app.get('/api/health', async (req, res) => {
     const startTime = Date.now();
-    
+
     try {
-      // Import database health check
-      const { checkDatabaseHealth, getDatabaseStats } = await import('./db');
-      
-      // Check database connectivity
-      const dbHealth = await checkDatabaseHealth();
-      const dbStats = await getDatabaseStats();
-      
+      // Only check database if explicitly requested with ?db=true
+      const checkDb = req.query.db === 'true';
+      let dbHealth = true;
+      let dbStats = null;
+
+      if (checkDb) {
+        // Import database health check
+        const { checkDatabaseHealth, getDatabaseStats } = await import('./db');
+        
+        // Check database connectivity
+        dbHealth = await checkDatabaseHealth();
+        dbStats = await getDatabaseStats();
+      }
+
       // Check memory usage
       const memUsage = process.memoryUsage();
       const memUsageMB = {
@@ -112,19 +119,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
         heapUsed: Math.round(memUsage.heapUsed / 1024 / 1024),
         external: Math.round(memUsage.external / 1024 / 1024)
       };
-      
+
       // System uptime
       const uptime = process.uptime();
-      
+
       const healthData = {
         status: dbHealth ? 'healthy' : 'unhealthy',
         timestamp: new Date().toISOString(),
         responseTime: Date.now() - startTime,
         version: process.env.npm_package_version || '1.0.0',
         environment: process.env.NODE_ENV || 'development',
-        database: {
+        database: checkDb ? {
           connected: dbHealth,
           stats: dbStats
+        } : {
+          connected: 'not_checked',
+          stats: 'not_checked'
         },
         system: {
           uptime: Math.round(uptime),
@@ -137,7 +147,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           cloudinary: !!(process.env.CLOUDINARY_CLOUD_NAME && process.env.CLOUDINARY_API_KEY)
         }
       };
-      
+
       res.status(dbHealth ? 200 : 503).json(healthData);
     } catch (error) {
       res.status(503).json({
@@ -154,7 +164,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { checkDatabaseHealth } = await import('./db');
       const dbHealth = await checkDatabaseHealth();
-      
+
       if (dbHealth) {
         res.status(200).json({ ready: true, timestamp: new Date().toISOString() });
       } else {
@@ -180,7 +190,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { getDatabaseStats } = await import('./db');
       const dbStats = await getDatabaseStats();
       const memUsage = process.memoryUsage();
-      
+
       const metrics = {
         timestamp: new Date().toISOString(),
         system: {
@@ -192,29 +202,38 @@ export async function registerRoutes(app: Express): Promise<Server> {
         database: dbStats,
         environment: process.env.NODE_ENV
       };
-      
+
       res.json(metrics);
     } catch (error) {
       res.status(500).json({ error: 'Failed to collect metrics' });
     }
   });
 
-  // Initialize admin user if not exists
-  const adminUser = await storage.getUserByUserId('ADMIN');
-  if (!adminUser) {
-    await storage.createUser({
-      userId: 'ADMIN',
-      password: await bcrypt.hash('admin', 10),
-      role: 'admin',
-      name: 'Administrator',
-      villageId: null,
-    });
+  // Lazy initialization function for admin user
+  async function ensureAdminUser() {
+    try {
+      const adminUser = await storage.getUserByUserId('ADMIN');
+      if (!adminUser) {
+        await storage.createUser({
+          userId: 'ADMIN',
+          password: await bcrypt.hash('admin', 10),
+          role: 'admin',
+          name: 'Administrator',
+          villageId: null,
+        });
+      }
+    } catch (error) {
+      console.error('Failed to initialize admin user:', error);
+    }
   }
 
   // Auth routes
   app.post('/api/auth/login', async (req, res) => {
     try {
       const { userId, password } = req.body;
+
+      // Initialize admin user only when someone attempts to login
+      await ensureAdminUser();
 
       const user = await storage.getUserByUserId(userId);
       if (!user) {
@@ -254,24 +273,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
     });
   });
 
-  app.get('/api/auth/user', requireAuth, async (req, res) => {
-    try {
-      const user = await storage.getUserByUserId(req.session.userId!);
-      if (!user) {
-        return res.status(404).json({ message: "User not found" });
-      }
-
-      res.json({
-        userId: user.userId,
-        role: user.role,
-        name: user.name,
-        villageId: user.villageId,
-        isFirstLogin: user.isFirstLogin,
-      });
-    } catch (error) {
-      console.error("Get user error:", error);
-      res.status(500).json({ message: "Failed to get user" });
+  app.get('/api/auth/user', (req, res) => {
+    // Check session first without hitting database
+    if (!req.session?.userId) {
+      return res.status(401).json({ message: "Unauthorized" });
     }
+
+    // Only hit database if user is actually logged in
+    storage.getUserByUserId(req.session.userId)
+      .then(user => {
+        if (!user) {
+          return res.status(404).json({ message: "User not found" });
+        }
+
+        res.json({
+          userId: user.userId,
+          role: user.role,
+          name: user.name,
+          villageId: user.villageId,
+          isFirstLogin: user.isFirstLogin,
+        });
+      })
+      .catch(error => {
+        console.error("Get user error:", error);
+        res.status(500).json({ message: "Failed to get user" });
+      });
   });
 
   app.post('/api/auth/change-password', requireAuth, async (req, res) => {
@@ -361,11 +387,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { villageId } = req.params;
       const village = await storage.getVillageByVillageId(villageId);
-      
+
       if (!village) {
         return res.status(404).json({ message: "Village not found" });
       }
-      
+
       res.json(village);
     } catch (error) {
       console.error("Get village error:", error);
@@ -376,7 +402,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Household routes
   app.post('/api/households', requireAuth, requireRole(['manager']), async (req, res) => {
     try {
-      const { headName, phone, houseNumber, familySize, address } = req.body;
+      const { headName, phone, houseNumber, familySize, address, ward } = req.body;
       const villageId = req.session.villageId!;
 
       // Generate unique UID with better logic
@@ -408,6 +434,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         headName,
         phone,
         houseNumber,
+        ward: ward || 'Ward-1',
         familySize,
         address,
         generatorUserId,
@@ -523,6 +550,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             headName: householdData.headName,
             houseNumber: householdData.houseNumber,
             phone: householdData.phone,
+            ward: householdData.ward || 'Ward-1',
             familySize: householdData.familySize || 1,
             address: householdData.address || '',
             generatorUserId,
@@ -780,6 +808,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Get generator household collections error:", error);
       res.status(500).json({ message: "Failed to get collections" });
+    }
+  });
+
+  // Get household data for logged-in generator
+  app.get('/api/generator/household', async (req, res) => {
+    try {
+      // Simple auth check
+      if (!req.session?.userId) {
+        return res.status(401).json({ message: "Please log in" });
+      }
+
+      const userId = req.session.userId;
+      console.log('Generator household request for:', userId);
+
+      // Get user to verify they're a generator
+      const user = await storage.getUserByUserId(userId);
+      if (!user || user.role !== 'generator') {
+        return res.status(403).json({ message: "Access denied" });
+      }
+
+      // Find household by generator user ID
+      const household = await storage.getHouseholdByGeneratorUserId(userId);
+      if (!household) {
+        return res.status(404).json({ message: "Household not found" });
+      }
+
+      console.log('Found household:', household.uid, 'QR Code:', !!household.qrCodeUrl);
+      res.json(household);
+    } catch (error) {
+      console.error('Get generator household error:', error);
+      res.status(500).json({ message: "Server error" });
     }
   });
 
@@ -1640,7 +1699,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Get comprehensive analytics for moderator villages with village filter
       const selectedVillageId = village === 'all' ? undefined : village as string;
       const analytics = await storage.getModeratorSystemAnalytics(villageIds, selectedVillageId);
-      
+
       // Return the full analytics object directly as it contains all needed data
       const fullAnalytics = {
         ...analytics,
@@ -1734,11 +1793,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const details = await storage.getVillageDetails(villageId);
-      
+
       // Add recent collections data for village performance charts
       const recentCollections = await storage.getRecentCollectionsByVillage(villageId, 7);
       details.recentCollections = recentCollections;
-      
+
       res.json(details);
     } catch (error) {
       console.error("Get moderator village details error:", error);
@@ -1772,7 +1831,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const moderatorId = req.session.userId!;
       const assignedVillages = await storage.getModeratorVillages(moderatorId);
-      
+
       const allManagers = [];
       for (const village of assignedVillages) {
         const managers = await storage.getManagersByVillage(village.villageId);
@@ -1781,7 +1840,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           villageName: village.name
         })));
       }
-      
+
       res.json(allManagers);
     } catch (error) {
       console.error("Get moderator managers error:", error);

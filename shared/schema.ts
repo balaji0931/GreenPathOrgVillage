@@ -53,6 +53,7 @@ export const households = pgTable("households", {
   headName: text("head_name").notNull(),
   phone: text("phone"),
   houseNumber: text("house_number"),
+  ward: text("ward").default("Ward-1"), // Ward/Sub-village identification
   familySize: integer("family_size").default(1),
   address: text("address"),
   status: text("status").default("active"),
