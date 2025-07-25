@@ -834,7 +834,7 @@ export default function AdminDashboard() {
                   <TableHead className="text-xs sm:text-sm">Name</TableHead>
                   <TableHead className="text-xs sm:text-sm hidden sm:table-cell">Households</TableHead>
                   <TableHead className="text-xs sm:text-sm hidden sm:table-cell">Collectors</TableHead>
-                  <TableHead className="text-xs sm:text-sm hidden md:table-cell">Payments</TableHead>
+                  <TableHead className="text-xs sm:text-sm ">Payments</TableHead>
                   <TableHead className="text-xs sm:text-sm">Actions</TableHead>
                 </TableRow>
               </TableHeader>
@@ -845,7 +845,7 @@ export default function AdminDashboard() {
                     <TableCell className="text-xs sm:text-sm">{village.name}</TableCell>
                     <TableCell className="text-xs sm:text-sm hidden sm:table-cell">{village.totalHouseholds || 0}</TableCell>
                     <TableCell className="text-xs sm:text-sm hidden sm:table-cell">{village.totalCollectors || 0}</TableCell>
-                    <TableCell className="text-xs sm:text-sm hidden md:table-cell">
+                    <TableCell className="text-xs sm:text-sm">
                       <Button
                         size="sm"
                         variant={village.paymentsEnabled ? "default" : "outline"}
