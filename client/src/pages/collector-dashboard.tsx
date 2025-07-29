@@ -1312,7 +1312,7 @@ export default function CollectorDashboard() {
             </div> */}
 
             {/* Wet Waste Composting */}
-            <div className="p-3 border border-gray-200 bg-gray-50 rounded-xl">
+            {/* <div className="p-3 border border-gray-200 bg-gray-50 rounded-xl">
               <Label className="text-base font-bold text-center block mb-3">
                 🌱 {t('collections.isWetWasteComposting')}
               </Label>
@@ -1340,7 +1340,7 @@ export default function CollectorDashboard() {
                   ❌ {t('app.no')}
                 </Button>
               </div>
-            </div>
+            </div> */}
 
             {/* Cleanliness Rating */}
             {/* <div className="p-3 border border-gray-200 bg-gray-50 rounded-xl">
@@ -1368,7 +1368,7 @@ export default function CollectorDashboard() {
             </div> */}
 
             {/* Observations */}
-            <div className="p-3 border border-gray-200 bg-gray-50 rounded-xl">
+            {/* <div className="p-3 border border-gray-200 bg-gray-50 rounded-xl">
               <Label className="text-base font-bold text-center block mb-3">
                 👀 {t('collections.whatDidYouSee')}
               </Label>
@@ -1409,7 +1409,7 @@ export default function CollectorDashboard() {
                   );
                 })}
               </div>
-            </div>
+            </div> */}
 
             {/* Photo Upload - REQUIRED */}
             <div className="p-4 border-2 border-blue-200 bg-blue-50 rounded-xl">
