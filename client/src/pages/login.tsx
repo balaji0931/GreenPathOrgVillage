@@ -6,9 +6,9 @@ import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { useTranslation } from 'react-i18next';
-import { LanguageSwitcher } from "@/components/LanguageSwitcher";
+import { LanguageSwitcher} from "@/components/LanguageSwitcher";
 import { InstallPWA } from "@/components/InstallPWA";
-import { Leaf, Eye, EyeOff } from "lucide-react";
+import { Leaf, Eye, EyeOff, Home } from "lucide-react";
 import Footer from "@/components/Footer";
 import { useLocation } from 'wouter';
 
@@ -52,7 +52,15 @@ export default function Login() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-green-pale to-white p-4">
       <div className="w-full max-w-md">
-        <div className="flex justify-end">
+        <div className="flex justify-between items-center mb-4">
+          <Button
+            variant="outline"
+            className="bg-green-600 text-white border-green-400 hover:bg-green-50"
+            onClick={() => setLocation("/")}
+          >
+            <Home className="w-4 h-4" />
+            Home
+          </Button>
           <LanguageSwitcher />
         </div>
 

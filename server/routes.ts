@@ -92,6 +92,60 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.use(session(sessionConfig));
 
+  // Public API routes (no authentication required)
+  // Website feedback submission
+  app.post('/api/website-feedback', async (req, res) => {
+    try {
+      const { name, email, feedbackType, message } = req.body;
+
+      if (!name || !email || !feedbackType || !message) {
+        return res.status(400).json({ message: 'All fields are required' });
+      }
+
+      const feedback = await storage.createWebsiteFeedback({
+        name,
+        email,
+        feedbackType,
+        message,
+      });
+
+      res.status(201).json({ 
+        message: 'Feedback submitted successfully',
+        id: feedback.id 
+      });
+    } catch (error) {
+      console.error('Error submitting feedback:', error);
+      res.status(500).json({ message: 'Internal server error' });
+    }
+  });
+
+  // Contact form submission
+  app.post('/api/contact', async (req, res) => {
+    try {
+      const { name, email, phone, subject, message } = req.body;
+
+      if (!name || !email || !subject || !message) {
+        return res.status(400).json({ message: 'Name, email, subject, and message are required' });
+      }
+
+      const contact = await storage.createContactSubmission({
+        name,
+        email,
+        phone: phone || null,
+        subject,
+        message,
+      });
+
+      res.status(201).json({ 
+        message: 'Message sent successfully',
+        id: contact.id 
+      });
+    } catch (error) {
+      console.error('Error submitting contact form:', error);
+      res.status(500).json({ message: 'Internal server error' });
+    }
+  });
+
   // Health check endpoints for load balancers and monitoring
   app.get('/api/health', async (req, res) => {
     const startTime = Date.now();
@@ -695,6 +749,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Mark QR codes as printed
+  app.post('/api/qr-codes/mark-printed', requireAuth, requireRole(['manager']), async (req, res) => {
+    try {
+      const { householdIds } = req.body;
+
+      if (!Array.isArray(householdIds) || householdIds.length === 0) {
+        return res.status(400).json({ message: 'Invalid household IDs' });
+      }
+
+      await storage.markQRCodesPrinted(householdIds);
+      res.json({ message: 'QR codes marked as printed successfully' });
+    } catch (error) {
+      console.error('Error marking QR codes as printed:', error);
+      res.status(500).json({ message: 'Internal server error' });
+    }
+  });
+
   // Collector routes
   app.post('/api/collectors', requireAuth, requireRole(['manager']), async (req, res) => {
     try {
@@ -1067,6 +1138,52 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Create announcement error:", error);
       res.status(500).json({ message: "Failed to create announcement" });
+    }
+  });
+
+  // Admin route to get all announcements
+  app.get('/api/admin/announcements', requireAuth, requireRole(['admin']), async (req, res) => {
+    try {
+      const announcements = await storage.getAllAnnouncements();
+      res.json(announcements);
+    } catch (error) {
+      console.error("Get all announcements error:", error);
+      res.status(500).json({ message: "Failed to get announcements" });
+    }
+  });
+
+  // Update announcement
+  app.put('/api/announcements/:id', requireAuth, requireRole(['admin', 'manager']), async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { message, targetAudience, photoUrl } = req.body;
+      const userId = req.session.userId!;
+
+      const updatedAnnouncement = await storage.updateAnnouncement(id, {
+        message,
+        targetAudience,
+        photoUrl,
+        updatedBy: userId,
+      });
+
+      res.json(updatedAnnouncement);
+    } catch (error) {
+      console.error("Update announcement error:", error);
+      res.status(500).json({ message: "Failed to update announcement" });
+    }
+  });
+
+  // Delete announcement
+  app.delete('/api/announcements/:id', requireAuth, requireRole(['admin', 'manager']), async (req, res) => {
+    try {
+      const { id } = req.params;
+      const userId = req.session.userId!;
+
+      await storage.deleteAnnouncement(id, userId);
+      res.json({ message: "Announcement deleted successfully" });
+    } catch (error) {
+      console.error("Delete announcement error:", error);
+      res.status(500).json({ message: "Failed to delete announcement" });
     }
   });
 
@@ -2382,6 +2499,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Serve uploaded files
   app.use('/uploads', express.static('uploads'));
+
+  // Admin routes for website feedback and contact submissions
+  app.get('/api/admin/website-feedback', requireAuth, requireRole(['admin']), async (req, res) => {
+    try {
+      const feedbacks = await storage.getWebsiteFeedbacks();
+      res.json(feedbacks);
+    } catch (error) {
+      console.error('Error getting website feedback:', error);
+      res.status(500).json({ message: 'Internal server error' });
+    }
+  });
+
+  app.get('/api/admin/contact-submissions', requireAuth, requireRole(['admin']), async (req, res) => {
+    try {
+      const contacts = await storage.getContactSubmissions();
+      res.json(contacts);
+    } catch (error) {
+      console.error('Error getting contact submissions:', error);
+      res.status(500).json({ message: 'Internal server error' });
+    }
+  });
 
   // Legal compliance routes
   app.get('/api/legal/privacy-policy', (req, res) => {

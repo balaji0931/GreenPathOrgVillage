@@ -11,6 +11,8 @@ import {
   payments,
   moderators,
   moderatorVillageAssignments,
+  websiteFeedback,
+  contactSubmissions,
   type Village,
   type User,
   type Household,
@@ -19,10 +21,11 @@ import {
   type Issue,
   type Announcement,
   type Feedback,
-  type CollectorComplaint,
-  type HouseholdAction,
+  type Payment,
   type Moderator,
   type ModeratorVillageAssignment,
+  type WebsiteFeedback,
+  type ContactSubmission,
   type InsertVillage,
   type InsertUser,
   type InsertHousehold,
@@ -31,13 +34,14 @@ import {
   type InsertIssue,
   type InsertAnnouncement,
   type InsertFeedback,
-  type InsertCollectorComplaint,
-  type InsertHouseholdAction,
+  type InsertPayment,
   type InsertModerator,
   type InsertModeratorVillageAssignment,
+  type InsertWebsiteFeedback,
+  type InsertContactSubmission,
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, desc, count, avg, sum, gte, lte, isNotNull, and, or, like, asc, sql, lt, inArray } from "drizzle-orm";
+import { eq, desc, count, avg, sum, gte, lte, isNotNull, and, or, like, asc, sql, lt, inArray, isNull } from "drizzle-orm";
 
 export interface IStorage {
   // User operations
@@ -55,6 +59,7 @@ export interface IStorage {
   getHouseholdsByVillage(villageId: string): Promise<Household[]>;
   getHouseholdByUid(uid: string): Promise<Household | undefined>;
   updateHousehold(id: number, updates: Partial<Household>): Promise<Household>;
+  markQRCodesPrinted(householdIds: number[]): Promise<void>;
 
   // Collector operations
   createCollector(collector: InsertCollector): Promise<Collector>;
@@ -81,6 +86,14 @@ export interface IStorage {
   createAnnouncement(announcement: InsertAnnouncement): Promise<Announcement>;
   getAnnouncementsByVillage(villageId: string): Promise<Announcement[]>;
   getGlobalAnnouncements(): Promise<Announcement[]>;
+  getAllAnnouncements(): Promise<any[]>;
+  updateAnnouncement(id: string, data: {
+    message: string;
+    targetAudience: string;
+    photoUrl?: string | null;
+    updatedBy: string;
+  }): Promise<any>;
+  deleteAnnouncement(id: string, deletedBy: string): Promise<any>;
 
   // Feedback operations
   createFeedback(feedback: InsertFeedback): Promise<Feedback>;
@@ -153,7 +166,6 @@ export interface IStorage {
     villagePerformance: any[];
   }>;
   getHouseholdByGeneratorUserId(generatorUserId: string): Promise<Household | undefined>;
-  getComplaintsByVillage(villageId: string): Promise<any[]>;
 
   // Moderator operations
   createModerator(moderator: InsertModerator): Promise<Moderator>;
@@ -163,6 +175,14 @@ export interface IStorage {
   assignVillageToModerator(assignment: InsertModeratorVillageAssignment): Promise<ModeratorVillageAssignment>;
   removeVillageFromModerator(moderatorId: string, villageId: string): Promise<void>;
   getModeratorVillages(moderatorId: string): Promise<any[]>;
+
+  // Website feedback operations
+  createWebsiteFeedback(feedback: InsertWebsiteFeedback): Promise<WebsiteFeedback>;
+  getWebsiteFeedbacks(): Promise<WebsiteFeedback[]>;
+
+  // Contact submissions operations
+  createContactSubmission(contact: InsertContactSubmission): Promise<ContactSubmission>;
+  getContactSubmissions(): Promise<ContactSubmission[]>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -339,8 +359,48 @@ export class DatabaseStorage implements IStorage {
     return await db
       .select()
       .from(announcements)
-      .where(sql`${announcements.villageId} IS NULL`)
+      .where(isNull(announcements.villageId))
       .orderBy(desc(announcements.createdAt));
+  }
+
+  async getAllAnnouncements() {
+    return await db.select({
+      id: announcements.id,
+      message: announcements.message,
+      targetAudience: announcements.targetAudience,
+      villageId: announcements.villageId,
+      photoUrl: announcements.photoUrl,
+      createdAt: announcements.createdAt,
+      createdBy: announcements.createdBy,
+    })
+    .from(announcements)
+    .orderBy(desc(announcements.createdAt));
+  }
+
+  async updateAnnouncement(id: string, data: {
+    message: string;
+    targetAudience: string;
+    photoUrl?: string | null;
+    updatedBy: string;
+  }) {
+    const [updated] = await db.update(announcements)
+      .set({
+        message: data.message,
+        targetAudience: data.targetAudience,
+        photoUrl: data.photoUrl,
+      })
+      .where(eq(announcements.id, id))
+      .returning();
+
+    return updated;
+  }
+
+  async deleteAnnouncement(id: string, deletedBy: string) {
+    const [deleted] = await db.delete(announcements)
+      .where(eq(announcements.id, id))
+      .returning();
+
+    return deleted;
   }
 
   async createFeedback(insertFeedback: InsertFeedback): Promise<Feedback> {
@@ -775,6 +835,12 @@ export class DatabaseStorage implements IStorage {
       .where(eq(households.id, id))
       .returning();
     return household;
+  }
+
+  async markQRCodesPrinted(householdIds: number[]): Promise<void> {
+    await db.update(households)
+      .set({ qrPrinted: true })
+      .where(inArray(households.id, householdIds));
   }
 
   async deleteHousehold(id: number): Promise<void> {
@@ -1709,8 +1775,7 @@ export class DatabaseStorage implements IStorage {
       };
     }
 
-    async getPaymentByHouseholdAndMonth(householdId: number, month: string): Promise<any | undefined> {
-    const [payment] = await db
+    async getPaymentByHouseholdAndMonth(householdId: number, month: string): Promise<any | undefined> {      const [payment] = await db
       .select()
       .from(payments)
       .where(and(eq(payments.householdId, householdId), eq(payments.month, month)))
@@ -1919,6 +1984,38 @@ export class DatabaseStorage implements IStorage {
     ).length;
 
     return problemCollections;
+  }
+
+  // Website feedback operations
+  async createWebsiteFeedback(insertFeedback: InsertWebsiteFeedback): Promise<WebsiteFeedback> {
+    const [feedback] = await db
+      .insert(websiteFeedback)
+      .values(insertFeedback)
+      .returning();
+    return feedback;
+  }
+
+  async getWebsiteFeedbacks(): Promise<WebsiteFeedback[]> {
+    return await db
+      .select()
+      .from(websiteFeedback)
+      .orderBy(desc(websiteFeedback.createdAt));
+  }
+
+  // Contact submissions operations
+  async createContactSubmission(insertContact: InsertContactSubmission): Promise<ContactSubmission> {
+    const [contact] = await db
+      .insert(contactSubmissions)
+      .values(insertContact)
+      .returning();
+    return contact;
+  }
+
+  async getContactSubmissions(): Promise<ContactSubmission[]> {
+    return await db
+      .select()
+      .from(contactSubmissions)
+      .orderBy(desc(contactSubmissions.createdAt));
   }
 }
 

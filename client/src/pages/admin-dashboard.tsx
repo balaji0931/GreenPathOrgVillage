@@ -52,6 +52,8 @@ export default function AdminDashboard() {
     photoFile: null,
   });
 
+  const [editingAnnouncement, setEditingAnnouncement] = useState<any>(null);
+
   const [profileData, setProfileData] = useState({
     name: user?.name || "",
     currentPassword: "",
@@ -127,6 +129,24 @@ export default function AdminDashboard() {
       const response = await apiRequest("GET", `/api/analytics/daily?${params.toString()}`);
       return response.json();
     },
+  });
+
+  // Fetch existing announcements
+  const { data: existingAnnouncements, isLoading: announcementsLoading } = useQuery({
+    queryKey: ["/api/admin/announcements"],
+    enabled: activeTab === "announcements",
+  });
+
+  // Fetch website feedback submissions
+  const { data: websiteFeedback, isLoading: feedbackLoading } = useQuery({
+    queryKey: ["/api/admin/website-feedback"],
+    enabled: activeTab === "website-feedback",
+  });
+
+  // Fetch contact submissions
+  const { data: contactSubmissions, isLoading: contactLoading } = useQuery({
+    queryKey: ["/api/admin/contact-submissions"],
+    enabled: activeTab === "contact-submissions",
   });
 
   // Village details query
@@ -236,11 +256,85 @@ export default function AdminDashboard() {
         description: "Announcement sent successfully",
       });
       setAnnouncement({ message: "", targetAudience: "all", photoFile: null });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/announcements"] });
     },
     onError: () => {
       toast({
         title: "Error",
         description: "Failed to send announcement",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Edit announcement mutation
+  const editAnnouncementMutation = useMutation({
+    mutationFn: async ({ id, data }: { id: string; data: any }) => {
+      let photoUrl = data.photoUrl;
+
+      // Upload new photo if provided
+      if (data.photoFile) {
+        try {
+          const formData = new FormData();
+          formData.append('file', data.photoFile);
+          
+          const uploadResponse = await fetch('/api/upload/photo', {
+            method: 'POST',
+            body: formData,
+            credentials: 'include'
+          });
+          
+          if (!uploadResponse.ok) {
+            throw new Error('Photo upload failed');
+          }
+          
+          const uploadResult = await uploadResponse.json();
+          photoUrl = uploadResult.url;
+        } catch (uploadError) {
+          console.error('Photo upload error:', uploadError);
+        }
+      }
+
+      const response = await apiRequest("PUT", `/api/announcements/${id}`, {
+        message: data.message,
+        targetAudience: data.targetAudience,
+        photoUrl: photoUrl,
+      });
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Success",
+        description: "Announcement updated successfully",
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/announcements"] });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to update announcement",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Delete announcement mutation
+  const deleteAnnouncementMutation = useMutation({
+    mutationFn: async (announcementId: string) => {
+      const response = await apiRequest("DELETE", `/api/announcements/${announcementId}`);
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Success",
+        description: "Announcement deleted successfully",
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/announcements"] });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to delete announcement",
         variant: "destructive",
       });
     },
@@ -571,6 +665,8 @@ export default function AdminDashboard() {
     { id: "moderators", label: "Moderators", icon: UserPlus },
     { id: "reports", label: "Reports", icon: BarChart3 },
     { id: "announcements", label: "Announcements", icon: Bell },
+    { id: "website-feedback", label: "Website Feedback", icon: MessageSquare },
+    { id: "contact-submissions", label: "Contact Us", icon: FileText },
     { id: "profile", label: "Profile", icon: User },
   ];
 
@@ -2368,112 +2464,254 @@ className="p-1 sm:p-2"
   const renderAnnouncements = () => (
     <div className="space-y-4 sm:space-y-6">
       <div>
-        <h2 className="text-2xl sm:text-3xl font-bold">Announcements</h2>
-        <p className="text-muted-foreground">Send messages to users across villages</p>
+        <h2 className="text-2xl sm:text-3xl font-bold">Announcements Management</h2>
+        <p className="text-muted-foreground">Create, edit, and manage announcements for all users</p>
       </div>
 
-      <Card>
-        <CardHeader className="p-3 sm:p-6">
-          <CardTitle className="text-lg sm:text-xl">Send Announcement</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4 p-3 sm:p-6 pt-0">
-          <div>
-            <Label htmlFor="announcement-message">Message</Label>
-            <Textarea
-              id="announcement-message"
-              value={announcement.message}
-              onChange={(e) => setAnnouncement({ ...announcement, message: e.target.value })}
-              placeholder="Type your announcement..."
-              rows={4}
-              className="text-sm sm:text-base"
-            />
-          </div>
-          <div>
-            <Label htmlFor="announcement-audience">Target Audience</Label>
-            <Select 
-              value={announcement.targetAudience} 
-              onValueChange={(value) => setAnnouncement({ ...announcement, targetAudience: value })}
-            >
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Users</SelectItem>                
-                <SelectItem value="managers">Managers Only</SelectItem>
-                <SelectItem value="generators">Generators Only</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          <div>
-            <Label htmlFor="announcement-photo">Image (Optional)</Label>
-            <Input
-              id="announcement-photo"
-              type="file"
-              accept="image/*"
-              onChange={(e) => {
-                const file = e.target.files?.[0] || null;
-                setAnnouncement({ ...announcement, photoFile: file });
-              }}
-              className="cursor-pointer"
-            />
-            {announcement.photoFile && (
-              <p className="text-xs text-muted-foreground mt-1">
-                Selected: {announcement.photoFile.name}
-              </p>
-            )}
-          </div>
-          <Button 
-            onClick={() => createAnnouncementMutation.mutate(announcement)}
-            disabled={createAnnouncementMutation.isPending}
-            className="w-full"
-          >
-            {createAnnouncementMutation.isPending ? "Sending..." : "Send Announcement"}
-          </Button>
-        </CardContent>
-      </Card>
+      <Tabs defaultValue="create" className="w-full">
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="create">Create New</TabsTrigger>
+          <TabsTrigger value="manage">Manage Existing</TabsTrigger>
+        </TabsList>
 
-      {/* Display Announcements */}
-      <Card>
-        <CardHeader className="p-3 sm:p-6">
-          <CardTitle className="text-lg sm:text-xl">Recent Announcements</CardTitle>
-        </CardHeader>
-        <CardContent className="p-3 sm:p-6 pt-0">
-          {/* Check if announcements are available */}
-          {announcement && announcement.length > 0 ? (
-            <div className="space-y-3 sm:space-y-4">
-              {announcement.slice(0, 3).map((announcement: any) => (
-                <div key={announcement.id} className="p-3 bg-blue-50 rounded-lg border-l-4 border-blue-400">
-                  <p className="text-sm text-gray-800 font-medium">
-                    {announcement.message}
+        {/* Create Announcement Tab */}
+        <TabsContent value="create" className="space-y-4">
+          <Card>
+            <CardHeader className="p-3 sm:p-6">
+              <CardTitle className="text-lg sm:text-xl">Send New Announcement</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4 p-3 sm:p-6 pt-0">
+              <div>
+                <Label htmlFor="announcement-message">Message</Label>
+                <Textarea
+                  id="announcement-message"
+                  value={announcement.message}
+                  onChange={(e) => setAnnouncement({ ...announcement, message: e.target.value })}
+                  placeholder="Type your announcement..."
+                  rows={4}
+                  className="text-sm sm:text-base"
+                />
+              </div>
+              <div>
+                <Label htmlFor="announcement-audience">Target Audience</Label>
+                <Select 
+                  value={announcement.targetAudience} 
+                  onValueChange={(value) => setAnnouncement({ ...announcement, targetAudience: value })}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Users</SelectItem>                
+                    <SelectItem value="managers">Managers Only</SelectItem>
+                    <SelectItem value="generators">Generators Only</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label htmlFor="announcement-photo">Image (Optional)</Label>
+                <Input
+                  id="announcement-photo"
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0] || null;
+                    setAnnouncement({ ...announcement, photoFile: file });
+                  }}
+                  className="cursor-pointer"
+                />
+                {announcement.photoFile && (
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Selected: {announcement.photoFile.name}
                   </p>
-                  {announcement.photoUrl && (
-                    <div className="mt-2">
-                      <img 
-                        src={announcement.photoUrl} 
-                        alt="Announcement" 
-                        className="max-w-full h-32 object-cover rounded-lg border"
-                      />
-                    </div>
-                  )}
-                  <div className="flex justify-between items-center mt-2">
-                    <Badge variant="secondary" className="text-xs">
-                      {announcement.targetAudience}
-                    </Badge>
-                    <p className="text-xs text-gray-500">
-                      {new Date(announcement.createdAt).toLocaleDateString()}
-                    </p>
-                  </div>
+                )}
+              </div>
+              <Button 
+                onClick={() => createAnnouncementMutation.mutate(announcement)}
+                disabled={createAnnouncementMutation.isPending}
+                className="w-full"
+              >
+                {createAnnouncementMutation.isPending ? "Sending..." : "Send Announcement"}
+              </Button>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Manage Announcements Tab */}
+        <TabsContent value="manage" className="space-y-4">
+          <Card>
+            <CardHeader className="p-3 sm:p-6">
+              <CardTitle className="text-lg sm:text-xl">All Announcements</CardTitle>
+            </CardHeader>
+            <CardContent className="p-3 sm:p-6 pt-0">
+              {announcementsLoading ? (
+                <div className="text-center py-8">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+                  <span className="ml-2 text-sm">Loading announcements...</span>
                 </div>
-              ))}
-            </div>
-          ) : (
-            // Display message if no announcements are available
-            <div className="text-center text-muted-foreground py-4">
-              No announcements available
-            </div>
-          )}
-        </CardContent>
-      </Card>
+              ) : (
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead className="text-xs sm:text-sm">Message</TableHead>
+                        <TableHead className="text-xs sm:text-sm">Audience</TableHead>
+                        <TableHead className="text-xs sm:text-sm hidden sm:table-cell">Date</TableHead>
+                        <TableHead className="text-xs sm:text-sm">Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {existingAnnouncements?.map((announcement: any) => (
+                        <TableRow key={announcement.id}>
+                          <TableCell className="text-xs sm:text-sm max-w-xs">
+                            <div className="space-y-1">
+                              <p className="truncate">{announcement.message}</p>
+                              {announcement.photoUrl && (
+                                <Badge variant="outline" className="text-xs">Has Image</Badge>
+                              )}
+                            </div>
+                          </TableCell>
+                          <TableCell className="text-xs sm:text-sm">
+                            <Badge variant="secondary" className="text-xs">
+                              {announcement.targetAudience}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="text-xs sm:text-sm hidden sm:table-cell">
+                            {new Date(announcement.createdAt).toLocaleDateString()}
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex space-x-1 sm:space-x-2">
+                              <Dialog>
+                                <DialogTrigger asChild>
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() => setEditingAnnouncement(announcement)}
+                                    className="p-1 sm:p-2"
+                                  >
+                                    <Eye className="h-3 w-3 sm:h-4 sm:w-4" />
+                                  </Button>
+                                </DialogTrigger>
+                                <DialogContent className="max-w-[95vw] sm:max-w-2xl">
+                                  <DialogHeader>
+                                    <DialogTitle>View/Edit Announcement</DialogTitle>
+                                  </DialogHeader>
+                                  {editingAnnouncement && (
+                                    <div className="space-y-4">
+                                      <div>
+                                        <Label>Message</Label>
+                                        <Textarea
+                                          value={editingAnnouncement.message}
+                                          onChange={(e) => setEditingAnnouncement({
+                                            ...editingAnnouncement,
+                                            message: e.target.value
+                                          })}
+                                          rows={4}
+                                        />
+                                      </div>
+                                      <div>
+                                        <Label>Target Audience</Label>
+                                        <Select
+                                          value={editingAnnouncement.targetAudience}
+                                          onValueChange={(value) => setEditingAnnouncement({
+                                            ...editingAnnouncement,
+                                            targetAudience: value
+                                          })}
+                                        >
+                                          <SelectTrigger>
+                                            <SelectValue />
+                                          </SelectTrigger>
+                                          <SelectContent>
+                                            <SelectItem value="all">All Users</SelectItem>
+                                            <SelectItem value="managers">Managers Only</SelectItem>
+                                            <SelectItem value="generators">Generators Only</SelectItem>
+                                          </SelectContent>
+                                        </Select>
+                                      </div>
+                                      {editingAnnouncement.photoUrl && (
+                                        <div>
+                                          <Label>Current Image</Label>
+                                          <div className="mt-2">
+                                            <img
+                                              src={editingAnnouncement.photoUrl}
+                                              alt="Current announcement"
+                                              className="max-w-full h-32 object-cover rounded border"
+                                            />
+                                          </div>
+                                        </div>
+                                      )}
+                                      <div>
+                                        <Label>Replace Image (Optional)</Label>
+                                        <Input
+                                          type="file"
+                                          accept="image/*"
+                                          onChange={(e) => {
+                                            const file = e.target.files?.[0] || null;
+                                            setEditingAnnouncement({
+                                              ...editingAnnouncement,
+                                              photoFile: file
+                                            });
+                                          }}
+                                          className="cursor-pointer"
+                                        />
+                                      </div>
+                                      <div className="flex space-x-2">
+                                        <Button
+                                          onClick={() => {
+                                            editAnnouncementMutation.mutate({
+                                              id: editingAnnouncement.id,
+                                              data: editingAnnouncement
+                                            });
+                                            setEditingAnnouncement(null);
+                                          }}
+                                          disabled={editAnnouncementMutation.isPending}
+                                          className="flex-1"
+                                        >
+                                          {editAnnouncementMutation.isPending ? "Updating..." : "Update"}
+                                        </Button>
+                                        <Button
+                                          variant="outline"
+                                          onClick={() => setEditingAnnouncement(null)}
+                                          className="flex-1"
+                                        >
+                                          Cancel
+                                        </Button>
+                                      </div>
+                                    </div>
+                                  )}
+                                </DialogContent>
+                              </Dialog>
+                              <Button
+                                size="sm"
+                                variant="destructive"
+                                onClick={() => {
+                                  if (confirm("Are you sure you want to delete this announcement?")) {
+                                    deleteAnnouncementMutation.mutate(announcement.id);
+                                  }
+                                }}
+                                className="p-1 sm:p-2"
+                              >
+                                <Trash2 className="h-3 w-3 sm:h-4 sm:w-4" />
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                      {(!existingAnnouncements || existingAnnouncements.length === 0) && (
+                        <TableRow>
+                          <TableCell colSpan={4} className="text-center py-8 text-muted-foreground">
+                            No announcements found
+                          </TableCell>
+                        </TableRow>
+                      )}
+                    </TableBody>
+                  </Table>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 
@@ -2568,6 +2806,126 @@ className="p-1 sm:p-2"
     </div>
   );
 
+  const renderWebsiteFeedback = () => (
+    <div className="space-y-4 sm:space-y-6">
+      <div>
+        <h2 className="text-2xl sm:text-3xl font-bold">Website Feedback</h2>
+        <p className="text-muted-foreground">Review feedback submissions from website visitors</p>
+      </div>
+
+      <Card>
+        <CardHeader className="p-3 sm:p-6">
+          <CardTitle className="text-lg sm:text-xl">All Feedback Submissions</CardTitle>
+        </CardHeader>
+        <CardContent className="p-3 sm:p-6 pt-0">
+          {feedbackLoading ? (
+            <div className="text-center py-8">Loading feedback submissions...</div>
+          ) : (
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="text-xs sm:text-sm">Name</TableHead>
+                    <TableHead className="text-xs sm:text-sm">Email</TableHead>
+                    <TableHead className="text-xs sm:text-sm hidden md:table-cell">Type</TableHead>
+                    <TableHead className="text-xs sm:text-sm hidden sm:table-cell">Message</TableHead>
+                    <TableHead className="text-xs sm:text-sm">Date</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {websiteFeedback?.map((feedback: any) => (
+                    <TableRow key={feedback.id}>
+                      <TableCell className="text-xs sm:text-sm">{feedback.name}</TableCell>
+                      <TableCell className="text-xs sm:text-sm">{feedback.email}</TableCell>
+                      <TableCell className="text-xs sm:text-sm hidden md:table-cell">
+                        <Badge variant="outline">{feedback.feedbackType}</Badge>
+                      </TableCell>
+                      <TableCell className="text-xs sm:text-sm hidden sm:table-cell max-w-xs truncate">
+                        {feedback.message}
+                      </TableCell>
+                      <TableCell className="text-xs sm:text-sm">
+                        {new Date(feedback.createdAt).toLocaleDateString()}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                  {(!websiteFeedback || websiteFeedback.length === 0) && (
+                    <TableRow>
+                      <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
+                        No feedback submissions yet
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  );
+
+  const renderContactSubmissions = () => (
+    <div className="space-y-4 sm:space-y-6">
+      <div>
+        <h2 className="text-2xl sm:text-3xl font-bold">Contact Us Submissions</h2>
+        <p className="text-muted-foreground">Review contact form submissions from website visitors</p>
+      </div>
+
+      <Card>
+        <CardHeader className="p-3 sm:p-6">
+          <CardTitle className="text-lg sm:text-xl">All Contact Submissions</CardTitle>
+        </CardHeader>
+        <CardContent className="p-3 sm:p-6 pt-0">
+          {contactLoading ? (
+            <div className="text-center py-8">Loading contact submissions...</div>
+          ) : (
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="text-xs sm:text-sm">Name</TableHead>
+                    <TableHead className="text-xs sm:text-sm">Email</TableHead>
+                    <TableHead className="text-xs sm:text-sm hidden md:table-cell">Phone</TableHead>
+                    <TableHead className="text-xs sm:text-sm hidden lg:table-cell">Subject</TableHead>
+                    <TableHead className="text-xs sm:text-sm hidden sm:table-cell">Message</TableHead>
+                    <TableHead className="text-xs sm:text-sm">Date</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {contactSubmissions?.map((contact: any) => (
+                    <TableRow key={contact.id}>
+                      <TableCell className="text-xs sm:text-sm">{contact.name}</TableCell>
+                      <TableCell className="text-xs sm:text-sm">{contact.email}</TableCell>
+                      <TableCell className="text-xs sm:text-sm hidden md:table-cell">
+                        {contact.phone || "N/A"}
+                      </TableCell>
+                      <TableCell className="text-xs sm:text-sm hidden lg:table-cell max-w-xs truncate">
+                        {contact.subject}
+                      </TableCell>
+                      <TableCell className="text-xs sm:text-sm hidden sm:table-cell max-w-xs truncate">
+                        {contact.message}
+                      </TableCell>
+                      <TableCell className="text-xs sm:text-sm">
+                        {new Date(contact.createdAt).toLocaleDateString()}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                  {(!contactSubmissions || contactSubmissions.length === 0) && (
+                    <TableRow>
+                      <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
+                        No contact submissions yet
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  );
+
   const renderContent = () => {
     switch (activeTab) {
       case "overview": return renderOverview();
@@ -2576,6 +2934,8 @@ className="p-1 sm:p-2"
       case "moderators": return renderModerators();
       case "reports": return renderReports();
       case "announcements": return renderAnnouncements();
+      case "website-feedback": return renderWebsiteFeedback();
+      case "contact-submissions": return renderContactSubmissions();
       case "profile": return renderProfile();
       default: return renderOverview();
     }

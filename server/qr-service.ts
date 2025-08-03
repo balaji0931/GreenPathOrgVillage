@@ -61,12 +61,12 @@ export const generateBulkQRCodesPDF = async (
   const pageWidth = 210;
   const pageHeight = 297;
 
-  const cols = 4;
-  const rows = 4;
+  const cols = 3;
+  const rows = 3;
   const qrSize = 40;
 
-  const boxWidth = pageWidth / cols;  
-  const boxHeight = pageHeight / rows; 
+  const boxWidth = pageWidth / cols;  // 70
+  const boxHeight = pageHeight / rows; // 99
   const qrCodesPerPage = cols * rows;
 
   for (let i = 0; i < households.length; i++) {
@@ -83,7 +83,7 @@ export const generateBulkQRCodesPDF = async (
     const x = col * boxWidth;
     const y = row * boxHeight;
     const centerX = x + boxWidth / 2;
-    let currentY = y + 5;
+    let currentY = y + 10;
 
     // ✅ Dashed box around section
     pdf.setDrawColor(0);
@@ -93,16 +93,16 @@ export const generateBulkQRCodesPDF = async (
     pdf.setLineDashPattern([]); // Reset line style
 
     // ✅ Heading
-    pdf.setFontSize(12);
+    pdf.setFontSize(17);
     pdf.setTextColor(0, 128, 0);
     pdf.text('GreenPath', centerX, currentY, { align: 'center' });
-    currentY += 3;
+    currentY += 7;
 
     // ✅ Subheading
-    pdf.setFontSize(8);
+    pdf.setFontSize(10);
     pdf.setTextColor(80, 80, 80);
     pdf.text('Waste Management System', centerX, currentY, { align: 'center' });
-    currentY += 3;
+    currentY += 7;
 
     // ✅ QR Code
     const qrX = centerX - qrSize / 2;
@@ -152,18 +152,18 @@ export const generateBulkQRCodesPDF = async (
     }
 
     // ✅ Info text below QR
-    currentY += qrSize + 4;
+    currentY += qrSize + 6;
     pdf.setTextColor(0, 0, 0);
-    pdf.setFontSize(8);
-    pdf.text(`ID: GEN-${household.uid}`, centerX, currentY, { align: 'center' });
-    currentY += 4;
-    pdf.text(`name: ${household.headName}`, centerX, currentY, { align: 'center' });
-    currentY += 4;
-    pdf.text(`H.No: ${household.houseNumber}`, centerX, currentY, { align: 'center' });
-    currentY += 4;
-    pdf.text(`Login and Manage at:`, centerX, currentY, { align: 'center' });
-    currentY += 4;
     pdf.setFontSize(10);
+    pdf.text(`House UID: GEN-${household.uid}`, centerX, currentY, { align: 'center' });
+    currentY += 6;
+    pdf.text(`Head: ${household.headName}`, centerX, currentY, { align: 'center' });
+    currentY += 6;
+    pdf.text(`No: ${household.houseNumber}`, centerX, currentY, { align: 'center' });
+    currentY += 6;
+    pdf.text('Login & manage at: ', centerX, currentY, { align: 'center' });
+    currentY += 6;
+    pdf.setFontSize(12);
     pdf.setTextColor(0, 128, 0);
     pdf.text('www.greenpathorg.social', centerX, currentY, { align: 'center' });
   }

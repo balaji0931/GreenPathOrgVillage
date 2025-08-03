@@ -86,6 +86,7 @@ interface Household {
   villageId: string;
   ward: string;
   qrCodeUrl: string;
+  qrPrinted: boolean;
   createdAt: string;
 }
 
@@ -384,6 +385,8 @@ export default function ManagerDashboard() {
   // QR management state
   const [selectedQRHouseholds, setSelectedQRHouseholds] = useState<number[]>([]);
   const [selectedDownloadHouseholds, setSelectedDownloadHouseholds] = useState<number[]>([]);
+  const [qrPrintFilter, setQrPrintFilter] = useState<string>("all"); // all, printed, not_printed
+  const [showPrintConfirmDialog, setShowPrintConfirmDialog] = useState(false);
   const [bulkHouseholds, setBulkHouseholds] = useState([
     { headName: "", houseNumber: "", phone: "", address: "", ward: "" }
   ]);
@@ -435,8 +438,11 @@ export default function ManagerDashboard() {
 
   // Filtered households for QR download
   const filteredHouseholdsForDownload = households.filter(household => {
-    if (wardFilter === "all") return true;
-    return household.ward === wardFilter;
+    const wardMatch = wardFilter === "all" || household.ward === wardFilter;
+    const printMatch = qrPrintFilter === "all" || 
+                      (qrPrintFilter === "printed" && household.qrPrinted) ||
+                      (qrPrintFilter === "not_printed" && !household.qrPrinted);
+    return wardMatch && household.qrCodeUrl && printMatch;
   });
 
   const { data: collectorStats = [] } = useQuery<CollectorStats[]>({
@@ -676,6 +682,24 @@ export default function ManagerDashboard() {
       toast({
         title: "Error",
         description: error.message || "Failed to generate QR codes",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const markPrintedMutation = useMutation({
+    mutationFn: (householdIds: number[]) =>
+      apiRequest("POST", "/api/qr-codes/mark-printed", { householdIds }),
+    onSuccess: () => {
+      toast({ title: "QR codes marked as printed successfully!" });
+      queryClient.invalidateQueries({ queryKey: ["/api/households"] });
+      setSelectedDownloadHouseholds([]);
+      setShowPrintConfirmDialog(false);
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to mark QR codes as printed",
         variant: "destructive",
       });
     },
@@ -1533,15 +1557,15 @@ export default function ManagerDashboard() {
                   <TabsContent value="qr-download" className="space-y-4">
                     <Card>
                       <CardHeader>
-                        <CardTitle>{t("manager.downloadQRCodes")}</CardTitle>
-                        <CardDescription>{t("manager.downloadQRDesc")}</CardDescription>
+                        <CardTitle>QR Code Management</CardTitle>
+                        <CardDescription>Download QR codes and track printing status to avoid duplicates</CardDescription>
                       </CardHeader>
                       <CardContent>
                         <div className="space-y-4">
-                          {/* Ward Filter */}
+                          {/* Filters */}
                           <div className="flex items-center gap-4">
                             <div className="flex-1">
-                              <Label htmlFor="ward-filter">Filter by Ward/Sub-village</Label>
+                              <Label htmlFor="ward-filter">Filter by Ward</Label>
                               <Select value={wardFilter} onValueChange={setWardFilter}>
                                 <SelectTrigger>
                                   <SelectValue placeholder="All Wards" />
@@ -1554,37 +1578,78 @@ export default function ManagerDashboard() {
                                 </SelectContent>
                               </Select>
                             </div>
+                            <div className="flex-1">
+                              <Label htmlFor="print-filter">Print Status</Label>
+                              <Select value={qrPrintFilter} onValueChange={setQrPrintFilter}>
+                                <SelectTrigger>
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="all">All QR Codes</SelectItem>
+                                  <SelectItem value="not_printed">Not Printed</SelectItem>
+                                  <SelectItem value="printed">Already Printed</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </div>
                           </div>
 
-                          <div className="flex justify-between items-center">
-                            <Button 
-                              size="sm" 
-                              variant="outline" 
-                              onClick={() => setSelectedDownloadHouseholds(filteredHouseholdsForDownload.filter(h => h.qrCodeUrl).map(h => h.id))}
-                            >
-                              {t("manager.selectAll")} ({filteredHouseholdsForDownload.filter(h => h.qrCodeUrl).length})
-                            </Button>
-                            <Button
-                              onClick={() => downloadPDFMutation.mutate(selectedDownloadHouseholds)}
-                              disabled={selectedDownloadHouseholds.length === 0 || downloadPDFMutation.isPending}
-                            >
-                              <Download className="h-4 w-4 mr-2" />
-                              {downloadPDFMutation.isPending ? t("manager.generating") : `${t("manager.downloadPDF")} (${selectedDownloadHouseholds.length})`}
-                            </Button>
+                          <div className="flex justify-between items-center flex-wrap gap-2">
+                            <div className="flex gap-2">
+                              <Button 
+                                size="sm" 
+                                variant="outline" 
+                                onClick={() => setSelectedDownloadHouseholds(filteredHouseholdsForDownload.map(h => h.id))}
+                              >
+                                Select All ({filteredHouseholdsForDownload.length})
+                              </Button>
+                              <Button 
+                                size="sm" 
+                                variant="outline" 
+                                onClick={() => setSelectedDownloadHouseholds([])}
+                              >
+                                Clear Selection
+                              </Button>
+                            </div>
+                            <div className="flex gap-2">
+                              <Button
+                                onClick={() => downloadPDFMutation.mutate(selectedDownloadHouseholds)}
+                                disabled={selectedDownloadHouseholds.length === 0 || downloadPDFMutation.isPending}
+                                variant="outline"
+                              >
+                                <Download className="h-4 w-4 mr-2" />
+                                {downloadPDFMutation.isPending ? "Generating..." : `Download PDF (${selectedDownloadHouseholds.length})`}
+                              </Button>
+                              <Button
+                                onClick={() => setShowPrintConfirmDialog(true)}
+                                disabled={selectedDownloadHouseholds.length === 0}
+                                className="bg-green-600 hover:bg-green-700"
+                              >
+                                <CheckCircle className="h-4 w-4 mr-2" />
+                                Mark as Printed ({selectedDownloadHouseholds.length})
+                              </Button>
+                            </div>
                           </div>
 
-                          {filteredHouseholdsForDownload.filter(h => h.qrCodeUrl).length === 0 ? (
+                          {filteredHouseholdsForDownload.length === 0 ? (
                             <div className="text-center py-8">
                               <QrCode className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-                              <p className="text-muted-foreground">{t("manager.noQRAvailable")}</p>
-                              <p className="text-sm text-muted-foreground">{t("manager.addHouseholdsForQR")}</p>
+                              <p className="text-muted-foreground">No QR codes found for the selected filters</p>
+                              <p className="text-sm text-muted-foreground">Try changing your filter settings or generate QR codes first</p>
                             </div>
                           ) : (
                             <div className="space-y-2">
-                              {filteredHouseholdsForDownload.filter(h => h.qrCodeUrl).map((household) => (
+                              {filteredHouseholdsForDownload.map((household) => (
                                 <Card
                                   key={household.id}
-                                  className="cursor-pointer hover:bg-gray-50"
+                                  className={cn(
+                                    "cursor-pointer transition-all",
+                                    selectedDownloadHouseholds.includes(household.id) 
+                                      ? "ring-2 ring-blue-500 bg-blue-50" 
+                                      : "hover:bg-gray-50",
+                                    household.qrPrinted 
+                                      ? "bg-red-50 border-red-200" 
+                                      : "bg-green-50 border-green-200"
+                                  )}
                                   onClick={() => {
                                     setSelectedDownloadHouseholds(prev => 
                                       prev.includes(household.id) 
@@ -1599,7 +1664,7 @@ export default function ManagerDashboard() {
                                         <img
                                           src={household.qrCodeUrl}
                                           alt="QR Code"
-                                          className="h-12 w-12 rounded border"
+                                          className="h-12 w-12 rounded border bg-white"
                                         />
                                         <div>
                                           <h4 className="font-medium">{household.headName}</h4>
@@ -1608,12 +1673,20 @@ export default function ManagerDashboard() {
                                           </p>
                                         </div>
                                       </div>
-                                      <input
-                                        type="checkbox"
-                                        checked={selectedDownloadHouseholds.includes(household.id)}
-                                        onChange={() => {}}
-                                        className="h-4 w-4"
-                                      />
+                                      <div className="flex items-center gap-3">
+                                        <Badge 
+                                          variant={household.qrPrinted ? "destructive" : "default"}
+                                          className={household.qrPrinted ? "bg-red-100 text-red-800" : "bg-green-100 text-green-800"}
+                                        >
+                                          {household.qrPrinted ? "Printed" : "Not Printed"}
+                                        </Badge>
+                                        <input
+                                          type="checkbox"
+                                          checked={selectedDownloadHouseholds.includes(household.id)}
+                                          onChange={() => {}}
+                                          className="h-4 w-4"
+                                        />
+                                      </div>
                                     </div>
                                   </CardContent>
                                 </Card>
@@ -1623,6 +1696,42 @@ export default function ManagerDashboard() {
                         </div>
                       </CardContent>
                     </Card>
+
+                    {/* Print Confirmation Dialog */}
+                    <Dialog open={showPrintConfirmDialog} onOpenChange={setShowPrintConfirmDialog}>
+                      <DialogContent>
+                        <DialogHeader>
+                          <DialogTitle>Confirm QR Code Printing</DialogTitle>
+                        </DialogHeader>
+                        <div className="space-y-4">
+                          <p className="text-muted-foreground">
+                            Are you sure you want to mark {selectedDownloadHouseholds.length} QR codes as printed? 
+                            This will help track which QR codes have already been distributed to avoid duplicates.
+                          </p>
+                          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
+                            <div className="flex items-center gap-2">
+                              <AlertTriangle className="h-4 w-4 text-yellow-600" />
+                              <span className="text-sm font-medium text-yellow-800">Important</span>
+                            </div>
+                            <p className="text-sm text-yellow-700 mt-1">
+                              Once marked as printed, these QR codes will appear with a red background to indicate they've been distributed.
+                            </p>
+                          </div>
+                          <div className="flex justify-end gap-2">
+                            <Button variant="outline" onClick={() => setShowPrintConfirmDialog(false)}>
+                              Cancel
+                            </Button>
+                            <Button 
+                              onClick={() => markPrintedMutation.mutate(selectedDownloadHouseholds)}
+                              disabled={markPrintedMutation.isPending}
+                              className="bg-green-600 hover:bg-green-700"
+                            >
+                              {markPrintedMutation.isPending ? "Marking..." : "Confirm & Mark as Printed"}
+                            </Button>
+                          </div>
+                        </div>
+                      </DialogContent>
+                    </Dialog>
                   </TabsContent>
                 </Tabs>
               </div>

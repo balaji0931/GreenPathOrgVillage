@@ -3,6 +3,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { useAuth } from "@/hooks/useAuth";
 import { InstallPWA } from "@/components/InstallPWA";
 import Login from "@/pages/login";
+import PublicHome from "@/pages/public-home";
 import AdminDashboard from "@/pages/admin-dashboard";
 import ManagerDashboard from "@/pages/manager-dashboard";
 import CollectorDashboard from "@/pages/collector-dashboard";
@@ -46,12 +47,8 @@ function Router() {
         <Route path="/privacy-policy" component={PrivacyPolicy} />
         <Route path="/terms-of-service" component={TermsOfService} />
         <Route path="/data-protection" component={DataProtection} />
-        <Route>
-          {() => {
-            setLocation("/login");
-            return <Login />;
-          }}
-        </Route>
+        <Route path="/" component={PublicHome} />
+        <Route component={NotFound} />
       </Switch>
     );
   }

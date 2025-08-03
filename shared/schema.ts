@@ -59,6 +59,7 @@ export const households = pgTable("households", {
   status: text("status").default("active"),
   qrCodeUrl: text("qr_code_url"),
   qrCodePublicId: text("qr_code_public_id"),
+  qrPrinted: boolean("qr_printed").default(false), // Track if QR code has been printed
   generatorUserId: text("generator_user_id"),
   generatorPassword: text("generator_password"),
   createdAt: timestamp("created_at").defaultNow(),
@@ -300,6 +301,38 @@ export const insertModeratorVillageAssignmentSchema = createInsertSchema(moderat
   assignedAt: true,
 });
 
+// Website feedback table (for public home page feedback form)
+export const websiteFeedback = pgTable("website_feedback", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  email: text("email").notNull(),
+  feedbackType: text("feedback_type").notNull(), // suggestion, bug_report, general
+  message: text("message").notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Contact us table (for public home page contact form)
+export const contactSubmissions = pgTable("contact_submissions", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  email: text("email").notNull(),
+  phone: text("phone"),
+  subject: text("subject").notNull(),
+  message: text("message").notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Insert schemas for new tables
+export const insertWebsiteFeedbackSchema = createInsertSchema(websiteFeedback).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertContactSubmissionSchema = createInsertSchema(contactSubmissions).omit({
+  id: true,
+  createdAt: true,
+});
+
 // Types
 export type InsertVillage = z.infer<typeof insertVillageSchema>;
 export type InsertUser = z.infer<typeof insertUserSchema>;
@@ -312,6 +345,8 @@ export type InsertFeedback = z.infer<typeof insertFeedbackSchema>;
 export type InsertPayment = z.infer<typeof insertPaymentSchema>;
 export type InsertModerator = z.infer<typeof insertModeratorSchema>;
 export type InsertModeratorVillageAssignment = z.infer<typeof insertModeratorVillageAssignmentSchema>;
+export type InsertWebsiteFeedback = z.infer<typeof insertWebsiteFeedbackSchema>;
+export type InsertContactSubmission = z.infer<typeof insertContactSubmissionSchema>;
 
 export type Village = typeof villages.$inferSelect;
 export type User = typeof users.$inferSelect;
@@ -324,3 +359,5 @@ export type Feedback = typeof feedback.$inferSelect;
 export type Payment = typeof payments.$inferSelect;
 export type Moderator = typeof moderators.$inferSelect;
 export type ModeratorVillageAssignment = typeof moderatorVillageAssignments.$inferSelect;
+export type WebsiteFeedback = typeof websiteFeedback.$inferSelect;
+export type ContactSubmission = typeof contactSubmissions.$inferSelect;
