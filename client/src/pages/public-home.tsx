@@ -854,7 +854,7 @@ export default function PublicHome() {
                   </div>
                 </div>
                 <CardTitle className="text-2xl sm:text-3xl font-bold text-gray-800 mb-2">
-                  Gummula Sreeja
+                  Sreeja
                 </CardTitle>
                 <p className="text-base sm:text-lg font-medium text-pink-600">Co-Founder & Strategic Partnerships Lead</p>
               </CardHeader>
