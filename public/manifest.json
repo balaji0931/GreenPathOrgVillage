@@ -3,7 +3,7 @@
   "name": "GreenPath",
   "short_name": "GreenPath",
   "description": "Comprehensive waste management system for villages",
-  "start_url": "/",
+  "start_url": "/login",
   "display": "standalone",
   "background_color": "#ffffff",
   "theme_color": "#16a34a",
