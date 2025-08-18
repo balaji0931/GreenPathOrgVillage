@@ -522,6 +522,27 @@ export default function AdminDashboard() {
     },
   });
 
+  const toggleImageUploadRequiredMutation = useMutation({
+    mutationFn: async ({ villageId, imageUploadRequired }: { villageId: string; imageUploadRequired: boolean }) => {
+      const response = await apiRequest("PUT", `/api/villages/${villageId}`, { imageUploadRequired });
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Success",
+        description: "Village image upload settings updated successfully",
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/villages"] });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to update village image upload settings",
+        variant: "destructive",
+      });
+    },
+  });
+
   // Assign village to moderator mutation
   const assignVillageToModeratorMutation = useMutation({
     mutationFn: async ({ moderatorId, villageId }: { moderatorId: string; villageId: string }) => {
@@ -930,7 +951,8 @@ export default function AdminDashboard() {
                   <TableHead className="text-xs sm:text-sm">Name</TableHead>
                   <TableHead className="text-xs sm:text-sm hidden sm:table-cell">Households</TableHead>
                   <TableHead className="text-xs sm:text-sm hidden sm:table-cell">Collectors</TableHead>
-                  <TableHead className="text-xs sm:text-sm ">Payments</TableHead>
+                  <TableHead className="text-xs sm:text-sm">Payments</TableHead>
+                  <TableHead className="text-xs sm:text-sm">Image Upload</TableHead>
                   <TableHead className="text-xs sm:text-sm">Actions</TableHead>
                 </TableRow>
               </TableHeader>
@@ -952,6 +974,19 @@ export default function AdminDashboard() {
                         className="text-xs"
                       >
                         {village.paymentsEnabled ? "Enabled" : "Disabled"}
+                      </Button>
+                    </TableCell>
+                    <TableCell className="text-xs sm:text-sm">
+                      <Button
+                        size="sm"
+                        variant={village.imageUploadRequired ? "default" : "outline"}
+                        onClick={() => toggleImageUploadRequiredMutation.mutate({
+                          villageId: village.villageId,
+                          imageUploadRequired: !village.imageUploadRequired
+                        })}
+                        className="text-xs"
+                      >
+                        {village.imageUploadRequired ? "Required" : "Optional"}
                       </Button>
                     </TableCell>
                     <TableCell>
@@ -2341,7 +2376,7 @@ className="p-1 sm:p-2"
               <CardContent>
                 <div className="space-y-2">
                   {Array.from({ length: 12 }).map((_, i) => {
-                    const hour = i + 8; // Start from 8 AM
+                    const hour = i + 6; // Start from 8 AM
                     const timelineData = dailyAnalytics?.collectionTimeline || [];
                     const hourData = timelineData.find((t: any) => Number(t.hour) === hour);
                     const hourCollections = hourData?.collections || 0;
@@ -2949,7 +2984,7 @@ className="p-1 sm:p-2"
           <div className="flex items-center">
             <Leaf className="h-6 w-6 text-white" strokeWidth={3}/>
             <div>
-              <h1 className="text-2xl text-white font-bold ">GreenPath</h1>
+              <h1 className="text-2xl text-white font-bold ">GreenPathORG</h1>
             </div>
           </div>
           <div className="flex items-center space-x-2">
@@ -2974,7 +3009,7 @@ className="p-1 sm:p-2"
               <div className="flex items-center space-x-3">
                 <Leaf className="h-8 w-8 text-green-600" />
                 <div>
-                  <h1 className="text-xl font-bold">GreenPath</h1>
+                  <h1 className="text-xl font-bold">GreenPathORG</h1>
                   <p className="text-sm text-muted-foreground">Admin Panel</p>
                 </div>
               </div>

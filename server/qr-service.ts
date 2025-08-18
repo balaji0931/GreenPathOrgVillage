@@ -95,7 +95,7 @@ export const generateBulkQRCodesPDF = async (
     // ✅ Heading
     pdf.setFontSize(17);
     pdf.setTextColor(0, 128, 0);
-    pdf.text('GreenPath', centerX, currentY, { align: 'center' });
+    pdf.text('GreenPathORG', centerX, currentY, { align: 'center' });
     currentY += 7;
 
     // ✅ Subheading

@@ -53,12 +53,14 @@ export interface IStorage {
   createVillage(village: InsertVillage): Promise<Village>;
   getVillages(): Promise<Village[]>;
   getVillageByVillageId(villageId: string): Promise<Village | undefined>;
+  updateVillage(villageId: string, updates: Partial<Village>): Promise<Village>;
 
   // Household operations
   createHousehold(household: InsertHousehold): Promise<Household>;
   getHouseholdsByVillage(villageId: string): Promise<Household[]>;
   getHouseholdByUid(uid: string): Promise<Household | undefined>;
   updateHousehold(id: number, updates: Partial<Household>): Promise<Household>;
+  getWardsByVillage(villageId: string): Promise<string[]>;
   markQRCodesPrinted(householdIds: number[]): Promise<void>;
 
   // Collector operations
@@ -223,6 +225,15 @@ export class DatabaseStorage implements IStorage {
     return village || undefined;
   }
 
+  async updateVillage(villageId: string, updates: Partial<Village>): Promise<Village> {
+    const [village] = await db
+      .update(villages)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(villages.villageId, villageId))
+      .returning();
+    return village;
+  }
+
   async updateVillagePaymentSettings(villageId: string, paymentsEnabled: boolean): Promise<Village> {
     const [village] = await db
       .update(villages)
@@ -251,6 +262,27 @@ export class DatabaseStorage implements IStorage {
   async getHouseholdByUid(uid: string): Promise<Household | undefined> {
     const [household] = await db.select().from(households).where(eq(households.uid, uid));
     return household || undefined;
+  }
+
+  async updateHousehold(id: number, updates: Partial<Household>): Promise<Household> {
+    const [household] = await db
+      .update(households)
+      .set({ ...updates })
+      .where(eq(households.id, id))
+      .returning();
+    return household;
+  }
+
+  async getWardsByVillage(villageId: string): Promise<string[]> {
+    const result = await db
+      .selectDistinct({ ward: households.ward })
+      .from(households)
+      .where(eq(households.villageId, villageId));
+    
+    return result
+      .map(row => row.ward)
+      .filter(ward => ward && ward.trim() !== '')
+      .sort();
   }
 
   async createCollector(insertCollector: InsertCollector): Promise<Collector> {
@@ -829,13 +861,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Enhanced household operations
-  async updateHousehold(id: number, updates: Partial<Household>): Promise<Household> {
-    const [household] = await db.update(households)
-      .set(updates)
-      .where(eq(households.id, id))
-      .returning();
-    return household;
-  }
+
 
   async markQRCodesPrinted(householdIds: number[]): Promise<void> {
     await db.update(households)

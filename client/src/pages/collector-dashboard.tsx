@@ -17,6 +17,8 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import { QRScanner } from "@/components/qr-scanner";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import { useOfflineStorage } from "@/lib/offline-storage";
+import { DashboardTour } from "@/components/tours/DashboardTour";
+import { TourButton } from "@/components/tours/TourButton";
 import { 
   Home,
   QrCode, 
@@ -167,9 +169,35 @@ export default function CollectorDashboard() {
     refetchInterval: 60000, // Refetch every minute
   });
 
+  // Fetch current village data to get image upload requirements
+  const { data: villageData } = useQuery({
+    queryKey: ["/api/villages", user?.villageId, "details"],
+    queryFn: async () => {
+      if (!user?.villageId) return null;
+      const response = await apiRequest("GET", `/api/villages/${user.villageId}`);
+      return response.json();
+    },
+    enabled: !!user?.villageId,
+  });
+
   const households = householdsQuery.data;
   const collections = collectionsQuery.data;
   const householdsLoading = householdsQuery.isLoading;
+
+  // Helper function to determine if photo is required
+  const isPhotoRequired = React.useMemo(() => {
+    const village = villageData;
+    if (!village) return true; // Default to required if village data not loaded
+
+    // If village requires images for all collections
+    if (village.imageUploadRequired) {
+      return true;
+    }
+
+    // If village doesn't require images, only require for ratings <= 3
+    const hasLowRating = collectionForm.segregationRating <= 3 && collectionForm.segregationRating > 0;
+    return hasLowRating;
+  }, [villageData, collectionForm.segregationRating]);
 
   // Filter collections for today first - include refreshTrigger to force recalculation
   const collectionsToday = React.useMemo(() => {
@@ -744,6 +772,12 @@ export default function CollectorDashboard() {
 
   return (
     <div className="min-h-screen bg-gray-50 max-w-md mx-auto relative">
+      {/* Dashboard Tour Component */}
+      <DashboardTour 
+        userRole="collector" 
+        shouldShowWelcome={user?.isFirstLogin}
+      />
+      
       {/* Mobile Header */}
       <div className="bg-green-600 text-white p-3 sticky top-0 z-10 ">
         <div className="flex items-center justify-between">
@@ -754,6 +788,7 @@ export default function CollectorDashboard() {
             </div>
           </div>
           <div className="flex items-center space-x-2">
+            <TourButton className="text-black hover:bg-white bg-white" />
             <LanguageSwitcher />
           </div>
         </div>
@@ -766,7 +801,7 @@ export default function CollectorDashboard() {
         {activeTab === 'home' && (
           <div className="space-y-3 p-4">
             {/* Stats Cards - Compact */}
-            <div className="grid grid-cols-2 gap-3" key={`stats-${collectionsToday.length}`}>
+            <div className="collector-daily-stats grid grid-cols-2 gap-3" key={`stats-${collectionsToday.length}`}>
               <div className="bg-green-50 p-3 rounded-lg border">
                 <div className="text-xl font-bold text-green-600">{collectionsToday.length}</div>
                 <div className="text-xs text-green-700">{t('collections.todayCollections')}</div>
@@ -840,7 +875,7 @@ export default function CollectorDashboard() {
             </div>
 
             {/* Household List */}
-            <div key={`household-list-${refreshTrigger}-${collectionsToday.length}`}>
+            <div className="collector-recent-collections" key={`household-list-${refreshTrigger}-${collectionsToday.length}`}>
               <h3 className="text-base font-semibold mb-2">
                 {searchQuery ? `Search Results (${filteredHouseholds.length})` : 'All Households'}
               </h3>
@@ -918,7 +953,9 @@ export default function CollectorDashboard() {
 
             {/* Recent Collections */}
             <div className="space-y-2">
-              <h3 className="font-semibold">Recent Collections</h3>
+              <div className="collector-recent-collections">
+                <h3 className="font-semibold">Recent Collections</h3>
+              </div>
               {collections?.slice(0, 5).map((collection: any) => (
                 <div key={collection.id} className="flex items-center justify-between p-3 border rounded-lg bg-white">
                   <div>
@@ -1411,44 +1448,6 @@ export default function CollectorDashboard() {
               </div>
             </div> */}
 
-            {/* Photo Upload - REQUIRED */}
-            <div className="p-4 border-2 border-blue-200 bg-blue-50 rounded-xl">
-              <Label className="text-lg font-bold text-center block mb-3">
-                📸 Take Photo of Waste *
-              </Label>
-              <div className="relative">
-                <input
-                  type="file"
-                  accept="image/*"
-                  capture="environment"
-                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                  onChange={(e) => {
-                    const file = e.target.files?.[0] || null;
-                    setCollectionForm({ ...collectionForm, photoFile: file });
-                  }}
-                />
-                <div className={`border-4 border-dashed rounded-xl p-6 text-center transition-all ${
-                  collectionForm.photoFile 
-                    ? 'border-green-400 bg-green-50' 
-                    : 'border-blue-300 bg-white hover:bg-blue-50'
-                }`}>
-                  {collectionForm.photoFile ? (
-                    <>
-                      <div className="text-4xl mb-2">✅</div>
-                      <p className="text-lg font-bold text-green-700">Photo Taken!</p>
-                      <p className="text-sm text-gray-600">{collectionForm.photoFile.name}</p>
-                    </>
-                  ) : (
-                    <>
-                      <div className="text-4xl mb-2">📸</div>
-                      <p className="text-lg font-bold text-blue-700">Tap to Take Photo</p>
-                      <p className="text-sm text-gray-600">Required for collection</p>
-                    </>
-                  )}
-                </div>
-              </div>
-            </div>
-
             {/* Waste Accepted? */}
             <div>
               <Label className="text-sm font-medium">{t('collections.wasteCollectionStatus')}</Label>
@@ -1491,6 +1490,60 @@ export default function CollectorDashboard() {
                 </Select>
               </div>
             )}
+
+            {/* Photo Upload - Conditional Requirement */}
+            <div className={`p-4 border-2 rounded-xl ${
+              isPhotoRequired 
+                ? 'border-red-200 bg-red-50' 
+                : 'border-blue-200 bg-blue-50'
+            }`}>
+              <Label className="text-lg font-bold text-center block mb-3">
+                📸 Take Photo of Waste {isPhotoRequired ? '*' : '(Optional)'}
+              </Label>
+              {isPhotoRequired && collectionForm.segregationRating <= 3 && collectionForm.segregationRating > 0 && (
+                <p className="text-sm text-red-600 text-center mb-3">
+                  📋 Photo required for low rating (≤ 3 stars)
+                </p>
+              )}
+              <div className="relative">
+                <input
+                  type="file"
+                  accept="image/*"
+                  capture="environment"
+                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0] || null;
+                    setCollectionForm({ ...collectionForm, photoFile: file });
+                  }}
+                />
+                <div className={`border-4 border-dashed rounded-xl p-6 text-center transition-all ${
+                  collectionForm.photoFile 
+                    ? 'border-green-400 bg-green-50' 
+                    : isPhotoRequired
+                    ? 'border-red-300 bg-white hover:bg-red-50'
+                    : 'border-blue-300 bg-white hover:bg-blue-50'
+                }`}>
+                  {collectionForm.photoFile ? (
+                    <>
+                      <div className="text-4xl mb-2">✅</div>
+                      <p className="text-lg font-bold text-green-700">Photo Taken!</p>
+                      <p className="text-sm text-gray-600">{collectionForm.photoFile.name}</p>
+                    </>
+                  ) : (
+                    <>
+                      <div className="text-4xl mb-2">📸</div>
+                      <p className={`text-lg font-bold ${
+                        isPhotoRequired ? 'text-red-700' : 'text-blue-700'
+                      }`}>Tap to Take Photo</p>
+                      <p className="text-sm text-gray-600">
+                        {isPhotoRequired ? 'Required for collection' : 'Optional - tap if needed'}
+                      </p>
+                    </>
+                  )}
+                </div>
+              </div>
+            </div>
+
 
             {/* Voice Recording or Text Comments */}
             <div className="p-3 border border-gray-200 bg-gray-50 rounded-xl">
@@ -1535,10 +1588,10 @@ export default function CollectorDashboard() {
             {/* Submit Button */}
             <Button
               className={`w-full py-6 text-xl font-bold ${
-                // Check if required fields are filled
+                // Check if required fields are filled (including conditional photo requirement)
                 collectionForm.wasteSegregated !== null && 
                 collectionForm.segregationRating > 0 && 
-                collectionForm.photoFile && 
+                (isPhotoRequired ? collectionForm.photoFile : true) && 
                 collectionForm.wasteAccepted !== null &&
                 (collectionForm.wasteAccepted || collectionForm.notCollectedReason)
                   ? isOnline 
@@ -1551,7 +1604,7 @@ export default function CollectorDashboard() {
                 createCollectionMutation.isPending || 
                 collectionForm.wasteSegregated === null ||
                 collectionForm.segregationRating === 0 ||
-                !collectionForm.photoFile ||
+                (isPhotoRequired && !collectionForm.photoFile) ||
                 collectionForm.wasteAccepted === null ||
                 (collectionForm.wasteAccepted === false && !collectionForm.notCollectedReason)
               }
@@ -1955,7 +2008,7 @@ export default function CollectorDashboard() {
       <div className="fixed bottom-0 left-1/2 transform -translate-x-1/2 w-full max-w-md bg-green-100 border-t border-gray-200 z-20 rounded-lg">
         <div className="grid grid-cols-5 gap-1 p-2">
           <button
-            className={`flex flex-col items-center py-2 px-1 rounded-lg transition-colors ${
+            className={`collector-home-tab flex flex-col items-center py-2 px-1 rounded-lg transition-colors ${
               activeTab === 'home' 
                 ? 'bg-green-200 text-green-600' 
                 : 'text-gray-500 hover:text-green-600 hover:bg-gray-50'
@@ -1965,7 +2018,7 @@ export default function CollectorDashboard() {
             <Home size={24} strokeWidth={2.5}/>
           </button>
           <button
-            className={`flex flex-col items-center py-2 px-1 rounded-lg transition-colors ${
+            className={`collector-scan-tab flex flex-col items-center py-2 px-1 rounded-lg transition-colors ${
               activeTab === 'scan' 
                 ? 'bg-blue-100 text-blue-600' 
                 : 'text-gray-500 hover:text-blue-600 hover:bg-gray-50'
@@ -1978,7 +2031,7 @@ export default function CollectorDashboard() {
             <ScanLine size={24} strokeWidth={2.5}/>
           </button>
           <button
-            className={`flex flex-col items-center py-2 px-1 rounded-lg transition-colors ${
+            className={`collector-announcements-tab flex flex-col items-center py-2 px-1 rounded-lg transition-colors ${
               activeTab === 'announcements' 
                 ? 'bg-blue-100 text-blue-600' 
                 : 'text-gray-500 hover:text-blue-600 hover:bg-gray-50'
@@ -1988,7 +2041,7 @@ export default function CollectorDashboard() {
             <Bell size={24} strokeWidth={2.5}/>
           </button>
           <button
-            className={`flex flex-col items-center py-2 px-1 rounded-lg transition-colors ${
+            className={`collector-issues-tab flex flex-col items-center py-2 px-1 rounded-lg transition-colors ${
               activeTab === 'issues' 
                 ? 'bg-red-100 text-red-600' 
                 : 'text-gray-500 hover:text-red-600 hover:bg-gray-50'
@@ -1998,7 +2051,7 @@ export default function CollectorDashboard() {
             <AlertCircle size={24} strokeWidth={2.5}/>
           </button>
           <button
-            className={`flex flex-col items-center py-2 px-1 rounded-lg transition-colors ${
+            className={`collector-profile-tab flex flex-col items-center py-2 px-1 rounded-lg transition-colors ${
               activeTab === 'profile' 
                 ? 'bg-gray-100 text-gray-600' 
                 : 'text-gray-500 hover:text-gray-600 hover:bg-gray-50'

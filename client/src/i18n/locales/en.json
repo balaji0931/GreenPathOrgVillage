@@ -1,6 +1,6 @@
 {
   "app": {
-    "title": "GreenPath",
+    "title": "GreenPathORG",
     "loading": "Loading...",
     "error": "An error occurred",
     "success": "Success!",
@@ -51,7 +51,7 @@
     "observationCleanOrganized": "Clean and organized",
     "observationPoorHygiene": "Poor hygiene",
     "observationNoWaste": "No waste present",
-    "installApp": "Install GreenPath App",
+    "installApp": "Install GreenPathORG App",
     "install": "Install",
     "installing": "Installing...",
     "installDescription": "Install our app for faster access and offline features",
@@ -510,5 +510,25 @@
     "invalidDate": "Please enter a valid date",
     "fileTooBig": "File size is too large",
     "invalidFileType": "Invalid file type"
+  },
+  "tour": {
+    "welcome": {
+      "title": "Welcome to Your Dashboard!",
+      "message": "Would you like a quick tour of this dashboard? We'll show you the key features to get you started.",
+      "startTour": "Start Tour",
+      "skip": "Skip Tour"
+    },
+    "navigation": {
+      "skip": "Skip",
+      "back": "Back",
+      "next": "Next",
+      "done": "Done"
+    },
+    "common": {
+      "clickNext": "Click 'Next' to continue the tour.",
+      "clickDone": "Click 'Done' to finish the tour.",
+      "tourCompleted": "Tour completed! You can restart it anytime using the help button.",
+      "helpButton": "Use this help button to restart the tour anytime."
+    }
   }
 }

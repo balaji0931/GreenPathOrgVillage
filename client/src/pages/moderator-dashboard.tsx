@@ -2248,7 +2248,7 @@ export default function ModeratorDashboard() {
               <CardContent>
                 <div className="space-y-2">
                   {Array.from({ length: 12 }).map((_, i) => {
-                    const hour = i + 8; // Start from 8 AM
+                    const hour = i + 6; // Start from 8 AM
                     const timelineData =
                       dailyAnalytics?.collectionTimeline || [];
                     const hourData = timelineData.find(
@@ -2624,7 +2624,7 @@ const renderAnnouncements = () => (
           <div className="flex items-center">
             <Leaf className="h-6 w-6 text-white" strokeWidth={2.5}/>
             <div>
-              <h1 className="text-2xl text-white font-bold">GreenPath</h1>
+              <h1 className="text-2xl text-white font-bold">GreenPathORG</h1>
             </div>
           </div>
           <div className="">
@@ -2644,7 +2644,7 @@ const renderAnnouncements = () => (
               <div className="flex items-center space-x-3">
                 <Leaf className="h-8 w-8 text-green-600" />
                 <div>
-                  <h1 className="text-xl font-bold">GreenPath</h1>
+                  <h1 className="text-xl font-bold">GreenPathORG</h1>
                   <p className="text-sm text-muted-foreground">Moderator Panel</p>
                 </div>
               </div>

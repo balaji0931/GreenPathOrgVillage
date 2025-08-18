@@ -437,7 +437,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get('/api/villages/:villageId', requireAuth, requireRole(['admin', 'manager', 'generator']), async (req, res) => {
+  app.get('/api/villages/:villageId', requireAuth, requireRole(['admin', 'manager', 'collector', 'generator']), async (req, res) => {
     try {
       const { villageId } = req.params;
       const village = await storage.getVillageByVillageId(villageId);
@@ -450,6 +450,52 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Get village error:", error);
       res.status(500).json({ message: "Failed to get village" });
+    }
+  });
+
+  // Get wards for a village
+  app.get('/api/villages/:villageId/wards', requireAuth, requireRole(['manager']), async (req, res) => {
+    try {
+      const { villageId } = req.params;
+      const wards = await storage.getWardsByVillage(villageId);
+      res.json(wards);
+    } catch (error) {
+      console.error("Get wards error:", error);
+      res.status(500).json({ message: "Failed to get wards" });
+    }
+  });
+
+  // Add ward for a village
+  app.post('/api/villages/:villageId/wards', requireAuth, requireRole(['manager']), async (req, res) => {
+    try {
+      const { villageId } = req.params;
+      const { ward } = req.body;
+      
+      // Create a temporary household entry to establish the ward in the system
+      // This is a workaround since we're not changing the DB schema
+      const existingWards = await storage.getWardsByVillage(villageId);
+      if (existingWards.includes(ward)) {
+        return res.status(400).json({ message: "Ward already exists" });
+      }
+      
+      // Create a placeholder household to establish the ward
+      await storage.createHousehold({
+        uid: `${villageId}-WARD-${Date.now()}`,
+        villageId,
+        headName: `Ward-Placeholder-${ward}`,
+        phone: '',
+        houseNumber: 'PLACEHOLDER',
+        ward,
+        familySize: 1,
+        address: 'Ward placeholder entry',
+        generatorUserId: '',
+        generatorPassword: '',
+      });
+      
+      res.json({ message: "Ward added successfully" });
+    } catch (error) {
+      console.error("Add ward error:", error);
+      res.status(500).json({ message: "Failed to add ward" });
     }
   });
 
@@ -1671,6 +1717,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Delete village error:", error);
       res.status(500).json({ message: "Failed to delete village" });
+    }
+  });
+
+  // Update village settings (including image upload requirement)
+  app.put('/api/villages/:villageId', requireAuth, requireRole(['admin']), async (req, res) => {
+    try {
+      const { villageId } = req.params;
+      const updates = req.body;
+
+      const village = await storage.updateVillage(villageId, updates);
+
+      res.json({ message: "Village updated successfully", village });
+    } catch (error) {
+      console.error("Update village error:", error);
+      res.status(500).json({ message: "Failed to update village" });
     }
   });
 

@@ -187,7 +187,7 @@ export default function Login() {
           <div className="bg-white rounded-lg shadow-sm border p-4">
             <div className="flex flex-col items-center gap-3">
               <div className="text-xs text-gray-500">
-                © {new Date().getFullYear()} GreenPath Org. All rights reserved.
+                © {new Date().getFullYear()} GreenPathORG. All rights reserved.
               </div>
               <div className="flex flex-wrap justify-center gap-4 text-xs">
                 <a

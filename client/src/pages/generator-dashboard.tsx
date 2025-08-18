@@ -26,6 +26,8 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
+import { DashboardTour } from "@/components/tours/DashboardTour";
+import { TourButton } from "@/components/tours/TourButton";
 import {
   Home,
   Languages,
@@ -484,6 +486,12 @@ export default function GeneratorDashboard() {
 
   return (
     <div className="min-h-screen bg-gray-50 max-w-md mx-auto relative">
+      {/* Dashboard Tour Component */}
+      <DashboardTour 
+        userRole="generator" 
+        shouldShowWelcome={user?.isFirstLogin}
+      />
+      
       {/* Mobile Header */}
       <div className="bg-green-600 text-white px-4 py-3 sticky top-0 z-10">
         <div className="flex items-center justify-between">
@@ -494,6 +502,7 @@ export default function GeneratorDashboard() {
             </div>
           </div>
           <div className="flex items-center space-x-2">
+            <TourButton className="text-black hover:bg-white/20 bg-white" />
             <LanguageSwitcher />
           </div>
         </div>
@@ -625,7 +634,7 @@ export default function GeneratorDashboard() {
             </Card>
 
             {/* Recent Activity */}
-            <Card>
+            <Card className="generator-collection-stats">
               <CardHeader className="pb-3">
                 <CardTitle className="text-lg">{t('collections.title')}</CardTitle>
               </CardHeader>
@@ -1596,18 +1605,18 @@ export default function GeneratorDashboard() {
       <div className="fixed bottom-0 left-1/2 transform -translate-x-1/2 w-full max-w-md bg-white border-t border-gray-200 px-2 py-2 rounded-lg">
           <div className="flex justify-around">
             {[
-              { id: "home", icon: Home },
-              { id: "reports", icon: BarChart3 },
-              { id: "collections", icon: FileText },
-              { id: "qr-code", icon: QrCode },
-              { id: "issues", icon: AlertTriangle },
-              ...(villageData?.paymentsEnabled ? [{ id: "payments", icon: CreditCard }] : []),
-              { id: "profile", icon: User },
+              { id: "home", icon: Home, class: "generator-home-tab" },
+              { id: "reports", icon: BarChart3, class: "generator-collection-stats" },
+              { id: "collections", icon: FileText, class: "generator-collections-tab" },
+              { id: "qr-code", icon: QrCode, class: "generator-qr-tab" },
+              { id: "issues", icon: AlertTriangle, class: "generator-issues-tab" },
+              ...(villageData?.paymentsEnabled ? [{ id: "payments", icon: CreditCard, class: "generator-payments-tab" }] : []),
+              { id: "profile", icon: User, class: "generator-profile-tab" },
             ].map((tab) => (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`flex flex-col items-center py-1 px-3 rounded-lg transition-colors ${
+              className={`${tab.class} flex flex-col items-center py-1 px-3 rounded-lg transition-colors ${
                 activeTab === tab.id
                   ? "text-green-600 bg-green-50"
                   : "text-gray-500 hover:text-gray-700"

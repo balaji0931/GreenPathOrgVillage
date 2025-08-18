@@ -5,6 +5,8 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useTranslation } from "react-i18next";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
+import { DashboardTour } from "@/components/tours/DashboardTour";
+import { TourButton } from "@/components/tours/TourButton";
 import {
   Card,
   CardContent,
@@ -107,6 +109,7 @@ interface WasteCollection {
   feedbackRating: number;
   feedbackRemarks?: string;
   photo?: string;
+  photoUrl?: string;
   voiceUrl?: string;
   createdAt: string;
   householdUid: string;
@@ -134,6 +137,13 @@ interface Issue {
   managerProofPhotoUrl?: string;
   createdAt: string;
   updatedAt?: string;
+}
+
+interface CollectorStats {
+  collectorId: number;
+  collectorName: string;
+  collectionsCompleted: number;
+  avgRating: number;
 }
 
 // Consolidated filter state
@@ -309,13 +319,27 @@ const CreateHouseholdDialog = ({ villageId }: { villageId: string }) => {
           </div>
           <div>
             <Label htmlFor="household-ward">Ward/Sub-village *</Label>
-            <Input
-              id="household-ward"
-              value={formData.ward}
-              onChange={(e) => setFormData(prev => ({ ...prev, ward: e.target.value }))}
-              placeholder="Enter ward or sub-village name"
-              required
-            />
+            <Select 
+              value={formData.ward} 
+              onValueChange={(value) => setFormData(prev => ({ ...prev, ward: value }))}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Select ward/sub-village" />
+              </SelectTrigger>
+              <SelectContent>
+                {wards.length > 0 ? (
+                  wards.map((ward: string) => (
+                    <SelectItem key={ward} value={ward}>
+                      {ward}
+                    </SelectItem>
+                  ))
+                ) : (
+                  <SelectItem value="" disabled>
+                    No wards available. Add wards in Overview tab.
+                  </SelectItem>
+                )}
+              </SelectContent>
+            </Select>
           </div>
           <div className="flex gap-2 pt-4">
             <Button type="button" variant="outline" onClick={() => setOpen(false)} className="flex-1">
@@ -386,6 +410,7 @@ export default function ManagerDashboard() {
   const [selectedQRHouseholds, setSelectedQRHouseholds] = useState<number[]>([]);
   const [selectedDownloadHouseholds, setSelectedDownloadHouseholds] = useState<number[]>([]);
   const [qrPrintFilter, setQrPrintFilter] = useState<string>("all"); // all, printed, not_printed
+  const [searchQuery, setSearchQuery] = useState("");
   const [showPrintConfirmDialog, setShowPrintConfirmDialog] = useState(false);
   const [bulkHouseholds, setBulkHouseholds] = useState([
     { headName: "", houseNumber: "", phone: "", address: "", ward: "" }
@@ -402,6 +427,8 @@ export default function ManagerDashboard() {
     familySize?: number;
   }>>([]);
   const [excelFile, setExcelFile] = useState<File | null>(null);
+  const [showWardForm, setShowWardForm] = useState(false);
+  const [newWard, setNewWard] = useState("");
 
   // Logout mutation
   const logoutMutation = useMutation({
@@ -442,7 +469,12 @@ export default function ManagerDashboard() {
     const printMatch = qrPrintFilter === "all" || 
                       (qrPrintFilter === "printed" && household.qrPrinted) ||
                       (qrPrintFilter === "not_printed" && !household.qrPrinted);
-    return wardMatch && household.qrCodeUrl && printMatch;
+    const searchMatch = searchQuery === "" || 
+      household.headName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      household.houseNumber?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      household.ward?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      household.phone?.includes(searchQuery);
+    return wardMatch && household.qrCodeUrl && printMatch && searchMatch;
   });
 
   const { data: collectorStats = [] } = useQuery<CollectorStats[]>({
@@ -467,6 +499,12 @@ export default function ManagerDashboard() {
 
   const { data: announcements = [] } = useQuery<any[]>({
     queryKey: ["/api/announcements", user?.villageId],
+    enabled: !!user?.villageId,
+  });
+
+  const { data: wards = [] } = useQuery<string[]>({
+    queryKey: ["/api/villages", user?.villageId, "wards"],
+    queryFn: () => fetch(`/api/villages/${user?.villageId}/wards`, { credentials: "include" }).then(res => res.json()),
     enabled: !!user?.villageId,
   });
 
@@ -730,6 +768,24 @@ export default function ManagerDashboard() {
     },
   });
 
+  const addWardMutation = useMutation({
+    mutationFn: (wardName: string) =>
+      apiRequest("POST", `/api/villages/${user?.villageId}/wards`, { ward: wardName }),
+    onSuccess: () => {
+      toast({ title: "Ward added successfully!" });
+      queryClient.invalidateQueries({ queryKey: ["/api/villages", user?.villageId, "wards"] });
+      setNewWard("");
+      setShowWardForm(false);
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to add ward",
+        variant: "destructive",
+      });
+    },
+  });
+
   const createBulkHouseholdsMutation = useMutation({
     mutationFn: (householdsData: any[]) =>
       apiRequest("POST", "/api/households/bulk", { households: householdsData }),
@@ -741,6 +797,7 @@ export default function ManagerDashboard() {
       });
       queryClient.invalidateQueries({ queryKey: ["/api/households"] });
       queryClient.invalidateQueries({ queryKey: ["/api/manager/stats"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/villages", user?.villageId, "wards"] });
       setBulkHouseholds([{ headName: "", houseNumber: "", phone: "", address: "", ward: "" }]);
       
       // Close Excel preview and reset state
@@ -1029,6 +1086,13 @@ export default function ManagerDashboard() {
 
   return (
     <>
+      {/* Dashboard Tour Component */}
+      <DashboardTour 
+        userRole="manager" 
+        shouldShowWelcome={user?.isFirstLogin}
+      />
+      
+      
       <div className="min-h-screen flex flex-col bg-gray-50">
         {/* Top Navbar */}
         <div className="bg-green-600 text-white px-4 py-3 sticky top-0 z-10">
@@ -1040,27 +1104,16 @@ export default function ManagerDashboard() {
             </div>
           </div>
             <div className="flex items-center space-x-1">
+              <TourButton className="text-black bg-white hover:bg-white"/>
               <LanguageSwitcher />
                 <button
-                  key={'announcements'}
-                  onClick={() => setActiveTab('announcements')}
-                  className={cn(
-                    "flex-1 flex items-center justify-center py-3 transition-colors",
-                    activeTab === 'announcements'
-                      ? "text-green-600 bg-blue-50 p-2 rounded-md"
-                      : "text-white hover:text-green-900 hover:bg-gray-50 p-2 rounded-md",
-                  )}
-                >
-                  <Bell className="h-5 w-5" strokeWidth={3}/>
-                </button>
-                                <button
                   key={'profile'}
                   onClick={() => setActiveTab('profile')}
                   className={cn(
                     "flex-1 flex items-center justify-center py-3 transition-colors",
                     activeTab === 'profile'
                       ? "text-green-600 bg-blue-50 p-2 rounded-md"
-                      : "text-white p-2 rounded-md",
+                      : "text-black p-2 bg-white rounded-md",
                   )}
                 >
                   <User className="h-5 w-5" strokeWidth={3}/>
@@ -1075,19 +1128,20 @@ export default function ManagerDashboard() {
           <div className="fixed bottom-0 left-0 right-0 bg-green-100 border-t z-50 md:hidden">
             <div className="flex">
               {[
-                { id: "overview", icon: LayoutDashboard },
-                { id: "collectors", icon: Users },
-                { id: "households", icon: Home },
-                { id: "collections", icon: Package },
-                { id: "issues", icon: AlertTriangle },
-                ...(villageData?.paymentsEnabled ? [{ id: "payments", icon: CreditCard }] : []),
-                { id: "reports", icon: BarChart3 },
-              ].map(({ id, icon: Icon }) => (
+                { id: "overview", icon: LayoutDashboard, class: "manager-overview-tab" },
+                { id: "collectors", icon: Users, class: "manager-collectors-tab" },
+                { id: "households", icon: Home, class: "manager-households-tab" },
+                { id: "collections", icon: Package, class: "manager-collections-tab" },
+                { id: "issues", icon: AlertTriangle, class: "manager-issues-tab" },
+                ...(villageData?.paymentsEnabled ? [{ id: "payments", icon: CreditCard, class: "manager-payments-tab" }] : []),
+                { id: "reports", icon: BarChart3, class: "manager-reports-tab" },
+                { id: "announcements", icon: Bell, class: "manager-announcements-tab" },
+              ].map(({ id, icon: Icon, class: className }) => (
                 <button
                   key={id}
                   onClick={() => setActiveTab(id)}
                   className={cn(
-                    "flex-1 flex items-center justify-center py-3 transition-colors",
+                    `${className} flex-1 flex items-center justify-center py-3 transition-colors`,
                     activeTab === id
                       ? "text-blue-600 bg-blue-50 rouded-lg"
                       : "text-gray-600 hover:text-gray-900 hover:bg-gray-50",
@@ -1104,21 +1158,21 @@ export default function ManagerDashboard() {
             <div className="p-4">
               <nav className="space-y-2">
                 {[
-                  { id: "overview", icon: LayoutDashboard, label: t("dashboard.overview") },
-                  { id: "collectors", icon: Users, label: t("navigation.collectors") },
-                  { id: "households", icon: Home, label: t("navigation.households") },
-                  { id: "collections", icon: Package, label: t("navigation.collections") },
-                  { id: "issues", icon: AlertTriangle, label: t("navigation.issues") },
-                  ...(villageData?.paymentsEnabled ? [{ id: "payments", icon: CreditCard, label: t("navigation.payments") }] : []),
-                  { id: "reports", icon: BarChart3, label: t("navigation.reports") },
-                  { id: "announcements", icon: Bell, label: t("navigation.announcements") },
-                  { id: "profile", icon: User, label: t("navigation.profile") },
-                ].map(({ id, icon: Icon, label }) => (
+                  { id: "overview", icon: LayoutDashboard, label: t("dashboard.overview"), class: "manager-overview-tab" },
+                  { id: "collectors", icon: Users, label: t("navigation.collectors"), class: "manager-collectors-tab" },
+                  { id: "households", icon: Home, label: t("navigation.households"), class: "manager-households-tab" },
+                  { id: "collections", icon: Package, label: t("navigation.collections"), class: "manager-collections-tab" },
+                  { id: "issues", icon: AlertTriangle, label: t("navigation.issues"), class: "manager-issues-tab" },
+                  ...(villageData?.paymentsEnabled ? [{ id: "payments", icon: CreditCard, label: t("navigation.payments"), class: "manager-payments-tab" }] : []),
+                  { id: "reports", icon: BarChart3, label: t("navigation.reports"), class: "manager-reports-tab" },
+                  { id: "announcements", icon: Bell, label: t("navigation.announcements"), class: "manager-announcements-tab" },
+                  { id: "profile", icon: User, label: t("navigation.profile"), class: "manager-profile-tab" },
+                ].map(({ id, icon: Icon, label, class: className }) => (
                   <button
                     key={id}
                     onClick={() => setActiveTab(id)}
                     className={cn(
-                      "w-full flex items-center gap-3 px-3 py-2 rounded-lg text-left transition-colors text-sm",
+                      `${className} w-full flex items-center gap-3 px-3 py-2 rounded-lg text-left transition-colors text-sm`,
                       activeTab === id
                         ? "bg-blue-100 text-blue-700"
                         : "text-gray-700 hover:bg-gray-100",
@@ -1168,6 +1222,41 @@ export default function ManagerDashboard() {
                     description={t("app.pending")}
                   />
                 </div>
+
+                {/* Ward Management */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <LayoutDashboard className="w-5 h-5 text-green-600" />
+                        Ward/Sub-Village Management
+                      </div>
+                      <Button
+                        size="sm"
+                        onClick={() => setShowWardForm(true)}
+                        className="flex items-center gap-2"
+                      >
+                        <Plus className="w-4 h-4" />
+                        Add Ward
+                      </Button>
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    {wards.length > 0 ? (
+                      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
+                        {wards.map((ward: string, index: number) => (
+                          <Badge key={index} variant="outline" className="justify-center py-2 px-3">
+                            {ward}
+                          </Badge>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-muted-foreground text-sm">
+                        No wards configured yet. Add your first ward to organize households.
+                      </p>
+                    )}
+                  </CardContent>
+                </Card>
 
                 {/* Recent Announcements */}
                 <Card>
@@ -1434,16 +1523,31 @@ export default function ManagerDashboard() {
                                   </div>
                                   <div>
                                     <Label htmlFor={`ward-${index}`}>Ward/Sub-village *</Label>
-                                    <Input
-                                      id={`ward-${index}`}
+                                    <Select
                                       value={household.ward}
-                                      onChange={(e) => {
+                                      onValueChange={(value) => {
                                         const updated = [...bulkHouseholds];
-                                        updated[index].ward = e.target.value;
+                                        updated[index].ward = value;
                                         setBulkHouseholds(updated);
                                       }}
-                                      placeholder="Enter ward name"
-                                    />
+                                    >
+                                      <SelectTrigger>
+                                        <SelectValue placeholder="Select ward/sub-village" />
+                                      </SelectTrigger>
+                                      <SelectContent>
+                                        {wards.length > 0 ? (
+                                          wards.map((ward: string) => (
+                                            <SelectItem key={ward} value={ward}>
+                                              {ward}
+                                            </SelectItem>
+                                          ))
+                                        ) : (
+                                          <SelectItem value="" disabled>
+                                            No wards available. Add wards in Overview tab.
+                                          </SelectItem>
+                                        )}
+                                      </SelectContent>
+                                    </Select>
                                   </div>
                                   <div className="flex items-end">
                                     <Button
@@ -1562,6 +1666,19 @@ export default function ManagerDashboard() {
                       </CardHeader>
                       <CardContent>
                         <div className="space-y-4">
+                          {/* Search Bar */}
+                          <div className="space-y-2">
+                            <Label htmlFor="household-search">Search Households</Label>
+                            <Input
+                              id="household-search"
+                              type="text"
+                              placeholder="Search by name, house number, phone, or ward..."
+                              value={searchQuery}
+                              onChange={(e) => setSearchQuery(e.target.value)}
+                              className="w-full"
+                            />
+                          </div>
+                          
                           {/* Filters */}
                           <div className="flex items-center gap-4">
                             <div className="flex-1">
@@ -3809,7 +3926,7 @@ export default function ManagerDashboard() {
                         <CardContent>
                           <div className="space-y-2">
                             {Array.from({ length: 12 }).map((_, i) => {
-                              const hour = i + 8; // Start from 8 AM
+                              const hour = i + 6; // Start from 8 AM
                               const targetDate = filters.date || new Date().toISOString().split('T')[0];
                               const hourCollections = allCollections.filter(c => {
                                 const collectionDate = new Date(c.collectionDate);
@@ -3879,6 +3996,7 @@ export default function ManagerDashboard() {
                           sendAnnouncementMutation.mutate({
                             message: announcementMessage,
                             targetAudience: announcementTarget,
+                            photoFile: null,
                           });
                         }
                       }}
@@ -4266,6 +4384,61 @@ export default function ManagerDashboard() {
               </Button>
             </div>
           </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Ward Form Dialog */}
+      <Dialog open={showWardForm} onOpenChange={setShowWardForm}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Add New Ward/Sub-Village</DialogTitle>
+          </DialogHeader>
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              if (!newWard.trim()) {
+                toast({ title: "Ward name is required", variant: "destructive" });
+                return;
+              }
+              if (wards.includes(newWard.trim())) {
+                toast({ title: "Ward already exists", variant: "destructive" });
+                return;
+              }
+              addWardMutation.mutate(newWard.trim());
+            }}
+            className="space-y-4"
+          >
+            <div>
+              <Label htmlFor="ward-name">Ward/Sub-Village Name *</Label>
+              <Input
+                id="ward-name"
+                value={newWard}
+                onChange={(e) => setNewWard(e.target.value)}
+                placeholder="Enter ward or sub-village name"
+                required
+              />
+            </div>
+            <div className="flex gap-2 pt-4">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  setShowWardForm(false);
+                  setNewWard("");
+                }}
+                className="flex-1"
+              >
+                Cancel
+              </Button>
+              <Button 
+                type="submit" 
+                className="flex-1"
+                disabled={addWardMutation.isPending}
+              >
+                {addWardMutation.isPending ? "Adding..." : "Add Ward"}
+              </Button>
+            </div>
+          </form>
         </DialogContent>
       </Dialog>
     </>

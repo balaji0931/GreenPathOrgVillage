@@ -34,7 +34,7 @@ export default function TermsOfService() {
             <section>
               <h2 className="text-xl font-semibold mb-3">1. Acceptance of Terms</h2>
               <p className="text-sm">
-                By accessing and using the GreenPath Waste Management System, you accept and agree to be bound by the terms and 
+                By accessing and using the GreenPathORG Waste Management System, you accept and agree to be bound by the terms and 
                 provision of this agreement. These terms apply to all users of the system including households, collectors, 
                 managers, moderators, and administrators.
               </p>
@@ -43,7 +43,7 @@ export default function TermsOfService() {
             <section>
               <h2 className="text-xl font-semibold mb-3">2. Description of Service</h2>
               <p className="text-sm">
-                GreenPath is a digital waste management platform that facilitates waste collection tracking, household management, 
+                GreenPathORG is a digital waste management platform that facilitates waste collection tracking, household management, 
                 issue reporting, and communication between various stakeholders in village waste management systems.
               </p>
             </section>

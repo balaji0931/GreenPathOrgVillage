@@ -11,6 +11,7 @@ export const villages = pgTable("villages", {
   paymentLink: text("payment_link"), // UPI payment link
   monthlyFee: decimal("monthly_fee", { precision: 10, scale: 2 }), // Monthly fee amount
   paymentsEnabled: boolean("payments_enabled").default(false), // Enable/disable payments for village
+  imageUploadRequired: boolean("image_upload_required").default(true), // Require image upload for collections
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });

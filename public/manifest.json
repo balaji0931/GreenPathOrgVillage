@@ -1,7 +1,7 @@
 
 {
-  "name": "GreenPath",
-  "short_name": "GreenPath",
+  "name": "GreenPathORG",
+  "short_name": "GreenPathORG",
   "description": "Comprehensive waste management system for villages",
   "start_url": "/login",
   "display": "standalone",
@@ -10,7 +10,7 @@
   "orientation": "portrait-primary",
   "scope": "/",
   "prefer_related_applications": false,
-  "id": "greenpath-org-pwa",
+  "id": "greenpathorg-pwa",
   "categories": ["productivity", "utilities", "environmental"],
   "lang": "en",
   "dir": "ltr",
@@ -28,14 +28,14 @@
       "sizes": "384x384",
       "type": "image/png",
       "form_factor": "narrow",
-      "label": "GreenPath mobile dashboard"
+      "label": "GreenPathORG mobile dashboard"
     },
     {
       "src": "/icons/icon-512x512.png", 
       "sizes": "512x512",
       "type": "image/png",
       "form_factor": "wide",
-      "label": "GreenPath desktop dashboard"
+      "label": "GreenPathORG desktop dashboard"
     }
   ],
   "related_applications": [

@@ -144,16 +144,16 @@ export default function PublicHome() {
   // const learningVideos = [
   //   {
   //     id: 1,
-  //     title: "Getting Started with GreenPath",
-  //     description: "Learn how to create an account, login, and navigate the GreenPath platform for the first time.",
+  //     title: "Getting Started with GreenPathORG",
+  //     description: "Learn how to create an account, login, and navigate the GreenPathORG platform for the first time.",
   //     youtubeId: "dQw4w9WgXcQ", // Replace with actual YouTube video ID
   //     category: "Application Usage",
   //     duration: "5:30"
   //   },
   //   {
   //     id: 2,
-  //     title: "Installing GreenPath Mobile App",
-  //     description: "Step-by-step guide to install the GreenPath mobile application on your smartphone and set up notifications.",
+  //     title: "Installing GreenPathORG Mobile App",
+  //     description: "Step-by-step guide to install the GreenPathORG mobile application on your smartphone and set up notifications.",
   //     youtubeId: "dQw4w9WgXcQ", // Replace with actual YouTube video ID
   //     category: "Installation",
   //     duration: "3:45"
@@ -335,7 +335,7 @@ export default function PublicHome() {
 
           <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold text-white mb-4 sm:mb-6 leading-tight">
             <span className="bg-gradient-to-r from-white to-green-100 bg-clip-text text-transparent">
-              GreenPath
+              GreenPathORG
             </span>
           </h1>
 
@@ -350,7 +350,7 @@ export default function PublicHome() {
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center px-4">
             <Button 
-              onClick={() => window.location.href = "/login"}
+              onClick={() => setActiveSection("contact")}
               size="lg"
               className="w-full sm:w-auto bg-white text-green-600 hover:bg-green-50 font-semibold px-6 sm:px-8 py-3 sm:py-4 text-base sm:text-lg rounded-full shadow-2xl transform hover:scale-105 transition-all duration-300"
             >
@@ -663,7 +663,7 @@ export default function PublicHome() {
             Ready to Transform Your Community?
           </h2>
           <p className="text-lg sm:text-xl text-green-100 mb-8 px-4">
-            Join thousands of villages, organizations, societies, and residential complexes for smarter waste management using GreenPath
+            Join thousands of villages, organizations, societies, and residential complexes for smarter waste management using GreenPathORG
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center px-4">
             <Button 
@@ -710,7 +710,7 @@ export default function PublicHome() {
 
           <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold text-white mb-4 sm:mb-6 leading-tight">
             <span className="bg-gradient-to-r from-white to-purple-100 bg-clip-text text-transparent">
-              About GreenPath
+              About GreenPathORG
             </span>
           </h1>
 
@@ -720,18 +720,18 @@ export default function PublicHome() {
 
           <p className="text-base sm:text-lg text-white/90 max-w-4xl mx-auto mb-8 sm:mb-12 leading-relaxed px-4">
             Learn about our platform, our passionate founders, and the amazing community 
-            that makes GreenPath a reality for villages across the nation.
+            that makes GreenPathORG a reality for villages across the nation.
           </p>
         </div>
       </div>
 
-      {/* What GreenPath Is - Enhanced */}
+      {/* What GreenPathORG Is - Enhanced */}
       <div className="py-12 sm:py-20 px-4 sm:px-6 bg-gradient-to-r from-slate-50 to-blue-50">
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-12 sm:mb-16">
             <div className="inline-flex items-center gap-3 bg-white/80 backdrop-blur-sm px-4 sm:px-6 py-3 rounded-full shadow-lg mb-6">
               <Recycle className="w-6 sm:w-8 h-6 sm:h-8 text-green-600" />
-              <span className="text-xl sm:text-2xl font-bold text-gray-800">What is GreenPath?</span>
+              <span className="text-xl sm:text-2xl font-bold text-gray-800">What is GreenPathORG?</span>
             </div>
           </div>
 
@@ -744,7 +744,7 @@ export default function PublicHome() {
                     <span className="bg-gradient-to-r from-green-600 to-blue-600 bg-clip-text text-transparent"> Community Waste Management</span>
                   </h3>
                   <p className="text-base sm:text-lg md:text-xl text-gray-700 leading-relaxed">
-                    GreenPath is a cutting-edge waste management platform built for diverse communities including villages, 
+                    GreenPathORG is a cutting-edge waste management platform built for diverse communities including villages, 
                     organizations, residential societies, apartment complexes, and corporate offices. We transform traditional 
                     waste collection into a smart, digital process that benefits everyone involved.
                   </p>
@@ -824,7 +824,7 @@ export default function PublicHome() {
                 <CardTitle className="text-2xl sm:text-3xl font-bold text-gray-800 mb-2">
                   Balaji Nayak
                 </CardTitle>
-                <p className="text-base sm:text-lg font-medium text-purple-600">Co-Founder & Chief Executive Officer</p>
+                <p className="text-base sm:text-lg font-medium text-purple-600">Co-Founder & Chief Executive</p>
               </CardHeader>
               <CardContent className="px-4 sm:px-6">
                 <p className="text-gray-700 text-base sm:text-lg leading-relaxed mb-6">
@@ -860,7 +860,7 @@ export default function PublicHome() {
               </CardHeader>
               <CardContent className="px-4 sm:px-6">
                 <p className="text-gray-700 text-base sm:text-lg leading-relaxed mb-6">
-                  Leads partnerships, fundraising, and external relations to drive GreenPath’s mission forward through strong collaborations and impact-focused growth.
+                  Leads partnerships, fundraising, and external relations to drive GreenPathORG’s mission forward through strong collaborations and impact-focused growth.
                 </p>
                 <div className="flex flex-wrap justify-center gap-2">
                   <div className="bg-pink-100 text-pink-600 px-3 sm:px-4 py-2 rounded-full text-xs sm:text-sm font-medium">
@@ -897,7 +897,7 @@ export default function PublicHome() {
                   We extend our heartfelt gratitude to 
                   <span className="font-bold text-orange-600"> Azim Premji University</span> and the 
                   <span className="font-bold text-green-600"> Hasiru Dala team</span> for their invaluable 
-                  support, guidance, and collaboration in making GreenPath a reality.
+                  support, guidance, and collaboration in making GreenPathORG a reality.
                 </p>
 
                 <p className="text-lg sm:text-xl text-gray-600 leading-relaxed text-center">
@@ -1060,12 +1060,12 @@ export default function PublicHome() {
           </h1>
 
           <p className="text-lg sm:text-xl md:text-2xl text-pink-100 mb-6 sm:mb-8 font-light max-w-4xl mx-auto">
-            💬 Help Us Improve GreenPath
+            💬 Help Us Improve GreenPathORG
           </p>
 
           <p className="text-base sm:text-lg text-white/90 max-w-4xl mx-auto mb-8 sm:mb-12 leading-relaxed px-4">
             Your voice matters! Share suggestions, report bugs, or provide general feedback 
-            to help us make GreenPath even better for communities everywhere.
+            to help us make GreenPathORG even better for communities everywhere.
           </p>
         </div>
 
@@ -1235,7 +1235,7 @@ export default function PublicHome() {
 
           <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold text-white mb-4 sm:mb-6 leading-tight">
             <span className="bg-gradient-to-r from-white to-yellow-100 bg-clip-text text-transparent">
-              Learn GreenPath
+              Learn GreenPathORG
             </span>
           </h1>
 
@@ -1244,7 +1244,7 @@ export default function PublicHome() {
           </p>
 
           <p className="text-base sm:text-lg text-white/90 max-w-4xl mx-auto mb-8 sm:mb-12 leading-relaxed px-4">
-            Watch our comprehensive video tutorials to learn how to use GreenPath effectively, 
+            Watch our comprehensive video tutorials to learn how to use GreenPathORG effectively, 
             master waste segregation techniques, and become a champion of sustainable living.
           </p>
         </div>
@@ -1275,7 +1275,7 @@ export default function PublicHome() {
               <span className="text-xl sm:text-2xl font-bold text-gray-800">Video Tutorials</span>
             </div>
             <p className="text-base sm:text-lg text-gray-600 max-w-3xl mx-auto">
-              Learn at your own pace with our comprehensive video library covering all aspects of GreenPath
+              Learn at your own pace with our comprehensive video library covering all aspects of GreenPathORG
             </p>
           </div>
 
@@ -1333,7 +1333,7 @@ export default function PublicHome() {
               Quick Learning Guide
             </h2>
             <p className="text-lg sm:text-xl text-gray-600 max-w-3xl mx-auto">
-              Essential topics to get you started with GreenPath
+              Essential topics to get you started with GreenPathORG
             </p>
           </div>
 
@@ -1391,7 +1391,7 @@ export default function PublicHome() {
 
         <div className="relative z-10 max-w-4xl mx-auto text-center">
           <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold mb-6 bg-gradient-to-r from-orange-300 to-yellow-300 bg-clip-text text-transparent">
-            Ready to Become a GreenPath Expert?
+            Ready to Become a GreenPathORG Expert?
           </h2>
           <p className="text-lg sm:text-xl text-orange-100 mb-8 px-4">
             Start your learning journey today and make a positive impact on your community
@@ -1447,7 +1447,7 @@ export default function PublicHome() {
           </h1>
 
           <p className="text-lg sm:text-xl md:text-2xl text-cyan-100 mb-6 sm:mb-8 font-light max-w-4xl mx-auto">
-            📞 Get in Touch with GreenPath
+            📞 Get in Touch with GreenPathORG
           </p>
 
           <p className="text-base sm:text-lg text-white/90 max-w-4xl mx-auto mb-8 sm:mb-12 leading-relaxed px-4">
@@ -1482,7 +1482,7 @@ export default function PublicHome() {
               <span className="text-xl sm:text-2xl font-bold text-gray-800">Get In Touch</span>
             </div>
             <p className="text-base sm:text-lg text-gray-600 max-w-3xl mx-auto">
-              Whether you're interested in implementing GreenPath in your village, organization, society, apartment complex, 
+              Whether you're interested in implementing GreenPathORG in your village, organization, society, apartment complex, 
               or have questions about our services, we'd love to connect with you
             </p>
           </div>
@@ -1551,7 +1551,7 @@ export default function PublicHome() {
                     <Textarea 
                       id="contact-message" 
                       name="message" 
-                      placeholder="Please describe your waste management needs, community/organization details, or any questions you have about GreenPath..."
+                      placeholder="Please describe your waste management needs, community/organization details, or any questions you have about GreenPathORG..."
                       rows={5}
                       required 
                       className="text-sm sm:text-base border-gray-200 focus:border-cyan-400 focus:ring-cyan-400 resize-none"
@@ -1640,7 +1640,7 @@ export default function PublicHome() {
                       </div>
                       <div>
                         <h4 className="font-semibold text-gray-800 text-sm sm:text-base">Community Implementation</h4>
-                        <p className="text-gray-700 text-xs sm:text-sm">Get started with GreenPath in your community or organization</p>
+                        <p className="text-gray-700 text-xs sm:text-sm">Get started with GreenPathORG in your community or organization</p>
                       </div>
                     </div>
                     <div className="flex items-start gap-3">
@@ -1686,10 +1686,10 @@ export default function PublicHome() {
               <span className="text-xl sm:text-2xl font-bold text-gray-800">Implementation Guide</span>
             </div>
             <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold mb-4 bg-gradient-to-r from-green-600 to-teal-600 bg-clip-text text-transparent">
-              Adopting GreenPath in Your Community
+              Adopting GreenPathORG in Your Community
             </h2>
             <p className="text-lg sm:text-xl text-gray-600 max-w-3xl mx-auto">
-              A step-by-step guide for villages, organizations, societies, and residential complexes wanting to adopt GreenPath
+              A step-by-step guide for villages, organizations, societies, and residential complexes wanting to adopt GreenPathORG
             </p>
           </div>
 
@@ -1703,7 +1703,7 @@ export default function PublicHome() {
               </CardHeader>
               <CardContent className="space-y-4">
                 <p className="text-base sm:text-lg text-gray-700">
-                  To successfully implement GreenPath in your community or organization, you'll need the following:
+                  To successfully implement GreenPathORG in your community or organization, you'll need the following:
                 </p>
                 <ul className="list-disc list-inside space-y-2">
                   <li className="text-sm sm:text-base text-gray-600">
@@ -1769,7 +1769,7 @@ export default function PublicHome() {
                     Online Session or on-site training(if possible ) for collectors on waste segregation and QR code scanning
                   </li>
                   <li className="text-sm sm:text-base text-gray-600">
-                    Training for managers on using the GreenPath platform
+                    Training for managers on using the GreenPathORG platform
                   </li>
                   <li className="text-sm sm:text-base text-gray-600">
                     Educational materials for households on proper waste segregation
@@ -1788,15 +1788,15 @@ export default function PublicHome() {
               <CardContent className="space-y-4">
                 <div className="space-y-2">
                   <h4 className="font-semibold text-gray-800">
-                    Q: What are the benefits of using GreenPath?
+                    Q: What are the benefits of using GreenPathORG?
                   </h4>
                   <p className="text-sm sm:text-base text-gray-600">
-                    A: GreenPath improves waste management efficiency, promotes transparency, and creates a cleaner environment.
+                    A: GreenPathORG improves waste management efficiency, promotes transparency, and creates a cleaner environment.
                   </p>
                 </div>
                 <div className="space-y-2">
                   <h4 className="font-semibold text-gray-800">
-                    Q: How much does it cost to implement GreenPath?
+                    Q: How much does it cost to implement GreenPathORG?
                   </h4>
                   <p className="text-sm sm:text-base text-gray-600">
                     A: The cost varies depending on the size of your community or organization. Contact us for a customized quote.
@@ -1807,7 +1807,7 @@ export default function PublicHome() {
                     Q: What kind of support do you provide?
                   </h4>
                   <p className="text-sm sm:text-base text-gray-600">
-                    A: We offer training, technical support, and ongoing monitoring to ensure the success of GreenPath in your community or organization.
+                    A: We offer training, technical support, and ongoing monitoring to ensure the success of GreenPathORG in your community or organization.
                   </p>
                 </div>
               </CardContent>
@@ -1833,7 +1833,7 @@ export default function PublicHome() {
               </div>
               <div>
                 <span className="text-lg sm:text-2xl font-bold bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent">
-                  GreenPath
+                  GreenPathORG
                 </span>
                 <div className="hidden sm:block text-xs text-gray-500 font-medium">Smart Waste Management</div>
               </div>
@@ -1924,13 +1924,13 @@ export default function PublicHome() {
               <div className="bg-green-600 p-2 rounded-lg">
                 <Leaf className="w-6 h-6 text-white" />
               </div>
-              <span className="text-xl font-bold">GreenPath</span>
+              <span className="text-xl font-bold">GreenPathORG</span>
             </div>
             <p className="text-gray-400 mb-4">
               Empowering Clean Villages through Smart Waste Management
             </p>
             <p className="text-sm text-gray-500">
-              © 2025 GreenPath. All rights reserved.
+              © 2025 GreenPathORG. All rights reserved.
             </p>
           </div>
         </div>
