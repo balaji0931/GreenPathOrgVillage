@@ -496,7 +496,7 @@ export default function GeneratorDashboard() {
       <div className="bg-green-600 text-white px-4 py-3 sticky top-0 z-10">
         <div className="flex items-center justify-between">
           <div className="flex items-center">
-            <Leaf className="" size={24} strokeWidth={2.5}/>
+            <Leaf className="" size={28} strokeWidth={2.5}/>
             <div>
               <h1 className="font-bold text-2xl">{t('app.title')}</h1>
             </div>
