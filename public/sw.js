@@ -58,6 +58,9 @@ const API_CACHE_PATTERNS = [
 // Initialize IndexedDB for offline storage
 let offlineDB = null;
 
+// Sync operation lock to prevent concurrent syncs
+let isSyncInProgress = false;
+
 function initOfflineDB() {
   return new Promise((resolve, reject) => {
     const request = indexedDB.open(OFFLINE_DB_NAME, OFFLINE_DB_VERSION);
@@ -535,6 +538,14 @@ self.addEventListener("sync", (event) => {
 
 // Sync offline collections when back online
 async function syncOfflineCollections() {
+  // Check if sync is already in progress
+  if (isSyncInProgress) {
+    console.log("[Service Worker] Sync already in progress, skipping...");
+    return { success: false, error: 'Sync already in progress' };
+  }
+
+  // Set sync lock
+  isSyncInProgress = true;
   console.log("[Service Worker] Starting offline collections sync...");
 
   try {
@@ -602,6 +613,19 @@ async function syncOfflineCollections() {
               data: { collectionId: collection.id, success: true }
             });
           });
+        } else if (response.status === 409) {
+          // Duplicate collection - remove from offline storage
+          await removeOfflineCollection(collection.id);
+          console.log(`[Service Worker] Duplicate collection detected, removed from offline storage: ${collection.id}`);
+          
+          // Notify clients about duplicate removal
+          const clients = await self.clients.matchAll();
+          clients.forEach(client => {
+            client.postMessage({
+              type: 'COLLECTION_SYNCED',
+              data: { collectionId: collection.id, success: true, duplicate: true }
+            });
+          });
         } else {
           console.error(`[Service Worker] Failed to sync collection: ${collection.id}`, response.status);
         }
@@ -612,8 +636,14 @@ async function syncOfflineCollections() {
     }
 
     console.log("[Service Worker] Offline collections sync completed");
+    return { success: true };
   } catch (error) {
     console.error("[Service Worker] Background sync failed:", error);
+    return { success: false, error: error.message };
+  } finally {
+    // Always release the sync lock
+    isSyncInProgress = false;
+    console.log("[Service Worker] Sync lock released");
   }
 }
 
@@ -677,8 +707,8 @@ self.addEventListener('message', async (event) => {
 
     case 'FORCE_SYNC':
       try {
-        await syncOfflineCollections();
-        event.ports[0].postMessage({ success: true });
+        const result = await syncOfflineCollections();
+        event.ports[0].postMessage(result);
       } catch (error) {
         event.ports[0].postMessage({ success: false, error: error.message });
       }

@@ -16,7 +16,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { QRScanner } from "@/components/qr-scanner";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
-import { useOfflineStorage } from "@/lib/offline-storage";
+import { useOfflineStorage, offlineStorage } from "@/lib/offline-storage";
 import { DashboardTour } from "@/components/tours/DashboardTour";
 import { TourButton } from "@/components/tours/TourButton";
 import { 
@@ -97,7 +97,7 @@ export default function CollectorDashboard() {
   const { user, logout } = useAuth();
   const { toast } = useToast();
   const { t } = useTranslation();
-  const { isOnline, pendingCount, storeCollectionOffline, storeFileOffline, syncPendingData } = useOfflineStorage();
+  const { isOnline, pendingCount, isSyncing, storeCollectionOffline, storeFileOffline, syncPendingData } = useOfflineStorage();
   
   const [showScanner, setShowScanner] = useState(false);
   const [showCollectionModal, setShowCollectionModal] = useState(false);
@@ -242,7 +242,7 @@ export default function CollectorDashboard() {
       resetForm();
       
       // Invalidate all related queries
-      await queryClient.invalidateQueries({ queryKey: ["/api/waste-collections/collector"] });
+      await queryClient.invalidateQueries({ queryKey: ["/api/waste-collections"] });
       await queryClient.invalidateQueries({ queryKey: ["/api/households"] });
       
       // Refetch data to ensure UI updates immediately
@@ -255,11 +255,20 @@ export default function CollectorDashboard() {
       setRefreshTrigger(prev => prev + 1);
     },
     onError: (error: any) => {
-      toast({
-        title: "Error", 
-        description: error.message || "Failed to record collection",
-        variant: "destructive",
-      });
+      // Handle duplicate collection error specifically
+      if (error.status === 409) {
+        toast({
+          title: "Already Collected",
+          description: "Collection already recorded for this household today.",
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Error", 
+          description: error.message || "Failed to record collection",
+          variant: "destructive",
+        });
+      }
     },
   });
 
@@ -520,8 +529,66 @@ export default function CollectorDashboard() {
     }
   };
 
+  // Check if collection already exists for this household today (online + offline)
+  const checkDuplicateCollection = async (householdUid: string) => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    
+    // Check online collections
+    if (collections) {
+      const hasOnlineDuplicate = collections.some((collection: any) => {
+        if (!collection.household || collection.household.uid !== householdUid) return false;
+        
+        const collectionDate = new Date(collection.collectionDate);
+        return collectionDate >= today && collectionDate < tomorrow;
+      });
+      
+      if (hasOnlineDuplicate) return true;
+    }
+    
+    // Check pending offline collections
+    try {
+      const pendingResult = await offlineStorage.getPendingCollections();
+      if (pendingResult.success && pendingResult.data) {
+        const hasOfflineDuplicate = pendingResult.data.some((collection: any) => {
+          if (collection.householdUid !== householdUid) return false;
+          
+          const collectionDate = new Date(collection.collectionDate);
+          return collectionDate >= today && collectionDate < tomorrow;
+        });
+        
+        if (hasOfflineDuplicate) return true;
+      }
+    } catch (error) {
+      console.error('Error checking offline collections:', error);
+    }
+    
+    return false;
+  };
+
   const handleSubmitCollection = async () => {
     if (!scannedHousehold) return;
+    
+    // Prevent double submissions
+    if (isSubmitLocked || createCollectionMutation.isPending) {
+      return;
+    }
+
+    // Check for duplicate collection (both online and offline)
+    if (await checkDuplicateCollection(scannedHousehold.uid)) {
+      toast({
+        title: "Already Collected",
+        description: "Collection already recorded for this household today.",
+        variant: "destructive",
+      });
+      setIsSubmitLocked(false); // Unlock since we're not proceeding
+      return;
+    }
+    
+    // Lock submissions
+    setIsSubmitLocked(true);
 
     try {
       const collectionData = {
@@ -846,6 +913,7 @@ export default function CollectorDashboard() {
                   </div>
                   <Button
                     size="sm"
+                    disabled={isSyncing}
                     onClick={async () => {
                       const result = await syncPendingData();
                       if (result.success) {
@@ -853,11 +921,17 @@ export default function CollectorDashboard() {
                           title: "Sync Complete",
                           description: "All offline data has been synced.",
                         });
+                      } else if (result.error === 'Sync already in progress') {
+                        toast({
+                          title: "Sync in Progress",
+                          description: "Please wait, sync is already running.",
+                          variant: "default",
+                        });
                       }
                     }}
                     className="bg-blue-600 hover:bg-blue-700 text-xs"
                   >
-                    Sync Now
+                    {isSyncing ? "Syncing..." : "Sync Now"}
                   </Button>
                 </div>
               </div>

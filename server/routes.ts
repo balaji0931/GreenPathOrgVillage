@@ -10,12 +10,40 @@ import { z } from "zod";
 import path from "path";
 import { readFileSync } from "fs";
 
-// Configure multer for file uploads
+// Configure multer for file uploads with enhanced security
 const upload = multer({
   dest: 'uploads/',
   limits: {
     fileSize: 5 * 1024 * 1024, // 5MB limit
+    files: 1, // Only one file per request
+    fieldSize: 1024 * 1024, // 1MB field size limit
   },
+  fileFilter: (req, file, cb) => {
+    // Allowed MIME types for different upload types
+    const allowedMimeTypes = {
+      photo: ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'],
+      voice: ['audio/mpeg', 'audio/wav', 'audio/mp3', 'audio/webm', 'audio/ogg'],
+      document: ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'] // For manager proof photos
+    };
+
+    // Determine upload type from route
+    const uploadType = req.route?.path?.includes('photo') ? 'photo' :
+                      req.route?.path?.includes('voice') ? 'voice' : 'document';
+    
+    const allowed = allowedMimeTypes[uploadType] || allowedMimeTypes.photo;
+    
+    if (!allowed.includes(file.mimetype)) {
+      return cb(new Error(`Invalid file type. Allowed types: ${allowed.join(', ')}`));
+    }
+
+    // Additional filename validation
+    const allowedExtensions = /\.(jpg|jpeg|png|webp|mp3|wav|ogg|webm)$/i;
+    if (!allowedExtensions.test(file.originalname)) {
+      return cb(new Error('Invalid file extension'));
+    }
+
+    cb(null, true);
+  }
 });
 
 // Extend express session
@@ -42,10 +70,70 @@ const requireRole = (roles: string[]) => (req: any, res: any, next: any) => {
   next();
 };
 
+// Cross-village authorization middleware
+const requireVillageAccess = (req: any, res: any, next: any) => {
+  const requestedVillageId = req.params.villageId || req.body.villageId || req.query.villageId;
+  const userVillageId = req.session?.villageId;
+  const userRole = req.session?.role;
+
+  // Admins can access all villages
+  if (userRole === 'admin') {
+    return next();
+  }
+
+  // Moderators can access their assigned villages (check will be done in storage layer)
+  if (userRole === 'moderator') {
+    return next();
+  }
+
+  // Other roles must match village
+  if (requestedVillageId && userVillageId && requestedVillageId !== userVillageId) {
+    return res.status(403).json({ message: "Access denied: Village mismatch" });
+  }
+
+  next();
+};
+
+// Input validation and sanitization middleware
+const validateInput = (req: any, res: any, next: any) => {
+  // Sanitize string inputs
+  const sanitizeString = (str: string) => {
+    if (typeof str !== 'string') return str;
+    return str.trim().replace(/[<>'"]/g, ''); // Basic XSS prevention
+  };
+
+  // Recursively sanitize object
+  const sanitizeObject = (obj: any): any => {
+    if (typeof obj === 'string') {
+      return sanitizeString(obj);
+    } else if (Array.isArray(obj)) {
+      return obj.map(sanitizeObject);
+    } else if (obj && typeof obj === 'object') {
+      const sanitized: any = {};
+      for (const key in obj) {
+        sanitized[key] = sanitizeObject(obj[key]);
+      }
+      return sanitized;
+    }
+    return obj;
+  };
+
+  if (req.body && typeof req.body === 'object') {
+    req.body = sanitizeObject(req.body);
+  }
+
+  next();
+};
+
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Validate required environment variables
+  if (!process.env.SESSION_SECRET) {
+    throw new Error('SESSION_SECRET environment variable is required for production');
+  }
+
   // Production-ready session configuration
   const sessionConfig = {
-    secret: process.env.SESSION_SECRET || 'your-secret-key',
+    secret: process.env.SESSION_SECRET,
     resave: false,
     saveUninitialized: false,
     name: 'greenpath.sid',
@@ -92,21 +180,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.use(session(sessionConfig));
 
+  // Apply input validation middleware to all routes except static assets
+  app.use('/api', validateInput);
+
   // Public API routes (no authentication required)
-  // Website feedback submission
+  // Website feedback submission with enhanced validation
   app.post('/api/website-feedback', async (req, res) => {
     try {
       const { name, email, feedbackType, message } = req.body;
 
+      // Enhanced validation
       if (!name || !email || !feedbackType || !message) {
         return res.status(400).json({ message: 'All fields are required' });
       }
 
+      // Email validation
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(email)) {
+        return res.status(400).json({ message: 'Invalid email format' });
+      }
+
+      // Length validation
+      if (name.length < 2 || name.length > 100) {
+        return res.status(400).json({ message: 'Name must be between 2 and 100 characters' });
+      }
+
+      if (message.length < 10 || message.length > 5000) {
+        return res.status(400).json({ message: 'Message must be between 10 and 5000 characters' });
+      }
+
       const feedback = await storage.createWebsiteFeedback({
-        name,
-        email,
+        name: name.trim(),
+        email: email.toLowerCase().trim(),
         feedbackType,
-        message,
+        message: message.trim(),
       });
 
       res.status(201).json({ 
@@ -119,7 +226,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Contact form submission
+  // Contact form submission with enhanced validation
   app.post('/api/contact', async (req, res) => {
     try {
       const { name, email, phone, subject, message } = req.body;
@@ -128,12 +235,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: 'Name, email, subject, and message are required' });
       }
 
+      // Email validation
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(email)) {
+        return res.status(400).json({ message: 'Invalid email format' });
+      }
+
+      // Phone validation (if provided)
+      if (phone && phone.trim() !== '') {
+        const phoneRegex = /^[\+]?[1-9][\d]{0,15}$/;
+        if (!phoneRegex.test(phone.replace(/\D/g, ''))) {
+          return res.status(400).json({ message: 'Invalid phone number format' });
+        }
+      }
+
+      // Length validation
+      if (name.length < 2 || name.length > 100) {
+        return res.status(400).json({ message: 'Name must be between 2 and 100 characters' });
+      }
+
+      if (subject.length < 3 || subject.length > 200) {
+        return res.status(400).json({ message: 'Subject must be between 3 and 200 characters' });
+      }
+
+      if (message.length < 10 || message.length > 5000) {
+        return res.status(400).json({ message: 'Message must be between 10 and 5000 characters' });
+      }
+
       const contact = await storage.createContactSubmission({
-        name,
-        email,
-        phone: phone || null,
-        subject,
-        message,
+        name: name.trim(),
+        email: email.toLowerCase().trim(),
+        phone: phone ? phone.trim() : null,
+        subject: subject.trim(),
+        message: message.trim(),
       });
 
       res.status(201).json({ 
@@ -437,7 +571,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get('/api/villages/:villageId', requireAuth, requireRole(['admin', 'manager', 'collector', 'generator']), async (req, res) => {
+  app.get('/api/villages/:villageId', requireAuth, requireRole(['admin', 'manager', 'collector', 'generator']), requireVillageAccess, async (req, res) => {
     try {
       const { villageId } = req.params;
       const village = await storage.getVillageByVillageId(villageId);
@@ -454,7 +588,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Get wards for a village
-  app.get('/api/villages/:villageId/wards', requireAuth, requireRole(['manager']), async (req, res) => {
+  app.get('/api/villages/:villageId/wards', requireAuth, requireRole(['manager']), requireVillageAccess, async (req, res) => {
     try {
       const { villageId } = req.params;
       const wards = await storage.getWardsByVillage(villageId);
@@ -500,7 +634,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Household routes
-  app.post('/api/households', requireAuth, requireRole(['manager']), async (req, res) => {
+  app.post('/api/households', requireAuth, requireRole(['manager']), requireVillageAccess, async (req, res) => {
     try {
       const { headName, phone, houseNumber, familySize, address, ward } = req.body;
       const villageId = req.session.villageId!;
@@ -580,7 +714,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get('/api/households', requireAuth, requireRole(['manager', 'collector']), async (req, res) => {
+  app.get('/api/households', requireAuth, requireRole(['manager', 'collector']), requireVillageAccess, async (req, res) => {
     try {
       const villageId = req.session.villageId!;
       const households = await storage.getHouseholdsByVillage(villageId);
@@ -592,7 +726,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Get single household by UID (for QR scanning)
-  app.get('/api/households/:uid', requireAuth, requireRole(['manager', 'collector']), async (req, res) => {
+  app.get('/api/households/:uid', requireAuth, requireRole(['manager', 'collector']), requireVillageAccess, async (req, res) => {
     try {
       const { uid } = req.params;
       const household = await storage.getHouseholdByUid(uid);
@@ -607,7 +741,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Bulk household creation with QR codes
-  app.post('/api/households/bulk', requireAuth, requireRole(['manager']), async (req, res) => {
+  app.post('/api/households/bulk', requireAuth, requireRole(['manager']), requireVillageAccess, async (req, res) => {
     try {
       const { households: householdsData } = req.body;
       const villageId = req.session.villageId!;
@@ -860,7 +994,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Waste collection routes
-  app.post('/api/waste-collections', requireAuth, requireRole(['collector']), async (req, res) => {
+  app.post('/api/waste-collections', requireAuth, requireRole(['collector']), requireVillageAccess, async (req, res) => {
     try {
       const { householdUid, segregationRating, plasticRating, observations, remarks, photoUrl, voiceUrl, status, missedReason } = req.body;
 
@@ -872,6 +1006,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const collector = await storage.getCollectorByUid(req.session.userId!);
       if (!collector) {
         return res.status(404).json({ message: "Collector not found" });
+      }
+
+      // Check for existing collection today
+      const today = new Date().toISOString().split('T')[0];
+      const existingCollection = await storage.checkExistingCollection(household.id, collector.id, today);
+      
+      if (existingCollection) {
+        return res.status(409).json({ 
+          message: "Collection already recorded for this household today",
+          existingCollection 
+        });
       }
 
       const collection = await storage.createWasteCollection({
@@ -1054,7 +1199,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Issues routes
-  app.post('/api/issues', requireAuth, requireRole(['generator','collector']), async (req, res) => {
+  app.post('/api/issues', requireAuth, requireRole(['generator','collector']), requireVillageAccess, async (req, res) => {
     try {
       const { title, description, category, photoUrl } = req.body;
       const reportedBy = req.session.userId!;
@@ -2170,7 +2315,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get('/api/villages/:villageId/details', requireAuth, requireRole(['admin']), async (req, res) => {
+  app.get('/api/villages/:villageId/details', requireAuth, requireRole(['admin']), requireVillageAccess, async (req, res) => {
     try {
       const { villageId } = req.params;
       const details = await storage.getVillageDetails(villageId);
@@ -2390,7 +2535,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Enhanced collector management routes
-  app.get('/api/collectors/stats/:villageId', requireAuth, requireRole(['manager']), async (req, res) => {
+  app.get('/api/collectors/stats/:villageId', requireAuth, requireRole(['manager']), requireVillageAccess, async (req, res) => {
     try {
       const { villageId } = req.params;
       const collectors = await storage.getCollectorsByVillage(villageId);
@@ -2449,7 +2594,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // New API routes for manager real-time management
-  app.get('/api/waste-collections/village', requireAuth, requireRole(['manager']), async (req, res) => {
+  app.get('/api/waste-collections/village', requireAuth, requireRole(['manager']), requireVillageAccess, async (req, res) => {
     try {
       const villageId = req.session.villageId!;
       const { date, householdId } = req.query;
@@ -2467,7 +2612,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.put('/api/issues/:id', requireAuth, requireRole(['manager']), async (req, res) => {
+  app.put('/api/issues/:id', requireAuth, requireRole(['manager']), requireVillageAccess, async (req, res) => {
     try {
       const { id } = req.params;
       const { status, managerReply } = req.body;

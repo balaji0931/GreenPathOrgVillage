@@ -74,26 +74,23 @@
 
 /* Floating particles animation */
 @keyframes float {
-  0%, 100% {
-    transform: translateY(0px) translateX(0px);
-    opacity: 0.3;
+  0%, 100% { 
+    transform: translateY(0px); 
   }
-  25% {
-    transform: translateY(-20px) translateX(10px);
-    opacity: 0.7;
-  }
-  50% {
-    transform: translateY(-40px) translateX(-5px);
-    opacity: 1;
-  }
-  75% {
-    transform: translateY(-20px) translateX(-10px);
-    opacity: 0.7;
+  50% { 
+    transform: translateY(-20px); 
   }
 }
 
 .animate-float {
-  animation: float linear infinite;
+  animation: float 6s ease-in-out infinite;
+}
+
+/* Mobile responsive float animation */
+@media (max-width: 640px) {
+  .animate-float {
+    animation-duration: 4s;
+  }
 }
 
 /* Gradient text animation */
@@ -114,10 +111,10 @@
 /* Pulse glow animation */
 @keyframes pulse-glow {
   0%, 100% {
-    box-shadow: 0 0 20px rgba(34, 197, 94, 0.3);
+    box-shadow: 0 0 20px rgba(34, 197, 94, 0.5);
   }
   50% {
-    box-shadow: 0 0 40px rgba(34, 197, 94, 0.6);
+    box-shadow: 0 0 40px rgba(34, 197, 94, 0.8);
   }
 }
 

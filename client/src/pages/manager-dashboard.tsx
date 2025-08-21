@@ -3246,7 +3246,6 @@ export default function ManagerDashboard() {
               <div className="space-y-6">
                 <div>
                   <h2 className="text-2xl font-bold">Reports & Analytics</h2>
-                  <p className="text-muted-foreground">Comprehensive performance insights and trends</p>
                 </div>
 
                 <Tabs defaultValue="overall" className="w-full">
@@ -3671,26 +3670,22 @@ export default function ManagerDashboard() {
                   <TabsContent value="daily" className="space-y-6">
                     {/* Date Filter for Daily Reports */}
                     <Card>
-                      <CardHeader>
+                      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 p-4">
                         <CardTitle>Select Date for Daily Report</CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        <div className="flex gap-4 items-center">
+                        <div className="flex flex-col sm:flex-row gap-4 flex-1 lg:flex-none">
                           <div className="flex-1">
-                            <Label htmlFor="daily-date">Select Date</Label>
                             <Input
                               id="daily-date"
                               type="date"
-                              value={filters.date || new Date().toISOString().split('T')[0]}
+                              value={filters.date || new Date().toISOString().split("T")[0]}
                               onChange={(e) => updateFilter("date", e.target.value)}
                             />
                           </div>
-                          <Button variant="outline" onClick={() => updateFilter("date", new Date().toISOString().split('T')[0])}>
-                            Today
-                          </Button>
                         </div>
-                      </CardContent>
+                      </div>
                     </Card>
+
+
 
                     {/* Daily KPI Cards */}
                     <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
@@ -3925,50 +3920,50 @@ export default function ManagerDashboard() {
                         </CardHeader>
                         <CardContent>
                           <div className="space-y-2">
-                            {Array.from({ length: 12 }).map((_, i) => {
-                              const hour = i + 6; // Start from 8 AM
-                              const targetDate = filters.date || new Date().toISOString().split('T')[0];
-                              const hourCollections = allCollections.filter(c => {
-                                const collectionDate = new Date(c.collectionDate);
-                                return collectionDate.toDateString() === new Date(targetDate).toDateString() &&
-                                       collectionDate.getHours() === hour;
-                              }).length;
+                            {(() => {
+                              const targetDate = filters.date || new Date().toISOString().split("T")[0];
+                              const dateObj = new Date(targetDate);
 
-                              const maxCollections = Math.max(...Array.from({ length: 12 }).map((_, j) => {
-                                const h = j + 8;
+                              const counts = Array.from({ length: 12 }, (_, i) => {
+                                const hour = i + 6;
                                 return allCollections.filter(c => {
-                                  const collectionDate = new Date(c.collectionDate);
-                                  return collectionDate.toDateString() === new Date(targetDate).toDateString() &&
-                                         collectionDate.getHours() === h;
+                                  const d = new Date(c.collectionDate);
+                                  return d.toDateString() === dateObj.toDateString() && d.getHours() === hour;
                                 }).length;
-                              }));
+                              });
 
-                              const percentage = maxCollections > 0 ? (hourCollections / maxCollections) * 100 : 0;
+                              const maxCollections = Math.max(...counts, 0);
 
-                              return (
-                                <div key={i} className="flex items-center gap-3">
-                                  <div className="w-16 text-xs text-muted-foreground">
-                                    {hour}:00
+                              return counts.map((count, i) => {
+                                const hour = i + 6;
+                                const percentage = maxCollections > 0 ? (count / maxCollections) * 100 : 0;
+
+                                return (
+                                  <div key={i} className="flex items-center gap-3">
+                                    <div className="w-16 text-xs text-muted-foreground">
+                                      {hour}:00
+                                    </div>
+                                    <div className="flex-1 bg-gray-200 rounded-full h-3 relative">
+                                      <div 
+                                        className="bg-indigo-500 h-3 rounded-full transition-all" 
+                                        style={{ width: `${percentage}%` }}
+                                      />
+                                      {count > 0 && (
+                                        <span className="absolute inset-0 flex items-center justify-center text-xs font-medium text-white">
+                                          {count}
+                                        </span>
+                                      )}
+                                    </div>
+                                    <div className="w-8 text-xs text-right">
+                                      {count}
+                                    </div>
                                   </div>
-                                  <div className="flex-1 bg-gray-200 rounded-full h-3 relative">
-                                    <div 
-                                      className="bg-indigo-500 h-3 rounded-full transition-all" 
-                                      style={{ width: `${percentage}%` }}
-                                    />
-                                    {hourCollections > 0 && (
-                                      <span className="absolute inset-0 flex items-center justify-center text-xs font-medium text-white">
-                                        {hourCollections}
-                                      </span>
-                                    )}
-                                  </div>
-                                  <div className="w-8 text-xs text-right">
-                                    {hourCollections}
-                                  </div>
-                                </div>
-                              );
-                            })}
+                                );
+                              });
+                            })()}
                           </div>
                         </CardContent>
+
                       </Card>
                     </div>
                   </TabsContent>

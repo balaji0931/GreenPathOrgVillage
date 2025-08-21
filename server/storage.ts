@@ -72,6 +72,7 @@ export interface IStorage {
   createWasteCollection(collection: InsertWasteCollection): Promise<WasteCollection>;
   getCollectionsByHousehold(householdId: number): Promise<WasteCollection[]>;
   getCollectionsByCollector(collectorId: number): Promise<WasteCollection[]>;
+  checkExistingCollection(householdId: number, collectorId: number, date: string): Promise<WasteCollection | undefined>;
 
   // Issue operations
   createIssue(issue: InsertIssue): Promise<Issue>;
@@ -304,6 +305,30 @@ export class DatabaseStorage implements IStorage {
   async getCollectorByUid(uid: string): Promise<Collector | undefined> {
     const [collector] = await db.select().from(collectors).where(eq(collectors.uid, uid));
     return collector || undefined;
+  }
+
+  async checkExistingCollection(householdId: number, collectorId: number, date: string): Promise<WasteCollection | undefined> {
+    const startDate = new Date(date);
+    startDate.setHours(0, 0, 0, 0);
+    const endDate = new Date(date);
+    endDate.setHours(23, 59, 59, 999);
+
+    const [existing] = await db
+      .select()
+      .from(wasteCollections)
+      .where(
+        and(
+          eq(wasteCollections.householdId, householdId),
+          eq(wasteCollections.collectorId, collectorId),
+          and(
+            gte(wasteCollections.collectionDate, startDate),
+            lte(wasteCollections.collectionDate, endDate)
+          )
+        )
+      )
+      .limit(1);
+    
+    return existing;
   }
 
   async createWasteCollection(insertCollection: InsertWasteCollection): Promise<WasteCollection> {

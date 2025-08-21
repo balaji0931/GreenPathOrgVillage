@@ -159,12 +159,23 @@ export const offlineStorage = new OfflineStorageManager();
 export function useOfflineStorage() {
   const [isOnline, setIsOnline] = React.useState(navigator.onLine);
   const [pendingCount, setPendingCount] = React.useState(0);
+  const [isSyncing, setIsSyncing] = React.useState(false);
 
   React.useEffect(() => {
-    const handleOnline = () => {
+    const handleOnline = async () => {
       setIsOnline(true);
-      // Force sync when back online
-      offlineStorage.forceSync();
+      // Force sync when back online, but respect sync lock
+      if (!isSyncing) {
+        setIsSyncing(true);
+        try {
+          const result = await offlineStorage.forceSync();
+          if (result.success) {
+            updatePendingCount();
+          }
+        } finally {
+          setIsSyncing(false);
+        }
+      }
     };
 
     const handleOffline = () => setIsOnline(false);
@@ -208,16 +219,26 @@ export function useOfflineStorage() {
   };
 
   const syncPendingData = async () => {
-    const result = await offlineStorage.forceSync();
-    if (result.success) {
-      updatePendingCount();
+    if (isSyncing) {
+      return { success: false, error: 'Sync already in progress' };
     }
-    return result;
+    
+    setIsSyncing(true);
+    try {
+      const result = await offlineStorage.forceSync();
+      if (result.success) {
+        updatePendingCount();
+      }
+      return result;
+    } finally {
+      setIsSyncing(false);
+    }
   };
 
   return {
     isOnline,
     pendingCount,
+    isSyncing,
     storeCollectionOffline,
     storeFileOffline,
     syncPendingData,

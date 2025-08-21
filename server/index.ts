@@ -1,12 +1,12 @@
-import dotenv from 'dotenv';
+import dotenv from "dotenv";
 import express, { type Request, Response, NextFunction } from "express";
-import helmet from 'helmet';
-import compression from 'compression';
-import cors from 'cors';
-import rateLimit from 'express-rate-limit';
-import slowDown from 'express-slow-down';
-import morgan from 'morgan';
-import { createLogger, format, transports } from 'winston';
+import helmet from "helmet";
+import compression from "compression";
+import cors from "cors";
+import rateLimit from "express-rate-limit";
+import slowDown from "express-slow-down";
+import morgan from "morgan";
+import { createLogger, format, transports } from "winston";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 
@@ -15,74 +15,125 @@ dotenv.config();
 
 // Create Winston logger for production
 const logger = createLogger({
-  level: process.env.LOG_LEVEL || 'info',
+  level: process.env.LOG_LEVEL || "info",
   format: format.combine(
     format.timestamp(),
     format.errors({ stack: true }),
-    format.json()
+    format.json(),
   ),
-  defaultMeta: { service: 'greenpath-api' },
+  defaultMeta: { service: "greenpath-api" },
   transports: [
     new transports.Console({
-      format: format.combine(
-        format.colorize(),
-        format.simple()
-      )
-    })
-  ]
+      format: format.combine(format.colorize(), format.simple()),
+    }),
+  ],
 });
 
 const app = express();
 
 // Trust proxy for accurate IP addresses when behind reverse proxy
-app.set('trust proxy', 1);
+app.set("trust proxy", 1);
 
-// Security headers with Helmet
-app.use(helmet({
-  contentSecurityPolicy: {
-    directives: {
-      defaultSrc: ["'self'"],
-      styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
-      fontSrc: ["'self'", "https://fonts.gstatic.com"],
-      imgSrc: ["'self'", "data:", "https:", "blob:"],
-      scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'"],
-      connectSrc: ["'self'", "https:", "wss:"],
-      mediaSrc: ["'self'", "https:", "blob:"],
-      workerSrc: ["'self'", "blob:"],
-      frameSrc: ["'none'"],
-      objectSrc: ["'none'"],
-      baseUri: ["'self'"]
+// Security headers with Helmet - Relaxed CSP for development
+app.use(
+  helmet({
+    contentSecurityPolicy: {
+      directives: {
+        defaultSrc: ["'self'"],
+        styleSrc: [
+          "'self'", 
+          "'unsafe-inline'", // Allow inline styles
+          "https://fonts.googleapis.com"
+        ],
+        fontSrc: ["'self'", "https://fonts.gstatic.com"],
+        imgSrc: [
+          "'self'", 
+          "data:", 
+          "https:", // Allow all HTTPS images
+          "blob:"
+        ],
+        scriptSrc: [
+          "'self'",
+          "'unsafe-inline'", // Allow inline scripts
+          "'unsafe-eval'" // Allow eval for development
+        ],
+        connectSrc: [
+          "'self'", 
+          "https:",
+          "wss:",
+          "ws:" // Allow websockets for development
+        ],
+        mediaSrc: [
+          "'self'", 
+          "https:",
+          "blob:"
+        ],
+        workerSrc: ["'self'", "blob:"],
+        frameSrc: ["'self'"], // Allow same-origin frames
+        objectSrc: ["'none'"],
+        baseUri: ["'self'"],
+        formAction: ["'self'"],
+      },
+    },
+    crossOriginEmbedderPolicy: false, // Required for some PWA features
+    hsts: {
+      maxAge: 31536000, // 1 year
+      includeSubDomains: true,
+      preload: true
+    },
+  }),
+);
+
+// CORS configuration - Environment-based and secure
+const getAllowedOrigins = () => {
+  if (process.env.NODE_ENV === "production") {
+    const origins = [];
+    if (process.env.CLIENT_URL) {
+      origins.push(process.env.CLIENT_URL);
     }
-  },
-  crossOriginEmbedderPolicy: false // Required for some PWA features
-}));
+    if (process.env.ALLOWED_ORIGINS) {
+      origins.push(...process.env.ALLOWED_ORIGINS.split(',').map(origin => origin.trim()));
+    }
+    if (origins.length === 0) {
+      throw new Error('CLIENT_URL or ALLOWED_ORIGINS must be set in production');
+    }
+    return origins;
+  }
+  return true; // Allow all origins in development
+};
 
-// CORS configuration
 const corsOptions = {
-  origin: process.env.NODE_ENV === 'production' 
-    ? [process.env.CLIENT_URL || 'https:www.greenpathorg.social']
-    : true,
+  origin: getAllowedOrigins(),
   credentials: true,
   optionsSuccessStatus: 200,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
+  methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+  allowedHeaders: [
+    "Content-Type", 
+    "Authorization", 
+    "X-Requested-With",
+    "X-CSRF-Token" // For CSRF protection
+  ],
+  exposedHeaders: ["X-Total-Count"], // For pagination
+  maxAge: 86400, // Cache preflight responses for 24 hours
 };
 app.use(cors(corsOptions));
 
 // Compression middleware
-app.use(compression({
-  level: 6,
-  threshold: 1024,
-  filter: (req, res) => {
-    if (req.headers['x-no-compression']) {
-      return false;
-    }
-    return compression.filter(req, res);
-  }
-}));
+app.use(
+  compression({
+    level: 6,
+    threshold: 1024,
+    filter: (req, res) => {
+      if (req.headers["x-no-compression"]) {
+        return false;
+      }
+      return compression.filter(req, res);
+    },
+  }),
+);
 
 // Rate limiting - different limits for different endpoints
-const createRateLimit = (windowMs: number, max: number, message: string) => 
+const createRateLimit = (windowMs: number, max: number, message: string) =>
   rateLimit({
     windowMs,
     max,
@@ -92,48 +143,85 @@ const createRateLimit = (windowMs: number, max: number, message: string) =>
     handler: (req, res) => {
       logger.warn(`Rate limit exceeded for IP: ${req.ip}`);
       res.status(429).json({ error: message });
-    }
+    },
   });
 
 // General API rate limiting
-app.use('/api/', createRateLimit(15 * 60 * 1000, 1000, 'Too many requests, please try again later'));
+app.use(
+  "/api/",
+  createRateLimit(
+    15 * 60 * 1000,
+    1000,
+    "Too many requests, please try again later",
+  ),
+);
 
 // Stricter rate limiting for auth endpoints
-app.use('/api/auth/login', createRateLimit(15 * 60 * 1000, 5, 'Too many login attempts, please try again later'));
-app.use('/api/auth/register', createRateLimit(60 * 60 * 1000, 3, 'Too many registration attempts, please try again later'));
+app.use(
+  "/api/auth/login",
+  createRateLimit(
+    15 * 60 * 1000,
+    5,
+    "Too many login attempts, please try again later",
+  ),
+);
+app.use(
+  "/api/auth/register",
+  createRateLimit(
+    60 * 60 * 1000,
+    3,
+    "Too many registration attempts, please try again later",
+  ),
+);
 
 // Upload rate limiting
-app.use('/api/upload', createRateLimit(5 * 60 * 1000, 20, 'Too many upload requests, please try again later'));
+app.use(
+  "/api/upload",
+  createRateLimit(
+    5 * 60 * 1000,
+    20,
+    "Too many upload requests, please try again later",
+  ),
+);
 
 // Slow down repeated requests
-app.use('/api/', slowDown({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  delayAfter: 100, // Allow 100 requests per windowMs without delay
-  delayMs: 500, // Add 500ms delay per request after delayAfter
-  maxDelayMs: 20000, // Maximum delay of 20 seconds
-}));
+app.use(
+  "/api/",
+  slowDown({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    delayAfter: 100, // Allow 100 requests per windowMs without delay
+    delayMs: 500, // Add 500ms delay per request after delayAfter
+    maxDelayMs: 20000, // Maximum delay of 20 seconds
+  }),
+);
 
 // Request logging
-if (process.env.NODE_ENV === 'production') {
-  app.use(morgan('combined', {
-    stream: { write: (message) => logger.info(message.trim()) }
-  }));
+if (process.env.NODE_ENV === "production") {
+  app.use(
+    morgan("combined", {
+      stream: { write: (message) => logger.info(message.trim()) },
+    }),
+  );
 } else {
-  app.use(morgan('dev'));
+  app.use(morgan("dev"));
 }
 
 // Body parsing with size limits
-app.use(express.json({ 
-  limit: '10mb',
-  verify: (req, res, buf) => {
-    // Store raw body for webhook verification if needed
-    (req as any).rawBody = buf;
-  }
-}));
-app.use(express.urlencoded({ 
-  extended: false, 
-  limit: '10mb' 
-}));
+app.use(
+  express.json({
+    limit: "10mb",
+    verify: (req, res, buf) => {
+      // Store raw body for webhook verification if needed
+      (req as any).rawBody = buf;
+    },
+  }),
+);
+app.use(
+  express.urlencoded({
+    extended: false,
+    limit: "10mb",
+  }),
+);
 
 app.use((req, res, next) => {
   const start = Date.now();
@@ -152,8 +240,8 @@ app.use((req, res, next) => {
 });
 
 // Import required modules at the top
-import path from 'path';
-import fs from 'fs';
+import path from "path";
+import fs from "fs";
 
 // PWA routes - must be before registerRoutes to avoid conflicts
 app.get("/sw.js", (_req, res) => {
@@ -181,7 +269,12 @@ app.get("/.well-known/assetlinks.json", (_req, res) => {
     res.setHeader("Content-Type", "application/json; charset=utf-8");
     res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
     res.setHeader("Access-Control-Allow-Origin", "*");
-    const assetLinksPath = path.join(process.cwd(), "public", ".well-known", "assetlinks.json");
+    const assetLinksPath = path.join(
+      process.cwd(),
+      "public",
+      ".well-known",
+      "assetlinks.json",
+    );
     if (fs.existsSync(assetLinksPath)) {
       res.sendFile(assetLinksPath);
     } else {
@@ -200,7 +293,7 @@ app.get("/manifest.json", (_req, res) => {
     res.setHeader("Cache-Control", "public, max-age=86400"); // Cache for 24 hours for better TWA performance
     res.setHeader("Access-Control-Allow-Origin", "*");
     res.setHeader("Cross-Origin-Resource-Policy", "cross-origin");
-    
+
     const manifestPath = path.join(process.cwd(), "public", "manifest.json");
     if (fs.existsSync(manifestPath)) {
       const manifestBuffer = fs.readFileSync(manifestPath);
@@ -221,7 +314,7 @@ app.get("/icons/:filename", (req, res) => {
   try {
     const filename = req.params.filename;
     const iconPath = path.join(process.cwd(), "public", "icons", filename);
-    
+
     if (!fs.existsSync(iconPath)) {
       return res.status(404).json({ error: "Icon not found" });
     }
@@ -231,13 +324,16 @@ app.get("/icons/:filename", (req, res) => {
     res.setHeader("Cache-Control", "public, max-age=31536000, immutable");
     res.setHeader("Access-Control-Allow-Origin", "*");
     res.setHeader("Access-Control-Allow-Methods", "GET, HEAD, OPTIONS");
-    res.setHeader("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
+    res.setHeader(
+      "Access-Control-Allow-Headers",
+      "Origin, X-Requested-With, Content-Type, Accept",
+    );
     res.setHeader("Cross-Origin-Resource-Policy", "cross-origin");
-    
+
     // Read file and set content length for better compatibility
     const iconBuffer = fs.readFileSync(iconPath);
     res.setHeader("Content-Length", iconBuffer.length.toString());
-    
+
     res.send(iconBuffer);
   } catch (error) {
     console.error("Icon route error:", error);
@@ -248,7 +344,12 @@ app.get("/icons/:filename", (req, res) => {
 // Serve favicon.ico
 app.get("/favicon.ico", (_req, res) => {
   try {
-    const faviconPath = path.join(process.cwd(), "public", "icons", "icon-96x96.png");
+    const faviconPath = path.join(
+      process.cwd(),
+      "public",
+      "icons",
+      "icon-96x96.png",
+    );
     if (fs.existsSync(faviconPath)) {
       res.setHeader("Content-Type", "image/png");
       res.setHeader("Cache-Control", "public, max-age=31536000");
@@ -267,35 +368,37 @@ app.get("/api/pwa/health", (_req, res) => {
   try {
     const manifestPath = path.join(process.cwd(), "public", "manifest.json");
     const iconsPath = path.join(process.cwd(), "public", "icons");
-    
+
     const manifestExists = fs.existsSync(manifestPath);
     const iconsExist = fs.existsSync(iconsPath);
-    
-    const iconFiles = fs.readdirSync(iconsPath).filter(file => file.endsWith('.png'));
-    
+
+    const iconFiles = fs
+      .readdirSync(iconsPath)
+      .filter((file) => file.endsWith(".png"));
+
     res.json({
       status: "healthy",
       manifest: {
         exists: manifestExists,
-        path: "/manifest.json"
+        path: "/manifest.json",
       },
       icons: {
         directory: iconsExist,
         count: iconFiles.length,
         files: iconFiles,
-        basePath: "/icons/"
+        basePath: "/icons/",
       },
       assetLinks: {
-        path: "/.well-known/assetlinks.json"
+        path: "/.well-known/assetlinks.json",
       },
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     });
   } catch (error) {
     console.error("PWA health check error:", error);
-    res.status(500).json({ 
-      status: "error", 
+    res.status(500).json({
+      status: "error",
       error: "PWA health check failed",
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     });
   }
 });
@@ -303,42 +406,65 @@ app.get("/api/pwa/health", (_req, res) => {
 (async () => {
   const server = await registerRoutes(app);
 
-  // Enhanced error handling middleware
+  // Enhanced error handling middleware - Security hardened
   app.use((err: any, req: Request, res: Response, _next: NextFunction) => {
     const status = err.status || err.statusCode || 500;
-    const message = err.message || "Internal Server Error";
     
-    // Log error details
-    logger.error('Application Error', {
+    // Create error ID for tracking
+    const errorId = Math.random().toString(36).substring(2, 15);
+    
+    // Log error details securely (remove sensitive information in production)
+    const logData = {
+      errorId,
       error: {
-        message: err.message,
-        stack: err.stack,
-        status: status
+        message: process.env.NODE_ENV === 'production' ? 'Internal Server Error' : err.message,
+        status: status,
+        ...(process.env.NODE_ENV !== 'production' && { stack: err.stack })
       },
       request: {
         method: req.method,
         url: req.url,
         ip: req.ip,
-        userAgent: req.get('User-Agent')
-      }
-    });
+        userAgent: req.get("User-Agent"),
+        timestamp: new Date().toISOString()
+      },
+    };
 
-    // Don't expose stack trace in production
-    const errorResponse = process.env.NODE_ENV === 'production' 
-      ? { message: status === 500 ? 'Internal Server Error' : message }
-      : { message, stack: err.stack };
+    // Log based on severity
+    if (status >= 500) {
+      logger.error("Server Error", logData);
+    } else if (status >= 400) {
+      logger.warn("Client Error", logData);
+    }
+
+    // Secure error response - don't expose internal details in production
+    const errorResponse = process.env.NODE_ENV === "production"
+      ? { 
+          error: status === 404 ? "Not Found" : 
+                 status === 403 ? "Forbidden" :
+                 status === 401 ? "Unauthorized" :
+                 "Internal Server Error",
+          status,
+          errorId // For support purposes only
+        }
+      : { 
+          error: err.message || "Internal Server Error", 
+          status, 
+          errorId,
+          ...(err.stack && { stack: err.stack })
+        };
 
     res.status(status).json(errorResponse);
   });
 
   // Handle uncaught exceptions and unhandled promise rejections
-  process.on('uncaughtException', (error) => {
-    logger.error('Uncaught Exception:', error);
+  process.on("uncaughtException", (error) => {
+    logger.error("Uncaught Exception:", error);
     process.exit(1);
   });
 
-  process.on('unhandledRejection', (reason, promise) => {
-    logger.error('Unhandled Rejection at:', { promise, reason });
+  process.on("unhandledRejection", (reason, promise) => {
+    logger.error("Unhandled Rejection at:", { promise, reason });
     process.exit(1);
   });
 
@@ -346,13 +472,13 @@ app.get("/api/pwa/health", (_req, res) => {
   const gracefulShutdown = (signal: string) => {
     logger.info(`Received ${signal}. Graceful shutdown initiated.`);
     server.close(() => {
-      logger.info('HTTP server closed.');
+      logger.info("HTTP server closed.");
       process.exit(0);
     });
   };
 
-  process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
-  process.on('SIGINT', () => gracefulShutdown('SIGINT'));
+  process.on("SIGTERM", () => gracefulShutdown("SIGTERM"));
+  process.on("SIGINT", () => gracefulShutdown("SIGINT"));
 
   // importantly only setup vite in development and after
   // setting up all the other routes so the catch-all route
@@ -367,11 +493,14 @@ app.get("/api/pwa/health", (_req, res) => {
   // this serves both the API and the client.
   // It is the only port that is not firewalled.
   const port = 5000;
-  server.listen({
-    port,
-    host: "0.0.0.0",
-    reusePort: true,
-  }, () => {
-    log(`serving on port ${port}`);
-  });
+  server.listen(
+    {
+      port,
+      host: "0.0.0.0",
+      reusePort: true,
+    },
+    () => {
+      log(`serving on port ${port}`);
+    },
+  );
 })();
