@@ -1932,6 +1932,32 @@ export default function PublicHome() {
             <p className="text-sm text-gray-500">
               © 2025 GreenPathORG. All rights reserved.
             </p>
+            <div className="flex flex-wrap justify-center gap-4 text-xs pt-3">
+                <a
+                  href="/privacy-policy"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-gray-500 hover:text-green-600 transition-colors underline"
+                >
+                  Privacy Policy
+                </a>
+                <a
+                  href="/terms-of-service"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-gray-500 hover:text-green-600 transition-colors underline"
+                >
+                  Terms of Service
+                </a>
+                <a
+                  href="/data-protection"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-gray-500 hover:text-green-600 transition-colors underline"
+                >
+                  Data Protection
+                </a>
+            </div>
           </div>
         </div>
       </footer>
