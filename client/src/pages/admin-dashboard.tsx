@@ -2984,7 +2984,7 @@ className="p-1 sm:p-2"
           <div className="flex items-center">
             <Leaf className="h-6 w-6 text-white" strokeWidth={3}/>
             <div>
-              <h1 className="text-2xl text-white font-bold ">GreenPathORG</h1>
+              <h1 className="text-2xl text-white font-bold ">GreenPath</h1>
             </div>
           </div>
           <div className="flex items-center space-x-2">
@@ -3009,7 +3009,7 @@ className="p-1 sm:p-2"
               <div className="flex items-center space-x-3">
                 <Leaf className="h-8 w-8 text-green-600" />
                 <div>
-                  <h1 className="text-xl font-bold">GreenPathORG</h1>
+                  <h1 className="text-xl font-bold">GreenPath</h1>
                   <p className="text-sm text-muted-foreground">Admin Panel</p>
                 </div>
               </div>

@@ -3,7 +3,7 @@
     "relation": ["delegate_permission/common.handle_all_urls"],
     "target": {
       "namespace": "android_app",
-      "package_name": "social.greenpathorg.www.twa",
+      "package_name": "social.GreenPath.www.twa",
       "sha256_cert_fingerprints": [
         "93:91:62:5F:03:A9:87:27:58:41:BC:48:6D:51:D4:E2:11:99:BB:91:3B:8C:31:7D:52:34:9D:3D:85:25:BF:9A"
       ]

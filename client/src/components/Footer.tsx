@@ -9,7 +9,7 @@ export default function Footer() {
       <div className="max-w-7xl mx-auto px-4 py-6">
         <div className="flex flex-col md:flex-row justify-between items-center gap-4">
           <div className="text-sm text-gray-600">
-            © {new Date().getFullYear()} GreenPathORG. All rights reserved.
+            © {new Date().getFullYear()} GreenPath. All rights reserved.
           </div>
           <div className="flex flex-wrap gap-4 text-sm">
             <button

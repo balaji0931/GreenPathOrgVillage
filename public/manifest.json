@@ -1,7 +1,7 @@
 
 {
-  "name": "GreenPathORG",
-  "short_name": "GreenPathORG",
+  "name": "GreenPath",
+  "short_name": "GreenPath",
   "description": "Comprehensive waste management system for Organizations",
   "start_url": "/login",
   "display": "standalone",
@@ -10,7 +10,7 @@
   "orientation": "portrait-primary",
   "scope": "/",
   "prefer_related_applications": false,
-  "id": "greenpathorg-pwa",
+  "id": "GreenPath-pwa",
   "categories": ["productivity", "utilities", "environmental"],
   "lang": "en",
   "dir": "ltr",
@@ -28,14 +28,14 @@
       "sizes": "384x384",
       "type": "image/png",
       "form_factor": "narrow",
-      "label": "GreenPathORG mobile dashboard"
+      "label": "GreenPath mobile dashboard"
     },
     {
       "src": "/icons/icon-512x512.png", 
       "sizes": "512x512",
       "type": "image/png",
       "form_factor": "wide",
-      "label": "GreenPathORG desktop dashboard"
+      "label": "GreenPath desktop dashboard"
     }
   ],
   "related_applications": [
@@ -47,7 +47,7 @@
   ],
   "scope_extensions": [
     {
-      "origin": "https://www.greenpathorg.social"
+      "origin": "https://www.GreenPath.social"
     }
   ],
   "icons": [

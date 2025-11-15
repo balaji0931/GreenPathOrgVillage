@@ -1,6 +1,6 @@
 {
   "app": {
-    "title": "GreenPathORG",
+    "title": "GreenPath",
     "loading": "Loading...",
     "error": "An error occurred",
     "success": "Success!",
@@ -51,7 +51,7 @@
     "observationCleanOrganized": "Clean and organized",
     "observationPoorHygiene": "Poor hygiene",
     "observationNoWaste": "No waste present",
-    "installApp": "Install GreenPathORG App",
+    "installApp": "Install GreenPath App",
     "install": "Install",
     "installing": "Installing...",
     "installDescription": "Install our app for faster access and offline features",
