@@ -796,7 +796,7 @@ export default function PublicHome() {
         </div>
       </div>
 
-      {/* Founders Section - Replicated from Home */}
+      {/* Founders Section - Replicated from Home
       <div className="py-12 sm:py-20 px-4 sm:px-6 bg-gradient-to-r from-purple-50 to-pink-50">
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-12 sm:mb-16">
@@ -874,7 +874,7 @@ export default function PublicHome() {
             </Card>
           </div>
         </div>
-      </div>
+      </div> */}
 
       {/* Thank You Section - Enhanced */}
       <div className="py-12 sm:py-20 px-4 sm:px-6 bg-gradient-to-br from-amber-50 to-orange-100">
