@@ -2302,7 +2302,7 @@ export default function ModeratorDashboard() {
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <Leaf className="h-5 w-5 text-green-600" />
+                  <img Leaf className="h-5 w-5" />
                   Home Composting Rate
                 </CardTitle>
               </CardHeader>
@@ -2622,10 +2622,7 @@ const renderAnnouncements = () => (
       <div className="md:hidden bg-green-600 border-b px-3 py-3 sticky top-0 left-0 z-10">
         <div className="flex items-center justify-between">
           <div className="flex items-center">
-            <Leaf className="h-6 w-6 text-white" strokeWidth={2.5}/>
-            <div>
-              <h1 className="text-2xl text-white font-bold">GreenPath</h1>
-            </div>
+            <img src="/logos/logo-full.svg" alt="GreenPath" className="h-10 w-auto" />
           </div>
           <div className="">
             <Button onClick={logout} variant="ghost" size="md" className="p-2">
@@ -2642,9 +2639,8 @@ const renderAnnouncements = () => (
           <div className="p-6 border-b">
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-3">
-                <Leaf className="h-8 w-8 text-green-600" />
+                <img src="/logos/logo-full.svg" alt="GreenPath" className="h-10 w-auto" />
                 <div>
-                  <h1 className="text-xl font-bold">GreenPath</h1>
                   <p className="text-sm text-muted-foreground">Moderator Panel</p>
                 </div>
               </div>

@@ -8,7 +8,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useTranslation } from 'react-i18next';
 import { LanguageSwitcher} from "@/components/LanguageSwitcher";
 import { InstallPWA } from "@/components/InstallPWA";
-import { Leaf, Eye, EyeOff, Home } from "lucide-react";
+import { Eye, EyeOff, Home } from "lucide-react";
 import Footer from "@/components/Footer";
 import { useLocation } from 'wouter';
 
@@ -65,10 +65,9 @@ export default function Login() {
         </div>
 
         <div className="text-center mb-4">
-          <div className="inline-flex items-center justify-center w-20 h-20 bg-green-primary rounded-full mb-4">
-            <Leaf className="text-white text-3xl" size={36} />
+          <div className="mb-4">
+            <img src="/logos/logo-full.svg" alt="GreenPath" className="w-auto h-14 mx-auto" />
           </div>
-          <h1 className="text-3xl font-bold text-green-dark mb-2">{t('app.title')}</h1>
           <p className="text-gray-600 text-sm px-4">
             Empowering Clean Villages through Smart Waste Management
           </p>

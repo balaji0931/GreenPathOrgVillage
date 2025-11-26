@@ -9,7 +9,6 @@ import { useToast } from "@/hooks/use-toast";
 import { useMutation } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { 
-  Leaf, 
   Recycle, 
   Users, 
   Target, 
@@ -32,7 +31,8 @@ import {
   ArrowRight,
   Quote,
   LogIn,
-  Menu
+  Menu,
+  Home,
 } from "lucide-react";
 
 // Add CSS for animations
@@ -71,7 +71,7 @@ export default function PublicHome() {
 
   // Navigation sections
   const sections = [
-    { id: "home", label: "Home", icon: <Leaf className="w-4 h-4" /> },
+    { id: "home", label: "Home", icon: <Home className="w-4 h-4" /> },
     { id: "about", label: "About Us", icon: <Users className="w-4 h-4" /> },
     // { id: "learn", label: "Learn", icon: <ClipboardList className="w-4 h-4" /> },
     { id: "feedback", label: "Feedback", icon: <Star className="w-4 h-4" /> },
@@ -328,7 +328,7 @@ export default function PublicHome() {
             <div className="relative">
               <div className="absolute inset-0 bg-white/20 rounded-full blur-xl animate-pulse"></div>
               <div className="relative bg-white/90 backdrop-blur-sm p-4 sm:p-6 rounded-full shadow-2xl">
-                <Leaf className="w-12 h-12 sm:w-16 sm:h-16 text-green-600 animate-bounce" />
+                <img src="/logos/logo.svg" alt="GreenPath" className="w-12 h-12 sm:w-16 sm:h-16 animate-bounce" />
               </div>
             </div>
           </div>
@@ -763,7 +763,7 @@ export default function PublicHome() {
                   <div className="bg-gradient-to-br from-green-400 to-blue-500 p-6 sm:p-8 rounded-3xl shadow-2xl transform rotate-3 hover:rotate-0 transition-transform duration-500">
                     <div className="bg-white rounded-2xl p-4 sm:p-6 space-y-4">
                       <div className="flex items-center gap-3 text-green-600">
-                        <Leaf className="w-6 sm:w-8 h-6 sm:h-8" />
+                        <img src="/logos/logo.svg" alt="GreenPath" className="w-6 sm:w-8 h-6 sm:h-8" />
                         <span className="text-lg sm:text-2xl font-bold">Smart Platform</span>
                       </div>
                       <div className="space-y-3">
@@ -1825,19 +1825,11 @@ export default function PublicHome() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16 sm:h-20">
             {/* Logo */}
-            <div className="flex items-center gap-2 sm:gap-3">
               <div className="relative">
-                <div className="bg-gradient-to-br from-green-500 to-emerald-600 p-2 sm:p-3 rounded-xl sm:rounded-2xl shadow-lg">
-                  <Leaf className="w-6 h-6 sm:w-8 sm:h-8 text-white" />
+                <div className="p-2">
+                  <img src="/logos/logo-full.svg" alt="GreenPath" className="w-auto sm:h-14 h-10" />
                 </div>
               </div>
-              <div>
-                <span className="text-lg sm:text-2xl font-bold bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent">
-                  GreenPath
-                </span>
-                <div className="hidden sm:block text-xs text-gray-500 font-medium">Smart Waste Management</div>
-              </div>
-            </div>
 
             {/* Desktop Navigation */}
             <div className="hidden lg:flex space-x-2">
@@ -1921,10 +1913,9 @@ export default function PublicHome() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center">
             <div className="flex justify-center items-center gap-2 mb-4">
-              <div className="bg-green-600 p-2 rounded-lg">
-                <Leaf className="w-6 h-6 text-white" />
+              <div className="p-2 rounded-lg">
+                <img src="/logos/logo-light.svg" alt="GreenPath" className="w-auto h-10" />
               </div>
-              <span className="text-xl font-bold">GreenPath</span>
             </div>
             <p className="text-gray-400 mb-4">
               Empowering Clean Villages through Smart Waste Management

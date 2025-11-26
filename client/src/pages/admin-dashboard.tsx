@@ -14,10 +14,11 @@ import { useAuth } from "@/hooks/useAuth";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { 
-  Leaf, Users, AlertTriangle, TrendingUp, Plus, Megaphone, BarChart3, 
+  Users, AlertTriangle, TrendingUp, Plus, Megaphone, BarChart3, 
   LogOut, Settings, Copy, Download, Eye, Trash2, RotateCcw, Filter, 
   PieChart, LineChart, Building2, UserPlus, X, Home, MessageSquare,
-  User, MapPin, Calendar, Activity, FileText, Bell, Star, Award, Package
+  User, MapPin, Calendar, Activity, FileText, Bell, Star, Award, Package,
+  Leaf
 } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart as RechartsLineChart, Line, PieChart as RechartsPieChart, Cell, Pie } from 'recharts';
 import { cn } from "@/lib/utils";
@@ -2419,7 +2420,7 @@ className="p-1 sm:p-2"
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <Leaf className="h-5 w-5 text-green-600" />
+                  <Leaf className="h-5 w-5" />
                   Home Composting Rate
                 </CardTitle>
               </CardHeader>
@@ -2982,10 +2983,7 @@ className="p-1 sm:p-2"
       <div className="md:hidden bg-green-600 border-b px-3 py-3 sticky top-0 left-0 z-10">
         <div className="flex items-center justify-between">
           <div className="flex items-center">
-            <Leaf className="h-6 w-6 text-white" strokeWidth={3}/>
-            <div>
-              <h1 className="text-2xl text-white font-bold ">GreenPath</h1>
-            </div>
+            <img src="/logos/logo-full.svg" alt="GreenPath" className="h-10 w-auto" />
           </div>
           <div className="flex items-center space-x-2">
             <Button 
@@ -3007,9 +3005,8 @@ className="p-1 sm:p-2"
           <div className="p-6 border-b">
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-3">
-                <Leaf className="h-8 w-8 text-green-600" />
+                <img src="/logos/logo-full.svg" alt="GreenPath" className="h-10 w-auto" />
                 <div>
-                  <h1 className="text-xl font-bold">GreenPath</h1>
                   <p className="text-sm text-muted-foreground">Admin Panel</p>
                 </div>
               </div>

@@ -62,7 +62,6 @@ import {
   CheckCircle,
   Bell,
   LayoutDashboard,
-  Leaf,
   CreditCard,
   XCircle,
 } from "lucide-react";
@@ -1098,10 +1097,7 @@ export default function ManagerDashboard() {
         <div className="bg-green-600 text-white px-4 py-3 sticky top-0 z-10">
           <div className="flex items-center justify-between">
             <div className="flex items-center">
-              <Leaf className="" size={28} strokeWidth={2.5}/>
-            <div>
-              <h1 className="font-bold text-2xl">{t('app.title')}</h1>
-            </div>
+              <img src="/logos/logo-full.svg" alt="GreenPath" className="w-auto h-10" />
           </div>
             <div className="flex items-center space-x-1">
               <TourButton className="text-black bg-white hover:bg-white"/>

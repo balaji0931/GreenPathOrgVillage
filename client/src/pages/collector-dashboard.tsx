@@ -44,7 +44,6 @@ import {
   Bell,
   MapPin,
   Upload,
-  Leaf
 } from "lucide-react";
 
 interface CollectionForm {
@@ -849,10 +848,7 @@ export default function CollectorDashboard() {
       <div className="bg-green-600 text-white p-3 sticky top-0 z-10 ">
         <div className="flex items-center justify-between">
           <div className="flex items-center">
-            <Leaf className="" size={28} strokeWidth={2.5}/>
-            <div>
-              <h1 className="font-bold text-2xl">{t('app.title')}</h1>
-            </div>
+            <img src="/logos/logo-full.svg" alt="GreenPath" className="w-auto h-10" />
           </div>
           <div className="flex items-center space-x-2">
             <TourButton className="text-black hover:bg-white bg-white" />
