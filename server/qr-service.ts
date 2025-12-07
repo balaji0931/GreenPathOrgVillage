@@ -58,6 +58,14 @@ export const generateBulkQRCodesPDF = async (
 ): Promise<Buffer> => {
   const pdf = new jsPDF('p', 'mm', 'a4');
 
+  // Fetch logo only once per PDF generation
+  const logoUrl = "https://www.greenpathorg.social/logos/png/logo-full-1024x256.png";
+
+  const logoResponse = await fetch(logoUrl);
+  const logoArrayBuffer = await logoResponse.arrayBuffer();
+  const logoBase64 = Buffer.from(logoArrayBuffer).toString("base64");
+  const logoDataURL = `data:image/png;base64,${logoBase64}`;
+
   const pageWidth = 210;
   const pageHeight = 297;
 
@@ -83,7 +91,7 @@ export const generateBulkQRCodesPDF = async (
     const x = col * boxWidth;
     const y = row * boxHeight;
     const centerX = x + boxWidth / 2;
-    let currentY = y + 10;
+    let currentY = y + 2;
 
     // ✅ Dashed box around section
     pdf.setDrawColor(0);
@@ -92,17 +100,33 @@ export const generateBulkQRCodesPDF = async (
     pdf.rect(x, y, boxWidth, boxHeight);
     pdf.setLineDashPattern([]); // Reset line style
 
-    // ✅ Heading
-    pdf.setFontSize(17);
-    pdf.setTextColor(0, 128, 0);
-    pdf.text('GreenPath', centerX, currentY, { align: 'center' });
-    currentY += 7;
+    // // ✅ Heading
+    // pdf.setFontSize(17);
+    // pdf.setTextColor(0, 128, 0);
+    // pdf.text('GreenPath', centerX, currentY, { align: 'center' });
+    // currentY += 7;
+
+    // === Logo Heading ===
+    const logoWidth = 40;   
+    const logoHeight = 10;       
+
+    pdf.addImage(
+      logoDataURL,
+      "PNG",
+      centerX - logoWidth / 2,
+      currentY,
+      logoWidth,
+      logoHeight
+    );
+
+    currentY += logoHeight + 3;
+
 
     // ✅ Subheading
     pdf.setFontSize(10);
     pdf.setTextColor(80, 80, 80);
     pdf.text('Waste Management System', centerX, currentY, { align: 'center' });
-    currentY += 7;
+    currentY += 6;
 
     // ✅ QR Code
     const qrX = centerX - qrSize / 2;
@@ -152,7 +176,7 @@ export const generateBulkQRCodesPDF = async (
     }
 
     // ✅ Info text below QR
-    currentY += qrSize + 6;
+    currentY += qrSize + 7;
     pdf.setTextColor(0, 0, 0);
     pdf.setFontSize(10);
     pdf.text(`House UID: GEN-${household.uid}`, centerX, currentY, { align: 'center' });
@@ -165,7 +189,7 @@ export const generateBulkQRCodesPDF = async (
     currentY += 6;
     pdf.setFontSize(12);
     pdf.setTextColor(0, 128, 0);
-    pdf.text('www.GreenPath.social', centerX, currentY, { align: 'center' });
+    pdf.text('www.greenpathorg.social', centerX, currentY, { align: 'center' });
   }
 
   try {

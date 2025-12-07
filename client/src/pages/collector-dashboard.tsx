@@ -848,7 +848,7 @@ export default function CollectorDashboard() {
       <div className="bg-green-600 text-white p-3 sticky top-0 z-10 ">
         <div className="flex items-center justify-between">
           <div className="flex items-center">
-            <img src="/logos/logo-full.svg" alt="GreenPath" className="w-auto h-10" />
+            <img src="/logos/logo-dark.svg" alt="GreenPath" className="w-auto h-9" />
           </div>
           <div className="flex items-center space-x-2">
             <TourButton className="text-black hover:bg-white bg-white" />

@@ -1827,7 +1827,7 @@ export default function PublicHome() {
             {/* Logo */}
               <div className="relative">
                 <div className="p-2">
-                  <img src="/logos/logo-full.svg" alt="GreenPath" className="w-auto sm:h-14 h-10" />
+                  <img src="/logos/logo-full.svg" alt="GreenPath" className="w-auto sm:h-12 h-10" />
                 </div>
               </div>
 
@@ -1914,7 +1914,7 @@ export default function PublicHome() {
           <div className="text-center">
             <div className="flex justify-center items-center gap-2 mb-4">
               <div className="p-2 rounded-lg">
-                <img src="/logos/logo-light.svg" alt="GreenPath" className="w-auto h-10" />
+                <img src="/logos/logo-dark.svg" alt="GreenPath" className="w-auto h-9" />
               </div>
             </div>
             <p className="text-gray-400 mb-4">

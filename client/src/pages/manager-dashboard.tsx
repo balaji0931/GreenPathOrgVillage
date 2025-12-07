@@ -1097,7 +1097,7 @@ export default function ManagerDashboard() {
         <div className="bg-green-600 text-white px-4 py-3 sticky top-0 z-10">
           <div className="flex items-center justify-between">
             <div className="flex items-center">
-              <img src="/logos/logo-full.svg" alt="GreenPath" className="w-auto h-10" />
+              <img src="/logos/logo-dark.svg" alt="GreenPath" className="w-auto h-9" />
           </div>
             <div className="flex items-center space-x-1">
               <TourButton className="text-black bg-white hover:bg-white"/>

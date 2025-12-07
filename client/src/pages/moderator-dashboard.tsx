@@ -2622,7 +2622,7 @@ const renderAnnouncements = () => (
       <div className="md:hidden bg-green-600 border-b px-3 py-3 sticky top-0 left-0 z-10">
         <div className="flex items-center justify-between">
           <div className="flex items-center">
-            <img src="/logos/logo-full.svg" alt="GreenPath" className="h-10 w-auto" />
+            <img src="/logos/logo-dark.svg" alt="GreenPath" className="h-9 w-auto" />
           </div>
           <div className="">
             <Button onClick={logout} variant="ghost" size="md" className="p-2">

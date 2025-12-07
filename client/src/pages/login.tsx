@@ -66,7 +66,7 @@ export default function Login() {
 
         <div className="text-center mb-4">
           <div className="mb-4">
-            <img src="/logos/logo-full.svg" alt="GreenPath" className="w-auto h-14 mx-auto" />
+            <img src="/logos/logo-full.svg" alt="GreenPath" className="w-auto h-12 mx-auto" />
           </div>
           <p className="text-gray-600 text-sm px-4">
             Empowering Clean Villages through Smart Waste Management

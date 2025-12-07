@@ -2983,7 +2983,7 @@ className="p-1 sm:p-2"
       <div className="md:hidden bg-green-600 border-b px-3 py-3 sticky top-0 left-0 z-10">
         <div className="flex items-center justify-between">
           <div className="flex items-center">
-            <img src="/logos/logo-full.svg" alt="GreenPath" className="h-10 w-auto" />
+            <img src="/logos/logo-dark.svg" alt="GreenPath" className="h-9 w-auto" />
           </div>
           <div className="flex items-center space-x-2">
             <Button 
