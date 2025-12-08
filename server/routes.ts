@@ -646,13 +646,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Keep trying until we find a unique UID
       do {
-        uid = `${villageId}-H${String(counter).padStart(3, '0')}`;
+        uid = `${villageId}-H${String(counter).padStart(4, '0')}`;
         const existing = await storage.getHouseholdByUid(uid);
         if (!existing) break;
         counter++;
-      } while (counter <= 999);
+      } while (counter <= 9999);
 
-      if (counter > 999) {
+      if (counter > 9999) {
         return res.status(400).json({ message: "Maximum households reached for this village" });
       }
 
@@ -762,13 +762,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
           // Keep trying until we find a unique UID
           do {
-            uid = `${villageId}-H${String(counter).padStart(3, '0')}`;
+            uid = `${villageId}-H${String(counter).padStart(4, '0')}`;
             const existing = await storage.getHouseholdByUid(uid);
             if (!existing) break;
             counter++;
-          } while (counter <= 999);
+          } while (counter <= 9999);
 
-          if (counter > 999) {
+          if (counter > 9999) {
             console.error(`Maximum households reached for village ${villageId}`);
             continue; // Skip this household
           }

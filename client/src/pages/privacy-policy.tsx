@@ -120,7 +120,7 @@ export default function PrivacyPolicy() {
               <h2 className="text-xl font-semibold mb-3">10. Contact Information</h2>
               <div className="text-sm">
                 <p>For questions about this privacy policy, contact:</p>
-                <p>Email: greenpathforgood@gmail.com</p>
+                <p>Email: info@greenpathorg.social</p>
               </div>
             </section>
           </CardContent>

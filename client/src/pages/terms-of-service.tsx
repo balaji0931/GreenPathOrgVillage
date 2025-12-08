@@ -156,7 +156,7 @@ export default function TermsOfService() {
               <h2 className="text-xl font-semibold mb-3">12. Contact Information</h2>
               <div className="text-sm">
                 <p>For questions about these terms, contact:</p>
-                <p>Email: greenpathforgood@gmail.com</p>
+                <p>Email: info@greenpathorg.social</p>
               </div>
             </section>
           </CardContent>

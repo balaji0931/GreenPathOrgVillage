@@ -8,6 +8,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useToast } from "@/hooks/use-toast";
 import { useMutation } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
+import Pricing from "@/pages/pricing";
+import { useLocation, Link } from "wouter";
 import { 
   Recycle, 
   Users, 
@@ -65,9 +67,25 @@ if (typeof document !== 'undefined') {
   document.head.appendChild(styleSheet);
 }
 
-export default function PublicHome() {
-  const [activeSection, setActiveSection] = useState("home");
+interface PublicHomeProps {
+  initialSection?: string;
+}
+
+export default function PublicHome({ initialSection = "home" }: PublicHomeProps = {}) {
+  const [activeSection, setActiveSection] = useState(initialSection);
+  const [, setLocation] = useLocation();
   const { toast } = useToast();
+
+  const navigateToSection = (sectionId: string) => {
+    if (sectionId === "home") {
+      setLocation("/");
+    } else if (sectionId === "pricing") {
+      setLocation("/pricing");
+    } else {
+      setLocation(`/${sectionId}`);
+    }
+    setActiveSection(sectionId);
+  };
 
   // Navigation sections
   const sections = [
@@ -76,6 +94,7 @@ export default function PublicHome() {
     // { id: "learn", label: "Learn", icon: <ClipboardList className="w-4 h-4" /> },
     { id: "feedback", label: "Feedback", icon: <Star className="w-4 h-4" /> },
     { id: "contact", label: "Contact Us", icon: <Phone className="w-4 h-4" /> },
+    { id: "pricing", label: "Pricing", icon: <TrendingUp className="w-4 h-4" /> },
   ];
 
   // User roles data
@@ -350,7 +369,7 @@ export default function PublicHome() {
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center px-4">
             <Button 
-              onClick={() => setActiveSection("contact")}
+              onClick={() => navigateToSection("contact")}
               size="lg"
               className="w-full sm:w-auto bg-white text-green-600 hover:bg-green-50 font-semibold px-6 sm:px-8 py-3 sm:py-4 text-base sm:text-lg rounded-full shadow-2xl transform hover:scale-105 transition-all duration-300"
             >
@@ -359,7 +378,7 @@ export default function PublicHome() {
               <ArrowRight className="w-4 h-4 sm:w-5 sm:h-5 ml-2" />
             </Button>
             <Button 
-              onClick={() => setActiveSection("about")}
+              onClick={() => navigateToSection("about")}
               variant="outline"
               size="lg"
               className="w-full sm:w-auto border-white/50 text-black hover:bg-white/10 hover:text-white font-semibold px-6 sm:px-8 py-3 sm:py-4 text-base sm:text-lg rounded-full backdrop-blur-sm"
@@ -675,7 +694,7 @@ export default function PublicHome() {
               Start Your Journey
             </Button>
             <Button 
-              onClick={() => setActiveSection("contact")}
+              onClick={() => navigateToSection("contact")}
               variant="outline"
               size="lg"
               className="w-full sm:w-auto border-white/50 text-black hover:text-white hover:bg-white/10 font-semibold px-6 sm:px-8 py-3 sm:py-4 text-base sm:text-lg rounded-full backdrop-blur-sm"
@@ -1406,7 +1425,7 @@ export default function PublicHome() {
               Start Learning Now
             </Button>
             <Button 
-              onClick={() => setActiveSection("contact")}
+              onClick={() => navigateToSection("contact")}
               variant="outline"
               size="lg"
               className="w-full sm:w-auto border-white/50 text-white hover:bg-white/10 font-semibold px-6 sm:px-8 py-3 sm:py-4 text-base sm:text-lg rounded-full backdrop-blur-sm"
@@ -1597,7 +1616,7 @@ export default function PublicHome() {
                       </div>
                       <div>
                         <h4 className="font-semibold text-gray-800 text-sm sm:text-base">Email</h4>
-                        <p className="text-gray-600 text-sm sm:text-base">greenpathforgood@gmail.com</p>
+                        <p className="text-gray-600 text-sm sm:text-base">support@greenpathorg.social</p>
                       </div>
                     </div>
 
@@ -1836,7 +1855,7 @@ export default function PublicHome() {
               {sections.map((section) => (
                 <button
                   key={section.id}
-                  onClick={() => setActiveSection(section.id)}
+                  onClick={() => navigateToSection(section.id)}
                   className={`relative flex items-center gap-2 px-6 py-3 rounded-full text-sm font-semibold transition-all duration-300 transform hover:scale-105 ${
                     activeSection === section.id
                       ? "bg-gradient-to-r from-green-500 to-emerald-600 text-white shadow-lg"
@@ -1886,7 +1905,7 @@ export default function PublicHome() {
                 {sections.map((section) => (
                   <button
                     key={section.id}
-                    onClick={() => setActiveSection(section.id)}
+                    onClick={() => navigateToSection(section.id)}
                     className="w-full flex items-center gap-3 py-1 px-5 text-left text-black hover:bg-green-50 hover:text-green-600 transition-colors rounded-lg"
                   >
                     {section.icon}
@@ -1906,6 +1925,7 @@ export default function PublicHome() {
         {/* {activeSection === "learn" && renderLearnSection()} */}
         {activeSection === "feedback" && renderFeedbackSection()}
         {activeSection === "contact" && renderContactSection()}
+        {activeSection === "pricing" && <Pricing isStandalone={false} onContactClick={() => navigateToSection("contact")} />}
       </main>
 
       {/* Footer */}

@@ -128,7 +128,7 @@ export default function DataProtection() {
               <h2 className="text-xl font-semibold mb-3">Contact Information</h2>
               <div className="text-sm">
                 <p>For questions about data protection and compliance, contact:</p>
-                <p>Email: greenpathforgood@gmail.com</p>
+                <p>Email: info@greenpathorg.social</p>
               </div>
             </section>
 

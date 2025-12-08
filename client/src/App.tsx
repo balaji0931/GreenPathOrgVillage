@@ -12,6 +12,7 @@ import ModeratorDashboard from "@/pages/moderator-dashboard";
 import PrivacyPolicy from "@/pages/privacy-policy";
 import TermsOfService from "@/pages/terms-of-service";
 import DataProtection from "@/pages/data-protection";
+import Pricing from "@/pages/pricing";
 import NotFound from "@/pages/not-found";
 import "./i18n";
 
@@ -47,7 +48,12 @@ function Router() {
         <Route path="/privacy-policy" component={PrivacyPolicy} />
         <Route path="/terms-of-service" component={TermsOfService} />
         <Route path="/data-protection" component={DataProtection} />
-        <Route path="/" component={PublicHome} />
+        <Route path="/pricing">{() => <Pricing />}</Route>
+        <Route path="/home">{() => <PublicHome initialSection="home" />}</Route>
+        <Route path="/about">{() => <PublicHome initialSection="about" />}</Route>
+        <Route path="/feedback">{() => <PublicHome initialSection="feedback" />}</Route>
+        <Route path="/contact">{() => <PublicHome initialSection="contact" />}</Route>
+        <Route path="/">{() => <PublicHome initialSection="home" />}</Route>
         <Route component={NotFound} />
       </Switch>
     );

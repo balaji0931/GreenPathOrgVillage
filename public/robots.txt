@@ -1,0 +1,20 @@
+User-agent: *
+Allow: /
+Allow: /home
+Allow: /about
+Allow: /pricing
+Allow: /feedback
+Allow: /contact
+Allow: /privacy-policy
+Allow: /terms-of-service
+Allow: /data-protection
+
+Disallow: /login
+Disallow: /admin
+Disallow: /manager
+Disallow: /collector
+Disallow: /generator
+Disallow: /moderator
+Disallow: /api/
+
+Sitemap: https://greenpathorg.social/sitemap.xml
