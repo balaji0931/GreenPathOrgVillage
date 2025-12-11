@@ -1355,7 +1355,7 @@ export class DatabaseStorage implements IStorage {
     return result;
   }
 
-  async getModeratorsList(): Promise<User[]> {
+  async getModeratorsUser(): Promise<User[]> {
     const cache = getCache();
     const cacheKey = cacheKeys.moderators();
     const cached = await cache.get(cacheKey);
