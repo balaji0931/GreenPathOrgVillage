@@ -90,7 +90,6 @@ export function parseQRData(data: string): any {
   try {
     return JSON.parse(data);
   } catch (error) {
-    console.error('Invalid QR data:', error);
     return null;
   }
 }
@@ -103,7 +102,35 @@ export function validateHouseholdQR(data: any): boolean {
     data &&
     typeof data.uid === 'string' &&
     typeof data.headName === 'string' &&
-    typeof data.villageId === 'string' &&
-    data.uid.includes('-G') // Generator (household) UID
+    typeof data.villageId === 'string'
   );
+}
+
+/**
+ * Validate pre-mapped QR code data structure (from batch generation)
+ */
+export function validatePreMappedQR(data: any): boolean {
+  return (
+    data &&
+    typeof data.uid === 'string' &&
+    typeof data.villageId === 'string' &&
+    data.type === 'premapped'
+  );
+}
+
+/**
+ * Convert scanned UID to full database UID (add GEN- prefix if missing)
+ */
+export function toFullUid(scannedUid: string): string {
+  if (scannedUid.startsWith('GEN-')) {
+    return scannedUid;
+  }
+  return `GEN-${scannedUid}`;
+}
+
+/**
+ * Extract scannable UID from full UID (remove GEN- prefix)
+ */
+export function getScannableUid(fullUid: string): string {
+  return fullUid.replace(/^GEN-/, '');
 }

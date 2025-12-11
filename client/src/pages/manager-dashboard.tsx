@@ -1,8 +1,8 @@
 import { useState, useEffect } from "react";
 import React from "react";
 import { useAuth } from "@/hooks/useAuth";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { apiRequest } from "@/lib/queryClient";
+import { useQuery, useMutation, useQueryClient, useInfiniteQuery } from "@tanstack/react-query";
+import { apiRequest, fetchWithCsrf } from "@/lib/queryClient";
 import { useTranslation } from "react-i18next";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import { DashboardTour } from "@/components/tours/DashboardTour";
@@ -145,6 +145,15 @@ interface CollectorStats {
   avgRating: number;
 }
 
+// Paginated response interface
+interface PaginatedResponse<T> {
+  data: T[];
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+}
+
 // Consolidated filter state
 interface FilterState {
   search: string;
@@ -249,7 +258,7 @@ const CreateHouseholdDialog = ({ villageId }: { villageId: string }) => {
       apiRequest("POST", "/api/households", { ...data, villageId }),
     onSuccess: () => {
       toast({ title: t("messages.operationSuccess") });
-      queryClient.invalidateQueries({ queryKey: ["/api/households"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/households/paginated"] });
       queryClient.invalidateQueries({ queryKey: ["/api/manager/stats"] });
       setFormData({ headName: "", houseNumber: "", phone: "", ward: "" });
       setOpen(false);
@@ -333,7 +342,7 @@ const CreateHouseholdDialog = ({ villageId }: { villageId: string }) => {
                     </SelectItem>
                   ))
                 ) : (
-                  <SelectItem value="" disabled>
+                  <SelectItem value="no-wards" disabled>
                     No wards available. Add wards in Overview tab.
                   </SelectItem>
                 )}
@@ -362,7 +371,9 @@ export default function ManagerDashboard() {
 
   // Simplified state management
   const [activeTab, setActiveTab] = useState("overview");
+  const [householdApproachTab, setHouseholdApproachTab] = useState("household-first");
   const [householdSubTab, setHouseholdSubTab] = useState("excel-upload");
+  const [qrFirstSubTab, setQrFirstSubTab] = useState("generate-batch");
   const [showPasswordDialog, setShowPasswordDialog] = useState(false);
   const [selectedIssue, setSelectedIssue] = useState<Issue | null>(null);
   const [showIssueDialog, setShowIssueDialog] = useState(false);
@@ -429,6 +440,13 @@ export default function ManagerDashboard() {
   const [showWardForm, setShowWardForm] = useState(false);
   const [newWard, setNewWard] = useState("");
 
+  // Field Worker and Batch QR state
+  const [collectorsSubTab, setCollectorsSubTab] = useState("collectors");
+  const [batchQuantity, setBatchQuantity] = useState(10);
+  const [showCreateFieldWorkerDialog, setShowCreateFieldWorkerDialog] = useState(false);
+  const [newFieldWorkerName, setNewFieldWorkerName] = useState("");
+  const [newFieldWorkerPhone, setNewFieldWorkerPhone] = useState("");
+
   // Logout mutation
   const logoutMutation = useMutation({
     mutationFn: () => apiRequest("POST", "/api/auth/logout"),
@@ -457,10 +475,30 @@ export default function ManagerDashboard() {
     enabled: !!user?.villageId,
   });
 
-  const { data: households = [] } = useQuery<Household[]>({
-    queryKey: ["/api/households", user?.villageId],
+  // Paginated households query with infinite scroll support
+  const {
+    data: householdsData,
+    fetchNextPage: fetchNextHouseholdsPage,
+    hasNextPage: hasNextHouseholdsPage,
+    isFetchingNextPage: isFetchingNextHouseholdsPage,
+  } = useInfiniteQuery<PaginatedResponse<Household>>({
+    queryKey: ["/api/households/paginated", user?.villageId],
+    queryFn: async ({ pageParam = 1 }) => {
+      const response = await fetch(
+        `/api/households/paginated?page=${pageParam}&limit=50`,
+        { credentials: "include" }
+      );
+      return response.json();
+    },
+    getNextPageParam: (lastPage) =>
+      lastPage.page < lastPage.totalPages ? lastPage.page + 1 : undefined,
+    initialPageParam: 1,
     enabled: !!user?.villageId,
   });
+
+  // Flatten households from all pages
+  const households = householdsData?.pages.flatMap((page) => page.data) ?? [];
+  const totalHouseholdsCount = householdsData?.pages[0]?.total ?? 0;
 
   // Filtered households for QR download
   const filteredHouseholdsForDownload = households.filter(household => {
@@ -481,15 +519,55 @@ export default function ManagerDashboard() {
     enabled: !!user?.villageId,
   });
 
-  const { data: allCollections = [] } = useQuery<WasteCollection[]>({
-    queryKey: ["/api/waste-collections/village", user?.villageId],
+  // Paginated waste collections query with infinite scroll support
+  const {
+    data: collectionsData,
+    fetchNextPage: fetchNextCollectionsPage,
+    hasNextPage: hasNextCollectionsPage,
+    isFetchingNextPage: isFetchingNextCollectionsPage,
+  } = useInfiniteQuery<PaginatedResponse<WasteCollection>>({
+    queryKey: ["/api/waste-collections/village/paginated", user?.villageId],
+    queryFn: async ({ pageParam = 1 }) => {
+      const response = await fetch(
+        `/api/waste-collections/village/paginated?page=${pageParam}&limit=50`,
+        { credentials: "include" }
+      );
+      return response.json();
+    },
+    getNextPageParam: (lastPage) =>
+      lastPage.page < lastPage.totalPages ? lastPage.page + 1 : undefined,
+    initialPageParam: 1,
     enabled: !!user?.villageId,
   });
 
-  const { data: allIssues = [] } = useQuery<Issue[]>({
-    queryKey: ["/api/issues", user?.villageId],
+  // Flatten collections from all pages
+  const allCollections = collectionsData?.pages.flatMap((page) => page.data) ?? [];
+  const totalCollectionsCount = collectionsData?.pages[0]?.total ?? 0;
+
+  // Paginated issues query with infinite scroll support
+  const {
+    data: issuesData,
+    fetchNextPage: fetchNextIssuesPage,
+    hasNextPage: hasNextIssuesPage,
+    isFetchingNextPage: isFetchingNextIssuesPage,
+  } = useInfiniteQuery<PaginatedResponse<Issue>>({
+    queryKey: ["/api/issues/paginated", user?.villageId],
+    queryFn: async ({ pageParam = 1 }) => {
+      const response = await fetch(
+        `/api/issues/paginated?page=${pageParam}&limit=20`,
+        { credentials: "include" }
+      );
+      return response.json();
+    },
+    getNextPageParam: (lastPage) =>
+      lastPage.page < lastPage.totalPages ? lastPage.page + 1 : undefined,
+    initialPageParam: 1,
     enabled: !!user?.villageId,
   });
+
+  // Flatten issues from all pages
+  const allIssues = issuesData?.pages.flatMap((page) => page.data) ?? [];
+  const totalIssuesCount = issuesData?.pages[0]?.total ?? 0;
 
   const { data: feedbacks = [] } = useQuery<any[]>({
     queryKey: ["/api/feedback/village", user?.villageId],
@@ -510,6 +588,21 @@ export default function ManagerDashboard() {
   const { data: payments = [] } = useQuery<any[]>({
     queryKey: ["/api/payments/village", user?.villageId],
     enabled: !!user?.villageId && activeTab === "payments",
+  });
+
+  // Field workers query
+  const { data: fieldWorkers = [] } = useQuery<any[]>({
+    queryKey: ["/api/fieldworkers", user?.villageId],
+    enabled: !!user?.villageId && activeTab === "collectors" && collectorsSubTab === "fieldworkers",
+  });
+
+  // Batch QR codes query - enabled for both Field Workers tab and Households QR-first approach
+  const { data: batchQRCodes = [] } = useQuery<any[]>({
+    queryKey: ["/api/qr-codes", user?.villageId],
+    enabled: !!user?.villageId && (
+      (activeTab === "collectors" && collectorsSubTab === "fieldworkers") ||
+      (activeTab === "households" && householdApproachTab === "qr-first")
+    ),
   });
 
   // Helper function to extract UPI ID from payment link
@@ -552,7 +645,7 @@ export default function ManagerDashboard() {
           const formData = new FormData();
           formData.append('file', proofPhotoFile);
           
-          const uploadResponse = await fetch('/api/upload/manager-proof', {
+          const uploadResponse = await fetchWithCsrf('/api/upload/manager-proof', {
             method: 'POST',
             body: formData,
             credentials: 'include'
@@ -565,7 +658,6 @@ export default function ManagerDashboard() {
           const uploadResult = await uploadResponse.json();
           managerProofPhotoUrl = uploadResult.url;
         } catch (uploadError) {
-          console.error('Proof photo upload error:', uploadError);
           throw new Error('Failed to upload proof photo. Please try again.');
         }
       }
@@ -578,7 +670,7 @@ export default function ManagerDashboard() {
     },
     onSuccess: () => {
       toast({ title: "Issue updated successfully" });
-      queryClient.invalidateQueries({ queryKey: ["/api/issues"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/issues/paginated"] });
       setShowIssueDialog(false);
     },
     onError: (error: any) => {
@@ -587,6 +679,55 @@ export default function ManagerDashboard() {
         description: error.message || "Please try again",
         variant: "destructive" 
       });
+    },
+  });
+
+  // Field worker mutations
+  const createFieldWorkerMutation = useMutation({
+    mutationFn: async (data: { name: string; phone: string }) => {
+      const response = await apiRequest("POST", "/api/fieldworkers", data);
+      return response.json();
+    },
+    onSuccess: (data) => {
+      toast({ 
+        title: "Field Worker Created", 
+        description: `User ID: ${data.userId}, Password: ${data.userId}` 
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/fieldworkers"] });
+      setShowCreateFieldWorkerDialog(false);
+      setNewFieldWorkerName("");
+      setNewFieldWorkerPhone("");
+    },
+    onError: (error: any) => {
+      toast({ title: "Failed to create field worker", description: error.message, variant: "destructive" });
+    },
+  });
+
+  const deleteFieldWorkerMutation = useMutation({
+    mutationFn: async (userId: string) => {
+      await apiRequest("DELETE", `/api/fieldworkers/${userId}`);
+    },
+    onSuccess: () => {
+      toast({ title: "Field worker deleted" });
+      queryClient.invalidateQueries({ queryKey: ["/api/fieldworkers"] });
+    },
+    onError: (error: any) => {
+      toast({ title: "Failed to delete field worker", description: error.message, variant: "destructive" });
+    },
+  });
+
+  // Batch QR generation mutation
+  const generateBatchQRMutation = useMutation({
+    mutationFn: async (quantity: number) => {
+      const response = await apiRequest("POST", "/api/qr-codes/batch", { quantity });
+      return response.json();
+    },
+    onSuccess: (data) => {
+      toast({ title: "QR Codes Generated", description: `Batch ${data.batchId} with ${data.qrCodes.length} QR codes created` });
+      queryClient.invalidateQueries({ queryKey: ["/api/qr-codes"] });
+    },
+    onError: (error: any) => {
+      toast({ title: "Failed to generate QR codes", description: error.message, variant: "destructive" });
     },
   });
 
@@ -600,7 +741,7 @@ export default function ManagerDashboard() {
           const formData = new FormData();
           formData.append('file', data.photoFile);
           
-          const uploadResponse = await fetch('/api/upload/photo', {
+          const uploadResponse = await fetchWithCsrf('/api/upload/photo', {
             method: 'POST',
             body: formData,
             credentials: 'include'
@@ -613,7 +754,6 @@ export default function ManagerDashboard() {
           const uploadResult = await uploadResponse.json();
           photoUrl = uploadResult.url;
         } catch (uploadError) {
-          console.error('Photo upload error:', uploadError);
           // Continue without photo if upload fails
         }
       }
@@ -712,7 +852,7 @@ export default function ManagerDashboard() {
       apiRequest("POST", "/api/qr-codes/generate", { householdIds }),
     onSuccess: () => {
       toast({ title: "QR codes generated successfully!" });
-      queryClient.invalidateQueries({ queryKey: ["/api/households"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/households/paginated"] });
       setSelectedQRHouseholds([]);
     },
     onError: (error: any) => {
@@ -729,7 +869,7 @@ export default function ManagerDashboard() {
       apiRequest("POST", "/api/qr-codes/mark-printed", { householdIds }),
     onSuccess: () => {
       toast({ title: "QR codes marked as printed successfully!" });
-      queryClient.invalidateQueries({ queryKey: ["/api/households"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/households/paginated"] });
       setSelectedDownloadHouseholds([]);
       setShowPrintConfirmDialog(false);
     },
@@ -744,11 +884,10 @@ export default function ManagerDashboard() {
 
   const downloadPDFMutation = useMutation({
     mutationFn: async (householdIds: number[]) => {
-      const response = await fetch("/api/qr-codes/download-pdf", {
+      const response = await fetchWithCsrf("/api/qr-codes/download-pdf", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ householdIds }),
-        credentials: "include",
       });
       if (!response.ok) throw new Error("Failed to download PDF");
       return response.blob();
@@ -794,7 +933,7 @@ export default function ManagerDashboard() {
         title: "Success",
         description: `households created successfully with QR codes!`,
       });
-      queryClient.invalidateQueries({ queryKey: ["/api/households"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/households/paginated"] });
       queryClient.invalidateQueries({ queryKey: ["/api/manager/stats"] });
       queryClient.invalidateQueries({ queryKey: ["/api/villages", user?.villageId, "wards"] });
       setBulkHouseholds([{ headName: "", houseNumber: "", phone: "", address: "", ward: "" }]);
@@ -1097,7 +1236,7 @@ export default function ManagerDashboard() {
         <div className="bg-green-600 text-white px-4 py-3 sticky top-0 z-10">
           <div className="flex items-center justify-between">
             <div className="flex items-center">
-              <img src="/logos/logo-dark.svg" alt="GreenPath" className="w-auto h-9" />
+             <img src="/logos/logo-dark.svg" alt="GreenPath" className="w-auto h-9" />
           </div>
             <div className="flex items-center space-x-1">
               <TourButton className="text-black bg-white hover:bg-white"/>
@@ -1155,7 +1294,7 @@ export default function ManagerDashboard() {
               <nav className="space-y-2">
                 {[
                   { id: "overview", icon: LayoutDashboard, label: t("dashboard.overview"), class: "manager-overview-tab" },
-                  { id: "collectors", icon: Users, label: t("navigation.collectors"), class: "manager-collectors-tab" },
+                  { id: "collectors", icon: Users, label: "WorkForce", class: "manager-collectors-tab" },
                   { id: "households", icon: Home, label: t("navigation.households"), class: "manager-households-tab" },
                   { id: "collections", icon: Package, label: t("navigation.collections"), class: "manager-collections-tab" },
                   { id: "issues", icon: AlertTriangle, label: t("navigation.issues"), class: "manager-issues-tab" },
@@ -1296,13 +1435,21 @@ export default function ManagerDashboard() {
               <div className="space-y-6">
                 <div className="flex justify-between items-center">
                   <div>
-                    <h2 className="text-2xl font-bold">{t("collectors.title")}</h2>
-                    <p className="text-muted-foreground">{t("collectors.title")}</p>
-                  </div>
-                  <div className="flex gap-2">
-                    <CreateCollectorDialog villageId={user?.villageId || ""} />
+                    <h2 className="text-2xl font-bold">WorkForce Management</h2>
+                    <p className="text-muted-foreground">Manage collectors and field workers</p>
                   </div>
                 </div>
+
+                <Tabs value={collectorsSubTab} onValueChange={setCollectorsSubTab} className="w-full">
+                  <TabsList className="grid w-full grid-cols-2">
+                    <TabsTrigger value="collectors">Collectors</TabsTrigger>
+                    <TabsTrigger value="fieldworkers">Field Workers</TabsTrigger>
+                  </TabsList>
+
+                  <TabsContent value="collectors" className="space-y-4">
+                    <div className="flex justify-end">
+                      <CreateCollectorDialog villageId={user?.villageId || ""} />
+                    </div>
 
                 {/* Date Filter */}
                 <Card>
@@ -1420,6 +1567,100 @@ export default function ManagerDashboard() {
                     );
                   })}
                 </div>
+                  </TabsContent>
+
+                  <TabsContent value="fieldworkers" className="space-y-4">
+                    {/* Field Worker Management */}
+                    <div className="flex justify-between items-center">
+                      <h3 className="text-lg font-semibold">Field Workers</h3>
+                      <Dialog open={showCreateFieldWorkerDialog} onOpenChange={setShowCreateFieldWorkerDialog}>
+                        <DialogTrigger asChild>
+                          <Button data-testid="button-add-fieldworker">
+                            <Plus className="h-4 w-4 mr-2" />
+                            Add Field Worker
+                          </Button>
+                        </DialogTrigger>
+                        <DialogContent>
+                          <DialogHeader>
+                            <DialogTitle>Create Field Worker</DialogTitle>
+                          </DialogHeader>
+                          <div className="space-y-4">
+                            <div>
+                              <Label htmlFor="fw-name">Name *</Label>
+                              <Input
+                                id="fw-name"
+                                value={newFieldWorkerName}
+                                onChange={(e) => setNewFieldWorkerName(e.target.value)}
+                                placeholder="Enter field worker name"
+                                data-testid="input-fieldworker-name"
+                              />
+                            </div>
+                            <div>
+                              <Label htmlFor="fw-phone">Phone</Label>
+                              <Input
+                                id="fw-phone"
+                                value={newFieldWorkerPhone}
+                                onChange={(e) => setNewFieldWorkerPhone(e.target.value)}
+                                placeholder="Enter phone number"
+                                data-testid="input-fieldworker-phone"
+                              />
+                            </div>
+                            <Button
+                              onClick={() => createFieldWorkerMutation.mutate({ name: newFieldWorkerName, phone: newFieldWorkerPhone })}
+                              disabled={!newFieldWorkerName.trim() || createFieldWorkerMutation.isPending}
+                              className="w-full"
+                              data-testid="button-submit-fieldworker"
+                            >
+                              {createFieldWorkerMutation.isPending ? "Creating..." : "Create Field Worker"}
+                            </Button>
+                          </div>
+                        </DialogContent>
+                      </Dialog>
+                    </div>
+
+                    {/* Field Workers List */}
+                    <Card>
+                      <CardHeader>
+                        <CardTitle>Field Workers ({fieldWorkers.length})</CardTitle>
+                        <CardDescription>Manage field workers who can map QR codes to households</CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        {fieldWorkers.length === 0 ? (
+                          <p className="text-center text-muted-foreground py-4">No field workers yet. Create one to get started.</p>
+                        ) : (
+                          <div className="space-y-2">
+                            {fieldWorkers.map((fw: any) => (
+                              <div key={fw.userId} className="flex items-center justify-between p-3 border rounded-lg" data-testid={`row-fieldworker-${fw.userId}`}>
+                                <div>
+                                  <p className="font-medium">{fw.name}</p>
+                                  <p className="text-sm text-muted-foreground">ID: {fw.userId} | Phone: {fw.phone || 'N/A'}</p>
+                                </div>
+                                <Button
+                                  variant="destructive"
+                                  size="sm"
+                                  onClick={() => deleteFieldWorkerMutation.mutate(fw.userId)}
+                                  disabled={deleteFieldWorkerMutation.isPending}
+                                  data-testid={`button-delete-fieldworker-${fw.userId}`}
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </CardContent>
+                    </Card>
+
+                    {/* Note about QR batch generation moved */}
+                    <Card className="bg-muted/50">
+                      <CardContent className="pt-4">
+                        <p className="text-sm text-muted-foreground">
+                          <strong>Note:</strong> QR batch generation has been moved to the Households section under the "QR First" approach tab.
+                        </p>
+                      </CardContent>
+                    </Card>
+                  </TabsContent>
+                </Tabs>
               </div>
             )}
 
@@ -1433,14 +1674,37 @@ export default function ManagerDashboard() {
                   </div>
                 </div>
 
-                <Tabs value={householdSubTab} onValueChange={setHouseholdSubTab} className="w-full">
-                  <TabsList className="grid w-full grid-cols-3 gap-2">
-                    <TabsTrigger value="bulk">{t("manager.addHousehold")}</TabsTrigger>
-                    <TabsTrigger value="excel-upload">Excel Upload</TabsTrigger>
-                    <TabsTrigger value="qr-download">{t("manager.downloadQR")}</TabsTrigger>
+                {/* Main Approach Tabs */}
+                <Tabs value={householdApproachTab} onValueChange={setHouseholdApproachTab} className="w-full">
+                  <TabsList className="grid w-full grid-cols-2 gap-2 mb-4">
+                    <TabsTrigger value="household-first" className="flex items-center gap-2">
+                      <Home className="h-4 w-4" />
+                      Household First
+                    </TabsTrigger>
+                    <TabsTrigger value="qr-first" className="flex items-center gap-2">
+                      <QrCode className="h-4 w-4" />
+                      QR First
+                    </TabsTrigger>
                   </TabsList>
 
-                  <TabsContent value="bulk" className="space-y-4">
+                  {/* Approach 1: Household First - Create households, then generate QRs */}
+                  <TabsContent value="household-first" className="space-y-4">
+                    <Card className="bg-blue-50 border-blue-200">
+                      <CardContent className="pt-4">
+                        <p className="text-sm text-blue-800">
+                          <strong>Workflow:</strong> Create households with details first, then generate and print QR codes for distribution.
+                        </p>
+                      </CardContent>
+                    </Card>
+
+                    <Tabs value={householdSubTab} onValueChange={setHouseholdSubTab} className="w-full">
+                      <TabsList className="grid w-full grid-cols-3 gap-2">
+                        <TabsTrigger value="bulk">{t("manager.addHousehold")}</TabsTrigger>
+                        <TabsTrigger value="excel-upload">Excel Upload</TabsTrigger>
+                        <TabsTrigger value="qr-download">{t("manager.downloadQR")}</TabsTrigger>
+                      </TabsList>
+
+                      <TabsContent value="bulk" className="space-y-4">
                     <Card>
                       <CardHeader>
                         <CardTitle>{t("manager.addMultipleHouseholds")}</CardTitle>
@@ -1538,7 +1802,7 @@ export default function ManagerDashboard() {
                                             </SelectItem>
                                           ))
                                         ) : (
-                                          <SelectItem value="" disabled>
+                                          <SelectItem value="no-wards" disabled>
                                             No wards available. Add wards in Overview tab.
                                           </SelectItem>
                                         )}
@@ -1845,6 +2109,105 @@ export default function ManagerDashboard() {
                         </div>
                       </DialogContent>
                     </Dialog>
+                      </TabsContent>
+                    </Tabs>
+                  </TabsContent>
+
+                  {/* Approach 2: QR First - Generate QRs first, field workers scan and fill data */}
+                  <TabsContent value="qr-first" className="space-y-4">
+                    <Card className="bg-green-50 border-green-200">
+                      <CardContent className="pt-4">
+                        <p className="text-sm text-green-800">
+                          <strong>Workflow:</strong> Pre-generate QR codes, print and distribute to field workers who scan and fill household details in the field.
+                        </p>
+                      </CardContent>
+                    </Card>
+
+                    <Tabs value={qrFirstSubTab} onValueChange={setQrFirstSubTab} className="w-full">
+                      <TabsList className="grid w-full grid-cols-2 gap-2">
+                        <TabsTrigger value="generate-batch">Generate Batch</TabsTrigger>
+                        <TabsTrigger value="download-batches">Download Batches</TabsTrigger>
+                      </TabsList>
+
+                      <TabsContent value="generate-batch" className="space-y-4">
+                        <Card>
+                          <CardHeader>
+                            <CardTitle>Generate Batch QR Codes</CardTitle>
+                            <CardDescription>Pre-generate QR codes for field workers to map to households</CardDescription>
+                          </CardHeader>
+                          <CardContent className="space-y-4">
+                            <div className="flex items-end gap-4">
+                              <div className="flex-1">
+                                <Label htmlFor="batch-quantity-hh">Number of QR Codes</Label>
+                                <Input
+                                  id="batch-quantity-hh"
+                                  type="number"
+                                  min={1}
+                                  max={100}
+                                  value={batchQuantity}
+                                  onChange={(e) => setBatchQuantity(parseInt(e.target.value) || 10)}
+                                  data-testid="input-batch-quantity-households"
+                                />
+                              </div>
+                              <Button
+                                onClick={() => generateBatchQRMutation.mutate(batchQuantity)}
+                                disabled={generateBatchQRMutation.isPending || batchQuantity < 1}
+                                data-testid="button-generate-batch-households"
+                              >
+                                <QrCode className="h-4 w-4 mr-2" />
+                                {generateBatchQRMutation.isPending ? "Generating..." : "Generate Batch"}
+                              </Button>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      </TabsContent>
+
+                      <TabsContent value="download-batches" className="space-y-4">
+                        <Card>
+                          <CardHeader>
+                            <CardTitle>Generated QR Code Batches</CardTitle>
+                            <CardDescription>Download PDFs for printing and distribution to field workers</CardDescription>
+                          </CardHeader>
+                          <CardContent>
+                            {batchQRCodes.length === 0 ? (
+                              <p className="text-center text-muted-foreground py-4">No QR codes generated yet. Go to "Generate Batch" tab to create some.</p>
+                            ) : (
+                              <div className="space-y-3">
+                                {Object.entries(
+                                  batchQRCodes.reduce((acc: any, qr: any) => {
+                                    if (!acc[qr.batchId]) acc[qr.batchId] = { total: 0, mapped: 0, notMapped: 0 };
+                                    acc[qr.batchId].total++;
+                                    if (qr.status === 'mapped') acc[qr.batchId].mapped++;
+                                    else acc[qr.batchId].notMapped++;
+                                    return acc;
+                                  }, {})
+                                ).map(([batchId, stats]: [string, any]) => (
+                                  <div key={batchId} className="flex items-center justify-between p-3 border rounded-lg" data-testid={`row-batch-households-${batchId}`}>
+                                    <div>
+                                      <p className="font-medium">{batchId}</p>
+                                      <p className="text-sm text-muted-foreground">
+                                        Total: {stats.total} | Mapped: {stats.mapped} | Unmapped: {stats.notMapped}
+                                      </p>
+                                    </div>
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      onClick={() => {
+                                        window.open(`/api/qr-codes/batch/${batchId}/pdf`, '_blank');
+                                      }}
+                                      data-testid={`button-download-batch-households-${batchId}`}
+                                    >
+                                      <Download className="h-4 w-4 mr-2" />
+                                      Download PDF
+                                    </Button>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                          </CardContent>
+                        </Card>
+                      </TabsContent>
+                    </Tabs>
                   </TabsContent>
                 </Tabs>
               </div>
@@ -1956,18 +2319,21 @@ export default function ManagerDashboard() {
                         <CardTitle>Household Collection Status</CardTitle>
                       </CardHeader>
                       <CardContent>
-                        <div className="space-y-3">
-                          {households
-                            .filter(household => {
-                              if (!filters.search) return true;
-                              const search = filters.search.toLowerCase();
-                              return (
-                                household.headName?.toLowerCase().includes(search) ||
-                                household.uid?.toLowerCase().includes(search) ||
-                                household.houseNumber?.toLowerCase().includes(search)
-                              );
-                            })
-                            .map((household) => {
+                        {(() => {
+                          const filteredHouseholds = households.filter(household => {
+                            if (!filters.search) return true;
+                            const search = filters.search.toLowerCase();
+                            return (
+                              household.headName?.toLowerCase().includes(search) ||
+                              household.uid?.toLowerCase().includes(search) ||
+                              household.houseNumber?.toLowerCase().includes(search)
+                            );
+                          });
+                          
+                          return (
+                            <>
+                              <div className="space-y-3">
+                                {filteredHouseholds.map((household) => {
                               const householdCollections = allCollections.filter(c => c.householdId === household.id);
                               
                               let targetCollection = null;
@@ -2366,7 +2732,29 @@ export default function ManagerDashboard() {
                                 </Dialog>
                               );
                             })}
-                        </div>
+                              </div>
+                              
+                              {/* Load More Controls for Households - Server-side pagination */}
+                              <div className="mt-4 flex justify-center gap-2">
+                                {hasNextHouseholdsPage && (
+                                  <Button
+                                    variant="outline"
+                                    onClick={() => fetchNextHouseholdsPage()}
+                                    disabled={isFetchingNextHouseholdsPage}
+                                    data-testid="button-load-more-households"
+                                  >
+                                    {isFetchingNextHouseholdsPage ? "Loading..." : `Load More (${totalHouseholdsCount - households.length} remaining)`}
+                                  </Button>
+                                )}
+                              </div>
+                              
+                              {/* Summary */}
+                              <p className="text-sm text-muted-foreground text-center mt-2">
+                                Showing {filteredHouseholds.length} of {totalHouseholdsCount} households
+                              </p>
+                            </>
+                          );
+                        })()}
                       </CardContent>
                     </Card>
                   </TabsContent>
@@ -3154,85 +3542,109 @@ export default function ManagerDashboard() {
                     <CardTitle>Issue Reports</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <div className="space-y-4">
-                      {allIssues
-                        .filter(issue => filters.status === "all" || issue.status === filters.status)
-                        .map((issue) => (
-                          <Card key={issue.id}>
-                            <CardContent className="p-4">
-                              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
-                                {/* Left: Issue Info */}
-                                <div className="flex-1 w-full">
-                                  <div className="flex flex-wrap items-center gap-2 mb-2">
-                                    <h4 className="font-semibold break-words">{issue.title}</h4>
-                                    <Badge
-                                      variant={
-                                        issue.status === "open" ? "destructive" :
-                                        issue.status === "in_progress" ? "secondary" : "default"
-                                      }
-                                    >
-                                      {issue.status.replace("_", " ").toUpperCase()}
-                                    </Badge>
-                                    <Badge variant="outline">{issue.category}</Badge>
-                                  </div>
-                                  <p className="text-sm text-muted-foreground mb-2 break-words">
-                                    Reported by: {issue.reportedBy} on {new Date(issue.createdAt).toLocaleDateString()}
-                                  </p>
-                                  <p className="text-sm break-words">{issue.description}</p>
-                                  
-                                  {/* Show reporter's image if available */}
-                                  {issue.photoUrl && (
-                                    <div className="mt-2">
-                                      <p className="text-xs font-medium mb-1">Reported with image:</p>
-                                      <img 
-                                        src={issue.photoUrl} 
-                                        alt="Issue photo" 
-                                        className="w-16 h-16 object-cover rounded cursor-pointer"
-                                        onClick={() => window.open(issue.photoUrl, "_blank")}
-                                      />
-                                    </div>
-                                  )}
-
-                                  {issue.managerReply && (
-                                    <div className="mt-3 p-3 bg-blue-50 rounded-lg">
-                                      <p className="text-sm break-words">
-                                        <strong>Manager Reply:</strong> {issue.managerReply}
+                    {(() => {
+                      const filteredIssues = allIssues.filter(issue => filters.status === "all" || issue.status === filters.status);
+                      
+                      return (
+                        <>
+                          <div className="space-y-4">
+                            {filteredIssues.map((issue) => (
+                              <Card key={issue.id}>
+                                <CardContent className="p-4">
+                                  <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+                                    {/* Left: Issue Info */}
+                                    <div className="flex-1 w-full">
+                                      <div className="flex flex-wrap items-center gap-2 mb-2">
+                                        <h4 className="font-semibold break-words">{issue.title}</h4>
+                                        <Badge
+                                          variant={
+                                            issue.status === "open" ? "destructive" :
+                                            issue.status === "in_progress" ? "secondary" : "default"
+                                          }
+                                        >
+                                          {issue.status.replace("_", " ").toUpperCase()}
+                                        </Badge>
+                                        <Badge variant="outline">{issue.category}</Badge>
+                                      </div>
+                                      <p className="text-sm text-muted-foreground mb-2 break-words">
+                                        Reported by: {issue.reportedBy} on {new Date(issue.createdAt).toLocaleDateString()}
                                       </p>
-                                      {/* Show manager's proof photo if available */}
-                                      {issue.managerProofPhotoUrl && (
+                                      <p className="text-sm break-words">{issue.description}</p>
+                                      
+                                      {/* Show reporter's image if available */}
+                                      {issue.photoUrl && (
                                         <div className="mt-2">
-                                          <p className="text-xs font-medium mb-1">Manager proof:</p>
+                                          <p className="text-xs font-medium mb-1">Reported with image:</p>
                                           <img 
-                                            src={issue.managerProofPhotoUrl} 
-                                            alt="Manager proof photo" 
+                                            src={issue.photoUrl} 
+                                            alt="Issue photo" 
                                             className="w-16 h-16 object-cover rounded cursor-pointer"
-                                            onClick={() => window.open(issue.managerProofPhotoUrl, "_blank")}
+                                            onClick={() => window.open(issue.photoUrl, "_blank")}
                                           />
                                         </div>
                                       )}
+
+                                      {issue.managerReply && (
+                                        <div className="mt-3 p-3 bg-blue-50 rounded-lg">
+                                          <p className="text-sm break-words">
+                                            <strong>Manager Reply:</strong> {issue.managerReply}
+                                          </p>
+                                          {/* Show manager's proof photo if available */}
+                                          {issue.managerProofPhotoUrl && (
+                                            <div className="mt-2">
+                                              <p className="text-xs font-medium mb-1">Manager proof:</p>
+                                              <img 
+                                                src={issue.managerProofPhotoUrl} 
+                                                alt="Manager proof photo" 
+                                                className="w-16 h-16 object-cover rounded cursor-pointer"
+                                                onClick={() => window.open(issue.managerProofPhotoUrl, "_blank")}
+                                              />
+                                            </div>
+                                          )}
+                                        </div>
+                                      )}
                                     </div>
-                                  )}
-                                </div>
 
-                                {/* Right: Action Buttons */}
-                                <div className="flex gap-2 mt-3 sm:mt-0 self-end sm:self-auto">
-                                  <Button
-                                    size="sm"
-                                    onClick={() => {
-                                      setSelectedIssue(issue);
-                                      setShowIssueDialog(true);
-                                    }}
-                                  >
-                                    <Edit className="h-4 w-4" />
-                                  </Button>
-                                </div>
-                              </div>
-                            </CardContent>
-                          </Card>
-                        ))}
-                    </div>
+                                    {/* Right: Action Buttons */}
+                                    <div className="flex gap-2 mt-3 sm:mt-0 self-end sm:self-auto">
+                                      <Button
+                                        size="sm"
+                                        onClick={() => {
+                                          setSelectedIssue(issue);
+                                          setShowIssueDialog(true);
+                                        }}
+                                      >
+                                        <Edit className="h-4 w-4" />
+                                      </Button>
+                                    </div>
+                                  </div>
+                                </CardContent>
+                              </Card>
+                            ))}
+                          </div>
+                          
+                          {/* Load More Controls for Issues - Server-side pagination */}
+                          <div className="mt-4 flex justify-center gap-2">
+                            {hasNextIssuesPage && (
+                              <Button
+                                variant="outline"
+                                onClick={() => fetchNextIssuesPage()}
+                                disabled={isFetchingNextIssuesPage}
+                                data-testid="button-load-more-issues"
+                              >
+                                {isFetchingNextIssuesPage ? "Loading..." : `Load More (${totalIssuesCount - allIssues.length} remaining)`}
+                              </Button>
+                            )}
+                          </div>
+                          
+                          {/* Summary */}
+                          <p className="text-sm text-muted-foreground text-center mt-2">
+                            Showing {filteredIssues.length} of {totalIssuesCount} issues
+                          </p>
+                        </>
+                      );
+                    })()}
                   </CardContent>
-
                 </Card>
               </div>
             )}

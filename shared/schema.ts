@@ -1,4 +1,4 @@
-import { pgTable, text, serial, integer, boolean, timestamp, decimal, json, date, real } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, boolean, timestamp, decimal, json, date, real, index, uniqueIndex } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
@@ -12,6 +12,7 @@ export const villages = pgTable("villages", {
   monthlyFee: decimal("monthly_fee", { precision: 10, scale: 2 }), // Monthly fee amount
   paymentsEnabled: boolean("payments_enabled").default(false), // Enable/disable payments for village
   imageUploadRequired: boolean("image_upload_required").default(true), // Require image upload for collections
+  wards: text("wards").array().default([]), // Array of ward names for this village
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
@@ -30,7 +31,11 @@ export const payments = pgTable("payments", {
   verifiedBy: text("verified_by"), // Manager who verified
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
-});
+}, (table) => [
+  index("idx_payments_village_status").on(table.villageId, table.status),
+  index("idx_payments_household_month").on(table.householdId, table.month),
+  index("idx_payments_status").on(table.status),
+]);
 
 // Users table with role-based structure
 export const users = pgTable("users", {
@@ -44,7 +49,10 @@ export const users = pgTable("users", {
   isFirstLogin: boolean("is_first_login").default(true),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
-});
+}, (table) => [
+  index("idx_users_user_id").on(table.userId),
+  index("idx_users_role_village").on(table.role, table.villageId),
+]);
 
 // Households (Waste Generators)
 export const households = pgTable("households", {
@@ -64,7 +72,11 @@ export const households = pgTable("households", {
   generatorUserId: text("generator_user_id"),
   generatorPassword: text("generator_password"),
   createdAt: timestamp("created_at").defaultNow(),
-});
+}, (table) => [
+  index("idx_households_village_ward_status").on(table.villageId, table.ward, table.status),
+  index("idx_households_village_id").on(table.villageId),
+  index("idx_households_uid").on(table.uid),
+]);
 
 // Waste Collectors
 export const collectors = pgTable("collectors", {
@@ -74,7 +86,10 @@ export const collectors = pgTable("collectors", {
   name: text("name").notNull(),
   phone: text("phone"),
   createdAt: timestamp("created_at").defaultNow(),
-});
+}, (table) => [
+  index("idx_collectors_village_id").on(table.villageId),
+  index("idx_collectors_uid").on(table.uid),
+]);
 
 // Waste Collections
 export const wasteCollections = pgTable("waste_collections", {
@@ -90,7 +105,12 @@ export const wasteCollections = pgTable("waste_collections", {
   voiceUrl: text("voice_url"), // voice recording URL
   status: text("status").default("collected"), // collected, missed
   missedReason: text("missed_reason"),
-});
+}, (table) => [
+  index("idx_waste_collections_household_collector_date").on(table.householdId, table.collectorId, table.collectionDate),
+  index("idx_waste_collections_household_date").on(table.householdId, table.collectionDate),
+  index("idx_waste_collections_collector_date").on(table.collectorId, table.collectionDate),
+  index("idx_waste_collections_collection_date").on(table.collectionDate),
+]);
 
 // Issues
 export const issues = pgTable("issues", {
@@ -106,7 +126,11 @@ export const issues = pgTable("issues", {
   managerProofPhotoUrl: text("manager_proof_photo_url"), // Proof photo required from manager when updating status
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
-});
+}, (table) => [
+  index("idx_issues_village_status_created").on(table.villageId, table.status, table.createdAt),
+  index("idx_issues_village_created").on(table.villageId, table.createdAt),
+  index("idx_issues_status").on(table.status),
+]);
 
 // Announcements
 export const announcements = pgTable("announcements", {
@@ -117,7 +141,10 @@ export const announcements = pgTable("announcements", {
   createdBy: text("created_by").notNull(), // UID of creator
   photoUrl: text("photo_url"), // Optional image URL from Cloudinary
   createdAt: timestamp("created_at").defaultNow(),
-});
+}, (table) => [
+  index("idx_announcements_village_created").on(table.villageId, table.createdAt),
+  index("idx_announcements_target_audience").on(table.targetAudience),
+]);
 
 // Feedback (from generators to collectors for specific collections)
 export const feedback = pgTable("feedback", {
@@ -127,7 +154,10 @@ export const feedback = pgTable("feedback", {
   rating: integer("rating").notNull(), // 1-5 stars
   remarks: text("remarks"),
   createdAt: timestamp("created_at").defaultNow(),
-});
+}, (table) => [
+  index("idx_feedback_collector_created").on(table.toCollectorId, table.createdAt),
+  index("idx_feedback_household_collector").on(table.fromHouseholdId, table.toCollectorId),
+]);
 
 // Relations
 export const villagesRelations = relations(villages, ({ many }) => ({
@@ -302,6 +332,34 @@ export const insertModeratorVillageAssignmentSchema = createInsertSchema(moderat
   assignedAt: true,
 });
 
+// Phase 2: Monthly village stats summary table (for performance optimization)
+export const monthlyVillageStats = pgTable("monthly_village_stats", {
+  id: serial("id").primaryKey(),
+  villageId: text("village_id").notNull().references(() => villages.villageId),
+  month: text("month").notNull(), // Format: YYYY-MM (e.g., "2024-12")
+  totalHouseholds: integer("total_households").default(0),
+  totalCollectors: integer("total_collectors").default(0),
+  collectionsCompleted: integer("collections_completed").default(0),
+  collectionsMissed: integer("collections_missed").default(0),
+  openIssues: integer("open_issues").default(0),
+  averageSegregationRating: real("average_segregation_rating"),
+  averagePlasticRating: real("average_plastic_rating"),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => [
+  index("idx_monthly_stats_village_id").on(table.villageId),
+  uniqueIndex("idx_monthly_stats_village_month").on(table.villageId, table.month),
+  index("idx_monthly_stats_month").on(table.month),
+  index("idx_monthly_stats_updated_at").on(table.updatedAt),
+]);
+
+// Relations for monthly_village_stats
+export const monthlyVillageStatsRelations = relations(monthlyVillageStats, ({ one }) => ({
+  village: one(villages, {
+    fields: [monthlyVillageStats.villageId],
+    references: [villages.villageId],
+  }),
+}));
+
 // Website feedback table (for public home page feedback form)
 export const websiteFeedback = pgTable("website_feedback", {
   id: serial("id").primaryKey(),
@@ -321,6 +379,43 @@ export const contactSubmissions = pgTable("contact_submissions", {
   subject: text("subject").notNull(),
   message: text("message").notNull(),
   createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Pre-generated QR codes table (for field worker mapping)
+export const qrCodes = pgTable("qr_codes", {
+  id: serial("id").primaryKey(),
+  uid: text("uid").notNull().unique(), // GEN-V001-0001, GEN-V001-0002, etc.
+  qrCodeUrl: text("qr_code_url").notNull(),
+  qrCodePublicId: text("qr_code_public_id").notNull(),
+  status: text("status").default("notMapped"), // notMapped, mapped
+  villageId: text("village_id").notNull().references(() => villages.villageId),
+  householdId: integer("household_id").references(() => households.id),
+  batchId: text("batch_id").notNull(), // BATCH-V001-001, etc.
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Relations for qr_codes
+export const qrCodesRelations = relations(qrCodes, ({ one }) => ({
+  village: one(villages, {
+    fields: [qrCodes.villageId],
+    references: [villages.villageId],
+  }),
+  household: one(households, {
+    fields: [qrCodes.householdId],
+    references: [households.id],
+  }),
+}));
+
+// Insert schema for qr_codes
+export const insertQRCodeSchema = createInsertSchema(qrCodes).omit({
+  id: true,
+  createdAt: true,
+});
+
+// Insert schemas for Phase 2 summary table
+export const insertMonthlyVillageStatsSchema = createInsertSchema(monthlyVillageStats).omit({
+  id: true,
+  updatedAt: true,
 });
 
 // Insert schemas for new tables
@@ -346,8 +441,10 @@ export type InsertFeedback = z.infer<typeof insertFeedbackSchema>;
 export type InsertPayment = z.infer<typeof insertPaymentSchema>;
 export type InsertModerator = z.infer<typeof insertModeratorSchema>;
 export type InsertModeratorVillageAssignment = z.infer<typeof insertModeratorVillageAssignmentSchema>;
+export type InsertMonthlyVillageStats = z.infer<typeof insertMonthlyVillageStatsSchema>;
 export type InsertWebsiteFeedback = z.infer<typeof insertWebsiteFeedbackSchema>;
 export type InsertContactSubmission = z.infer<typeof insertContactSubmissionSchema>;
+export type InsertQRCode = z.infer<typeof insertQRCodeSchema>;
 
 export type Village = typeof villages.$inferSelect;
 export type User = typeof users.$inferSelect;
@@ -360,5 +457,7 @@ export type Feedback = typeof feedback.$inferSelect;
 export type Payment = typeof payments.$inferSelect;
 export type Moderator = typeof moderators.$inferSelect;
 export type ModeratorVillageAssignment = typeof moderatorVillageAssignments.$inferSelect;
+export type MonthlyVillageStats = typeof monthlyVillageStats.$inferSelect;
 export type WebsiteFeedback = typeof websiteFeedback.$inferSelect;
 export type ContactSubmission = typeof contactSubmissions.$inferSelect;
+export type QRCode = typeof qrCodes.$inferSelect;

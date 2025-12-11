@@ -13,11 +13,6 @@ export const usePerformance = () => {
     if (startTime) {
       const duration = performance.now() - startTime;
       performanceMetrics.current.delete(name);
-      
-      // Log in development
-      if (import.meta.env.DEV) {
-        console.log(`⚡ ${name}: ${duration.toFixed(2)}ms`);
-      }
 
       // Send to analytics in production
       if (import.meta.env.PROD && 'serviceWorker' in navigator) {

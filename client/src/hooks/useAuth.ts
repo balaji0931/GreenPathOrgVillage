@@ -1,5 +1,6 @@
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { apiRequest } from "@/lib/queryClient";
+import { useEffect } from "react";
+import { apiRequest, setCsrfToken, fetchCsrfToken, getCsrfToken } from "@/lib/queryClient";
 
 export interface User {
   userId: string;
@@ -19,10 +20,22 @@ export function useAuth() {
     refetchInterval: false,
   });
 
+  // Fetch CSRF token on mount if user is authenticated and no token exists
+  useEffect(() => {
+    if (user && !getCsrfToken()) {
+      fetchCsrfToken();
+    }
+  }, [user]);
+
   const loginMutation = useMutation({
     mutationFn: async ({ userId, password }: { userId: string; password: string }) => {
       const response = await apiRequest("POST", "/api/auth/login", { userId, password });
-      return response.json();
+      const data = await response.json();
+      // Store CSRF token from login response
+      if (data.csrfToken) {
+        setCsrfToken(data.csrfToken);
+      }
+      return data;
     },
     onSuccess: () => {
       refetch();
@@ -32,6 +45,8 @@ export function useAuth() {
   const logoutMutation = useMutation({
     mutationFn: async () => {
       await apiRequest("POST", "/api/auth/logout");
+      // Clear CSRF token on logout
+      setCsrfToken(null);
     },
     onSuccess: () => {
       refetch();

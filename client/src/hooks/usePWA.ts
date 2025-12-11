@@ -36,7 +36,6 @@ export function usePWA() {
 
     // Listen for beforeinstallprompt event
     const handleBeforeInstallPrompt = (e: Event) => {
-      console.log('[PWA] beforeinstallprompt event fired');
       e.preventDefault();
       setDeferredPrompt(e as BeforeInstallPromptEvent);
       setIsInstallable(true);
@@ -86,11 +85,9 @@ export function usePWA() {
     }
 
     try {
-      console.log('[PWA] Prompting for installation');
       await deferredPrompt.prompt();
       const choiceResult = await deferredPrompt.userChoice;
       
-      console.log('[PWA] User choice:', choiceResult.outcome);
       if (choiceResult.outcome === 'accepted') {
         setDeferredPrompt(null);
         setIsInstallable(false);
@@ -98,7 +95,6 @@ export function usePWA() {
       }
       return false;
     } catch (error) {
-      console.error('Error installing app:', error);
       return false;
     }
   };
@@ -127,8 +123,6 @@ export function registerServiceWorker() {
           updateViaCache: 'none'
         });
 
-        console.log('[PWA] Service Worker registered successfully:', registration.scope);
-
         // Handle updates
         registration.addEventListener('updatefound', () => {
           const newWorker = registration.installing;
@@ -150,16 +144,13 @@ export function registerServiceWorker() {
         });
 
       } catch (error) {
-        console.error('[PWA] Service Worker registration failed:', error);
         // Try to register from different path as fallback
         try {
           const fallbackRegistration = await navigator.serviceWorker.register('./sw.js', {
             scope: './',
             updateViaCache: 'none'
           });
-          console.log('[PWA] Service Worker registered via fallback:', fallbackRegistration.scope);
         } catch (fallbackError) {
-          console.error('[PWA] Fallback registration also failed:', fallbackError);
         }
       }
     });

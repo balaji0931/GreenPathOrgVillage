@@ -6,37 +6,43 @@ import * as schema from "@shared/schema";
 // Load environment variables
 dotenv.config();
 
-// Use DATABASE_URL from environment variables
-const DATABASE_URL = process.env.DATABASE_URL;
+// Use DATABASE_URL_POOLED for better connection pooling, fallback to DATABASE_URL
+const DATABASE_URL = process.env.DATABASE_URL_POOLED || process.env.DATABASE_URL;
 
 if (!DATABASE_URL) {
-  throw new Error('DATABASE_URL environment variable is required');
+  throw new Error('DATABASE_URL or DATABASE_URL_POOLED environment variable is required');
 }
 
-// Minimal connection pool configuration to save compute hours
+if (process.env.DATABASE_URL_POOLED) {
+  console.log('✅ Using Neon pooled connection for better concurrency');
+} else {
+  console.log('⚠️ DATABASE_URL_POOLED not set, using standard DATABASE_URL');
+}
+
+// Enhanced connection pool configuration for 50K+ concurrent users
 const poolConfig: PoolConfig = {
   connectionString: DATABASE_URL,
   ssl: process.env.NODE_ENV === 'production' 
     ? { rejectUnauthorized: false }
     : false,
   
-  // Minimal connection pool settings to reduce database activity
-  max: parseInt(process.env.DB_POOL_MAX || '3'), // Reduced max connections
-  min: parseInt(process.env.DB_POOL_MIN || '0'), // No minimum connections (let DB sleep)
-  idleTimeoutMillis: parseInt(process.env.DB_IDLE_TIMEOUT || '10000'), // Close idle connections faster (10s)
+  // Connection pool settings optimized for scaling (Phase 1 optimization)
+  max: parseInt(process.env.DB_POOL_MAX || '40'), // Increased from 10 for better concurrency
+  min: parseInt(process.env.DB_POOL_MIN || '5'), // Increased from 2, maintain more connections
+  idleTimeoutMillis: parseInt(process.env.DB_IDLE_TIMEOUT || '60000'), // Increased from 30s
   connectionTimeoutMillis: parseInt(process.env.DB_CONNECTION_TIMEOUT || '10000'),
   
   // Query timeout
   query_timeout: parseInt(process.env.DB_QUERY_TIMEOUT || '30000'),
   
-  // Disable keep alive to let connections close
-  keepAlive: false,
+  // Keep alive for pooled connections
+  keepAlive: process.env.DATABASE_URL_POOLED ? true : false,
   
   // Application name for monitoring
   application_name: process.env.DB_APP_NAME || 'greenpath-api',
   
-  // Statement timeout for long-running queries
-  statement_timeout: parseInt(process.env.DB_STATEMENT_TIMEOUT || '60000'),
+  // Statement timeout for long-running queries (Phase 1: increased for scaling)
+  statement_timeout: parseInt(process.env.DB_STATEMENT_TIMEOUT || '120000'), // Increased from 60s
 };
 
 export const pool = new Pool(poolConfig);

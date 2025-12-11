@@ -30,7 +30,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
-import { apiRequest, queryClient } from "@/lib/queryClient";
+import { apiRequest, queryClient, fetchWithCsrf } from "@/lib/queryClient";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Leaf,
@@ -141,7 +141,6 @@ export default function ModeratorDashboard() {
             villageName: village.name
           })));
         } catch (error) {
-          console.error(`Failed to fetch managers for village ${village.villageId}:`, error);
         }
       }
       return allManagers;
@@ -232,7 +231,7 @@ export default function ModeratorDashboard() {
           const formData = new FormData();
           formData.append('file', data.photoFile);
           
-          const uploadResponse = await fetch('/api/upload/photo', {
+          const uploadResponse = await fetchWithCsrf('/api/upload/photo', {
             method: 'POST',
             body: formData,
             credentials: 'include'
@@ -245,7 +244,6 @@ export default function ModeratorDashboard() {
           const uploadResult = await uploadResponse.json();
           photoUrl = uploadResult.url;
         } catch (uploadError) {
-          console.error('Photo upload error:', uploadError);
           // Continue without photo if upload fails
         }
       }

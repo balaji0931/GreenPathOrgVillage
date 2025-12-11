@@ -1,5 +1,73 @@
 import { QueryClient, QueryFunction } from "@tanstack/react-query";
 
+// CSRF token storage - use sessionStorage for persistence across page reloads
+let csrfToken: string | null = null;
+
+// Initialize from sessionStorage on module load
+if (typeof window !== 'undefined') {
+  csrfToken = sessionStorage.getItem('csrfToken');
+}
+
+export function setCsrfToken(token: string | null) {
+  csrfToken = token;
+  if (typeof window !== 'undefined') {
+    if (token) {
+      sessionStorage.setItem('csrfToken', token);
+    } else {
+      sessionStorage.removeItem('csrfToken');
+    }
+  }
+}
+
+export function getCsrfToken(): string | null {
+  return csrfToken;
+}
+
+// Fetch CSRF token from server (called on app initialization for authenticated users)
+export async function fetchCsrfToken(): Promise<string | null> {
+  try {
+    const res = await fetch('/api/auth/csrf-token', { credentials: 'include' });
+    if (res.ok) {
+      const data = await res.json();
+      if (data.csrfToken) {
+        setCsrfToken(data.csrfToken);
+        return data.csrfToken;
+      }
+    }
+  } catch (error) {
+    // Silently fail - user may not be authenticated
+  }
+  return null;
+}
+
+// Get headers for fetch requests that include CSRF token (for file uploads)
+export function getFetchHeaders(contentType?: string): Record<string, string> {
+  const headers: Record<string, string> = {};
+  if (contentType) {
+    headers["Content-Type"] = contentType;
+  }
+  if (csrfToken) {
+    headers["X-CSRF-Token"] = csrfToken;
+  }
+  return headers;
+}
+
+// Wrapper for fetch with CSRF token (for file uploads and other raw fetch calls)
+export async function fetchWithCsrf(
+  url: string,
+  options: RequestInit = {}
+): Promise<Response> {
+  const headers = new Headers(options.headers);
+  if (csrfToken && !["GET", "HEAD", "OPTIONS"].includes((options.method || "GET").toUpperCase())) {
+    headers.set("X-CSRF-Token", csrfToken);
+  }
+  return fetch(url, {
+    ...options,
+    headers,
+    credentials: "include",
+  });
+}
+
 async function throwIfResNotOk(res: Response) {
   if (!res.ok) {
     const text = (await res.text()) || res.statusText;
@@ -12,9 +80,20 @@ export async function apiRequest(
   url: string,
   data?: unknown | undefined,
 ): Promise<Response> {
+  const headers: Record<string, string> = {};
+  
+  if (data) {
+    headers["Content-Type"] = "application/json";
+  }
+  
+  // Include CSRF token for state-changing requests
+  if (csrfToken && !["GET", "HEAD", "OPTIONS"].includes(method.toUpperCase())) {
+    headers["X-CSRF-Token"] = csrfToken;
+  }
+  
   const res = await fetch(url, {
     method,
-    headers: data ? { "Content-Type": "application/json" } : {},
+    headers,
     body: data ? JSON.stringify(data) : undefined,
     credentials: "include",
   });

@@ -22,7 +22,6 @@ export function InstallPWA({ showInline = false, onInstallComplete }: InstallPWA
     setIsInstalling(false);
     
     if (success) {
-      console.log('App installed successfully');
       onInstallComplete?.();
     }
   };

@@ -1,4 +1,4 @@
-import { Switch, Route, useLocation } from "wouter";
+import { Switch, Route, Redirect } from "wouter";
 import { Toaster } from "@/components/ui/toaster";
 import { useAuth } from "@/hooks/useAuth";
 import { InstallPWA } from "@/components/InstallPWA";
@@ -9,6 +9,7 @@ import ManagerDashboard from "@/pages/manager-dashboard";
 import CollectorDashboard from "@/pages/collector-dashboard";
 import GeneratorDashboard from "@/pages/generator-dashboard";
 import ModeratorDashboard from "@/pages/moderator-dashboard";
+import FieldWorkerDashboard from "@/pages/fieldworker-dashboard";
 import PrivacyPolicy from "@/pages/privacy-policy";
 import TermsOfService from "@/pages/terms-of-service";
 import DataProtection from "@/pages/data-protection";
@@ -28,7 +29,6 @@ function App() {
 
 function Router() {
   const { user, isLoading, isAuthenticated } = useAuth();
-  const [location, setLocation] = useLocation();
 
   if (isLoading) {
     return (
@@ -48,63 +48,73 @@ function Router() {
         <Route path="/privacy-policy" component={PrivacyPolicy} />
         <Route path="/terms-of-service" component={TermsOfService} />
         <Route path="/data-protection" component={DataProtection} />
-        <Route path="/pricing">{() => <Pricing />}</Route>
+        <Route path="/pricing" component={Pricing} />
+
         <Route path="/home">{() => <PublicHome initialSection="home" />}</Route>
         <Route path="/about">{() => <PublicHome initialSection="about" />}</Route>
         <Route path="/feedback">{() => <PublicHome initialSection="feedback" />}</Route>
         <Route path="/contact">{() => <PublicHome initialSection="contact" />}</Route>
-        <Route path="/">{() => <PublicHome initialSection="home" />}</Route>
+
+        <Route path="/">
+          {() => <PublicHome initialSection="home" />}
+        </Route>
+
         <Route component={NotFound} />
       </Switch>
     );
   }
 
-  // Determine the correct dashboard based on user role
-  const getDashboardComponent = () => {
-    switch (user.role) {
-      case 'admin':
-        return <AdminDashboard />;
-      case 'moderator':
-        return <ModeratorDashboard />;
-      case 'manager':
-        return <ManagerDashboard />;
-      case 'collector':
-        return <CollectorDashboard />;
-      case 'generator':
-        return <GeneratorDashboard />;
-      default:
-        setLocation("/login");
-        return <Login />;
-    }
-  };
+  const dashboard = {
+    admin: <AdminDashboard />,
+    moderator: <ModeratorDashboard />,
+    manager: <ManagerDashboard />,
+    collector: <CollectorDashboard />,
+    generator: <GeneratorDashboard />,
+    fieldworker: <FieldWorkerDashboard />
+  }[user.role];
+
+  // If user has unknown / invalid role → redirect to login
+  if (!dashboard) {
+    return <Redirect to="/login" />;
+  }
 
   return (
     <Switch>
+      {/* Logged-in user visiting /login → redirect to dashboard */}
       <Route path="/login">
-        {() => {
-          // Redirect authenticated users to their dashboard
-          setLocation("/");
-          return getDashboardComponent();
-        }}
+        {() => <Redirect to="/" />}
       </Route>
+
+      {/* Role-specific routes */}
       <Route path="/admin">
-        {() => user.role === 'admin' ? <AdminDashboard /> : getDashboardComponent()}
+        {() => user.role === "admin" ? <AdminDashboard /> : <Redirect to="/" />}
       </Route>
+
       <Route path="/moderator">
-        {() => user.role === 'moderator' ? <ModeratorDashboard /> : getDashboardComponent()}
+        {() => user.role === "moderator" ? <ModeratorDashboard /> : <Redirect to="/" />}
       </Route>
+
       <Route path="/manager">
-        {() => user.role === 'manager' ? <ManagerDashboard /> : getDashboardComponent()}
+        {() => user.role === "manager" ? <ManagerDashboard /> : <Redirect to="/" />}
       </Route>
+
       <Route path="/collector">
-        {() => user.role === 'collector' ? <CollectorDashboard /> : getDashboardComponent()}
+        {() => user.role === "collector" ? <CollectorDashboard /> : <Redirect to="/" />}
       </Route>
+
       <Route path="/generator">
-        {() => user.role === 'generator' ? <GeneratorDashboard /> : getDashboardComponent()}
+        {() => user.role === "generator" ? <GeneratorDashboard /> : <Redirect to="/" />}
       </Route>
+
+      <Route path="/fieldworker">
+        {() => user.role === "fieldworker" ? <FieldWorkerDashboard /> : <Redirect to="/" />}
+      </Route>
+
+      {/* Default route → user's dashboard */}
       <Route path="/">
-        {() => getDashboardComponent()}
+        {() => dashboard}
       </Route>
+
       <Route component={NotFound} />
     </Switch>
   );

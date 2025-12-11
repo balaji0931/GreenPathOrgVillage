@@ -24,7 +24,7 @@ import { Progress } from "@/components/ui/progress";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
-import { apiRequest, queryClient } from "@/lib/queryClient";
+import { apiRequest, queryClient, fetchWithCsrf } from "@/lib/queryClient";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import { DashboardTour } from "@/components/tours/DashboardTour";
 import { TourButton } from "@/components/tours/TourButton";
@@ -139,10 +139,8 @@ export default function GeneratorDashboard() {
     queryKey: ["/api/generator/household"],
     enabled: !!user?.userId,
     queryFn: async () => {
-      console.log('Fetching household data for user:', user?.userId);
       const response = await apiRequest("GET", "/api/generator/household");
       const data = await response.json();
-      console.log('Household data received:', data);
       return data;
     },
     retry: 3,
@@ -176,11 +174,10 @@ export default function GeneratorDashboard() {
       // Upload photo first if provided
       if (newIssue.photoFile) {
         try {
-          console.log("Uploading photo:", newIssue.photoFile.name);
           const formData = new FormData();
           formData.append("file", newIssue.photoFile);
 
-          const uploadResponse = await fetch("/api/upload/photo", {
+          const uploadResponse = await fetchWithCsrf("/api/upload/photo", {
             method: "POST",
             body: formData,
             credentials: "include",
@@ -188,7 +185,6 @@ export default function GeneratorDashboard() {
 
           if (!uploadResponse.ok) {
             const errorData = await uploadResponse.text();
-            console.error("Photo upload failed:", errorData);
             throw new Error(
               `Photo upload failed: ${uploadResponse.status} ${errorData}`,
             );
@@ -196,9 +192,7 @@ export default function GeneratorDashboard() {
 
           const uploadResult = await uploadResponse.json();
           photoUrl = uploadResult.url;
-          console.log("Photo uploaded successfully:", photoUrl);
         } catch (uploadError) {
-          console.error("Photo upload error:", uploadError);
           toast({
             title: "Warning",
             description: "Photo upload failed, continuing without photo",
@@ -208,10 +202,7 @@ export default function GeneratorDashboard() {
         }
       }
 
-      // Create the issue with photo URL
-      console.log("Submitting issue with data:", { ...issueData, photoUrl });
-
-      const response = await fetch("/api/issues", {
+      const response = await fetchWithCsrf("/api/issues", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -225,7 +216,6 @@ export default function GeneratorDashboard() {
 
       if (!response.ok) {
         const errorData = await response.text();
-        console.error("Issue creation failed:", errorData);
         throw new Error(
           `Failed to create issue: ${response.status} ${errorData}`,
         );
@@ -234,7 +224,6 @@ export default function GeneratorDashboard() {
       return response.json();
     },
     onSuccess: (data) => {
-      console.log("Issue created successfully:", data);
       queryClient.invalidateQueries({ queryKey: ["/api/issues"] });
       setShowIssueModal(false);
       setNewIssue({
@@ -250,7 +239,6 @@ export default function GeneratorDashboard() {
       });
     },
     onError: (error: any) => {
-      console.error("Issue creation error:", error);
       toast({
         title: "Error",
         description:
@@ -263,7 +251,7 @@ export default function GeneratorDashboard() {
   // Submit feedback mutation
   const createFeedbackMutation = useMutation({
     mutationFn: async (feedbackData: any) => {
-      const response = await fetch("/api/feedback", {
+      const response = await fetchWithCsrf("/api/feedback", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -331,10 +319,9 @@ export default function GeneratorDashboard() {
       const formData = new FormData();
       formData.append('file', proofFile);
       
-      const response = await fetch(`/api/payments/${paymentId}/proof`, {
+      const response = await fetchWithCsrf(`/api/payments/${paymentId}/proof`, {
         method: 'POST',
         body: formData,
-        credentials: 'include'
       });
       
       if (!response.ok) {
@@ -407,13 +394,6 @@ export default function GeneratorDashboard() {
         return;
       }
     }
-
-    console.log("Submitting issue:", {
-      title: trimmedTitle,
-      category: newIssue.category,
-      description: trimmedDescription,
-      hasPhoto: !!newIssue.photoFile,
-    });
 
     createIssueMutation.mutate({
       title: trimmedTitle,

@@ -9,9 +9,33 @@ import morgan from "morgan";
 import { createLogger, format, transports } from "winston";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
+import { initializeCache } from "./cache";
+import { initializeJobProcessors, closeQueues } from "./jobs";
+import { storage } from "./storage";
 
 // Load environment variables from .env file
 dotenv.config();
+
+// Initialize caching layer (Redis with fallback to memory)
+initializeCache();
+
+// Initialize background job processors (uses same Redis connection)
+try {
+  initializeJobProcessors(storage);
+  
+  // Phase 3: Schedule daily stats update job on startup
+  import('./jobs').then(({ scheduleCurrentMonthStatsUpdate }) => {
+    scheduleCurrentMonthStatsUpdate().then(() => {
+      console.log('✅ Phase 3: Daily stats update job scheduled (runs daily at 12:05 AM UTC)');
+    }).catch(err => {
+      console.warn('⚠️ Phase 3: Failed to schedule daily stats update:', err.message);
+    });
+  }).catch(err => {
+    console.warn('⚠️ Phase 3: Could not load job scheduler:', err.message);
+  });
+} catch (error) {
+  console.warn('⚠️ Background jobs not available (Redis required):', (error as Error).message);
+}
 
 // Create Winston logger for production
 const logger = createLogger({
@@ -33,6 +57,17 @@ const app = express();
 
 // Trust proxy for accurate IP addresses when behind reverse proxy
 app.set("trust proxy", 1);
+
+// HTTPS enforcement in production - redirect HTTP to HTTPS
+if (process.env.NODE_ENV === "production") {
+  app.use((req, res, next) => {
+    // Check X-Forwarded-Proto header (set by reverse proxies like Replit/Cloudflare)
+    if (req.headers['x-forwarded-proto'] !== 'https' && req.hostname !== 'localhost') {
+      return res.redirect(301, `https://${req.hostname}${req.url}`);
+    }
+    next();
+  });
+}
 
 // Security headers with Helmet - Relaxed CSP for development
 app.use(
@@ -184,14 +219,15 @@ app.use(
   ),
 );
 
-// Slow down repeated requests
+// Slow down repeated requests - configured for express-slow-down v2
 app.use(
   "/api/",
   slowDown({
     windowMs: 15 * 60 * 1000, // 15 minutes
     delayAfter: 100, // Allow 100 requests per windowMs without delay
-    delayMs: 500, // Add 500ms delay per request after delayAfter
+    delayMs: () => 500, // Add 500ms delay per request after delayAfter (v2 syntax)
     maxDelayMs: 20000, // Maximum delay of 20 seconds
+    validate: { delayMs: false }, // Suppress deprecation warning
   }),
 );
 
@@ -469,8 +505,16 @@ app.get("/api/pwa/health", (_req, res) => {
   });
 
   // Graceful shutdown handler
-  const gracefulShutdown = (signal: string) => {
+  const gracefulShutdown = async (signal: string) => {
     logger.info(`Received ${signal}. Graceful shutdown initiated.`);
+    
+    // Close background job queues
+    try {
+      await closeQueues();
+    } catch (error) {
+      logger.error('Error closing job queues:', error);
+    }
+    
     server.close(() => {
       logger.info("HTTP server closed.");
       process.exit(0);

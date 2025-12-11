@@ -5,10 +5,15 @@ import { storage } from "./storage";
 import bcrypt from "bcrypt";
 import multer from "multer";
 import session from "express-session";
+import { createClient } from "redis";
+import { RedisStore } from "connect-redis";
 import { insertUserSchema, insertVillageSchema, insertHouseholdSchema, insertCollectorSchema, insertWasteCollectionSchema, insertIssueSchema, insertAnnouncementSchema, insertFeedbackSchema } from "@shared/schema";
 import { z } from "zod";
 import path from "path";
 import { readFileSync } from "fs";
+import { randomBytes } from "crypto";
+import { getQueueStats, scheduleReportGeneration } from "./jobs";
+import { getCache, cacheKeys } from "./cache";
 
 // Configure multer for file uploads with enhanced security
 const upload = multer({
@@ -52,8 +57,53 @@ declare module 'express-session' {
     userId?: string;
     role?: string;
     villageId?: string;
+    csrfToken?: string;
   }
 }
+
+// Generate cryptographically secure CSRF token
+const generateCsrfToken = (): string => {
+  return randomBytes(32).toString('hex');
+};
+
+// CSRF protection middleware - validates token on state-changing requests
+const csrfProtection = (req: any, res: any, next: any) => {
+  // Skip CSRF check for safe methods
+  const safeMethods = ['GET', 'HEAD', 'OPTIONS'];
+  if (safeMethods.includes(req.method)) {
+    return next();
+  }
+
+  // Skip CSRF for public endpoints that don't require auth
+  const publicEndpoints = [
+    '/api/website-feedback',
+    '/api/auth/login',
+    '/api/auth/logout',
+    '/api/contact',
+    '/api/newsletter',
+    '/api/auth/csrf-token'
+  ];
+  // Normalize path by removing trailing slash for exact comparison
+  const normalizedPath = req.path.replace(/\/$/, '');
+  if (publicEndpoints.includes(normalizedPath)) {
+    return next();
+  }
+
+  // Skip CSRF for unauthenticated requests (they can't do anything sensitive anyway)
+  if (!req.session?.userId) {
+    return next();
+  }
+
+  // Get token from header
+  const headerToken = req.headers['x-csrf-token'];
+  const sessionToken = req.session?.csrfToken;
+
+  if (!headerToken || !sessionToken || headerToken !== sessionToken) {
+    return res.status(403).json({ message: 'Invalid CSRF token' });
+  }
+
+  next();
+};
 
 // Authentication middleware
 const requireAuth = (req: any, res: any, next: any) => {
@@ -131,6 +181,51 @@ export async function registerRoutes(app: Express): Promise<Server> {
     throw new Error('SESSION_SECRET environment variable is required for production');
   }
 
+  // Initialize session store (Redis or memory fallback)
+  let sessionStore: any = undefined;
+  
+  if (process.env.REDIS_URL) {
+    try {
+      const redisClient = createClient({
+        url: process.env.REDIS_URL,
+        socket: {
+          reconnectStrategy: (retries: number) => {
+            if (retries > 10) {
+              console.error('❌ Redis session store: max retries exceeded');
+              return false;
+            }
+            return Math.min(retries * 100, 3000);
+          },
+        },
+      });
+
+      redisClient.on('connect', () => {
+        console.log('✅ Redis session store connected');
+      });
+
+      redisClient.on('error', (err: Error) => {
+        console.error('❌ Redis session store error:', err.message);
+      });
+
+      // Connect synchronously-ish by starting connection
+      redisClient.connect().catch((err: Error) => {
+        console.error('❌ Redis session store connection failed:', err.message);
+      });
+
+      sessionStore = new RedisStore({ 
+        client: redisClient,
+        prefix: 'greenpath:sess:',
+      });
+      console.log('🟢 Using Redis session store');
+    } catch (error) {
+      console.warn('⚠️ Redis session store not available, falling back to memory store:', (error as Error).message);
+    }
+  }
+
+  if (!sessionStore) {
+    console.log('🟠 Using memory session store (not recommended for production)');
+  }
+
   // Production-ready session configuration
   const sessionConfig = {
     secret: process.env.SESSION_SECRET,
@@ -144,44 +239,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       maxAge: parseInt(process.env.SESSION_MAX_AGE || '86400000'), // 24 hours default
       sameSite: 'strict' as const // CSRF protection
     },
-    // Store configuration for production scaling
-    ...(process.env.REDIS_URL && {
-      store: (() => {
-        try {
-          const RedisStore = require('connect-redis').default;
-          const { createClient } = require('redis');
-
-          const redisClient = createClient({
-            url: process.env.REDIS_URL,
-            retry_strategy: (options: any) => {
-              if (options.error && options.error.code === 'ECONNREFUSED') {
-                console.error('Redis connection refused');
-                return new Error('Redis connection refused');
-              }
-              if (options.total_retry_time > 1000 * 60 * 60) {
-                return new Error('Redis retry time exhausted');
-              }
-              if (options.attempt > 10) {
-                return undefined;
-              }
-              return Math.min(options.attempt * 100, 3000);
-            }
-          });
-
-          redisClient.connect().catch(console.error);
-          return new RedisStore({ client: redisClient });
-        } catch (error) {
-          console.warn('Redis store not available, falling back to memory store');
-          return undefined;
-        }
-      })()
-    })
+    ...(sessionStore && { store: sessionStore })
   };
 
   app.use(session(sessionConfig));
 
   // Apply input validation middleware to all routes except static assets
   app.use('/api', validateInput);
+
+  // Apply CSRF protection to all API routes
+  app.use('/api', csrfProtection);
 
   // Public API routes (no authentication required)
   // Website feedback submission with enhanced validation
@@ -415,6 +482,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   }
 
+  // CSRF token endpoint - provides token for authenticated sessions
+  app.get('/api/auth/csrf-token', (req, res) => {
+    // Generate new CSRF token and store in session
+    const token = generateCsrfToken();
+    req.session.csrfToken = token;
+    res.json({ csrfToken: token });
+  });
+
   // Auth routes
   app.post('/api/auth/login', async (req, res) => {
     try {
@@ -433,9 +508,45 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(401).json({ message: "Invalid credentials" });
       }
 
+      // Regenerate session to prevent session fixation attacks
+      // This must succeed for security - we fail closed if it doesn't work
+      const regenerateSession = () => new Promise<void>((resolve, reject) => {
+        req.session.regenerate((err) => {
+          if (err) {
+            console.error('Session regeneration failed:', err);
+            reject(err);
+          } else {
+            resolve();
+          }
+        });
+      });
+
+      // Save session after setting values
+      const saveSession = () => new Promise<void>((resolve, reject) => {
+        req.session.save((err) => {
+          if (err) {
+            console.error('Session save failed:', err);
+            reject(err);
+          } else {
+            resolve();
+          }
+        });
+      });
+
+      // Session regeneration must succeed - fail closed for security
+      await regenerateSession();
+
+      // Set session data after regeneration
       req.session.userId = user.userId;
       req.session.role = user.role;
       req.session.villageId = user.villageId ?? undefined;
+
+      // Generate new CSRF token for the session
+      const csrfToken = generateCsrfToken();
+      req.session.csrfToken = csrfToken;
+
+      // Explicitly save session to ensure data is persisted
+      await saveSession();
 
       res.json({
         user: {
@@ -444,10 +555,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
           name: user.name,
           villageId: user.villageId,
           isFirstLogin: user.isFirstLogin,
-        }
+        },
+        csrfToken
       });
     } catch (error) {
-      console.error("Login error:", error);
+      console.error('Login error:', error);
       res.status(500).json({ message: "Login failed" });
     }
   });
@@ -559,7 +671,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const villages = await storage.getVillages();
       const villagesWithStats = await Promise.all(
-        villages.map(async (village) => {
+        villages.slice(0, 50).map(async (village) => { // Limit to first 50 for performance
           const stats = await storage.getVillageStats(village.villageId);
           return { ...village, ...stats };
         })
@@ -571,7 +683,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get('/api/villages/:villageId', requireAuth, requireRole(['admin', 'manager', 'collector', 'generator']), requireVillageAccess, async (req, res) => {
+  // Paginated villages endpoint
+  app.get('/api/villages/paginated', requireAuth, requireRole(['admin']), async (req, res) => {
+    try {
+      const page = parseInt(req.query.page as string) || 1;
+      const limit = Math.min(parseInt(req.query.limit as string) || 50, 100);
+      const search = req.query.search as string;
+
+      const result = await storage.getVillagesPaginated({ page, limit, search });
+      
+      // Get stats for the paginated results (parallel processing)
+      const villagesWithStats = await Promise.all(
+        result.data.map(async (village) => {
+          const stats = await storage.getVillageStats(village.villageId);
+          return { ...village, ...stats };
+        })
+      );
+
+      res.json({
+        ...result,
+        data: villagesWithStats
+      });
+    } catch (error) {
+      console.error("Get paginated villages error:", error);
+      res.status(500).json({ message: "Failed to get villages" });
+    }
+  });
+
+  app.get('/api/villages/:villageId', requireAuth, requireRole(['admin', 'manager', 'collector', 'generator','fieldworker']), requireVillageAccess, async (req, res) => {
     try {
       const { villageId } = req.params;
       const village = await storage.getVillageByVillageId(villageId);
@@ -605,30 +744,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { villageId } = req.params;
       const { ward } = req.body;
       
-      // Create a temporary household entry to establish the ward in the system
-      // This is a workaround since we're not changing the DB schema
-      const existingWards = await storage.getWardsByVillage(villageId);
-      if (existingWards.includes(ward)) {
-        return res.status(400).json({ message: "Ward already exists" });
+      if (!ward || ward.trim() === '') {
+        return res.status(400).json({ message: "Ward name is required" });
       }
       
-      // Create a placeholder household to establish the ward
-      await storage.createHousehold({
-        uid: `${villageId}-WARD-${Date.now()}`,
-        villageId,
-        headName: `Ward-Placeholder-${ward}`,
-        phone: '',
-        houseNumber: 'PLACEHOLDER',
-        ward,
-        familySize: 1,
-        address: 'Ward placeholder entry',
-        generatorUserId: '',
-        generatorPassword: '',
-      });
+      const updatedWards = await storage.addWardToVillage(villageId, ward.trim());
       
-      res.json({ message: "Ward added successfully" });
-    } catch (error) {
+      res.json({ message: "Ward added successfully", wards: updatedWards });
+    } catch (error: any) {
       console.error("Add ward error:", error);
+      if (error.message === "Ward already exists") {
+        return res.status(400).json({ message: "Ward already exists" });
+      }
       res.status(500).json({ message: "Failed to add ward" });
     }
   });
@@ -639,18 +766,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { headName, phone, houseNumber, familySize, address, ward } = req.body;
       const villageId = req.session.villageId!;
 
-      // Generate unique UID with better logic
-      const existingHouseholds = await storage.getHouseholdsByVillage(villageId);
-      let uid;
-      let counter = 1;
+      // Generate unique UID by checking max from both households and qr_codes tables
+      let maxNum = await storage.getMaxHouseNumber(villageId);
+      let counter = maxNum + 1;
+      let uid = `${villageId}-H${String(counter).padStart(4, '0')}`;
 
-      // Keep trying until we find a unique UID
-      do {
-        uid = `${villageId}-H${String(counter).padStart(4, '0')}`;
-        const existing = await storage.getHouseholdByUid(uid);
-        if (!existing) break;
+      // Retry loop to handle race conditions
+      while (counter <= 9999) {
+        const existingHousehold = await storage.getHouseholdByUid(uid);
+        const existingQR = await storage.getQRCodeByUid(uid);
+        if (!existingHousehold && !existingQR) break;
         counter++;
-      } while (counter <= 9999);
+        uid = `${villageId}-H${String(counter).padStart(4, '0')}`;
+      }
 
       if (counter > 9999) {
         return res.status(400).json({ message: "Maximum households reached for this village" });
@@ -725,6 +853,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get('/api/households/paginated', requireAuth, requireRole(['manager', 'collector']), requireVillageAccess, async (req, res) => {
+    try {
+      const villageId = req.session.villageId!;
+      const page = parseInt(req.query.page as string) || 1;
+      const limit = parseInt(req.query.limit as string) || 50;
+      const search = req.query.search as string;
+      const ward = req.query.ward as string;
+      const status = req.query.status as string;
+      
+      const result = await storage.getHouseholdsByVillagePaginated(villageId, {
+        page,
+        limit,
+        search,
+        ward,
+        status
+      });
+      res.json(result);
+    } catch (error) {
+      console.error("Get paginated households error:", error);
+      res.status(500).json({ message: "Failed to get households" });
+    }
+  });
+
   // Get single household by UID (for QR scanning)
   app.get('/api/households/:uid', requireAuth, requireRole(['manager', 'collector']), requireVillageAccess, async (req, res) => {
     try {
@@ -753,20 +904,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const createdHouseholds = [];
       const { generateGeneratorCredentials, generateHouseholdQR } = await import('./qr-service');
 
+      // Get max house number at the start (from both tables)
+      let currentMaxNum = await storage.getMaxHouseNumber(villageId);
+
       for (const householdData of householdsData) {
         try {
-          // Generate unique UID for household with better logic
-          const existingHouseholds = await storage.getHouseholdsByVillage(villageId);
-          let uid;
-          let counter = existingHouseholds.length + createdHouseholds.length + 1;
+          // Generate unique UID by incrementing from max with uniqueness check
+          currentMaxNum++;
+          let counter = currentMaxNum;
+          let uid = `${villageId}-H${String(counter).padStart(4, '0')}`;
 
-          // Keep trying until we find a unique UID
-          do {
-            uid = `${villageId}-H${String(counter).padStart(4, '0')}`;
-            const existing = await storage.getHouseholdByUid(uid);
-            if (!existing) break;
+          // Ensure UID is actually unique (handles race conditions)
+          while (counter <= 9999) {
+            const existingHousehold = await storage.getHouseholdByUid(uid);
+            const existingQR = await storage.getQRCodeByUid(uid);
+            if (!existingHousehold && !existingQR) break;
             counter++;
-          } while (counter <= 9999);
+            uid = `${villageId}-H${String(counter).padStart(4, '0')}`;
+          }
+          currentMaxNum = counter; // Update for next iteration
 
           if (counter > 9999) {
             console.error(`Maximum households reached for village ${villageId}`);
@@ -993,6 +1149,274 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Paginated collectors endpoint
+  app.get('/api/collectors/paginated', requireAuth, requireRole(['manager', 'admin']), async (req, res) => {
+    try {
+      const villageId = req.session.villageId || req.query.villageId as string;
+      if (!villageId) {
+        return res.status(400).json({ message: "Village ID required" });
+      }
+      
+      const page = parseInt(req.query.page as string) || 1;
+      const limit = Math.min(parseInt(req.query.limit as string) || 50, 100);
+      const search = req.query.search as string;
+
+      const result = await storage.getCollectorsByVillagePaginated(villageId, { page, limit, search });
+      res.json(result);
+    } catch (error) {
+      console.error("Get paginated collectors error:", error);
+      res.status(500).json({ message: "Failed to get collectors" });
+    }
+  });
+
+  // Field Worker routes
+  app.get('/api/fieldworkers', requireAuth, requireRole(['manager']), async (req, res) => {
+    try {
+      const villageId = req.session.villageId!;
+      const fieldworkers = await storage.getFieldWorkersByVillage(villageId);
+      res.json(fieldworkers);
+    } catch (error) {
+      console.error("Get fieldworkers error:", error);
+      res.status(500).json({ message: "Failed to get field workers" });
+    }
+  });
+
+  app.post('/api/fieldworkers', requireAuth, requireRole(['manager']), async (req, res) => {
+    try {
+      const { name, phone } = req.body;
+      const villageId = req.session.villageId!;
+
+      // Generate UID: V001-FW001, V001-FW002, etc.
+      const existingFieldWorkers = await storage.getFieldWorkersByVillage(villageId);
+      const uid = `${villageId}-FW${String(existingFieldWorkers.length + 1).padStart(3, '0')}`;
+
+      // Create user account for field worker
+      const hashedPassword = await bcrypt.hash(uid, 10);
+      const fieldworker = await storage.createUser({
+        userId: uid,
+        password: hashedPassword,
+        role: 'fieldworker',
+        name,
+        phone,
+        villageId,
+      });
+
+      res.json(fieldworker);
+    } catch (error) {
+      console.error("Create fieldworker error:", error);
+      res.status(500).json({ message: "Failed to create field worker" });
+    }
+  });
+
+  app.delete('/api/fieldworkers/:userId', requireAuth, requireRole(['manager']), async (req, res) => {
+    try {
+      const { userId } = req.params;
+      const villageId = req.session.villageId!;
+
+      // Verify the fieldworker belongs to the manager's village
+      const user = await storage.getUserByUserId(userId);
+      if (!user || user.villageId !== villageId || user.role !== 'fieldworker') {
+        return res.status(404).json({ message: "Field worker not found" });
+      }
+
+      await storage.deleteFieldWorker(userId);
+      res.json({ message: "Field worker deleted successfully" });
+    } catch (error) {
+      console.error("Delete fieldworker error:", error);
+      res.status(500).json({ message: "Failed to delete field worker" });
+    }
+  });
+
+  // Pre-mapped QR Code routes (for field worker mapping)
+  app.post('/api/qr-codes/batch', requireAuth, requireRole(['manager']), async (req, res) => {
+    try {
+      const { quantity } = req.body;
+      const villageId = req.session.villageId!;
+
+      if (!quantity || quantity < 1 || quantity > 500) {
+        return res.status(400).json({ message: "Quantity must be between 1 and 500" });
+      }
+
+      // Get next batch ID and UIDs
+      const batchId = await storage.getNextBatchId(villageId);
+      const uids = await storage.getNextQRCodeUid(villageId, quantity);
+
+      // Import the QR generation function
+      const { generatePreMappedQR } = await import('./qr-service');
+
+      // Generate QR codes and upload to Cloudinary
+      const qrCodeRecords = [];
+      for (const uid of uids) {
+        const { qrCodeUrl, qrCodePublicId } = await generatePreMappedQR(uid, villageId);
+        qrCodeRecords.push({
+          uid,
+          qrCodeUrl,
+          qrCodePublicId,
+          villageId,
+          batchId,
+          status: 'notMapped',
+        });
+      }
+
+      // Save to database
+      const savedQRCodes = await storage.createBatchQRCodes(qrCodeRecords);
+
+      res.json({
+        batchId,
+        count: savedQRCodes.length,
+        qrCodes: savedQRCodes,
+      });
+    } catch (error) {
+      console.error("Create batch QR codes error:", error);
+      res.status(500).json({ message: "Failed to create QR codes" });
+    }
+  });
+
+  app.get('/api/qr-codes', requireAuth, requireRole(['manager']), async (req, res) => {
+    try {
+      const villageId = req.session.villageId!;
+      const qrCodes = await storage.getQRCodesByVillage(villageId);
+      res.json(qrCodes);
+    } catch (error) {
+      console.error("Get QR codes error:", error);
+      res.status(500).json({ message: "Failed to get QR codes" });
+    }
+  });
+
+  app.get('/api/qr-codes/unmapped', requireAuth, requireRole(['manager', 'fieldworker']), async (req, res) => {
+    try {
+      const villageId = req.session.villageId!;
+      const qrCodes = await storage.getUnmappedQRCodesByVillage(villageId);
+      res.json(qrCodes);
+    } catch (error) {
+      console.error("Get unmapped QR codes error:", error);
+      res.status(500).json({ message: "Failed to get unmapped QR codes" });
+    }
+  });
+
+  app.get('/api/qr-codes/batch/:batchId/pdf', requireAuth, requireRole(['manager']), async (req, res) => {
+    try {
+      const { batchId } = req.params;
+      const qrCodes = await storage.getQRCodesByBatch(batchId);
+
+      if (qrCodes.length === 0) {
+        return res.status(404).json({ message: "Batch not found" });
+      }
+
+      const { generatePreMappedQRCodesPDF } = await import('./qr-service');
+      const pdfBuffer = await generatePreMappedQRCodesPDF(qrCodes);
+
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', `attachment; filename="${batchId}-qr-codes.pdf"`);
+      res.send(pdfBuffer);
+    } catch (error) {
+      console.error("Generate batch PDF error:", error);
+      res.status(500).json({ message: "Failed to generate PDF" });
+    }
+  });
+
+  // Field worker QR code lookup route
+  app.get('/api/qr-codes/:uid', requireAuth, requireRole(['fieldworker', 'manager']), async (req, res) => {
+    try {
+      const { uid } = req.params;
+      const villageId = req.session.villageId!;
+
+      const { toFullUid } = await import('./qr-service');
+      const fullUid = toFullUid(uid);
+
+      const qrCode = await storage.getQRCodeByUid(fullUid);
+      if (!qrCode) {
+        return res.status(404).json({ message: "QR code not found" });
+      }
+
+      // Ensure the QR belongs to fieldworker's village
+      if (qrCode.villageId !== villageId) {
+        return res.status(403).json({ message: "Access denied" });
+      }
+
+      res.json(qrCode);
+    } catch (error) {
+      console.error("Get QR code error:", error);
+      res.status(500).json({ message: "Failed to get QR code" });
+    }
+  });
+
+  // Field worker map household route
+  app.post('/api/qr-codes/:uid/map', requireAuth, requireRole(['fieldworker']), async (req, res) => {
+    try {
+      const { uid } = req.params;
+      const { headName, phone, houseNumber, ward, familySize, address } = req.body;
+      const villageId = req.session.villageId!;
+
+      const { toFullUid, generateGeneratorCredentials } = await import('./qr-service');
+      const fullUid = toFullUid(uid);
+
+      // Get the QR code
+      const qrCode = await storage.getQRCodeByUid(fullUid);
+      if (!qrCode) {
+        return res.status(404).json({ message: "QR code not found" });
+      }
+
+      // Ensure QR belongs to fieldworker's village
+      if (qrCode.villageId !== villageId) {
+        return res.status(403).json({ message: "Access denied" });
+      }
+
+      // Check if already mapped
+      if (qrCode.status === 'mapped') {
+        return res.status(400).json({ message: "QR code is already mapped to a household" });
+      }
+
+      // The household UID is the same as the full QR UID (GEN-V001-H0001)
+      const householdUid = fullUid.replace('GEN-', '');
+
+      // Generate generator credentials (uses the full UID)
+      const { userId: generatorUserId, hashedPassword } = generateGeneratorCredentials(householdUid);
+
+      // Create household with qrPrinted = true (since they already have the physical QR)
+      const household = await storage.createHousehold({
+        uid: householdUid,
+        villageId,
+        headName,
+        phone,
+        houseNumber,
+        ward: ward || 'Ward-1',
+        familySize: familySize || 1,
+        address,
+        status: 'active',
+        qrCodeUrl: qrCode.qrCodeUrl,
+        qrCodePublicId: qrCode.qrCodePublicId,
+        qrPrinted: true,
+        generatorUserId,
+        generatorPassword: generatorUserId,
+      });
+
+      // Create generator user account
+      await storage.createUser({
+        userId: generatorUserId,
+        password: hashedPassword,
+        role: 'generator',
+        name: headName,
+        phone,
+        villageId,
+      });
+
+      // Update QR code status to mapped
+      await storage.updateQRCodeStatus(fullUid, 'mapped', household.id);
+
+      res.json({
+        household,
+        credentials: {
+          userId: generatorUserId,
+          password: generatorUserId,
+        },
+      });
+    } catch (error) {
+      console.error("Map QR code error:", error);
+      res.status(500).json({ message: "Failed to map QR code" });
+    }
+  });
+
   // Waste collection routes
   app.post('/api/waste-collections', requireAuth, requireRole(['collector']), requireVillageAccess, async (req, res) => {
     try {
@@ -1031,6 +1455,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         status,
         missedReason,
       });
+
+      // Phase 4: Invalidate relevant caches
+      const cache = getCache();
+      await cache.delete(cacheKeys.adminStats());
+      await cache.delete(cacheKeys.villageStats(household.villageId));
+      await cache.delete(cacheKeys.dailyReport(household.villageId, new Date().toISOString().split('T')[0]));
+      await cache.clear('report:*'); // Clear all report caches
 
       res.json(collection);
     } catch (error) {
@@ -1283,6 +1714,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get('/api/issues/paginated', requireAuth, async (req, res) => {
+    try {
+      const villageId = req.session.villageId!;
+
+      if (!villageId) {
+        return res.status(400).json({ message: "Village ID required" });
+      }
+
+      const page = parseInt(req.query.page as string) || 1;
+      const limit = parseInt(req.query.limit as string) || 50;
+      const status = req.query.status as string;
+
+      const result = await storage.getIssuesByVillagePaginated(villageId, {
+        page,
+        limit,
+        status
+      });
+      res.json(result);
+    } catch (error) {
+      console.error("Get paginated issues error:", error);
+      res.status(500).json({ message: "Failed to get issues" });
+    }
+  });
+
   app.patch('/api/issues/:id', requireAuth, requireRole(['manager', 'admin']), async (req, res) => {
     try {
       const { id } = req.params;
@@ -1303,6 +1758,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       };
 
       const issue = await storage.updateIssue(parseInt(id), updates);
+      
+      // Invalidate issues caches
+      const cache = getCache();
+      const villageId = req.session.villageId;
+      if (villageId) {
+        await cache.delete(cacheKeys.issues(villageId));
+        await cache.clear(`issues:${villageId}:*`); // Clear paginated caches
+        await cache.delete(cacheKeys.villageDetails(villageId)); // Clear village details cache
+      }
+      
       res.json(issue);
     } catch (error) {
       console.error("Update issue error:", error);
@@ -1339,6 +1804,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(announcements);
     } catch (error) {
       console.error("Get all announcements error:", error);
+      res.status(500).json({ message: "Failed to get announcements" });
+    }
+  });
+
+  // Paginated announcements endpoint
+  app.get('/api/admin/announcements/paginated', requireAuth, requireRole(['admin']), async (req, res) => {
+    try {
+      const page = parseInt(req.query.page as string) || 1;
+      const limit = Math.min(parseInt(req.query.limit as string) || 50, 100);
+      const villageId = req.query.villageId as string;
+
+      const result = await storage.getAllAnnouncementsPaginated({ page, limit, villageId });
+      res.json(result);
+    } catch (error) {
+      console.error("Get paginated announcements error:", error);
       res.status(500).json({ message: "Failed to get announcements" });
     }
   });
@@ -1415,36 +1895,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Get manager stats error:", error);
       res.status(500).json({ message: "Failed to get village stats" });
-    }
-  });
-
-  // Collector assignment routes
-  app.post('/api/collector-assignments', requireAuth, requireRole(['manager']), async (req, res) => {
-    try {
-      const { collectorId, householdId } = req.body;
-      const assignedBy = req.session.userId!;
-
-      const assignment = await storage.assignCollectorToHouseholds({
-        collectorId,
-        householdId,
-        assignedBy,
-      });
-
-      res.json(assignment);
-    } catch (error) {
-      console.error("Assign collector error:", error);
-      res.status(500).json({ message: "Failed to assign collector" });
-    }
-  });
-
-  app.get('/api/collector-assignments/:collectorId', requireAuth, requireRole(['manager']), async (req, res) => {
-    try {
-      const { collectorId } = req.params;
-      const assignments = await storage.getCollectorAssignments(parseInt(collectorId));
-      res.json(assignments);
-    } catch (error) {
-      console.error("Get collector assignments error:", error);
-      res.status(500).json({ message: "Failed to get collector assignments" });
     }
   });
 
@@ -1540,16 +1990,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const villageId = req.session.villageId!;
       const { month } = req.query;
 
-      let paymentsData = await storage.getPaymentsByVillage(villageId);
-
-      // Filter by month if provided
-      if (month) {
-        paymentsData = paymentsData.filter(p => p.month === month);
-      }
-
+      // Use month filter at database level
+      const paymentsData = await storage.getPaymentsByVillage(villageId, month as string);
       res.json(paymentsData);
     } catch (error) {
       console.error("Get village payments error:", error);
+      res.status(500).json({ message: "Failed to get payments" });
+    }
+  });
+
+  // Paginated payments endpoint
+  app.get('/api/payments/paginated', requireAuth, requireRole(['manager', 'admin']), async (req, res) => {
+    try {
+      const villageId = req.session.villageId || req.query.villageId as string;
+      if (!villageId) {
+        return res.status(400).json({ message: "Village ID required" });
+      }
+      
+      const page = parseInt(req.query.page as string) || 1;
+      const limit = Math.min(parseInt(req.query.limit as string) || 50, 100);
+      const month = req.query.month as string;
+      const status = req.query.status as string;
+      const search = req.query.search as string;
+
+      const result = await storage.getPaymentsByVillagePaginated(villageId, { 
+        page, 
+        limit, 
+        month, 
+        status, 
+        search 
+      });
+      res.json(result);
+    } catch (error) {
+      console.error("Get paginated payments error:", error);
       res.status(500).json({ message: "Failed to get payments" });
     }
   });
@@ -1565,6 +2038,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const payment = await storage.updatePaymentStatus(parseInt(paymentId), status, verifiedBy);
+      
+      // Invalidate payment caches
+      const cache = getCache();
+      const villageId = req.session.villageId;
+      if (villageId) {
+        await cache.delete(cacheKeys.payments(villageId));
+        await cache.clear(`payments:${villageId}:*`); // Clear paginated caches
+      }
+      
       res.json(payment);
     } catch (error) {
       console.error("Update payment status error:", error);
@@ -1834,6 +2316,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(managers);
     } catch (error) {
       console.error("Get managers error:", error);
+      res.status(500).json({ message: "Failed to get managers" });
+    }
+  });
+
+  // Paginated managers endpoint
+  app.get('/api/managers/paginated', requireAuth, requireRole(['admin']), async (req, res) => {
+    try {
+      const page = parseInt(req.query.page as string) || 1;
+      const limit = Math.min(parseInt(req.query.limit as string) || 50, 100);
+      const search = req.query.search as string;
+      const villageId = req.query.villageId as string;
+
+      const result = await storage.getManagersListPaginated({ page, limit, search, villageId });
+      res.json(result);
+    } catch (error) {
+      console.error("Get paginated managers error:", error);
       res.status(500).json({ message: "Failed to get managers" });
     }
   });
@@ -2441,9 +2939,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const moderators = await storage.getModeratorsList();
 
-      // Get village assignments for each moderator
+      // Get village assignments for each moderator (limited to first 50 for performance)
       const moderatorsWithVillages = await Promise.all(
-        moderators.map(async (moderator) => {
+        moderators.slice(0, 50).map(async (moderator) => {
           const villages = await storage.getModeratorVillages(moderator.moderatorId);
           return { ...moderator, villages };
         })
@@ -2452,6 +2950,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(moderatorsWithVillages);
     } catch (error) {
       console.error("Get moderators error:", error);
+      res.status(500).json({ message: "Failed to get moderators" });
+    }
+  });
+
+  // Paginated moderators endpoint
+  app.get('/api/moderators/paginated', requireAuth, requireRole(['admin']), async (req, res) => {
+    try {
+      const page = parseInt(req.query.page as string) || 1;
+      const limit = Math.min(parseInt(req.query.limit as string) || 50, 100);
+      const search = req.query.search as string;
+
+      const result = await storage.getModeratorsListPaginated({ page, limit, search });
+
+      // Get village assignments for paginated results (parallel)
+      const moderatorsWithVillages = await Promise.all(
+        result.data.map(async (moderator) => {
+          const villages = await storage.getModeratorVillages(moderator.moderatorId || moderator.userId);
+          return { ...moderator, villages };
+        })
+      );
+
+      res.json({
+        ...result,
+        data: moderatorsWithVillages
+      });
+    } catch (error) {
+      console.error("Get paginated moderators error:", error);
       res.status(500).json({ message: "Failed to get moderators" });
     }
   });
@@ -2558,41 +3083,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Collector complaint routes
-  app.post('/api/complaints', requireAuth, requireRole(['generator']), async (req, res) => {
-    try {
-      const { collectorId, complaint } = req.body;
-      const user = await storage.getUserByUserId(req.session.userId!);
-      const household = await storage.getHouseholdByGeneratorUserId(req.session.userId!);
-
-      if (!household) {
-        return res.status(404).json({ message: "Household not found" });
-      }
-
-      const newComplaint = await storage.createCollectorComplaint({
-        collectorId,
-        householdId: household.id,
-        complaint,
-      });
-
-      res.json(newComplaint);
-    } catch (error) {
-      console.error("Create complaint error:", error);
-      res.status(500).json({ message: "Failed to create complaint" });
-    }
-  });
-
-  app.get('/api/complaints/:villageId', requireAuth, requireRole(['manager']), async (req, res) => {
-    try {
-      const { villageId } = req.params;
-      const complaints = await storage.getComplaintsByVillage(villageId);
-      res.json(complaints);
-    } catch (error) {
-      console.error("Get complaints error:", error);
-      res.status(500).json({ message: "Failed to get complaints" });
-    }
-  });
-
   // New API routes for manager real-time management
   app.get('/api/waste-collections/village', requireAuth, requireRole(['manager']), requireVillageAccess, async (req, res) => {
     try {
@@ -2612,6 +3102,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get('/api/waste-collections/village/paginated', requireAuth, requireRole(['manager']), requireVillageAccess, async (req, res) => {
+    try {
+      const villageId = req.session.villageId!;
+      const page = parseInt(req.query.page as string) || 1;
+      const limit = parseInt(req.query.limit as string) || 50;
+      const date = req.query.date as string;
+      const collectorId = req.query.collectorId ? parseInt(req.query.collectorId as string) : undefined;
+      const status = req.query.status as string;
+
+      const result = await storage.getCollectionsByVillageWithDetailsPaginated(villageId, {
+        page,
+        limit,
+        date,
+        collectorId,
+        status
+      });
+
+      res.json(result);
+    } catch (error) {
+      console.error("Get paginated village collections error:", error);
+      res.status(500).json({ message: "Failed to get village collections" });
+    }
+  });
+
   app.put('/api/issues/:id', requireAuth, requireRole(['manager']), requireVillageAccess, async (req, res) => {
     try {
       const { id } = req.params;
@@ -2627,20 +3141,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Update issue error:", error);
       res.status(500).json({ message: "Failed to update issue" });
-    }
-  });
-
-  app.put('/api/complaints/:complaintId/resolve', requireAuth, requireRole(['manager']), async (req, res) => {
-    try {
-      const { complaintId } = req.params;
-      const { managerResponse } = req.body;
-
-      await storage.resolveCollectorComplaint(parseInt(complaintId), managerResponse);
-
-      res.json({ message: "Complaint resolved successfully" });
-    } catch (error) {
-      console.error("Resolve complaint error:", error);
-      res.status(500).json({ message: "Failed to resolve complaint" });
     }
   });
 
@@ -2724,6 +3224,70 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error('Error getting contact submissions:', error);
       res.status(500).json({ message: 'Internal server error' });
+    }
+  });
+
+  app.get('/api/admin/queue-stats', requireAuth, requireRole(['admin']), async (req, res) => {
+    try {
+      const stats = await getQueueStats();
+      res.json(stats);
+    } catch (error) {
+      console.error('Error getting queue stats:', error);
+      res.status(500).json({ message: 'Queue stats not available' });
+    }
+  });
+
+  app.post('/api/admin/schedule-report', requireAuth, requireRole(['admin']), async (req, res) => {
+    try {
+      const { type, villageId } = req.body;
+      const job = await scheduleReportGeneration({
+        type: type || 'daily',
+        villageId,
+        requestedBy: parseInt(req.session.userId || '0')
+      });
+      res.json({ jobId: job.id, status: 'queued' });
+    } catch (error) {
+      console.error('Error scheduling report:', error);
+      res.status(500).json({ message: 'Failed to schedule report' });
+    }
+  });
+
+  // Phase 3: Admin endpoints for manual stats management
+  app.post('/api/admin/backfill-stats', requireAuth, requireRole(['admin']), async (req, res) => {
+    try {
+      const recordsCreated = await storage.backfillHistoricalStats();
+      
+      // Clear all report and stats caches after backfill
+      const cache = getCache();
+      await cache.clear('stats:*');
+      await cache.clear('report:*');
+      
+      res.json({ 
+        message: `✅ Backfill completed: ${recordsCreated} monthly stats records created/updated`,
+        recordsCreated 
+      });
+    } catch (error) {
+      console.error('Admin backfill stats error:', error);
+      res.status(500).json({ message: 'Failed to backfill historical stats' });
+    }
+  });
+
+  app.post('/api/admin/update-current-stats', requireAuth, requireRole(['admin']), async (req, res) => {
+    try {
+      const recordsUpdated = await storage.updateCurrentMonthStats();
+      
+      // Clear all stats caches after update
+      const cache = getCache();
+      await cache.clear('stats:*');
+      await cache.clear('report:*');
+      
+      res.json({ 
+        message: `✅ Current month stats updated: ${recordsUpdated} records updated`,
+        recordsUpdated 
+      });
+    } catch (error) {
+      console.error('Admin update current stats error:', error);
+      res.status(500).json({ message: 'Failed to update current month stats' });
     }
   });
 

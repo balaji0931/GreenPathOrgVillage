@@ -13,7 +13,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
-import { apiRequest, queryClient } from "@/lib/queryClient";
+import { apiRequest, queryClient, fetchWithCsrf } from "@/lib/queryClient";
 import { QRScanner } from "@/components/qr-scanner";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import { useOfflineStorage, offlineStorage } from "@/lib/offline-storage";
@@ -303,11 +303,10 @@ export default function CollectorDashboard() {
       // Upload photo first if provided
       if (newIssue.photoFile) {
         try {
-          console.log("Uploading photo:", newIssue.photoFile.name);
           const formData = new FormData();
           formData.append("file", newIssue.photoFile);
 
-          const uploadResponse = await fetch("/api/upload/photo", {
+          const uploadResponse = await fetchWithCsrf("/api/upload/photo", {
             method: "POST",
             body: formData,
             credentials: "include",
@@ -315,7 +314,6 @@ export default function CollectorDashboard() {
 
           if (!uploadResponse.ok) {
             const errorData = await uploadResponse.text();
-            console.error("Photo upload failed:", errorData);
             throw new Error(
               `Photo upload failed: ${uploadResponse.status} ${errorData}`,
             );
@@ -323,9 +321,7 @@ export default function CollectorDashboard() {
 
           const uploadResult = await uploadResponse.json();
           photoUrl = uploadResult.url;
-          console.log("Photo uploaded successfully:", photoUrl);
         } catch (uploadError) {
-          console.error("Photo upload error:", uploadError);
           toast({
             title: "Warning",
             description: "Photo upload failed, continuing without photo",
@@ -335,10 +331,7 @@ export default function CollectorDashboard() {
         }
       }
 
-      // Create the issue with photo URL
-      console.log("Submitting issue with data:", { ...issueData, photoUrl });
-
-      const response = await fetch("/api/issues", {
+      const response = await fetchWithCsrf("/api/issues", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -352,7 +345,6 @@ export default function CollectorDashboard() {
 
       if (!response.ok) {
         const errorData = await response.text();
-        console.error("Issue creation failed:", errorData);
         throw new Error(
           `Failed to create issue: ${response.status} ${errorData}`,
         );
@@ -361,7 +353,6 @@ export default function CollectorDashboard() {
       return response.json();
     },
     onSuccess: (data) => {
-      console.log("Issue created successfully:", data);
       queryClient.invalidateQueries({ queryKey: ["/api/issues"] });
       setShowIssueModal(false);
       setNewIssue({
@@ -377,7 +368,6 @@ export default function CollectorDashboard() {
       });
     },
     onError: (error: any) => {
-      console.error("Issue creation error:", error);
       toast({
         title: "Error",
         description:
@@ -406,29 +396,33 @@ export default function CollectorDashboard() {
   };
 
   const handleQRScan = async (qrData: string) => {
-    console.log('Scanned QR:', qrData);
     setShowScanner(false);
     
     try {
       let householdData;
+      let uidToSearch: string | null = null;
       
       // Try to parse as JSON first (for QR codes with household data)
       try {
         const parsedData = JSON.parse(qrData);
-        if (parsedData.uid && parsedData.type === 'household') {
-          // Find the full household data from our local households
-          const household = households?.find((h: any) => h.uid === parsedData.uid);
-          if (household) {
-            householdData = household;
-          } else {
-            throw new Error("Household not found in your route");
-          }
+        // Accept both 'household' type (from households created with data) 
+        // and 'premapped' type (from batch-generated QR codes later filled by field workers)
+        if (parsedData.uid && (parsedData.type === 'household' || parsedData.type === 'premapped')) {
+          uidToSearch = parsedData.uid;
+        } else if (parsedData.uid) {
+          // Accept any QR with a uid field
+          uidToSearch = parsedData.uid;
         } else {
           throw new Error("Invalid QR format");
         }
       } catch (parseError) {
-        // If not JSON, treat as household UID and find in our local data
-        const household = households?.find((h: any) => h.uid === qrData);
+        // If not JSON, treat as household UID directly
+        uidToSearch = qrData;
+      }
+      
+      if (uidToSearch) {
+        // Find the full household data from our local households
+        const household = households?.find((h: any) => h.uid === uidToSearch);
         if (household) {
           householdData = household;
         } else {
@@ -436,8 +430,12 @@ export default function CollectorDashboard() {
         }
       }
       
-      setScannedHousehold(householdData);
-      checkDailySubmission(householdData);
+      if (householdData) {
+        setScannedHousehold(householdData);
+        checkDailySubmission(householdData);
+      } else {
+        throw new Error("Household not found");
+      }
     } catch (error) {
       toast({
         title: "QR Code Error",
@@ -561,7 +559,6 @@ export default function CollectorDashboard() {
         if (hasOfflineDuplicate) return true;
       }
     } catch (error) {
-      console.error('Error checking offline collections:', error);
     }
     
     return false;
@@ -613,7 +610,7 @@ export default function CollectorDashboard() {
             const photoFormData = new FormData();
             photoFormData.append('file', collectionForm.photoFile);
             
-            const photoResponse = await fetch('/api/upload/photo', {
+            const photoResponse = await fetchWithCsrf('/api/upload/photo', {
               method: 'POST',
               body: photoFormData,
               credentials: 'include'
@@ -632,7 +629,7 @@ export default function CollectorDashboard() {
             const voiceFormData = new FormData();
             voiceFormData.append('file', collectionForm.voiceRecording);
             
-            const voiceResponse = await fetch('/api/upload/voice', {
+            const voiceResponse = await fetchWithCsrf('/api/upload/voice', {
               method: 'POST',
               body: voiceFormData,
               credentials: 'include'
@@ -796,13 +793,6 @@ export default function CollectorDashboard() {
         return;
       }
     }
-
-    console.log("Submitting issue:", {
-      title: trimmedTitle,
-      category: newIssue.category,
-      description: trimmedDescription,
-      hasPhoto: !!newIssue.photoFile,
-    });
 
     createIssueMutation.mutate({
       title: trimmedTitle,

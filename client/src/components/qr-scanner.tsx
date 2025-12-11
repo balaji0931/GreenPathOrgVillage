@@ -27,7 +27,6 @@ export function QRScanner({ onScan, onClose }: QRScannerProps) {
         qrScanner = new QrScanner(
           videoRef.current,
           (result) => {
-            console.log('QR Code detected:', result.data);
             isDestroyed = true;
             if (qrScanner) {
               qrScanner.destroy();
@@ -71,7 +70,6 @@ export function QRScanner({ onScan, onClose }: QRScannerProps) {
           setIsScanning(true);
         }
       } catch (error) {
-        console.error('Error starting QR scanner:', error);
         if (!isDestroyed) {
           toast({
             title: "Camera Error",

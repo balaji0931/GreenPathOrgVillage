@@ -11,8 +11,10 @@ import {
   payments,
   moderators,
   moderatorVillageAssignments,
+  monthlyVillageStats,
   websiteFeedback,
   contactSubmissions,
+  qrCodes,
   type Village,
   type User,
   type Household,
@@ -24,8 +26,10 @@ import {
   type Payment,
   type Moderator,
   type ModeratorVillageAssignment,
+  type MonthlyVillageStats,
   type WebsiteFeedback,
   type ContactSubmission,
+  type QRCode,
   type InsertVillage,
   type InsertUser,
   type InsertHousehold,
@@ -37,11 +41,14 @@ import {
   type InsertPayment,
   type InsertModerator,
   type InsertModeratorVillageAssignment,
+  type InsertMonthlyVillageStats,
   type InsertWebsiteFeedback,
   type InsertContactSubmission,
+  type InsertQRCode,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, count, avg, sum, gte, lte, isNotNull, and, or, like, asc, sql, lt, inArray, isNull } from "drizzle-orm";
+import { getCache, cacheKeys } from "./cache";
 
 export interface IStorage {
   // User operations
@@ -61,6 +68,7 @@ export interface IStorage {
   getHouseholdByUid(uid: string): Promise<Household | undefined>;
   updateHousehold(id: number, updates: Partial<Household>): Promise<Household>;
   getWardsByVillage(villageId: string): Promise<string[]>;
+  addWardToVillage(villageId: string, ward: string): Promise<string[]>;
   markQRCodesPrinted(householdIds: number[]): Promise<void>;
 
   // Collector operations
@@ -186,6 +194,29 @@ export interface IStorage {
   // Contact submissions operations
   createContactSubmission(contact: InsertContactSubmission): Promise<ContactSubmission>;
   getContactSubmissions(): Promise<ContactSubmission[]>;
+
+  // Phase 2: Monthly village stats operations
+  createOrUpdateMonthlyStats(stats: InsertMonthlyVillageStats): Promise<MonthlyVillageStats>;
+  getMonthlyStatsByVillageAndMonth(villageId: string, month: string): Promise<MonthlyVillageStats | undefined>;
+  backfillHistoricalStats(): Promise<number>; // Returns number of records created
+
+  // Phase 3: Daily stats update for current month
+  updateCurrentMonthStats(): Promise<number>; // Returns number of records updated
+
+  // QR Code operations (for field worker mapping)
+  createQRCode(qrCode: InsertQRCode): Promise<QRCode>;
+  createBatchQRCodes(qrCodes: InsertQRCode[]): Promise<QRCode[]>;
+  getQRCodeByUid(uid: string): Promise<QRCode | undefined>;
+  getQRCodesByVillage(villageId: string): Promise<QRCode[]>;
+  getUnmappedQRCodesByVillage(villageId: string): Promise<QRCode[]>;
+  getQRCodesByBatch(batchId: string): Promise<QRCode[]>;
+  updateQRCodeStatus(uid: string, status: string, householdId?: number): Promise<QRCode>;
+  getNextBatchId(villageId: string): Promise<string>;
+  getNextQRCodeUid(villageId: string, count: number): Promise<string[]>;
+
+  // Field worker operations
+  getFieldWorkersByVillage(villageId: string): Promise<User[]>;
+  deleteFieldWorker(userId: string): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -210,28 +241,104 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createVillage(insertVillage: InsertVillage): Promise<Village> {
+    const cache = getCache();
     const [village] = await db
       .insert(villages)
       .values(insertVillage)
       .returning();
+    
+    // Invalidate village caches
+    await cache.delete(cacheKeys.villages());
+    await cache.clear('villages:paginated:*'); // Clear all paginated caches
+    
     return village;
   }
 
   async getVillages(): Promise<Village[]> {
-    return await db.select().from(villages).orderBy(villages.villageId);
+    const cache = getCache();
+    const cached = await cache.get(cacheKeys.villages());
+    if (cached) return cached;
+
+    const result = await db.select().from(villages).orderBy(villages.villageId).limit(500); // Safety limit
+    await cache.set(cacheKeys.villages(), result, 3600); // 1 hour TTL
+    return result;
+  }
+
+  async getVillagesPaginated(options: {
+    page?: number;
+    limit?: number;
+    search?: string;
+  } = {}): Promise<{ data: Village[]; total: number; page: number; limit: number; totalPages: number }> {
+    const cache = getCache();
+    const page = Math.max(1, options.page || 1);
+    const limit = Math.min(100, Math.max(1, options.limit || 50));
+    const offset = (page - 1) * limit;
+
+    const cacheKey = cacheKeys.villagesPaginated(page, limit);
+    const cached = await cache.get(cacheKey);
+    if (cached && !options.search) return cached;
+
+    let whereClause = undefined;
+    if (options.search) {
+      whereClause = or(
+        like(villages.name, `%${options.search}%`),
+        like(villages.villageId, `%${options.search}%`)
+      );
+    }
+
+    const [countResult] = await db
+      .select({ count: count() })
+      .from(villages)
+      .where(whereClause);
+
+    const data = await db
+      .select()
+      .from(villages)
+      .where(whereClause)
+      .orderBy(villages.villageId)
+      .limit(limit)
+      .offset(offset);
+
+    const result = {
+      data,
+      total: countResult.count,
+      page,
+      limit,
+      totalPages: Math.ceil(countResult.count / limit)
+    };
+
+    if (!options.search) {
+      await cache.set(cacheKey, result, 600); // 10 min TTL
+    }
+    return result;
   }
 
   async getVillageByVillageId(villageId: string): Promise<Village | undefined> {
+    const cache = getCache();
+    const cached = await cache.get(cacheKeys.village(villageId));
+    if (cached) return cached;
+
     const [village] = await db.select().from(villages).where(eq(villages.villageId, villageId));
+    if (village) {
+      await cache.set(cacheKeys.village(villageId), village, 3600);
+    }
     return village || undefined;
   }
 
   async updateVillage(villageId: string, updates: Partial<Village>): Promise<Village> {
+    const cache = getCache();
     const [village] = await db
       .update(villages)
       .set({ ...updates, updatedAt: new Date() })
       .where(eq(villages.villageId, villageId))
       .returning();
+    
+    // Invalidate all village caches including paginated
+    await cache.delete(cacheKeys.village(villageId));
+    await cache.delete(cacheKeys.villages());
+    await cache.delete(cacheKeys.villageDetails(villageId));
+    await cache.clear('villages:paginated:*'); // Clear all paginated village caches
+    
     return village;
   }
 
@@ -245,19 +352,91 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createHousehold(insertHousehold: InsertHousehold): Promise<Household> {
+    const cache = getCache();
     const [household] = await db
       .insert(households)
       .values(insertHousehold)
       .returning();
+    
+    // Invalidate households cache
+    await cache.delete(cacheKeys.households(insertHousehold.villageId));
+    await cache.clear(`households:${insertHousehold.villageId}:*`);
+    await cache.delete(cacheKeys.villageDetails(insertHousehold.villageId));
+    await cache.delete(cacheKeys.villageStats(insertHousehold.villageId));
+    
     return household;
   }
 
   async getHouseholdsByVillage(villageId: string): Promise<Household[]> {
-    return await db
+    const cache = getCache();
+    const cacheKey = cacheKeys.households(villageId);
+    const cached = await cache.get(cacheKey);
+    if (cached) return cached;
+
+    const result = await db
       .select()
       .from(households)
       .where(eq(households.villageId, villageId))
-      .orderBy(households.uid);
+      .orderBy(households.uid)
+      .limit(5000); // Safety limit - use paginated method for larger datasets
+    
+    await cache.set(cacheKey, result, 600); // 10 min TTL
+    return result;
+  }
+
+  async getHouseholdsByVillagePaginated(villageId: string, options: {
+    page?: number;
+    limit?: number;
+    search?: string;
+    ward?: string;
+    status?: string;
+  } = {}): Promise<{ data: Household[]; total: number; page: number; limit: number; totalPages: number }> {
+    const page = Math.max(1, options.page || 1);
+    const limit = Math.min(100, Math.max(1, options.limit || 50));
+    const offset = (page - 1) * limit;
+
+    let conditions = [eq(households.villageId, villageId)];
+    
+    if (options.search) {
+      conditions.push(
+        or(
+          like(households.headName, `%${options.search}%`),
+          like(households.uid, `%${options.search}%`),
+          like(households.houseNumber, `%${options.search}%`)
+        )!
+      );
+    }
+    
+    if (options.ward && options.ward !== 'all') {
+      conditions.push(eq(households.ward, options.ward));
+    }
+    
+    if (options.status && options.status !== 'all') {
+      conditions.push(eq(households.status, options.status));
+    }
+
+    const whereClause = conditions.length > 1 ? and(...conditions) : conditions[0];
+
+    const [countResult] = await db
+      .select({ count: count() })
+      .from(households)
+      .where(whereClause);
+
+    const data = await db
+      .select()
+      .from(households)
+      .where(whereClause)
+      .orderBy(households.uid)
+      .limit(limit)
+      .offset(offset);
+
+    return {
+      data,
+      total: countResult.count,
+      page,
+      limit,
+      totalPages: Math.ceil(countResult.count / limit)
+    };
   }
 
   async getHouseholdByUid(uid: string): Promise<Household | undefined> {
@@ -266,40 +445,149 @@ export class DatabaseStorage implements IStorage {
   }
 
   async updateHousehold(id: number, updates: Partial<Household>): Promise<Household> {
+    const cache = getCache();
     const [household] = await db
       .update(households)
       .set({ ...updates })
       .where(eq(households.id, id))
       .returning();
+    
+    // Invalidate households cache
+    await cache.delete(cacheKeys.households(household.villageId));
+    await cache.clear(`households:${household.villageId}:*`);
+    await cache.delete(cacheKeys.villageDetails(household.villageId));
+    
     return household;
   }
 
   async getWardsByVillage(villageId: string): Promise<string[]> {
-    const result = await db
-      .selectDistinct({ ward: households.ward })
-      .from(households)
-      .where(eq(households.villageId, villageId));
+    const cache = getCache();
+    const cached = await cache.get(cacheKeys.wards(villageId));
+    if (cached) return cached;
+
+    const [village] = await db
+      .select({ wards: villages.wards })
+      .from(villages)
+      .where(eq(villages.villageId, villageId));
     
-    return result
-      .map(row => row.ward)
-      .filter(ward => ward && ward.trim() !== '')
+    const wards = (village?.wards || [])
+      .filter((ward: string | null) => ward && ward.trim() !== '')
       .sort();
+    
+    await cache.set(cacheKeys.wards(villageId), wards, 3600);
+    return wards;
+  }
+
+  async addWardToVillage(villageId: string, ward: string): Promise<string[]> {
+    const cache = getCache();
+    
+    const [village] = await db
+      .select({ wards: villages.wards })
+      .from(villages)
+      .where(eq(villages.villageId, villageId));
+    
+    const existingWards = village?.wards || [];
+    if (existingWards.includes(ward)) {
+      throw new Error("Ward already exists");
+    }
+    
+    const updatedWards = [...existingWards, ward].sort();
+    
+    await db
+      .update(villages)
+      .set({ wards: updatedWards, updatedAt: new Date() })
+      .where(eq(villages.villageId, villageId));
+    
+    await cache.delete(cacheKeys.wards(villageId));
+    await cache.delete(cacheKeys.village(villageId));
+    
+    return updatedWards;
   }
 
   async createCollector(insertCollector: InsertCollector): Promise<Collector> {
+    const cache = getCache();
     const [collector] = await db
       .insert(collectors)
       .values(insertCollector)
       .returning();
+    
+    // Invalidate collector caches
+    await cache.delete(cacheKeys.collectors(insertCollector.villageId));
+    await cache.clear(`collectors:${insertCollector.villageId}:*`);
+    await cache.delete(cacheKeys.villageDetails(insertCollector.villageId));
+    await cache.delete(cacheKeys.villageStats(insertCollector.villageId));
+    
     return collector;
   }
 
   async getCollectorsByVillage(villageId: string): Promise<Collector[]> {
-    return await db
+    const cache = getCache();
+    const cached = await cache.get(cacheKeys.collectors(villageId));
+    if (cached) return cached;
+
+    const result = await db
       .select()
       .from(collectors)
       .where(eq(collectors.villageId, villageId))
-      .orderBy(collectors.uid);
+      .orderBy(collectors.uid)
+      .limit(500); // Safety limit
+    
+    await cache.set(cacheKeys.collectors(villageId), result, 1800); // 30 min TTL
+    return result;
+  }
+
+  async getCollectorsByVillagePaginated(villageId: string, options: {
+    page?: number;
+    limit?: number;
+    search?: string;
+  } = {}): Promise<{ data: Collector[]; total: number; page: number; limit: number; totalPages: number }> {
+    const cache = getCache();
+    const page = Math.max(1, options.page || 1);
+    const limit = Math.min(100, Math.max(1, options.limit || 50));
+    const offset = (page - 1) * limit;
+    
+    const cacheKey = cacheKeys.collectorsPaginated(villageId, page, limit);
+    const cached = await cache.get(cacheKey);
+    if (cached && !options.search) return cached;
+
+    let conditions = [eq(collectors.villageId, villageId)];
+    
+    if (options.search) {
+      conditions.push(
+        or(
+          like(collectors.name, `%${options.search}%`),
+          like(collectors.uid, `%${options.search}%`)
+        )!
+      );
+    }
+
+    const whereClause = conditions.length > 1 ? and(...conditions) : conditions[0];
+
+    const [countResult] = await db
+      .select({ count: count() })
+      .from(collectors)
+      .where(whereClause);
+
+    const data = await db
+      .select()
+      .from(collectors)
+      .where(whereClause)
+      .orderBy(collectors.uid)
+      .limit(limit)
+      .offset(offset);
+
+    const result = {
+      data,
+      total: countResult.count,
+      page,
+      limit,
+      totalPages: Math.ceil(countResult.count / limit)
+    };
+
+    if (!options.search) {
+      await cache.set(cacheKey, result, 900); // 15 min TTL
+    }
+    return result;
   }
 
   async getCollectorByUid(uid: string): Promise<Collector | undefined> {
@@ -332,61 +620,217 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createWasteCollection(insertCollection: InsertWasteCollection): Promise<WasteCollection> {
+    const cache = getCache();
     const [collection] = await db
       .insert(wasteCollections)
       .values(insertCollection as any)
       .returning();
+    
+    // Invalidate collections cache - lookup household to get villageId
+    const [household] = await db.select({ villageId: households.villageId })
+      .from(households)
+      .where(eq(households.id, insertCollection.householdId))
+      .limit(1);
+    
+    if (household?.villageId) {
+      await cache.delete(cacheKeys.wasteCollections(household.villageId));
+      await cache.clear(`collections:${household.villageId}:*`);
+      await cache.delete(cacheKeys.villageStats(household.villageId));
+      await cache.delete(cacheKeys.adminStats());
+    }
+    
     return collection;
   }
 
-  async getCollectionsByHousehold(householdId: number): Promise<WasteCollection[]> {
+  async getCollectionsByHousehold(householdId: number, limit: number = 100): Promise<WasteCollection[]> {
     return await db
       .select()
       .from(wasteCollections)
       .where(eq(wasteCollections.householdId, householdId))
-      .orderBy(desc(wasteCollections.collectionDate));
+      .orderBy(desc(wasteCollections.collectionDate))
+      .limit(limit);
   }
 
-  async getCollectionsByCollector(collectorId: number): Promise<WasteCollection[]> {
+  async getCollectionsByHouseholdPaginated(householdId: number, options: {
+    page?: number;
+    limit?: number;
+  } = {}): Promise<{ data: WasteCollection[]; total: number; page: number; limit: number; totalPages: number }> {
+    const page = Math.max(1, options.page || 1);
+    const limit = Math.min(100, Math.max(1, options.limit || 50));
+    const offset = (page - 1) * limit;
+
+    const [countResult] = await db
+      .select({ count: count() })
+      .from(wasteCollections)
+      .where(eq(wasteCollections.householdId, householdId));
+
+    const data = await db
+      .select()
+      .from(wasteCollections)
+      .where(eq(wasteCollections.householdId, householdId))
+      .orderBy(desc(wasteCollections.collectionDate))
+      .limit(limit)
+      .offset(offset);
+
+    return {
+      data,
+      total: countResult.count,
+      page,
+      limit,
+      totalPages: Math.ceil(countResult.count / limit)
+    };
+  }
+
+  async getCollectionsByCollector(collectorId: number, limit: number = 100): Promise<WasteCollection[]> {
     return await db
       .select()
       .from(wasteCollections)
       .where(eq(wasteCollections.collectorId, collectorId))
-      .orderBy(desc(wasteCollections.collectionDate));
+      .orderBy(desc(wasteCollections.collectionDate))
+      .limit(limit);
+  }
+
+  async getCollectionsByCollectorPaginated(collectorId: number, options: {
+    page?: number;
+    limit?: number;
+    date?: string;
+  } = {}): Promise<{ data: WasteCollection[]; total: number; page: number; limit: number; totalPages: number }> {
+    const page = Math.max(1, options.page || 1);
+    const limit = Math.min(100, Math.max(1, options.limit || 50));
+    const offset = (page - 1) * limit;
+
+    let conditions = [eq(wasteCollections.collectorId, collectorId)];
+
+    if (options.date) {
+      const startDate = new Date(options.date);
+      startDate.setHours(0, 0, 0, 0);
+      const endDate = new Date(options.date);
+      endDate.setHours(23, 59, 59, 999);
+      conditions.push(gte(wasteCollections.collectionDate, startDate));
+      conditions.push(lte(wasteCollections.collectionDate, endDate));
+    }
+
+    const whereClause = conditions.length > 1 ? and(...conditions) : conditions[0];
+
+    const [countResult] = await db
+      .select({ count: count() })
+      .from(wasteCollections)
+      .where(whereClause);
+
+    const data = await db
+      .select()
+      .from(wasteCollections)
+      .where(whereClause)
+      .orderBy(desc(wasteCollections.collectionDate))
+      .limit(limit)
+      .offset(offset);
+
+    return {
+      data,
+      total: countResult.count,
+      page,
+      limit,
+      totalPages: Math.ceil(countResult.count / limit)
+    };
   }
 
   async createIssue(insertIssue: InsertIssue): Promise<Issue> {
+    const cache = getCache();
     const issueData = {
       ...insertIssue,
       status: insertIssue.status || 'open',
       createdAt: new Date(),
     };
 
-    console.log('Inserting issue into database:', issueData);
-
     const [issue] = await db
       .insert(issues)
       .values(issueData)
       .returning();
 
-    console.log('Issue inserted successfully:', issue);
+    // Invalidate issues cache
+    if (insertIssue.villageId) {
+      await cache.delete(cacheKeys.issues(insertIssue.villageId));
+      await cache.clear(`issues:${insertIssue.villageId}:*`);
+      await cache.delete(cacheKeys.villageDetails(insertIssue.villageId));
+    }
+    await cache.delete(cacheKeys.adminStats());
+
     return issue;
   }
 
   async getIssuesByVillage(villageId: string): Promise<Issue[]> {
-    return await db
+    const cache = getCache();
+    const cacheKey = cacheKeys.issues(villageId);
+    const cached = await cache.get(cacheKey);
+    if (cached) return cached;
+
+    const result = await db
       .select()
       .from(issues)
       .where(eq(issues.villageId, villageId))
-      .orderBy(desc(issues.createdAt));
+      .orderBy(desc(issues.createdAt))
+      .limit(500); // Safety limit - use paginated method for larger datasets
+    
+    await cache.set(cacheKey, result, 300); // 5 min TTL
+    return result;
+  }
+
+  async getIssuesByVillagePaginated(villageId: string, options: {
+    page?: number;
+    limit?: number;
+    status?: string;
+  } = {}): Promise<{ data: Issue[]; total: number; page: number; limit: number; totalPages: number }> {
+    const page = Math.max(1, options.page || 1);
+    const limit = Math.min(100, Math.max(1, options.limit || 50));
+    const offset = (page - 1) * limit;
+
+    let conditions = [eq(issues.villageId, villageId)];
+    
+    if (options.status && options.status !== 'all') {
+      conditions.push(eq(issues.status, options.status));
+    }
+
+    const whereClause = conditions.length > 1 ? and(...conditions) : conditions[0];
+
+    const [countResult] = await db
+      .select({ count: count() })
+      .from(issues)
+      .where(whereClause);
+
+    const data = await db
+      .select()
+      .from(issues)
+      .where(whereClause)
+      .orderBy(desc(issues.createdAt))
+      .limit(limit)
+      .offset(offset);
+
+    return {
+      data,
+      total: countResult.count,
+      page,
+      limit,
+      totalPages: Math.ceil(countResult.count / limit)
+    };
   }
 
   async updateIssue(id: number, updates: Partial<Issue>): Promise<Issue> {
+    const cache = getCache();
     const [issue] = await db
       .update(issues)
       .set({ ...updates, updatedAt: new Date() })
       .where(eq(issues.id, id))
       .returning();
+    
+    // Invalidate issues cache
+    if (issue?.villageId) {
+      await cache.delete(cacheKeys.issues(issue.villageId));
+      await cache.clear(`issues:${issue.villageId}:*`);
+      await cache.delete(cacheKeys.villageStats(issue.villageId));
+      await cache.delete(cacheKeys.villageDetails(issue.villageId));
+    }
+    await cache.delete(cacheKeys.adminStats());
+    
     return issue;
   }
 
@@ -397,27 +841,50 @@ export class DatabaseStorage implements IStorage {
     createdBy: string;
     photoUrl?: string | null;
   }) {
+    const cache = getCache();
     const [announcement] = await db
       .insert(announcements)
       .values(data)
       .returning();
+    
+    // Invalidate cache
+    if (data.villageId) {
+      await cache.delete(cacheKeys.announcements(data.villageId));
+    } else {
+      await cache.delete(cacheKeys.globalAnnouncements());
+    }
+    
     return announcement;
   }
 
   async getAnnouncementsByVillage(villageId: string): Promise<Announcement[]> {
-    return await db
+    const cache = getCache();
+    const cached = await cache.get(cacheKeys.announcements(villageId));
+    if (cached) return cached;
+
+    const result = await db
       .select()
       .from(announcements)
       .where(eq(announcements.villageId, villageId))
       .orderBy(desc(announcements.createdAt));
+    
+    await cache.set(cacheKeys.announcements(villageId), result, 1800);
+    return result;
   }
 
   async getGlobalAnnouncements(): Promise<Announcement[]> {
-    return await db
+    const cache = getCache();
+    const cached = await cache.get(cacheKeys.globalAnnouncements());
+    if (cached) return cached;
+
+    const result = await db
       .select()
       .from(announcements)
       .where(isNull(announcements.villageId))
       .orderBy(desc(announcements.createdAt));
+    
+    await cache.set(cacheKeys.globalAnnouncements(), result, 1800);
+    return result;
   }
 
   async getAllAnnouncements() {
@@ -431,7 +898,61 @@ export class DatabaseStorage implements IStorage {
       createdBy: announcements.createdBy,
     })
     .from(announcements)
-    .orderBy(desc(announcements.createdAt));
+    .orderBy(desc(announcements.createdAt))
+    .limit(200); // Safety limit
+  }
+
+  async getAllAnnouncementsPaginated(options: {
+    page?: number;
+    limit?: number;
+    villageId?: string;
+  } = {}): Promise<{ data: any[]; total: number; page: number; limit: number; totalPages: number }> {
+    const cache = getCache();
+    const page = Math.max(1, options.page || 1);
+    const limit = Math.min(100, Math.max(1, options.limit || 50));
+    const offset = (page - 1) * limit;
+
+    const cacheKey = cacheKeys.announcementsPaginated(page, limit);
+    const cached = await cache.get(cacheKey);
+    if (cached && !options.villageId) return cached;
+
+    let whereClause = undefined;
+    if (options.villageId) {
+      whereClause = eq(announcements.villageId, options.villageId);
+    }
+
+    const [countResult] = await db
+      .select({ count: count() })
+      .from(announcements)
+      .where(whereClause);
+
+    const data = await db.select({
+      id: announcements.id,
+      message: announcements.message,
+      targetAudience: announcements.targetAudience,
+      villageId: announcements.villageId,
+      photoUrl: announcements.photoUrl,
+      createdAt: announcements.createdAt,
+      createdBy: announcements.createdBy,
+    })
+    .from(announcements)
+    .where(whereClause)
+    .orderBy(desc(announcements.createdAt))
+    .limit(limit)
+    .offset(offset);
+
+    const result = {
+      data,
+      total: countResult.count,
+      page,
+      limit,
+      totalPages: Math.ceil(countResult.count / limit)
+    };
+
+    if (!options.villageId) {
+      await cache.set(cacheKey, result, 600); // 10 min TTL
+    }
+    return result;
   }
 
   async updateAnnouncement(id: string, data: {
@@ -515,7 +1036,22 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getCollectionsByVillageWithDetails(villageId: string, date?: string, householdId?: number): Promise<any[]> {
-    let query = db
+    let conditions = [eq(households.villageId, villageId)];
+
+    if (date) {
+      const startDate = new Date(date);
+      startDate.setHours(0, 0, 0, 0);
+      const endDate = new Date(date);
+      endDate.setHours(23, 59, 59, 999);
+      conditions.push(sql`${wasteCollections.collectionDate} >= ${startDate}`);
+      conditions.push(sql`${wasteCollections.collectionDate} <= ${endDate}`);
+    }
+
+    if (householdId) {
+      conditions.push(eq(wasteCollections.householdId, householdId));
+    }
+
+    return await db
       .select({
         id: wasteCollections.id,
         collectionDate: wasteCollections.collectionDate,
@@ -538,32 +1074,84 @@ export class DatabaseStorage implements IStorage {
       .from(wasteCollections)
       .innerJoin(households, eq(wasteCollections.householdId, households.id))
       .innerJoin(collectors, eq(wasteCollections.collectorId, collectors.id))
-      .where(eq(households.villageId, villageId));
+      .where(and(...conditions))
+      .orderBy(desc(wasteCollections.collectionDate))
+      .limit(500);
+  }
 
-    if (date) {
-      const startDate = new Date(date);
+  async getCollectionsByVillageWithDetailsPaginated(villageId: string, options: {
+    page?: number;
+    limit?: number;
+    date?: string;
+    collectorId?: number;
+    status?: string;
+  } = {}): Promise<{ data: any[]; total: number; page: number; limit: number; totalPages: number }> {
+    const page = Math.max(1, options.page || 1);
+    const limit = Math.min(100, Math.max(1, options.limit || 50));
+    const offset = (page - 1) * limit;
+
+    let conditions = [eq(households.villageId, villageId)];
+
+    if (options.date) {
+      const startDate = new Date(options.date);
       startDate.setHours(0, 0, 0, 0);
-      const endDate = new Date(date);
+      const endDate = new Date(options.date);
       endDate.setHours(23, 59, 59, 999);
-      query = query.where(
-        and(
-          eq(households.villageId, villageId),
-          sql`${wasteCollections.collectionDate} >= ${startDate}`,
-          sql`${wasteCollections.collectionDate} <= ${endDate}`
-        )
-      );
+      conditions.push(sql`${wasteCollections.collectionDate} >= ${startDate}`);
+      conditions.push(sql`${wasteCollections.collectionDate} <= ${endDate}`);
     }
 
-    if (householdId) {
-      query = query.where(
-        and(
-          eq(households.villageId, villageId),
-          eq(wasteCollections.householdId, householdId)
-        )
-      );
+    if (options.collectorId) {
+      conditions.push(eq(wasteCollections.collectorId, options.collectorId));
     }
 
-    return await query.orderBy(desc(wasteCollections.collectionDate));
+    if (options.status && options.status !== 'all') {
+      conditions.push(eq(wasteCollections.status, options.status));
+    }
+
+    const whereClause = and(...conditions);
+
+    const [countResult] = await db
+      .select({ count: count() })
+      .from(wasteCollections)
+      .innerJoin(households, eq(wasteCollections.householdId, households.id))
+      .where(whereClause);
+
+    const data = await db
+      .select({
+        id: wasteCollections.id,
+        collectionDate: wasteCollections.collectionDate,
+        segregationRating: wasteCollections.segregationRating,
+        plasticRating: wasteCollections.plasticRating,
+        observations: wasteCollections.observations,
+        remarks: wasteCollections.remarks,
+        photoUrl: wasteCollections.photoUrl,
+        voiceUrl: wasteCollections.voiceUrl,
+        status: wasteCollections.status,
+        missedReason: wasteCollections.missedReason,
+        householdId: wasteCollections.householdId,
+        householdUid: households.uid,
+        headName: households.headName,
+        houseNumber: households.houseNumber,
+        collectorId: wasteCollections.collectorId,
+        collectorName: collectors.name,
+        collectorUid: collectors.uid,
+      })
+      .from(wasteCollections)
+      .innerJoin(households, eq(wasteCollections.householdId, households.id))
+      .innerJoin(collectors, eq(wasteCollections.collectorId, collectors.id))
+      .where(whereClause)
+      .orderBy(desc(wasteCollections.collectionDate))
+      .limit(limit)
+      .offset(offset);
+
+    return {
+      data,
+      total: countResult.count,
+      page,
+      limit,
+      totalPages: Math.ceil(countResult.count / limit)
+    };
   }
 
   async getFeedbackByVillageWithFilters(villageId: string, date?: string): Promise<any[]> {
@@ -607,6 +1195,10 @@ export class DatabaseStorage implements IStorage {
     openIssues: number;
     collectionsToday: number;
   }> {
+    const cache = getCache();
+    const cached = await cache.get(cacheKeys.villageStats(villageId));
+    if (cached) return cached;
+
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     const tomorrow = new Date(today);
@@ -638,12 +1230,15 @@ export class DatabaseStorage implements IStorage {
         )
       );
 
-    return {
+    const stats = {
       totalHouseholds: householdsCount.count,
       totalCollectors: collectorsCount.count,
       openIssues: openIssuesCount.count,
       collectionsToday: collectionsToday.count,
     };
+
+    await cache.set(cacheKeys.villageStats(villageId), stats, 300); // 5 min TTL for stats
+    return stats;
   }
 
   async getAdminStats(): Promise<{
@@ -687,7 +1282,146 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getManagersList(): Promise<User[]> {
-    return await db.select().from(users).where(eq(users.role, 'manager'));
+    const cache = getCache();
+    const cacheKey = cacheKeys.managers();
+    const cached = await cache.get(cacheKey);
+    if (cached) return cached;
+
+    const result = await db.select()
+      .from(users)
+      .where(eq(users.role, 'manager'))
+      .limit(500); // Safety limit
+    
+    await cache.set(cacheKey, result, 600); // 10 min TTL
+    return result;
+  }
+
+  async getManagersListPaginated(options: {
+    page?: number;
+    limit?: number;
+    search?: string;
+    villageId?: string;
+  } = {}): Promise<{ data: User[]; total: number; page: number; limit: number; totalPages: number }> {
+    const cache = getCache();
+    const page = Math.max(1, options.page || 1);
+    const limit = Math.min(100, Math.max(1, options.limit || 50));
+    const offset = (page - 1) * limit;
+
+    const cacheKey = cacheKeys.managersPaginated(page, limit);
+    const cached = await cache.get(cacheKey);
+    if (cached && !options.search && !options.villageId) return cached;
+
+    let conditions = [eq(users.role, 'manager')];
+
+    if (options.villageId) {
+      conditions.push(eq(users.villageId, options.villageId));
+    }
+
+    if (options.search) {
+      conditions.push(
+        or(
+          like(users.name, `%${options.search}%`),
+          like(users.userId, `%${options.search}%`)
+        )!
+      );
+    }
+
+    const whereClause = conditions.length > 1 ? and(...conditions) : conditions[0];
+
+    const [countResult] = await db
+      .select({ count: count() })
+      .from(users)
+      .where(whereClause);
+
+    const data = await db
+      .select()
+      .from(users)
+      .where(whereClause)
+      .orderBy(users.userId)
+      .limit(limit)
+      .offset(offset);
+
+    const result = {
+      data,
+      total: countResult.count,
+      page,
+      limit,
+      totalPages: Math.ceil(countResult.count / limit)
+    };
+
+    if (!options.search && !options.villageId) {
+      await cache.set(cacheKey, result, 600); // 10 min TTL
+    }
+    return result;
+  }
+
+  async getModeratorsList(): Promise<User[]> {
+    const cache = getCache();
+    const cacheKey = cacheKeys.moderators();
+    const cached = await cache.get(cacheKey);
+    if (cached) return cached;
+
+    const result = await db.select()
+      .from(users)
+      .where(eq(users.role, 'moderator'))
+      .limit(500); // Safety limit
+    
+    await cache.set(cacheKey, result, 600); // 10 min TTL
+    return result;
+  }
+
+  async getModeratorsListPaginated(options: {
+    page?: number;
+    limit?: number;
+    search?: string;
+  } = {}): Promise<{ data: User[]; total: number; page: number; limit: number; totalPages: number }> {
+    const cache = getCache();
+    const page = Math.max(1, options.page || 1);
+    const limit = Math.min(100, Math.max(1, options.limit || 50));
+    const offset = (page - 1) * limit;
+
+    const cacheKey = cacheKeys.moderatorsPaginated(page, limit);
+    const cached = await cache.get(cacheKey);
+    if (cached && !options.search) return cached;
+
+    let conditions = [eq(users.role, 'moderator')];
+
+    if (options.search) {
+      conditions.push(
+        or(
+          like(users.name, `%${options.search}%`),
+          like(users.userId, `%${options.search}%`)
+        )!
+      );
+    }
+
+    const whereClause = conditions.length > 1 ? and(...conditions) : conditions[0];
+
+    const [countResult] = await db
+      .select({ count: count() })
+      .from(users)
+      .where(whereClause);
+
+    const data = await db
+      .select()
+      .from(users)
+      .where(whereClause)
+      .orderBy(users.userId)
+      .limit(limit)
+      .offset(offset);
+
+    const result = {
+      data,
+      total: countResult.count,
+      page,
+      limit,
+      totalPages: Math.ceil(countResult.count / limit)
+    };
+
+    if (!options.search) {
+      await cache.set(cacheKey, result, 600); // 10 min TTL
+    }
+    return result;
   }
 
   async updateUser(userId: string, updates: Partial<User>): Promise<User> {
@@ -730,50 +1464,120 @@ export class DatabaseStorage implements IStorage {
     endDate?: Date;
   }): Promise<any> {
     try {
-      // Get collections data with village information
-      let collectionsQuery = db
-        .select({
-          villageId: households.villageId,
-          villageName: villages.name,
-          collections: count(wasteCollections.id),
-          avgSegregationRating: sql<number>`COALESCE(CAST(AVG(${wasteCollections.segregationRating}) AS DECIMAL(3,2)), 0)`,
-          avgPlasticRating: sql<number>`COALESCE(CAST(AVG(${wasteCollections.plasticRating}) AS DECIMAL(3,2)), 0)`,
-        })
-        .from(wasteCollections)
-        .innerJoin(households, eq(wasteCollections.householdId, households.id))
-        .innerJoin(villages, eq(households.villageId, villages.villageId))
-        .groupBy(households.villageId, villages.name);
+      const cache = getCache();
+      const cacheKey = cacheKeys.generateReport(
+        filters.village || 'all',
+        filters.startDate?.toISOString() || 'all',
+        filters.endDate?.toISOString() || 'all'
+      );
+      
+      const cached = await cache.get(cacheKey);
+      if (cached) return cached;
 
-      // Apply village filter
-      if (filters.village) {
-        collectionsQuery = collectionsQuery.where(eq(households.villageId, filters.village));
+      const currentMonth = new Date().getFullYear() + '-' + String(new Date().getMonth() + 1).padStart(2, '0');
+      const allVillages = await db.select().from(villages);
+      
+      let result: any = { collections: [] };
+
+      for (const village of allVillages) {
+        // Apply village filter
+        if (filters.village && filters.village !== village.villageId) {
+          continue;
+        }
+
+        const villageStatsPromises = [];
+        
+        // Get monthly stats from summary table for past months
+        if (filters.startDate) {
+          const startMonth = filters.startDate.getFullYear() + '-' + String(filters.startDate.getMonth() + 1).padStart(2, '0');
+          const endMonth = filters.endDate 
+            ? filters.endDate.getFullYear() + '-' + String(filters.endDate.getMonth() + 1).padStart(2, '0')
+            : currentMonth;
+
+          // Get stats from monthly_village_stats for all months in range except current
+          let statsQuery = db
+            .select({
+              villageId: monthlyVillageStats.villageId,
+              collections: sql<number>`${monthlyVillageStats.collectionsCompleted} + ${monthlyVillageStats.collectionsMissed}`,
+              avgSegregationRating: monthlyVillageStats.averageSegregationRating,
+              avgPlasticRating: monthlyVillageStats.averagePlasticRating,
+            })
+            .from(monthlyVillageStats)
+            .where(
+              and(
+                eq(monthlyVillageStats.villageId, village.villageId),
+                sql`${monthlyVillageStats.month} >= ${startMonth}`,
+                sql`${monthlyVillageStats.month} <= ${endMonth}`,
+                sql`${monthlyVillageStats.month} != ${currentMonth}` // Exclude current month from summary
+              )
+            );
+
+          villageStatsPromises.push(statsQuery);
+        }
+
+        // Get live data for current month (real-time data)
+        const monthStart = new Date(currentMonth + '-01');
+        const monthEnd = new Date(monthStart.getFullYear(), monthStart.getMonth() + 1, 0, 23, 59, 59);
+
+        let liveQuery = db
+          .select({
+            villageId: households.villageId,
+            collections: count(wasteCollections.id),
+            avgSegregationRating: sql<number>`COALESCE(CAST(AVG(${wasteCollections.segregationRating}) AS DECIMAL(3,2)), 0)`,
+            avgPlasticRating: sql<number>`COALESCE(CAST(AVG(${wasteCollections.plasticRating}) AS DECIMAL(3,2)), 0)`,
+          })
+          .from(wasteCollections)
+          .innerJoin(households, eq(wasteCollections.householdId, households.id))
+          .where(
+            and(
+              eq(households.villageId, village.villageId),
+              gte(wasteCollections.collectionDate, monthStart),
+              lte(wasteCollections.collectionDate, monthEnd)
+            )
+          )
+          .groupBy(households.villageId);
+
+        villageStatsPromises.push(liveQuery);
       }
 
-      // Apply date filters
-      if (filters.startDate) {
-        collectionsQuery = collectionsQuery.where(
-          sql`${wasteCollections.collectionDate} >= ${filters.startDate}`
-        );
-      }
-      if (filters.endDate) {
-        collectionsQuery = collectionsQuery.where(
-          sql`${wasteCollections.collectionDate} <= ${filters.endDate}`
-        );
+      // Combine results from all queries
+      const allStats = await Promise.all(villageStatsPromises);
+      const collectionsByVillage: { [key: string]: any } = {};
+
+      for (const statsArray of allStats) {
+        for (const stat of statsArray) {
+          const villageId = stat.villageId;
+          if (!collectionsByVillage[villageId]) {
+            const village = allVillages.find(v => v.villageId === villageId);
+            collectionsByVillage[villageId] = {
+              villageId,
+              villageName: village?.name || 'Unknown',
+              collections: 0,
+              avgSegregationRating: 0,
+              avgPlasticRating: 0,
+            };
+          }
+          
+          // Aggregate stats
+          collectionsByVillage[villageId].collections += Number(stat.collections) || 0;
+          if (stat.avgSegregationRating) {
+            collectionsByVillage[villageId].avgSegregationRating = Number(stat.avgSegregationRating) || 0;
+          }
+          if (stat.avgPlasticRating) {
+            collectionsByVillage[villageId].avgPlasticRating = Number(stat.avgPlasticRating) || 0;
+          }
+        }
       }
 
-      const collectionsData = await collectionsQuery;
-
-      // Ensure numeric values are properly converted
-      const formattedCollections = collectionsData.map(item => ({
+      result.collections = Object.values(collectionsByVillage).map(item => ({
         ...item,
         avgSegregationRating: parseFloat((Number(item.avgSegregationRating) || 0).toFixed(2)),
         avgPlasticRating: parseFloat((Number(item.avgPlasticRating) || 0).toFixed(2)),
         collections: Number(item.collections) || 0
       }));
 
-      return {
-        collections: formattedCollections,
-      };
+      await cache.set(cacheKey, result, 300); // 5 min cache
+      return result;
     } catch (error) {
       console.error("Generate report error:", error);
       return { collections: [] };
@@ -781,21 +1585,45 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getVillageDetails(villageId: string): Promise<any> {
-    const village = await this.getVillageByVillageId(villageId);
-    const stats = await this.getVillageStats(villageId);
-    const managers = await db.select().from(users).where(and(eq(users.villageId, villageId), eq(users.role, 'manager')));
-    const households = await this.getHouseholdsByVillage(villageId);
-    const collectors = await this.getCollectorsByVillage(villageId);
-    const issues = await this.getIssuesByVillage(villageId);
+    const cache = getCache();
+    const cacheKey = cacheKeys.villageDetails(villageId);
+    
+    const cached = await cache.get(cacheKey);
+    if (cached) return cached;
 
-    return {
+    // Run all queries in parallel for better performance
+    const [
       village,
       stats,
       managers,
-      households,
-      collectors,
-      issues,
+      householdsResult,
+      collectorsResult,
+      issuesResult,
+    ] = await Promise.all([
+      this.getVillageByVillageId(villageId),
+      this.getVillageStats(villageId),
+      db.select().from(users)
+        .where(and(eq(users.villageId, villageId), eq(users.role, 'manager')))
+        .limit(50), // Bounded
+      this.getHouseholdsByVillagePaginated(villageId, { page: 1, limit: 50 }),
+      this.getCollectorsByVillagePaginated(villageId, { page: 1, limit: 50 }),
+      this.getIssuesByVillagePaginated(villageId, { page: 1, limit: 50 }),
+    ]);
+
+    const result = {
+      village,
+      stats,
+      managers,
+      households: householdsResult.data,
+      householdsTotal: householdsResult.total,
+      collectors: collectorsResult.data,
+      collectorsTotal: collectorsResult.total,
+      issues: issuesResult.data,
+      issuesTotal: issuesResult.total,
     };
+
+    await cache.set(cacheKey, result, 300); // 5 min cache
+    return result;
   }
 
   async addManagerToVillage(villageData: {
@@ -855,7 +1683,22 @@ export class DatabaseStorage implements IStorage {
 
   // Enhanced collector operations
   async deleteCollector(id: number): Promise<void> {
+    const cache = getCache();
+    // Get villageId before deleting
+    const [collector] = await db.select({ villageId: collectors.villageId })
+      .from(collectors)
+      .where(eq(collectors.id, id))
+      .limit(1);
+    
     await db.delete(collectors).where(eq(collectors.id, id));
+    
+    // Invalidate collector caches
+    if (collector?.villageId) {
+      await cache.delete(cacheKeys.collectors(collector.villageId));
+      await cache.clear(`collectors:${collector.villageId}:*`);
+      await cache.delete(cacheKeys.villageStats(collector.villageId));
+      await cache.delete(cacheKeys.villageDetails(collector.villageId));
+    }
   }
 
   async getCollectorStats(collectorId: number): Promise<{
@@ -895,7 +1738,22 @@ export class DatabaseStorage implements IStorage {
   }
 
   async deleteHousehold(id: number): Promise<void> {
+    const cache = getCache();
+    // Get villageId before deleting
+    const [household] = await db.select({ villageId: households.villageId })
+      .from(households)
+      .where(eq(households.id, id))
+      .limit(1);
+    
     await db.delete(households).where(eq(households.id, id));
+    
+    // Invalidate household caches
+    if (household?.villageId) {
+      await cache.delete(cacheKeys.households(household.villageId));
+      await cache.clear(`households:${household.villageId}:*`);
+      await cache.delete(cacheKeys.villageStats(household.villageId));
+      await cache.delete(cacheKeys.villageDetails(household.villageId));
+    }
   }
 
   async getHouseholdByGeneratorUserId(generatorUserId: string): Promise<Household | undefined> {
@@ -936,27 +1794,35 @@ export class DatabaseStorage implements IStorage {
     collectionTimeline: any[];
     villagePerformance: any[];
   }> {
+    const cache = getCache();
+    const dateKey = date || new Date().toISOString().split('T')[0];
+    const villageKey = villageId || 'all';
+    const cacheKey = cacheKeys.dailyReport(villageKey, dateKey);
+    
+    const cached = await cache.get(cacheKey);
+    if (cached) return cached;
+
     const targetDate = date ? new Date(date) : new Date();
     targetDate.setHours(0, 0, 0, 0);
     const nextDay = new Date(targetDate);
     nextDay.setDate(nextDay.getDate() + 1);
 
-    let householdsQuery = db.select({ count: count() }).from(households);
-    let collectionsQuery = db
+    const villageCondition = villageId && villageId !== 'all' 
+      ? eq(households.villageId, villageId) 
+      : sql`1=1`;
+    
+    const dateCondition = sql`${wasteCollections.collectionDate} >= ${targetDate} AND ${wasteCollections.collectionDate} < ${nextDay}`;
+
+    const [householdsCount] = await db
+      .select({ count: count() })
+      .from(households)
+      .where(villageId && villageId !== 'all' ? eq(households.villageId, villageId) : sql`1=1`);
+
+    const [collectionsCount] = await db
       .select({ count: count() })
       .from(wasteCollections)
       .innerJoin(households, eq(wasteCollections.householdId, households.id))
-      .where(
-        sql`${wasteCollections.collectionDate} >= ${targetDate} AND ${wasteCollections.collectionDate} < ${nextDay}`
-      );
-
-    if (villageId && villageId !== 'all') {
-      householdsQuery = householdsQuery.where(eq(households.villageId, villageId));
-      collectionsQuery = collectionsQuery.where(eq(households.villageId, villageId));
-    }
-
-    const [householdsCount] = await householdsQuery;
-    const [collectionsCount] = await collectionsQuery;
+      .where(and(dateCondition, villageCondition));
 
     // Average rating for the day
     const [avgRating] = await db
@@ -1066,7 +1932,7 @@ export class DatabaseStorage implements IStorage {
     // Safely convert avgRating to number
     const dailyAvgRating = Number(avgRating.avg) || 0;
 
-    return {
+    const result = {
       totalHouses: householdsCount.count,
       collected: collectionsCount.count,
       remaining: householdsCount.count - collectionsCount.count,
@@ -1079,6 +1945,9 @@ export class DatabaseStorage implements IStorage {
       })),
       compostingData: compostingStats[0] || { composting: 0, notComposting: 0, total: 0 },
     };
+
+    await cache.set(cacheKey, result, 300);
+    return result;
   }
 
   // Moderator operations
@@ -1749,8 +2618,22 @@ export class DatabaseStorage implements IStorage {
     return village;
   }
 
-  async getPaymentsByVillage(villageId: string): Promise<any[]> {
-    return await db
+  async getPaymentsByVillage(villageId: string, month?: string): Promise<any[]> {
+    const cache = getCache();
+    const cacheKey = cacheKeys.payments(villageId);
+    
+    // Only cache when no month filter
+    if (!month) {
+      const cached = await cache.get(cacheKey);
+      if (cached) return cached;
+    }
+
+    let conditions = [eq(payments.villageId, villageId)];
+    if (month) {
+      conditions.push(eq(payments.month, month));
+    }
+
+    const result = await db
       .select({
         id: payments.id,
         householdId: payments.householdId,
@@ -1768,16 +2651,104 @@ export class DatabaseStorage implements IStorage {
       })
       .from(payments)
       .innerJoin(households, eq(payments.householdId, households.id))
-      .where(eq(payments.villageId, villageId))
-      .orderBy(desc(payments.createdAt));
+      .where(conditions.length > 1 ? and(...conditions) : conditions[0])
+      .orderBy(desc(payments.createdAt))
+      .limit(500); // Safety limit
+
+    if (!month) {
+      await cache.set(cacheKey, result, 300); // 5 min TTL
+    }
+    return result;
   }
 
-  async getPaymentsByHousehold(householdId: number): Promise<any[]> {
+  async getPaymentsByVillagePaginated(villageId: string, options: {
+    page?: number;
+    limit?: number;
+    month?: string;
+    status?: string;
+    search?: string;
+  } = {}): Promise<{ data: any[]; total: number; page: number; limit: number; totalPages: number }> {
+    const cache = getCache();
+    const page = Math.max(1, options.page || 1);
+    const limit = Math.min(100, Math.max(1, options.limit || 50));
+    const offset = (page - 1) * limit;
+    
+    const cacheKey = cacheKeys.paymentsPaginated(villageId, page, limit, options.month, options.status);
+    const cached = await cache.get(cacheKey);
+    if (cached && !options.search) return cached;
+
+    let conditions = [eq(payments.villageId, villageId)];
+    
+    if (options.month) {
+      conditions.push(eq(payments.month, options.month));
+    }
+    
+    if (options.status && options.status !== 'all') {
+      conditions.push(eq(payments.status, options.status));
+    }
+
+    if (options.search) {
+      conditions.push(
+        or(
+          like(households.headName, `%${options.search}%`),
+          like(households.uid, `%${options.search}%`),
+          like(households.houseNumber, `%${options.search}%`)
+        )!
+      );
+    }
+
+    const whereClause = conditions.length > 1 ? and(...conditions) : conditions[0];
+
+    const [countResult] = await db
+      .select({ count: count() })
+      .from(payments)
+      .innerJoin(households, eq(payments.householdId, households.id))
+      .where(whereClause);
+
+    const data = await db
+      .select({
+        id: payments.id,
+        householdId: payments.householdId,
+        month: payments.month,
+        amount: payments.amount,
+        status: payments.status,
+        paymentProofUrl: payments.paymentProofUrl,
+        submittedAt: payments.submittedAt,
+        verifiedAt: payments.verifiedAt,
+        verifiedBy: payments.verifiedBy,
+        createdAt: payments.createdAt,
+        householdUid: households.uid,
+        headName: households.headName,
+        houseNumber: households.houseNumber,
+      })
+      .from(payments)
+      .innerJoin(households, eq(payments.householdId, households.id))
+      .where(whereClause)
+      .orderBy(desc(payments.createdAt))
+      .limit(limit)
+      .offset(offset);
+
+    const result = {
+      data,
+      total: countResult.count,
+      page,
+      limit,
+      totalPages: Math.ceil(countResult.count / limit)
+    };
+
+    if (!options.search) {
+      await cache.set(cacheKey, result, 300); // 5 min TTL
+    }
+    return result;
+  }
+
+  async getPaymentsByHousehold(householdId: number, limit: number = 50): Promise<any[]> {
     return await db
       .select()
       .from(payments)
       .where(eq(payments.householdId, householdId))
-      .orderBy(desc(payments.createdAt));
+      .orderBy(desc(payments.createdAt))
+      .limit(limit);
   }
 
     async syncPaymentRecordsForVillage(villageId: string, month: string): Promise<{ created: number, total: number }> {
@@ -1882,10 +2853,18 @@ export class DatabaseStorage implements IStorage {
     segregationRateDistribution: any;
   }> {
     try {
+      const cache = getCache();
+      const cacheKey = cacheKeys.adminStats() + (villageFilter ? `:${villageFilter}` : '');
+      
+      const cached = await cache.get(cacheKey);
+      if (cached) return cached;
+
       const today = new Date();
       today.setHours(0, 0, 0, 0);
       const tomorrow = new Date(today);
       tomorrow.setDate(tomorrow.getDate() + 1);
+      const oneWeekAgo = new Date();
+      oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
 
       // Apply village filter where needed
       const villageCondition = villageFilter && villageFilter !== 'all' ? eq(households.villageId, villageFilter) : sql`1=1`;
@@ -1918,9 +2897,6 @@ export class DatabaseStorage implements IStorage {
           )
         );
 
-      const oneWeekAgo = new Date();
-      oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
-
       const [collectionsThisWeek] = await db
         .select({ count: count() })
         .from(wasteCollections)
@@ -1939,19 +2915,20 @@ export class DatabaseStorage implements IStorage {
         .innerJoin(households, eq(wasteCollections.householdId, households.id))
         .where(and(villageCondition, sql`${wasteCollections.segregationRating} IS NOT NULL`));
 
+      // Use monthly stats for top villages historical data combined with current month live data
       const topVillages = await db.select({
           villageName: villages.name,
-          avgRating: sql<number>`COALESCE(AVG(CAST(${wasteCollections.segregationRating} AS DECIMAL(3,2))), 0)`,
-          collections: count(wasteCollections.id)
+          avgRating: sql<number>`COALESCE(AVG(CAST(${monthlyVillageStats.averageSegregationRating} AS DECIMAL(3,2))), 0)`,
+          collections: sql<number>`SUM(${monthlyVillageStats.collectionsCompleted})`
         })
-        .from(wasteCollections)
-        .innerJoin(households, eq(wasteCollections.householdId, households.id))
-        .innerJoin(villages, eq(households.villageId, villages.villageId))
-        .where(and(villageCondition, sql`${wasteCollections.segregationRating} IS NOT NULL`))
+        .from(monthlyVillageStats)
+        .innerJoin(villages, eq(monthlyVillageStats.villageId, villages.villageId))
+        .where(villageFilterCondition)
         .groupBy(villages.villageId, villages.name)
-        .orderBy(desc(sql`COALESCE(AVG(CAST(${wasteCollections.segregationRating} AS DECIMAL(3,2))), 0)`))
+        .orderBy(desc(sql`COALESCE(AVG(CAST(${monthlyVillageStats.averageSegregationRating} AS DECIMAL(3,2))), 0)`))
         .limit(5);
 
+      // Get last 7 days trends from live data
       const collectionTrends = await db.select({
           date: sql<string>`DATE(${wasteCollections.collectionDate})`,
           collections: count(wasteCollections.id),
@@ -1982,7 +2959,7 @@ export class DatabaseStorage implements IStorage {
       // Safely convert avgSegregation to number
       const avgRating = Number(avgSegregation?.avg) || 0;
 
-      return {
+      const result = {
         totalVillages: Number(villagesCount?.count) || 0,
         totalHouseholds: Number(householdsCount?.count) || 0,
         totalCollectors: Number(collectorsCount?.count) || 0,
@@ -2004,6 +2981,9 @@ export class DatabaseStorage implements IStorage {
           count: Number(s.count) || 0
         })),
       };
+
+      await cache.set(cacheKey, result, 300); // 5 min cache
+      return result;
     } catch (error) {
       console.error("Get system analytics error:", error);
       return {
@@ -2067,6 +3047,394 @@ export class DatabaseStorage implements IStorage {
       .select()
       .from(contactSubmissions)
       .orderBy(desc(contactSubmissions.createdAt));
+  }
+
+  // Phase 2: Monthly village stats operations
+  async createOrUpdateMonthlyStats(stats: InsertMonthlyVillageStats): Promise<MonthlyVillageStats> {
+    // Try to update existing record first
+    const [existing] = await db
+      .select()
+      .from(monthlyVillageStats)
+      .where(
+        and(
+          eq(monthlyVillageStats.villageId, stats.villageId),
+          eq(monthlyVillageStats.month, stats.month)
+        )
+      );
+
+    if (existing) {
+      // Update existing record
+      const [updated] = await db
+        .update(monthlyVillageStats)
+        .set({
+          ...stats,
+          updatedAt: new Date(),
+        })
+        .where(
+          and(
+            eq(monthlyVillageStats.villageId, stats.villageId),
+            eq(monthlyVillageStats.month, stats.month)
+          )
+        )
+        .returning();
+      return updated;
+    } else {
+      // Create new record
+      const [created] = await db
+        .insert(monthlyVillageStats)
+        .values(stats)
+        .returning();
+      return created;
+    }
+  }
+
+  async getMonthlyStatsByVillageAndMonth(villageId: string, month: string): Promise<MonthlyVillageStats | undefined> {
+    const [stats] = await db
+      .select()
+      .from(monthlyVillageStats)
+      .where(
+        and(
+          eq(monthlyVillageStats.villageId, villageId),
+          eq(monthlyVillageStats.month, month)
+        )
+      );
+    return stats || undefined;
+  }
+
+  async backfillHistoricalStats(): Promise<number> {
+    try {
+      let recordsCreated = 0;
+
+      // Get all villages
+      const allVillages = await db.select().from(villages);
+
+      for (const village of allVillages) {
+        // Get unique months from waste_collections
+        const monthsResult = await db
+          .selectDistinct({
+            month: sql<string>`to_char(${wasteCollections.collectionDate}, 'YYYY-MM')`,
+          })
+          .from(wasteCollections)
+          .innerJoin(households, eq(wasteCollections.householdId, households.id))
+          .where(eq(households.villageId, village.villageId))
+          .orderBy(sql`to_char(${wasteCollections.collectionDate}, 'YYYY-MM')`);
+
+        for (const { month } of monthsResult) {
+          if (!month) continue;
+
+          // Calculate stats for this village and month
+          const monthStart = new Date(`${month}-01`);
+          const monthEnd = new Date(monthStart.getFullYear(), monthStart.getMonth() + 1, 0, 23, 59, 59);
+
+          // Get total households in village (at any point during this month)
+          const householdsCount = await db
+            .select({ count: count() })
+            .from(households)
+            .where(eq(households.villageId, village.villageId));
+
+          // Get total collectors in village (at any point during this month)
+          const collectorsCount = await db
+            .select({ count: count() })
+            .from(collectors)
+            .where(eq(collectors.villageId, village.villageId));
+
+          // Get collections data for this month
+          const collectionsData = await db
+            .select({
+              completed: count(),
+              missed: sql<number>`COUNT(*) FILTER (WHERE ${wasteCollections.status} = 'missed')`,
+              avgSegregation: avg(wasteCollections.segregationRating),
+              avgPlastic: avg(wasteCollections.plasticRating),
+            })
+            .from(wasteCollections)
+            .innerJoin(households, eq(wasteCollections.householdId, households.id))
+            .where(
+              and(
+                eq(households.villageId, village.villageId),
+                gte(wasteCollections.collectionDate, monthStart),
+                lte(wasteCollections.collectionDate, monthEnd)
+              )
+            );
+
+          // Get open issues count for this month
+          const openIssuesData = await db
+            .select({ count: count() })
+            .from(issues)
+            .where(
+              and(
+                eq(issues.villageId, village.villageId),
+                eq(issues.status, 'open'),
+                gte(issues.createdAt, monthStart),
+                lte(issues.createdAt, monthEnd)
+              )
+            );
+
+          // Create or update stats record
+          const stats = {
+            villageId: village.villageId,
+            month,
+            totalHouseholds: householdsCount[0]?.count || 0,
+            totalCollectors: collectorsCount[0]?.count || 0,
+            collectionsCompleted: collectionsData[0]?.completed || 0,
+            collectionsMissed: collectionsData[0]?.missed || 0,
+            openIssues: openIssuesData[0]?.count || 0,
+            averageSegregationRating: collectionsData[0]?.avgSegregation ? Number(collectionsData[0].avgSegregation) : undefined,
+            averagePlasticRating: collectionsData[0]?.avgPlastic ? Number(collectionsData[0].avgPlastic) : undefined,
+          };
+
+          await this.createOrUpdateMonthlyStats(stats as InsertMonthlyVillageStats);
+          recordsCreated++;
+        }
+      }
+
+      console.log(`✅ Phase 2 backfill completed: ${recordsCreated} monthly stats records created/updated`);
+      return recordsCreated;
+    } catch (error) {
+      console.error('Phase 2 backfill failed:', error);
+      throw error;
+    }
+  }
+
+  // Phase 3: Daily job to update current month stats
+  async updateCurrentMonthStats(): Promise<number> {
+    try {
+      let recordsUpdated = 0;
+      const today = new Date();
+      const currentMonth = today.getFullYear() + '-' + String(today.getMonth() + 1).padStart(2, '0');
+
+      // Get all villages
+      const allVillages = await db.select().from(villages);
+
+      for (const village of allVillages) {
+        // Calculate current month stats
+        const monthStart = new Date(`${currentMonth}-01`);
+        const monthEnd = new Date(monthStart.getFullYear(), monthStart.getMonth() + 1, 0, 23, 59, 59);
+
+        // Get total households
+        const householdsCount = await db
+          .select({ count: count() })
+          .from(households)
+          .where(eq(households.villageId, village.villageId));
+
+        // Get total collectors
+        const collectorsCount = await db
+          .select({ count: count() })
+          .from(collectors)
+          .where(eq(collectors.villageId, village.villageId));
+
+        // Get collections data for current month
+        const collectionsData = await db
+          .select({
+            completed: count(),
+            missed: sql<number>`COUNT(*) FILTER (WHERE ${wasteCollections.status} = 'missed')`,
+            avgSegregation: avg(wasteCollections.segregationRating),
+            avgPlastic: avg(wasteCollections.plasticRating),
+          })
+          .from(wasteCollections)
+          .innerJoin(households, eq(wasteCollections.householdId, households.id))
+          .where(
+            and(
+              eq(households.villageId, village.villageId),
+              gte(wasteCollections.collectionDate, monthStart),
+              lte(wasteCollections.collectionDate, monthEnd)
+            )
+          );
+
+        // Get open issues count
+        const openIssuesData = await db
+          .select({ count: count() })
+          .from(issues)
+          .where(
+            and(
+              eq(issues.villageId, village.villageId),
+              eq(issues.status, 'open'),
+              gte(issues.createdAt, monthStart),
+              lte(issues.createdAt, monthEnd)
+            )
+          );
+
+        // Update current month stats
+        const stats = {
+          villageId: village.villageId,
+          month: currentMonth,
+          totalHouseholds: householdsCount[0]?.count || 0,
+          totalCollectors: collectorsCount[0]?.count || 0,
+          collectionsCompleted: collectionsData[0]?.completed || 0,
+          collectionsMissed: collectionsData[0]?.missed || 0,
+          openIssues: openIssuesData[0]?.count || 0,
+          averageSegregationRating: collectionsData[0]?.avgSegregation ? Number(collectionsData[0].avgSegregation) : undefined,
+          averagePlasticRating: collectionsData[0]?.avgPlastic ? Number(collectionsData[0].avgPlastic) : undefined,
+        };
+
+        await this.createOrUpdateMonthlyStats(stats as InsertMonthlyVillageStats);
+        recordsUpdated++;
+      }
+
+      console.log(`✅ Phase 3: Updated ${recordsUpdated} current month stats records for ${currentMonth}`);
+      return recordsUpdated;
+    } catch (error) {
+      console.error('Phase 3: updateCurrentMonthStats failed:', error);
+      throw error;
+    }
+  }
+
+  // QR Code operations
+  async createQRCode(insertQRCode: InsertQRCode): Promise<QRCode> {
+    const [qrCode] = await db
+      .insert(qrCodes)
+      .values(insertQRCode)
+      .returning();
+    return qrCode;
+  }
+
+  async createBatchQRCodes(insertQRCodes: InsertQRCode[]): Promise<QRCode[]> {
+    if (insertQRCodes.length === 0) return [];
+    const result = await db
+      .insert(qrCodes)
+      .values(insertQRCodes)
+      .returning();
+    return result;
+  }
+
+  async getQRCodeByUid(uid: string): Promise<QRCode | undefined> {
+    const [qrCode] = await db
+      .select()
+      .from(qrCodes)
+      .where(eq(qrCodes.uid, uid));
+    return qrCode || undefined;
+  }
+
+  async getQRCodesByVillage(villageId: string): Promise<QRCode[]> {
+    return await db
+      .select()
+      .from(qrCodes)
+      .where(eq(qrCodes.villageId, villageId))
+      .orderBy(desc(qrCodes.createdAt));
+  }
+
+  async getUnmappedQRCodesByVillage(villageId: string): Promise<QRCode[]> {
+    return await db
+      .select()
+      .from(qrCodes)
+      .where(
+        and(
+          eq(qrCodes.villageId, villageId),
+          eq(qrCodes.status, 'notMapped')
+        )
+      )
+      .orderBy(qrCodes.uid);
+  }
+
+  async getQRCodesByBatch(batchId: string): Promise<QRCode[]> {
+    return await db
+      .select()
+      .from(qrCodes)
+      .where(eq(qrCodes.batchId, batchId))
+      .orderBy(qrCodes.uid);
+  }
+
+  async updateQRCodeStatus(uid: string, status: string, householdId?: number): Promise<QRCode> {
+    const updateData: Partial<QRCode> = { status };
+    if (householdId !== undefined) {
+      updateData.householdId = householdId;
+    }
+    const [qrCode] = await db
+      .update(qrCodes)
+      .set(updateData)
+      .where(eq(qrCodes.uid, uid))
+      .returning();
+    return qrCode;
+  }
+
+  async getNextBatchId(villageId: string): Promise<string> {
+    const existingBatches = await db
+      .select({ batchId: qrCodes.batchId })
+      .from(qrCodes)
+      .where(eq(qrCodes.villageId, villageId))
+      .groupBy(qrCodes.batchId)
+      .orderBy(desc(qrCodes.batchId));
+
+    if (existingBatches.length === 0) {
+      return `BATCH-${villageId}-001`;
+    }
+
+    const latestBatch = existingBatches[0].batchId;
+    const match = latestBatch.match(/BATCH-.*-(\d+)$/);
+    if (match) {
+      const nextNum = parseInt(match[1]) + 1;
+      return `BATCH-${villageId}-${String(nextNum).padStart(3, '0')}`;
+    }
+    return `BATCH-${villageId}-001`;
+  }
+
+  async getMaxHouseNumber(villageId: string): Promise<number> {
+    const existingHouseholds = await db
+      .select({ uid: households.uid })
+      .from(households)
+      .where(eq(households.villageId, villageId));
+
+    const existingQRCodes = await db
+      .select({ uid: qrCodes.uid })
+      .from(qrCodes)
+      .where(eq(qrCodes.villageId, villageId));
+
+    let maxNum = 0;
+
+    for (const h of existingHouseholds) {
+      const match = h.uid.match(/H(\d+)$/);
+      if (match) {
+        const num = parseInt(match[1], 10);
+        if (num > maxNum) {
+          maxNum = num;
+        }
+      }
+    }
+
+    for (const qr of existingQRCodes) {
+      const match = qr.uid.match(/H(\d+)$/);
+      if (match) {
+        const num = parseInt(match[1], 10);
+        if (num > maxNum) {
+          maxNum = num;
+        }
+      }
+    }
+
+    return maxNum;
+  }
+
+  async getNextQRCodeUid(villageId: string, count: number): Promise<string[]> {
+    const maxNum = await this.getMaxHouseNumber(villageId);
+
+    const startNum = maxNum + 1;
+    const uids: string[] = [];
+    for (let i = 0; i < count; i++) {
+      uids.push(`GEN-${villageId}-H${String(startNum + i).padStart(4, '0')}`);
+    }
+    return uids;
+  }
+
+  // Field worker operations
+  async getFieldWorkersByVillage(villageId: string): Promise<User[]> {
+    return await db
+      .select()
+      .from(users)
+      .where(
+        and(
+          eq(users.villageId, villageId),
+          eq(users.role, 'fieldworker')
+        )
+      )
+      .orderBy(users.userId);
+  }
+
+  async deleteFieldWorker(userId: string): Promise<void> {
+    await db.delete(users).where(
+      and(
+        eq(users.userId, userId),
+        eq(users.role, 'fieldworker')
+      )
+    );
   }
 }
 

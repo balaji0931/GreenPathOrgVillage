@@ -55,7 +55,6 @@ class OfflineStorageManager {
         );
       });
     } catch (error) {
-      console.error('Failed to store offline collection:', error);
       return { success: false, error: error.message };
     }
   }
@@ -80,7 +79,6 @@ class OfflineStorageManager {
         );
       });
     } catch (error) {
-      console.error('Failed to store offline file:', error);
       return { success: false, error: error.message };
     }
   }
@@ -105,7 +103,6 @@ class OfflineStorageManager {
         );
       });
     } catch (error) {
-      console.error('Failed to get pending collections:', error);
       return { success: false, error: error.message };
     }
   }
@@ -136,7 +133,6 @@ class OfflineStorageManager {
         );
       });
     } catch (error) {
-      console.error('Failed to force sync:', error);
       return { success: false, error: error.message };
     }
   }
