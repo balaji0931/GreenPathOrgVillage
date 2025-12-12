@@ -392,7 +392,7 @@ export class DatabaseStorage implements IStorage {
     status?: string;
   } = {}): Promise<{ data: Household[]; total: number; page: number; limit: number; totalPages: number }> {
     const page = Math.max(1, options.page || 1);
-    const limit = Math.min(100, Math.max(1, options.limit || 50));
+    const limit = Math.min(2000, Math.max(1, options.limit || 2000));
     const offset = (page - 1) * limit;
 
     let conditions = [eq(households.villageId, villageId)];
@@ -656,7 +656,7 @@ export class DatabaseStorage implements IStorage {
     limit?: number;
   } = {}): Promise<{ data: WasteCollection[]; total: number; page: number; limit: number; totalPages: number }> {
     const page = Math.max(1, options.page || 1);
-    const limit = Math.min(100, Math.max(1, options.limit || 50));
+    const limit = Math.min(1500, Math.max(1, options.limit || 1500));
     const offset = (page - 1) * limit;
 
     const [countResult] = await db
@@ -1604,7 +1604,7 @@ export class DatabaseStorage implements IStorage {
       this.getVillageStats(villageId),
       db.select().from(users)
         .where(and(eq(users.villageId, villageId), eq(users.role, 'manager')))
-        .limit(50), // Bounded
+        .limit(1500), // Bounded
       this.getHouseholdsByVillagePaginated(villageId, { page: 1, limit: 1600 }),
       this.getCollectorsByVillagePaginated(villageId, { page: 1, limit: 50 }),
       this.getIssuesByVillagePaginated(villageId, { page: 1, limit: 50 }),

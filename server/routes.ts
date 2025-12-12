@@ -857,7 +857,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const villageId = req.session.villageId!;
       const page = parseInt(req.query.page as string) || 1;
-      const limit = parseInt(req.query.limit as string) || 50;
+      const limit = parseInt(req.query.limit as string) || 1500;
       const search = req.query.search as string;
       const ward = req.query.ward as string;
       const status = req.query.status as string;

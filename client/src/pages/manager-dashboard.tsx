@@ -485,7 +485,7 @@ export default function ManagerDashboard() {
     queryKey: ["/api/households/paginated", user?.villageId],
     queryFn: async ({ pageParam = 1 }) => {
       const response = await fetch(
-        `/api/households/paginated?page=${pageParam}&limit=50`,
+        `/api/households/paginated?page=${pageParam}&limit=1500`,
         { credentials: "include" }
       );
       return response.json();
