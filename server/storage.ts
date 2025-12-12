@@ -1605,7 +1605,7 @@ export class DatabaseStorage implements IStorage {
       db.select().from(users)
         .where(and(eq(users.villageId, villageId), eq(users.role, 'manager')))
         .limit(50), // Bounded
-      this.getHouseholdsByVillagePaginated(villageId, { page: 1, limit: 50 }),
+      this.getHouseholdsByVillagePaginated(villageId, { page: 1, limit: 1600 }),
       this.getCollectorsByVillagePaginated(villageId, { page: 1, limit: 50 }),
       this.getIssuesByVillagePaginated(villageId, { page: 1, limit: 50 }),
     ]);
