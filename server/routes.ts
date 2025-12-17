@@ -3106,7 +3106,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const villageId = req.session.villageId!;
       const page = parseInt(req.query.page as string) || 1;
-      const limit = parseInt(req.query.limit as string) || 50;
+      const limit = parseInt(req.query.limit as string) || 5000;
       const date = req.query.date as string;
       const collectorId = req.query.collectorId ? parseInt(req.query.collectorId as string) : undefined;
       const status = req.query.status as string;

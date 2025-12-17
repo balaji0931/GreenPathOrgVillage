@@ -529,7 +529,7 @@ export default function ManagerDashboard() {
     queryKey: ["/api/waste-collections/village/paginated", user?.villageId],
     queryFn: async ({ pageParam = 1 }) => {
       const response = await fetch(
-        `/api/waste-collections/village/paginated?page=${pageParam}&limit=50`,
+        `/api/waste-collections/village/paginated?page=${pageParam}&limit=5000`,
         { credentials: "include" }
       );
       return response.json();
@@ -3652,10 +3652,6 @@ export default function ManagerDashboard() {
             {/* Reports Tab */}
             {activeTab === "reports" && (
               <div className="space-y-6">
-                <div>
-                  <h2 className="text-2xl font-bold">Reports & Analytics</h2>
-                </div>
-
                 <Tabs defaultValue="overall" className="w-full">
                   <TabsList className="grid w-full grid-cols-2">
                     <TabsTrigger value="overall">Overall Reports</TabsTrigger>

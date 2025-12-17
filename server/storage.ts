@@ -642,7 +642,7 @@ export class DatabaseStorage implements IStorage {
     return collection;
   }
 
-  async getCollectionsByHousehold(householdId: number, limit: number = 100): Promise<WasteCollection[]> {
+  async getCollectionsByHousehold(householdId: number, limit: number = 500): Promise<WasteCollection[]> {
     return await db
       .select()
       .from(wasteCollections)
@@ -681,7 +681,7 @@ export class DatabaseStorage implements IStorage {
     };
   }
 
-  async getCollectionsByCollector(collectorId: number, limit: number = 100): Promise<WasteCollection[]> {
+  async getCollectionsByCollector(collectorId: number, limit: number = 500): Promise<WasteCollection[]> {
     return await db
       .select()
       .from(wasteCollections)
@@ -696,7 +696,7 @@ export class DatabaseStorage implements IStorage {
     date?: string;
   } = {}): Promise<{ data: WasteCollection[]; total: number; page: number; limit: number; totalPages: number }> {
     const page = Math.max(1, options.page || 1);
-    const limit = Math.min(100, Math.max(1, options.limit || 50));
+    const limit = Math.min(1000, Math.max(1, options.limit || 5000));
     const offset = (page - 1) * limit;
 
     let conditions = [eq(wasteCollections.collectorId, collectorId)];
@@ -1087,7 +1087,7 @@ export class DatabaseStorage implements IStorage {
     status?: string;
   } = {}): Promise<{ data: any[]; total: number; page: number; limit: number; totalPages: number }> {
     const page = Math.max(1, options.page || 1);
-    const limit = Math.min(100, Math.max(1, options.limit || 50));
+    const limit = Math.min(10000, Math.max(1, options.limit || 10000));
     const offset = (page - 1) * limit;
 
     let conditions = [eq(households.villageId, villageId)];
