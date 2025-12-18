@@ -182,9 +182,6 @@ export const cacheKeys = {
   issues: (villageId: string) => `issues:${villageId}`,
   issuesPaginated: (villageId: string, page: number, limit: number, status?: string) => 
     `issues:${villageId}:${page}:${limit}:${status || 'all'}`,
-  payments: (villageId: string) => `payments:${villageId}`,
-  paymentsPaginated: (villageId: string, page: number, limit: number, month?: string, status?: string) => 
-    `payments:${villageId}:${page}:${limit}:${month || 'all'}:${status || 'all'}`,
   wasteCollections: (villageId: string) => `collections:${villageId}`,
   wasteCollectionsPaginated: (villageId: string, page: number, limit: number, date?: string) => 
     `collections:${villageId}:${page}:${limit}:${date || 'all'}`,

@@ -33,12 +33,6 @@ export const getGeneratorTourSteps = (t: any): TourStep[] => [
     placement: 'bottom',
   },
   {
-    target: '.generator-payments-tab',
-    title: t('tour.generator.paymentsTitle', 'Payment Management'),
-    content: t('tour.generator.paymentsContent', 'View payment dues, upload payment proof, and track verification status for waste management services.'),
-    placement: 'bottom',
-  },
-  {
     target: '.generator-profile-tab',
     title: t('tour.generator.profileTitle', 'Account Settings'),
     content: t('tour.generator.profileContent', 'Manage your account, change password, and access household settings from your profile.'),

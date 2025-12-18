@@ -10,32 +10,11 @@ export const villages = pgTable("villages", {
   name: text("name").notNull(),
   paymentLink: text("payment_link"), // UPI payment link
   monthlyFee: decimal("monthly_fee", { precision: 10, scale: 2 }), // Monthly fee amount
-  paymentsEnabled: boolean("payments_enabled").default(false), // Enable/disable payments for village
   imageUploadRequired: boolean("image_upload_required").default(true), // Require image upload for collections
   wards: text("wards").array().default([]), // Array of ward names for this village
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
-
-// Payments table
-export const payments = pgTable("payments", {
-  id: serial("id").primaryKey(),
-  householdId: integer("household_id").notNull().references(() => households.id),
-  villageId: text("village_id").notNull().references(() => villages.villageId),
-  month: text("month").notNull(), // Format: YYYY-MM
-  amount: decimal("amount", { precision: 10, scale: 2 }).notNull(),
-  status: text("status").default("due"), // due, verification_pending, paid
-  paymentProofUrl: text("payment_proof_url"), // Image URL for payment proof
-  submittedAt: timestamp("submitted_at"),
-  verifiedAt: timestamp("verified_at"),
-  verifiedBy: text("verified_by"), // Manager who verified
-  createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow(),
-}, (table) => [
-  index("idx_payments_village_status").on(table.villageId, table.status),
-  index("idx_payments_household_month").on(table.householdId, table.month),
-  index("idx_payments_status").on(table.status),
-]);
 
 // Users table with role-based structure
 export const users = pgTable("users", {
@@ -165,7 +144,6 @@ export const villagesRelations = relations(villages, ({ many }) => ({
   households: many(households),
   collectors: many(collectors),
   issues: many(issues),
-  payments: many(payments),
 }));
 
 export const usersRelations = relations(users, ({ one }) => ({
@@ -182,7 +160,6 @@ export const householdsRelations = relations(households, ({ one, many }) => ({
   }),
   wasteCollections: many(wasteCollections),
   feedback: many(feedback),
-  payments: many(payments),
 }));
 
 export const collectorsRelations = relations(collectors, ({ one, many }) => ({
@@ -220,17 +197,6 @@ export const feedbackRelations = relations(feedback, ({ one }) => ({
   collector: one(collectors, {
     fields: [feedback.toCollectorId],
     references: [collectors.id],
-  }),
-}));
-
-export const paymentsRelations = relations(payments, ({ one }) => ({
-  household: one(households, {
-    fields: [payments.householdId],
-    references: [households.id],
-  }),
-  village: one(villages, {
-    fields: [payments.villageId],
-    references: [villages.villageId],
   }),
 }));
 
@@ -275,12 +241,6 @@ export const insertAnnouncementSchema = createInsertSchema(announcements).omit({
 export const insertFeedbackSchema = createInsertSchema(feedback).omit({
   id: true,
   createdAt: true,
-});
-
-export const insertPaymentSchema = createInsertSchema(payments).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
 });
 
 // Moderators table
@@ -454,7 +414,6 @@ export type WasteCollection = typeof wasteCollections.$inferSelect;
 export type Issue = typeof issues.$inferSelect;
 export type Announcement = typeof announcements.$inferSelect;
 export type Feedback = typeof feedback.$inferSelect;
-export type Payment = typeof payments.$inferSelect;
 export type Moderator = typeof moderators.$inferSelect;
 export type ModeratorVillageAssignment = typeof moderatorVillageAssignments.$inferSelect;
 export type MonthlyVillageStats = typeof monthlyVillageStats.$inferSelect;

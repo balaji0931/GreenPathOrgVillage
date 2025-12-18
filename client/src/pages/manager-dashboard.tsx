@@ -66,7 +66,6 @@ import {
   XCircle,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import * as XLSX from 'xlsx';
 
 interface Collector {
   id: number;
@@ -246,123 +245,6 @@ const CreateCollectorDialog = ({ villageId }: { villageId: string }) => {
   );
 };
 
-const CreateHouseholdDialog = ({ villageId }: { villageId: string }) => {
-  const [open, setOpen] = useState(false);
-  const [formData, setFormData] = useState({ headName: "", houseNumber: "", phone: "", ward: "" });
-  const { toast } = useToast();
-  const queryClient = useQueryClient();
-  const { t } = useTranslation();
-
-  const householdMutation = useMutation({
-    mutationFn: (data: { headName: string; houseNumber: string; phone: string; ward: string }) =>
-      apiRequest("POST", "/api/households", { ...data, villageId }),
-    onSuccess: () => {
-      toast({ title: t("messages.operationSuccess") });
-      queryClient.invalidateQueries({ queryKey: ["/api/households/paginated"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/manager/stats"] });
-      setFormData({ headName: "", houseNumber: "", phone: "", ward: "" });
-      setOpen(false);
-    },
-    onError: (error: any) => {
-      toast({
-        title: t("messages.operationFailed"),
-        description: error.message,
-        variant: "destructive",
-      });
-    },
-  });
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!formData.headName.trim() || !formData.houseNumber.trim() || !formData.phone.trim() || !formData.ward.trim()) {
-      toast({ title: "Please fill all required fields including Ward/Sub-village", variant: "destructive" });
-      return;
-    }
-    householdMutation.mutate(formData);
-  };
-
-  return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button>
-          <Plus className="h-4 w-4 mr-2" />
-          {t("households.addHousehold")}
-        </Button>
-      </DialogTrigger>
-      <DialogContent className="sm:max-w-[425px]">
-        <DialogHeader>
-          <DialogTitle>{t("households.addHousehold")}</DialogTitle>
-        </DialogHeader>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <Label htmlFor="household-headName">{t("households.headName")} *</Label>
-            <Input
-              id="household-headName"
-              value={formData.headName}
-              onChange={(e) => setFormData(prev => ({ ...prev, headName: e.target.value }))}
-              placeholder={t("households.headName")}
-              required
-            />
-          </div>
-          <div>
-            <Label htmlFor="household-houseNumber">{t("households.houseNumber")} *</Label>
-            <Input
-              id="household-houseNumber"
-              value={formData.houseNumber}
-              onChange={(e) => setFormData(prev => ({ ...prev, houseNumber: e.target.value }))}
-              placeholder={t("households.houseNumber")}
-              required
-            />
-          </div>
-          <div>
-            <Label htmlFor="household-phone">{t("households.phone")} *</Label>
-            <Input
-              id="household-phone"
-              type="tel"
-              value={formData.phone}
-              onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
-              placeholder={t("households.phone")}
-              required
-            />
-          </div>
-          <div>
-            <Label htmlFor="household-ward">Ward/Sub-village *</Label>
-            <Select 
-              value={formData.ward} 
-              onValueChange={(value) => setFormData(prev => ({ ...prev, ward: value }))}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Select ward/sub-village" />
-              </SelectTrigger>
-              <SelectContent>
-                {wards.length > 0 ? (
-                  wards.map((ward: string) => (
-                    <SelectItem key={ward} value={ward}>
-                      {ward}
-                    </SelectItem>
-                  ))
-                ) : (
-                  <SelectItem value="no-wards" disabled>
-                    No wards available. Add wards in Overview tab.
-                  </SelectItem>
-                )}
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="flex gap-2 pt-4">
-            <Button type="button" variant="outline" onClick={() => setOpen(false)} className="flex-1">
-              {t("app.cancel")}
-            </Button>
-            <Button type="submit" disabled={householdMutation.isPending} className="flex-1">
-              {householdMutation.isPending ? t("app.submitting") : t("households.addHousehold")}
-            </Button>
-          </div>
-        </form>
-      </DialogContent>
-    </Dialog>
-  );
-};
-
 export default function ManagerDashboard() {
   const { user } = useAuth();
   const { toast } = useToast();
@@ -371,8 +253,7 @@ export default function ManagerDashboard() {
 
   // Simplified state management
   const [activeTab, setActiveTab] = useState("overview");
-  const [householdApproachTab, setHouseholdApproachTab] = useState("household-first");
-  const [householdSubTab, setHouseholdSubTab] = useState("excel-upload");
+  const [householdApproachTab, setHouseholdApproachTab] = useState("qr-first");
   const [qrFirstSubTab, setQrFirstSubTab] = useState("generate-batch");
   const [showPasswordDialog, setShowPasswordDialog] = useState(false);
   const [selectedIssue, setSelectedIssue] = useState<Issue | null>(null);
@@ -389,24 +270,6 @@ export default function ManagerDashboard() {
   // Image modal state
   const [showImageModal, setShowImageModal] = useState(false);
   const [selectedImageUrl, setSelectedImageUrl] = useState<string>('');
-  
-  // Payment state
-  const [paymentSetup, setPaymentSetup] = useState({
-    upiId: "",
-    confirmUpiId: "",
-    monthlyFee: "",
-  });
-  const [paymentSubTab, setPaymentSubTab] = useState("setup");
-  
-  // Payment filtering state
-  const [paymentFilters, setPaymentFilters] = useState({
-    search: "",
-    status: "all", // all, due, verification_pending, paid
-    month: new Date().toISOString().slice(0, 7), // Current month YYYY-MM
-  });
-
-  // Ward filtering for QR download
-  const [wardFilter, setWardFilter] = useState("all");
 
   // Consolidated filters
   const [filters, setFilters] = useState<FilterState>({
@@ -416,27 +279,7 @@ export default function ManagerDashboard() {
     collector: "all"
   });
 
-  // QR management state
-  const [selectedQRHouseholds, setSelectedQRHouseholds] = useState<number[]>([]);
-  const [selectedDownloadHouseholds, setSelectedDownloadHouseholds] = useState<number[]>([]);
-  const [qrPrintFilter, setQrPrintFilter] = useState<string>("all"); // all, printed, not_printed
-  const [searchQuery, setSearchQuery] = useState("");
-  const [showPrintConfirmDialog, setShowPrintConfirmDialog] = useState(false);
-  const [bulkHouseholds, setBulkHouseholds] = useState([
-    { headName: "", houseNumber: "", phone: "", address: "", ward: "" }
-  ]);
-
   // Excel upload state
-  const [showExcelPreview, setShowExcelPreview] = useState(false);
-  const [excelHouseholds, setExcelHouseholds] = useState<Array<{
-    headName: string;
-    houseNumber: string;
-    phone: string;
-    address: string;
-    ward: string;
-    familySize?: number;
-  }>>([]);
-  const [excelFile, setExcelFile] = useState<File | null>(null);
   const [showWardForm, setShowWardForm] = useState(false);
   const [newWard, setNewWard] = useState("");
 
@@ -499,20 +342,6 @@ export default function ManagerDashboard() {
   // Flatten households from all pages
   const households = householdsData?.pages.flatMap((page) => page.data) ?? [];
   const totalHouseholdsCount = householdsData?.pages[0]?.total ?? 0;
-
-  // Filtered households for QR download
-  const filteredHouseholdsForDownload = households.filter(household => {
-    const wardMatch = wardFilter === "all" || household.ward === wardFilter;
-    const printMatch = qrPrintFilter === "all" || 
-                      (qrPrintFilter === "printed" && household.qrPrinted) ||
-                      (qrPrintFilter === "not_printed" && !household.qrPrinted);
-    const searchMatch = searchQuery === "" || 
-      household.headName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      household.houseNumber?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      household.ward?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      household.phone?.includes(searchQuery);
-    return wardMatch && household.qrCodeUrl && printMatch && searchMatch;
-  });
 
   const { data: collectorStats = [] } = useQuery<CollectorStats[]>({
     queryKey: ["/api/collectors/stats", user?.villageId],
@@ -585,11 +414,6 @@ export default function ManagerDashboard() {
     enabled: !!user?.villageId,
   });
 
-  const { data: payments = [] } = useQuery<any[]>({
-    queryKey: ["/api/payments/village", user?.villageId],
-    enabled: !!user?.villageId && activeTab === "payments",
-  });
-
   // Field workers query
   const { data: fieldWorkers = [] } = useQuery<any[]>({
     queryKey: ["/api/fieldworkers", user?.villageId],
@@ -604,30 +428,6 @@ export default function ManagerDashboard() {
       (activeTab === "households" && householdApproachTab === "qr-first")
     ),
   });
-
-  // Helper function to extract UPI ID from payment link
-  const extractUpiId = (paymentLink: string) => {
-    if (!paymentLink) return null;
-    try {
-      const url = new URL(paymentLink);
-      return url.searchParams.get('pa') || null;
-    } catch {
-      return null;
-    }
-  };
-
-  // Update payment setup state when village data loads
-  useEffect(() => {
-    if (villageData) {
-      const currentUpiId = extractUpiId(villageData.paymentLink || '');
-      setPaymentSetup(prev => ({
-        ...prev,
-        upiId: currentUpiId || '',
-        confirmUpiId: currentUpiId || '',
-        monthlyFee: villageData.monthlyFee || '',
-      }));
-    }
-  }, [villageData]);
 
   // Mutations
   const updateIssueMutation = useMutation({
@@ -794,118 +594,6 @@ export default function ManagerDashboard() {
     },
   });
 
-  const setupPaymentMutation = useMutation({
-    mutationFn: (data: { upiId: string; monthlyFee: string }) =>
-      apiRequest("POST", "/api/payments/setup", data),
-    onSuccess: () => {
-      toast({ title: "Payment setup completed successfully" });
-      setPaymentSetup({ upiId: "", confirmUpiId: "", monthlyFee: "" });
-      queryClient.invalidateQueries({ queryKey: ["/api/villages"] });
-    },
-    onError: (error: any) => {
-      toast({
-        title: "Failed to setup payment",
-        description: error.message,
-        variant: "destructive",
-      });
-    },
-  });
-
-  const syncPaymentRecordsMutation = useMutation({
-    mutationFn: (month: string) =>
-      apiRequest("POST", "/api/payments/sync-records", { month }),
-    onSuccess: (response: any) => {
-      toast({ 
-        title: "Payment records synced successfully",
-        description: `Created ${response.created} new payment records out of ${response.total} total households.`
-      });
-      queryClient.invalidateQueries({ queryKey: ["/api/payments/village"] });
-    },
-    onError: (error: any) => {
-      toast({
-        title: "Failed to sync payment records",
-        description: error.message,
-        variant: "destructive",
-      });
-    },
-  });
-
-  const updatePaymentStatusMutation = useMutation({
-    mutationFn: ({ paymentId, status }: { paymentId: number; status: string }) =>
-      apiRequest("PATCH", `/api/payments/${paymentId}/status`, { status }),
-    onSuccess: () => {
-      toast({ title: "Payment status updated successfully" });
-      queryClient.invalidateQueries({ queryKey: ["/api/payments/village"] });
-    },
-    onError: (error: any) => {
-      toast({
-        title: "Failed to update payment status",
-        description: error.message,
-        variant: "destructive",
-      });
-    },
-  });
-
-  // QR Code mutations
-  const generateQRMutation = useMutation({
-    mutationFn: (householdIds: number[]) =>
-      apiRequest("POST", "/api/qr-codes/generate", { householdIds }),
-    onSuccess: () => {
-      toast({ title: "QR codes generated successfully!" });
-      queryClient.invalidateQueries({ queryKey: ["/api/households/paginated"] });
-      setSelectedQRHouseholds([]);
-    },
-    onError: (error: any) => {
-      toast({
-        title: "Error",
-        description: error.message || "Failed to generate QR codes",
-        variant: "destructive",
-      });
-    },
-  });
-
-  const markPrintedMutation = useMutation({
-    mutationFn: (householdIds: number[]) =>
-      apiRequest("POST", "/api/qr-codes/mark-printed", { householdIds }),
-    onSuccess: () => {
-      toast({ title: "QR codes marked as printed successfully!" });
-      queryClient.invalidateQueries({ queryKey: ["/api/households/paginated"] });
-      setSelectedDownloadHouseholds([]);
-      setShowPrintConfirmDialog(false);
-    },
-    onError: (error: any) => {
-      toast({
-        title: "Error",
-        description: error.message || "Failed to mark QR codes as printed",
-        variant: "destructive",
-      });
-    },
-  });
-
-  const downloadPDFMutation = useMutation({
-    mutationFn: async (householdIds: number[]) => {
-      const response = await fetchWithCsrf("/api/qr-codes/download-pdf", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ householdIds }),
-      });
-      if (!response.ok) throw new Error("Failed to download PDF");
-      return response.blob();
-    },
-    onSuccess: (blob: Blob) => {
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `household-qr-codes-${new Date().toISOString().split("T")[0]}.pdf`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      window.URL.revokeObjectURL(url);
-      toast({ title: "QR codes PDF downloaded!" });
-      setSelectedDownloadHouseholds([]);
-    },
-  });
-
   const addWardMutation = useMutation({
     mutationFn: (wardName: string) =>
       apiRequest("POST", `/api/villages/${user?.villageId}/wards`, { ward: wardName }),
@@ -924,94 +612,9 @@ export default function ManagerDashboard() {
     },
   });
 
-  const createBulkHouseholdsMutation = useMutation({
-    mutationFn: (householdsData: any[]) =>
-      apiRequest("POST", "/api/households/bulk", { households: householdsData }),
-    onSuccess: (response: any) => {
-      const successCount = Array.isArray(response) ? response.length : 0;
-      toast({
-        title: "Success",
-        description: `households created successfully with QR codes!`,
-      });
-      queryClient.invalidateQueries({ queryKey: ["/api/households/paginated"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/manager/stats"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/villages", user?.villageId, "wards"] });
-      setBulkHouseholds([{ headName: "", houseNumber: "", phone: "", address: "", ward: "" }]);
-      
-      // Close Excel preview and reset state
-      setShowExcelPreview(false);
-      setExcelHouseholds([]);
-      setExcelFile(null);
-    },
-    onError: (error: any) => {
-      toast({
-        title: "Error",
-        description: error.message || "Failed to create households",
-        variant: "destructive",
-      });
-      // Don't close preview on error so user can try again
-    },
-  });
-
   // Helper functions
   const updateFilter = (key: keyof FilterState, value: string) => {
     setFilters(prev => ({ ...prev, [key]: value }));
-  };
-
-  // Excel file processing
-  const handleExcelFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      try {
-        const data = new Uint8Array(e.target?.result as ArrayBuffer);
-        const workbook = XLSX.read(data, { type: 'array' });
-        const firstSheetName = workbook.SheetNames[0];
-        const worksheet = workbook.Sheets[firstSheetName];
-        const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
-
-        // Skip header row and process data
-        const householdsData = jsonData.slice(1).map((row: any[]) => ({
-          headName: row[0]?.toString().trim() || '',
-          houseNumber: row[1]?.toString().trim() || '',
-          phone: row[2]?.toString().trim() || '',
-          ward: row[3]?.toString().trim() || '',
-          address: row[4]?.toString().trim() || '',
-          familySize: row[5] ? parseInt(row[5].toString()) || 1 : 1,
-        })).filter(household => 
-          household.headName && household.houseNumber && household.phone && household.ward
-        );
-
-        if (householdsData.length === 0) {
-          toast({
-            title: "No valid data found",
-            description: "Please ensure your Excel file has the required columns: Head Name, House Number, Phone, Ward, Address, Family Size",
-            variant: "destructive"
-          });
-          return;
-        }
-
-        setExcelHouseholds(householdsData);
-        setExcelFile(file);
-        setShowExcelPreview(true);
-      } catch (error) {
-        toast({
-          title: "Error reading Excel file",
-          description: "Please ensure you've uploaded a valid Excel file",
-          variant: "destructive"
-        });
-      }
-    };
-    reader.readAsArrayBuffer(file);
-  };
-
-  const confirmExcelUpload = () => {
-    if (excelHouseholds.length > 0) {
-      createBulkHouseholdsMutation.mutate(excelHouseholds);
-      // Don't close preview immediately - let the mutation success handler close it
-    }
   };
 
   const clearFilters = () => {
@@ -1268,7 +871,6 @@ export default function ManagerDashboard() {
                 { id: "households", icon: Home, class: "manager-households-tab" },
                 { id: "collections", icon: Package, class: "manager-collections-tab" },
                 { id: "issues", icon: AlertTriangle, class: "manager-issues-tab" },
-                ...(villageData?.paymentsEnabled ? [{ id: "payments", icon: CreditCard, class: "manager-payments-tab" }] : []),
                 { id: "reports", icon: BarChart3, class: "manager-reports-tab" },
                 { id: "announcements", icon: Bell, class: "manager-announcements-tab" },
               ].map(({ id, icon: Icon, class: className }) => (
@@ -1298,7 +900,6 @@ export default function ManagerDashboard() {
                   { id: "households", icon: Home, label: t("navigation.households"), class: "manager-households-tab" },
                   { id: "collections", icon: Package, label: t("navigation.collections"), class: "manager-collections-tab" },
                   { id: "issues", icon: AlertTriangle, label: t("navigation.issues"), class: "manager-issues-tab" },
-                  ...(villageData?.paymentsEnabled ? [{ id: "payments", icon: CreditCard, label: t("navigation.payments"), class: "manager-payments-tab" }] : []),
                   { id: "reports", icon: BarChart3, label: t("navigation.reports"), class: "manager-reports-tab" },
                   { id: "announcements", icon: Bell, label: t("navigation.announcements"), class: "manager-announcements-tab" },
                   { id: "profile", icon: User, label: t("navigation.profile"), class: "manager-profile-tab" },
@@ -1326,11 +927,6 @@ export default function ManagerDashboard() {
             {/* Overview Tab */}
             {activeTab === "overview" && (
               <div className="space-y-6">
-                <div>
-                  <h2 className="text-2xl font-bold mb-2">{t("dashboard.overview")}</h2>
-                  <p className="text-muted-foreground">{t("villages.villageStats")}</p>
-                </div>
-
                 <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
                   <StatCard
                     title={t("households.totalHouseholds")}
@@ -1433,13 +1029,6 @@ export default function ManagerDashboard() {
             {/* Collectors Tab */}
             {activeTab === "collectors" && (
               <div className="space-y-6">
-                <div className="flex justify-between items-center">
-                  <div>
-                    <h2 className="text-2xl font-bold">WorkForce Management</h2>
-                    <p className="text-muted-foreground">Manage collectors and field workers</p>
-                  </div>
-                </div>
-
                 <Tabs value={collectorsSubTab} onValueChange={setCollectorsSubTab} className="w-full">
                   <TabsList className="grid w-full grid-cols-2">
                     <TabsTrigger value="collectors">Collectors</TabsTrigger>
@@ -1447,23 +1036,12 @@ export default function ManagerDashboard() {
                   </TabsList>
 
                   <TabsContent value="collectors" className="space-y-4">
-                    <div className="flex justify-end">
-                      <CreateCollectorDialog villageId={user?.villageId || ""} />
-                    </div>
 
                 {/* Date Filter */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle>{t("app.filter")} {t("dashboard.stats")}</CardTitle>
-                  </CardHeader>
-                  <CardContent>
                     <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
                       
                       {/* Date Input */}
                       <div className="flex-1 w-full">
-                        <Label htmlFor="analytics-date" className="text-sm mb-1 block">
-                          {t("filters.startDate")}
-                        </Label>
                         <Input
                           id="analytics-date"
                           type="date"
@@ -1483,16 +1061,9 @@ export default function ManagerDashboard() {
                           {t("app.clear")}
                         </Button>
                       </div>
-                    </div>
 
-                    {/* Info Text */}
-                    <p className="text-xs text-muted-foreground mt-2">
-                      {filters.date
-                        ? `${t("app.filter")} ${new Date(filters.date).toLocaleDateString()}`
-                        : t("app.all")}
-                    </p>
-                  </CardContent>
-                </Card>
+                      <CreateCollectorDialog villageId={user?.villageId || ""} />
+                    </div>
 
                 <div className="space-y-4">
                   {collectors.map((collector) => {
@@ -1650,15 +1221,6 @@ export default function ManagerDashboard() {
                         )}
                       </CardContent>
                     </Card>
-
-                    {/* Note about QR batch generation moved */}
-                    <Card className="bg-muted/50">
-                      <CardContent className="pt-4">
-                        <p className="text-sm text-muted-foreground">
-                          <strong>Note:</strong> QR batch generation has been moved to the Households section under the "QR First" approach tab.
-                        </p>
-                      </CardContent>
-                    </Card>
                   </TabsContent>
                 </Tabs>
               </div>
@@ -1667,473 +1229,28 @@ export default function ManagerDashboard() {
             {/* Households Tab */}
             {activeTab === "households" && (
               <div className="space-y-6">
-                <div className="flex justify-between items-center">
-                  <div>
-                    <h2 className="text-2xl font-bold">{t("manager.householdsManagement")}</h2>
-                    <p className="text-muted-foreground">{t("manager.manageHouseholdsQR")}</p>
-                  </div>
-                </div>
-
                 {/* Main Approach Tabs */}
                 <Tabs value={householdApproachTab} onValueChange={setHouseholdApproachTab} className="w-full">
-                  <TabsList className="grid w-full grid-cols-2 gap-2 mb-4">
-                    <TabsTrigger value="household-first" className="flex items-center gap-2">
-                      <Home className="h-4 w-4" />
-                      Household First
-                    </TabsTrigger>
+                  <TabsList className="grid w-full grid-cols-1 gap-2 mb-4">
                     <TabsTrigger value="qr-first" className="flex items-center gap-2">
                       <QrCode className="h-4 w-4" />
                       QR First
                     </TabsTrigger>
                   </TabsList>
 
-                  {/* Approach 1: Household First - Create households, then generate QRs */}
-                  <TabsContent value="household-first" className="space-y-4">
-                    <Card className="bg-blue-50 border-blue-200">
-                      <CardContent className="pt-4">
-                        <p className="text-sm text-blue-800">
-                          <strong>Workflow:</strong> Create households with details first, then generate and print QR codes for distribution.
-                        </p>
-                      </CardContent>
-                    </Card>
-
-                    <Tabs value={householdSubTab} onValueChange={setHouseholdSubTab} className="w-full">
-                      <TabsList className="grid w-full grid-cols-3 gap-2">
-                        <TabsTrigger value="bulk">{t("manager.addHousehold")}</TabsTrigger>
-                        <TabsTrigger value="excel-upload">Excel Upload</TabsTrigger>
-                        <TabsTrigger value="qr-download">{t("manager.downloadQR")}</TabsTrigger>
-                      </TabsList>
-
-                      <TabsContent value="bulk" className="space-y-4">
-                    <Card>
-                      <CardHeader>
-                        <CardTitle>{t("manager.addMultipleHouseholds")}</CardTitle>
-                        <CardDescription>{t("manager.createMultipleDesc")}</CardDescription>
-                      </CardHeader>
-                      <CardContent>
-                        <div className="space-y-4">
-                          <div className="flex justify-between items-center">
-                            <Button 
-                              size="sm" 
-                              variant="outline" 
-                              onClick={() => setBulkHouseholds([...bulkHouseholds, { headName: "", houseNumber: "", phone: "", address: "", ward: "" }])}
-                            >
-                              <Plus className="h-4 w-4 mr-2" />
-                              {t("manager.addRow")}
-                            </Button>
-                            <Button
-                              onClick={() => {
-                                const validHouseholds = bulkHouseholds.filter(h => 
-                                  h.headName.trim() && h.houseNumber.trim() && h.phone.trim() && h.ward.trim()
-                                );
-                                if (validHouseholds.length === 0) {
-                                  toast({ title: "Please fill at least one complete household", variant: "destructive" });
-                                  return;
-                                }
-                                createBulkHouseholdsMutation.mutate(validHouseholds);
-                              }}
-                              disabled={createBulkHouseholdsMutation.isPending || bulkHouseholds.every(h => !h.headName.trim())}
-                            >
-                              {createBulkHouseholdsMutation.isPending ? t("manager.creating") : `${t("manager.createHouseholds")} ${bulkHouseholds.filter(h => h.headName.trim() && h.houseNumber.trim() && h.phone.trim() && h.ward.trim()).length}`}
-                            </Button>
-                          </div>
-
-                          <div className="space-y-3 max-h-96 overflow-y-auto">
-                            {bulkHouseholds.map((household, index) => (
-                              <Card key={index} className="p-4">
-                                <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
-                                  <div>
-                                    <Label htmlFor={`headName-${index}`}>{t("manager.headNameRequired")}</Label>
-                                    <Input
-                                      id={`headName-${index}`}
-                                      value={household.headName}
-                                      onChange={(e) => {
-                                        const updated = [...bulkHouseholds];
-                                        updated[index].headName = e.target.value;
-                                        setBulkHouseholds(updated);
-                                      }}
-                                      placeholder={t("manager.enterHeadName")}
-                                    />
-                                  </div>
-                                  <div>
-                                    <Label htmlFor={`houseNumber-${index}`}>{t("manager.houseNumberRequired")}</Label>
-                                    <Input
-                                      id={`houseNumber-${index}`}
-                                      value={household.houseNumber}
-                                      onChange={(e) => {
-                                        const updated = [...bulkHouseholds];
-                                        updated[index].houseNumber = e.target.value;
-                                        setBulkHouseholds(updated);
-                                      }}
-                                      placeholder={t("manager.houseNumber")}
-                                    />
-                                  </div>
-                                  <div>
-                                    <Label htmlFor={`phone-${index}`}>{t("manager.phoneRequired")}</Label>
-                                    <Input
-                                      id={`phone-${index}`}
-                                      value={household.phone}
-                                      onChange={(e) => {
-                                        const updated = [...bulkHouseholds];
-                                        updated[index].phone = e.target.value;
-                                        setBulkHouseholds(updated);
-                                      }}
-                                      placeholder={t("manager.phoneNumber")}
-                                    />
-                                  </div>
-                                  <div>
-                                    <Label htmlFor={`ward-${index}`}>Ward/Sub-village *</Label>
-                                    <Select
-                                      value={household.ward}
-                                      onValueChange={(value) => {
-                                        const updated = [...bulkHouseholds];
-                                        updated[index].ward = value;
-                                        setBulkHouseholds(updated);
-                                      }}
-                                    >
-                                      <SelectTrigger>
-                                        <SelectValue placeholder="Select ward/sub-village" />
-                                      </SelectTrigger>
-                                      <SelectContent>
-                                        {wards.length > 0 ? (
-                                          wards.map((ward: string) => (
-                                            <SelectItem key={ward} value={ward}>
-                                              {ward}
-                                            </SelectItem>
-                                          ))
-                                        ) : (
-                                          <SelectItem value="no-wards" disabled>
-                                            No wards available. Add wards in Overview tab.
-                                          </SelectItem>
-                                        )}
-                                      </SelectContent>
-                                    </Select>
-                                  </div>
-                                  <div className="flex items-end">
-                                    <Button
-                                      type="button"
-                                      variant="outline"
-                                      size="sm"
-                                      onClick={() => {
-                                        if (bulkHouseholds.length > 1) {
-                                          const updated = bulkHouseholds.filter((_, i) => i !== index);
-                                          setBulkHouseholds(updated);
-                                        }
-                                      }}
-                                      className="w-full"
-                                    >
-                                      <Trash2 className="h-4 w-4" />
-                                    </Button>
-                                  </div>
-                                </div>
-                                <div className="mt-3">
-                                  <Label htmlFor={`address-${index}`}>{t("manager.addressOptional")}</Label>
-                                  <Input
-                                    id={`address-${index}`}
-                                    value={household.address}
-                                    onChange={(e) => {
-                                      const updated = [...bulkHouseholds];
-                                      updated[index].address = e.target.value;
-                                      setBulkHouseholds(updated);
-                                    }}
-                                    placeholder={t("manager.fullAddress")}
-                                  />
-                                </div>
-                              </Card>
-                            ))}
-                          </div>
-
-                          {bulkHouseholds.length === 0 && (
-                            <div className="text-center py-8">
-                              <p className="text-muted-foreground">{t("manager.clickAddRow")}</p>
-                            </div>
-                          )}
-                        </div>
-                      </CardContent>
-                    </Card>
-                  </TabsContent>
-
-                  <TabsContent value="excel-upload" className="space-y-4">
-                    <Card>
-                      <CardHeader>
-                        <CardTitle>Upload Excel File</CardTitle>
-                        <CardDescription>Upload an Excel file with household data to create multiple households at once</CardDescription>
-                      </CardHeader>
-                      <CardContent>
-                        <div className="space-y-4">
-                          <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
-                            <h4 className="font-medium text-blue-900 mb-2">Excel File Format Requirements:</h4>
-                            <p className="text-sm text-blue-800 mb-2">Your Excel file should have the following columns in order:</p>
-                            <div className="grid grid-cols-1 md:grid-cols-6 gap-2 text-xs">
-                              <div className="bg-blue-100 p-2 rounded">
-                                <strong>Column A:</strong> Head Name (Required)
-                              </div>
-                              <div className="bg-blue-100 p-2 rounded">
-                                <strong>Column B:</strong> House Number (Required)
-                              </div>
-                              <div className="bg-blue-100 p-2 rounded">
-                                <strong>Column C:</strong> Phone (Required)
-                              </div>
-                              <div className="bg-red-100 p-2 rounded">
-                                <strong>Column D:</strong> Ward/Sub-village (Required)
-                              </div>
-                              <div className="bg-blue-100 p-2 rounded">
-                                <strong>Column E:</strong> Address (Optional)
-                              </div>
-                              <div className="bg-blue-100 p-2 rounded">
-                                <strong>Column F:</strong> Family Size (Optional)
-                              </div>
-                            </div>
-                            <p className="text-xs text-blue-700 mt-2">
-                              Note: The first row should contain headers and will be skipped during processing.
-                            </p>
-                          </div>
-
-                          <div>
-                            <Label htmlFor="excel-upload">Upload Excel File</Label>
-                            <Input
-                              id="excel-upload"
-                              type="file"
-                              accept=".xlsx,.xls"
-                              onChange={handleExcelFileUpload}
-                              className="cursor-pointer"
-                            />
-                          </div>
-
-                          {excelFile && (
-                            <div className="p-3 bg-green-50 rounded-lg border border-green-200">
-                              <div className="flex items-center gap-2">
-                                <div className="w-4 h-4 bg-green-500 rounded-full"></div>
-                                <span className="text-sm font-medium text-green-800">
-                                  File uploaded: {excelFile.name}
-                                </span>
-                              </div>
-                              <p className="text-xs text-green-700 mt-1">
-                                {excelHouseholds.length} valid households found. Click preview to review before creating.
-                              </p>
-                            </div>
-                          )}
-                        </div>
-                      </CardContent>
-                    </Card>
-                  </TabsContent>
-
-                  <TabsContent value="qr-download" className="space-y-4">
-                    <Card>
-                      <CardHeader>
-                        <CardTitle>QR Code Management</CardTitle>
-                        <CardDescription>Download QR codes and track printing status to avoid duplicates</CardDescription>
-                      </CardHeader>
-                      <CardContent>
-                        <div className="space-y-4">
-                          {/* Search Bar */}
-                          <div className="space-y-2">
-                            <Label htmlFor="household-search">Search Households</Label>
-                            <Input
-                              id="household-search"
-                              type="text"
-                              placeholder="Search by name, house number, phone, or ward..."
-                              value={searchQuery}
-                              onChange={(e) => setSearchQuery(e.target.value)}
-                              className="w-full"
-                            />
-                          </div>
-                          
-                          {/* Filters */}
-                          <div className="flex items-center gap-4">
-                            <div className="flex-1">
-                              <Label htmlFor="ward-filter">Filter by Ward</Label>
-                              <Select value={wardFilter} onValueChange={setWardFilter}>
-                                <SelectTrigger>
-                                  <SelectValue placeholder="All Wards" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  <SelectItem value="all">All Wards</SelectItem>
-                                  {Array.from(new Set(households.map(h => h.ward).filter(Boolean))).sort().map(ward => (
-                                    <SelectItem key={ward} value={ward}>{ward}</SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
-                            </div>
-                            <div className="flex-1">
-                              <Label htmlFor="print-filter">Print Status</Label>
-                              <Select value={qrPrintFilter} onValueChange={setQrPrintFilter}>
-                                <SelectTrigger>
-                                  <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  <SelectItem value="all">All QR Codes</SelectItem>
-                                  <SelectItem value="not_printed">Not Printed</SelectItem>
-                                  <SelectItem value="printed">Already Printed</SelectItem>
-                                </SelectContent>
-                              </Select>
-                            </div>
-                          </div>
-
-                          <div className="flex justify-between items-center flex-wrap gap-2">
-                            <div className="flex gap-2">
-                              <Button 
-                                size="sm" 
-                                variant="outline" 
-                                onClick={() => setSelectedDownloadHouseholds(filteredHouseholdsForDownload.map(h => h.id))}
-                              >
-                                Select All ({filteredHouseholdsForDownload.length})
-                              </Button>
-                              <Button 
-                                size="sm" 
-                                variant="outline" 
-                                onClick={() => setSelectedDownloadHouseholds([])}
-                              >
-                                Clear Selection
-                              </Button>
-                            </div>
-                            <div className="flex gap-2">
-                              <Button
-                                onClick={() => downloadPDFMutation.mutate(selectedDownloadHouseholds)}
-                                disabled={selectedDownloadHouseholds.length === 0 || downloadPDFMutation.isPending}
-                                variant="outline"
-                              >
-                                <Download className="h-4 w-4 mr-2" />
-                                {downloadPDFMutation.isPending ? "Generating..." : `Download PDF (${selectedDownloadHouseholds.length})`}
-                              </Button>
-                              <Button
-                                onClick={() => setShowPrintConfirmDialog(true)}
-                                disabled={selectedDownloadHouseholds.length === 0}
-                                className="bg-green-600 hover:bg-green-700"
-                              >
-                                <CheckCircle className="h-4 w-4 mr-2" />
-                                Mark as Printed ({selectedDownloadHouseholds.length})
-                              </Button>
-                            </div>
-                          </div>
-
-                          {filteredHouseholdsForDownload.length === 0 ? (
-                            <div className="text-center py-8">
-                              <QrCode className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-                              <p className="text-muted-foreground">No QR codes found for the selected filters</p>
-                              <p className="text-sm text-muted-foreground">Try changing your filter settings or generate QR codes first</p>
-                            </div>
-                          ) : (
-                            <div className="space-y-2">
-                              {filteredHouseholdsForDownload.map((household) => (
-                                <Card
-                                  key={household.id}
-                                  className={cn(
-                                    "cursor-pointer transition-all",
-                                    selectedDownloadHouseholds.includes(household.id) 
-                                      ? "ring-2 ring-blue-500 bg-blue-50" 
-                                      : "hover:bg-gray-50",
-                                    household.qrPrinted 
-                                      ? "bg-red-50 border-red-200" 
-                                      : "bg-green-50 border-green-200"
-                                  )}
-                                  onClick={() => {
-                                    setSelectedDownloadHouseholds(prev => 
-                                      prev.includes(household.id) 
-                                        ? prev.filter(id => id !== household.id)
-                                        : [...prev, household.id]
-                                    );
-                                  }}
-                                >
-                                  <CardContent className="p-4">
-                                    <div className="flex items-center justify-between">
-                                      <div className="flex items-center gap-3">
-                                        <img
-                                          src={household.qrCodeUrl}
-                                          alt="QR Code"
-                                          className="h-12 w-12 rounded border bg-white"
-                                        />
-                                        <div>
-                                          <h4 className="font-medium">{household.headName}</h4>
-                                          <p className="text-sm text-muted-foreground">
-                                            House: {household.houseNumber} | Ward: {household.ward} | ID: {household.uid}
-                                          </p>
-                                        </div>
-                                      </div>
-                                      <div className="flex items-center gap-3">
-                                        <Badge 
-                                          variant={household.qrPrinted ? "destructive" : "default"}
-                                          className={household.qrPrinted ? "bg-red-100 text-red-800" : "bg-green-100 text-green-800"}
-                                        >
-                                          {household.qrPrinted ? "Printed" : "Not Printed"}
-                                        </Badge>
-                                        <input
-                                          type="checkbox"
-                                          checked={selectedDownloadHouseholds.includes(household.id)}
-                                          onChange={() => {}}
-                                          className="h-4 w-4"
-                                        />
-                                      </div>
-                                    </div>
-                                  </CardContent>
-                                </Card>
-                              ))}
-                            </div>
-                          )}
-                        </div>
-                      </CardContent>
-                    </Card>
-
-                    {/* Print Confirmation Dialog */}
-                    <Dialog open={showPrintConfirmDialog} onOpenChange={setShowPrintConfirmDialog}>
-                      <DialogContent>
-                        <DialogHeader>
-                          <DialogTitle>Confirm QR Code Printing</DialogTitle>
-                        </DialogHeader>
-                        <div className="space-y-4">
-                          <p className="text-muted-foreground">
-                            Are you sure you want to mark {selectedDownloadHouseholds.length} QR codes as printed? 
-                            This will help track which QR codes have already been distributed to avoid duplicates.
-                          </p>
-                          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
-                            <div className="flex items-center gap-2">
-                              <AlertTriangle className="h-4 w-4 text-yellow-600" />
-                              <span className="text-sm font-medium text-yellow-800">Important</span>
-                            </div>
-                            <p className="text-sm text-yellow-700 mt-1">
-                              Once marked as printed, these QR codes will appear with a red background to indicate they've been distributed.
-                            </p>
-                          </div>
-                          <div className="flex justify-end gap-2">
-                            <Button variant="outline" onClick={() => setShowPrintConfirmDialog(false)}>
-                              Cancel
-                            </Button>
-                            <Button 
-                              onClick={() => markPrintedMutation.mutate(selectedDownloadHouseholds)}
-                              disabled={markPrintedMutation.isPending}
-                              className="bg-green-600 hover:bg-green-700"
-                            >
-                              {markPrintedMutation.isPending ? "Marking..." : "Confirm & Mark as Printed"}
-                            </Button>
-                          </div>
-                        </div>
-                      </DialogContent>
-                    </Dialog>
-                      </TabsContent>
-                    </Tabs>
-                  </TabsContent>
-
                   {/* Approach 2: QR First - Generate QRs first, field workers scan and fill data */}
                   <TabsContent value="qr-first" className="space-y-4">
-                    <Card className="bg-green-50 border-green-200">
-                      <CardContent className="pt-4">
-                        <p className="text-sm text-green-800">
-                          <strong>Workflow:</strong> Pre-generate QR codes, print and distribute to field workers who scan and fill household details in the field.
-                        </p>
-                      </CardContent>
-                    </Card>
 
                     <Tabs value={qrFirstSubTab} onValueChange={setQrFirstSubTab} className="w-full">
                       <TabsList className="grid w-full grid-cols-2 gap-2">
-                        <TabsTrigger value="generate-batch">Generate Batch</TabsTrigger>
-                        <TabsTrigger value="download-batches">Download Batches</TabsTrigger>
+                        <TabsTrigger value="generate-batch">Generate QR</TabsTrigger>
+                        <TabsTrigger value="download-batches">Download QRs</TabsTrigger>
                       </TabsList>
 
                       <TabsContent value="generate-batch" className="space-y-4">
                         <Card>
                           <CardHeader>
-                            <CardTitle>Generate Batch QR Codes</CardTitle>
-                            <CardDescription>Pre-generate QR codes for field workers to map to households</CardDescription>
+                            <CardTitle>Generate QR Codes</CardTitle>
                           </CardHeader>
                           <CardContent className="space-y-4">
                             <div className="flex items-end gap-4">
@@ -2165,8 +1282,7 @@ export default function ManagerDashboard() {
                       <TabsContent value="download-batches" className="space-y-4">
                         <Card>
                           <CardHeader>
-                            <CardTitle>Generated QR Code Batches</CardTitle>
-                            <CardDescription>Download PDFs for printing and distribution to field workers</CardDescription>
+                            <CardTitle>Generated QR Codes</CardTitle>
                           </CardHeader>
                           <CardContent>
                             {batchQRCodes.length === 0 ? (
@@ -2216,11 +1332,6 @@ export default function ManagerDashboard() {
             {/* Collections Tab */}
             {activeTab === "collections" && (
               <div className="space-y-6">
-                <div>
-                  <h2 className="text-2xl font-bold">{t("manager.collectionsManagement")}</h2>
-                  <p className="text-muted-foreground">{t("manager.viewHouseholdStatus")}</p>
-                </div>
-
                 <Tabs defaultValue="collections" className="w-full">
                   <TabsList className="grid w-full grid-cols-2">
                     <TabsTrigger value="collections">{t("manager.collections")}</TabsTrigger>
@@ -2228,12 +1339,7 @@ export default function ManagerDashboard() {
                   </TabsList>
 
                   <TabsContent value="collections" className="space-y-4">
-                    <Card>
-                      <CardHeader>
-                        <CardTitle>{t("manager.searchFilter")}</CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        <div className="flex flex-col sm:flex-row gap-4">
+                        <div className="flex flex-col sm:flex-row gap-4 pt-3">
                           
                           {/* Search Input */}
                           <div className="flex-1">
@@ -2266,8 +1372,6 @@ export default function ManagerDashboard() {
                             </Button>
                           </div>
                         </div>
-                      </CardContent>
-                    </Card>
 
 
                 <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
@@ -3085,431 +2189,9 @@ export default function ManagerDashboard() {
           </div>
         )}
 
-            {/* Payments Tab */}
-            {activeTab === "payments" && (
-              <div className="space-y-6">
-                <div>
-                  <h2 className="text-2xl font-bold">Payment Management</h2>
-                  <p className="text-muted-foreground">Setup and manage monthly waste collection fees</p>
-                </div>
-
-                <Tabs value={paymentSubTab} onValueChange={setPaymentSubTab} className="w-full">
-                  <TabsList className="grid w-full grid-cols-2">
-                    <TabsTrigger value="setup">Setup Payments</TabsTrigger>
-                    <TabsTrigger value="manage">Manage Payments</TabsTrigger>
-                  </TabsList>
-
-                  <TabsContent value="setup" className="space-y-4">
-                    {/* Current Payment Configuration */}
-                    <Card>
-                      <CardHeader>
-                        <CardTitle>Current Payment Configuration</CardTitle>
-                        <CardDescription>View existing payment setup for your village</CardDescription>
-                      </CardHeader>
-                      <CardContent>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          <div>
-                            <Label className="text-sm font-medium text-gray-600">Current UPI ID</Label>
-                            <div className="p-3 bg-gray-50 rounded-md border">
-                              <p className="text-sm">
-                                {extractUpiId(villageData?.paymentLink) || (
-                                  <span className="text-gray-500">UPI ID is not linked yet</span>
-                                )}
-                              </p>
-                            </div>
-                          </div>
-                          <div>
-                            <Label className="text-sm font-medium text-gray-600">Monthly Fee</Label>
-                            <div className="p-3 bg-gray-50 rounded-md border">
-                              <p className="text-sm">
-                                {villageData?.monthlyFee ? (
-                                  <span>₹{villageData.monthlyFee}</span>
-                                ) : (
-                                  <span className="text-gray-500">No monthly fee added</span>
-                                )}
-                              </p>
-                            </div>
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-
-                    {/* Update Payment Configuration */}
-                    <Card>
-                      <CardHeader>
-                        <CardTitle>Update Payment Setup</CardTitle>
-                        <CardDescription>Configure or update UPI payment details for monthly waste collection fees</CardDescription>
-                      </CardHeader>
-                      <CardContent>
-                        <div className="space-y-4">
-                          <div>
-                            <Label htmlFor="upi-id">UPI ID *</Label>
-                            <Input
-                              id="upi-id"
-                              value={paymentSetup.upiId}
-                              onChange={(e) => setPaymentSetup(prev => ({ ...prev, upiId: e.target.value }))}
-                              placeholder="example@paytm"
-                            />
-                          </div>
-                          <div>
-                            <Label htmlFor="confirm-upi-id">Confirm UPI ID *</Label>
-                            <Input
-                              id="confirm-upi-id"
-                              value={paymentSetup.confirmUpiId}
-                              onChange={(e) => setPaymentSetup(prev => ({ ...prev, confirmUpiId: e.target.value }))}
-                              placeholder="example@paytm"
-                            />
-                          </div>
-                          <div>
-                            <Label htmlFor="monthly-fee">Monthly Fee (₹) *</Label>
-                            <Input
-                              id="monthly-fee"
-                              type="number"
-                              value={paymentSetup.monthlyFee}
-                              onChange={(e) => setPaymentSetup(prev => ({ ...prev, monthlyFee: e.target.value }))}
-                              placeholder="100"
-                            />
-                          </div>
-                          <Button
-                            onClick={() => {
-                              if (!paymentSetup.upiId || !paymentSetup.confirmUpiId || !paymentSetup.monthlyFee) {
-                                toast({ title: "Please fill all required fields", variant: "destructive" });
-                                return;
-                              }
-                              if (paymentSetup.upiId !== paymentSetup.confirmUpiId) {
-                                toast({ title: "UPI IDs do not match", variant: "destructive" });
-                                return;
-                              }
-                              setupPaymentMutation.mutate({
-                                upiId: paymentSetup.upiId,
-                                monthlyFee: paymentSetup.monthlyFee,
-                              });
-                            }}
-                            disabled={setupPaymentMutation.isPending}
-                            className="w-full"
-                          >
-                            {setupPaymentMutation.isPending ? "Updating..." : "Update Payment Configuration"}
-                          </Button>
-                        </div>
-                      </CardContent>
-                    </Card>
-
-                    {/* Sync Payment Records */}
-                    {villageData?.paymentLink && villageData?.monthlyFee && (
-                      <Card>
-                        <CardHeader>
-                          <CardTitle>Sync Payment Records</CardTitle>
-                          <CardDescription>Ensure all households have payment records for the current month</CardDescription>
-                        </CardHeader>
-                        <CardContent>
-                          <div className="space-y-4">
-                            <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
-                              <h4 className="font-medium text-blue-900 mb-2">What this does:</h4>
-                              <ul className="text-sm text-blue-800 space-y-1">
-                                <li>• Checks all households in your village</li>
-                                <li>• Creates payment records with "due" status for households missing records for {new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}</li>
-                                <li>• Ensures no household is missed during payment collection</li>
-                              </ul>
-                            </div>
-                            
-                            <Button
-                              onClick={() => {
-                                const currentMonth = new Date().toISOString().slice(0, 7); // YYYY-MM format
-                                syncPaymentRecordsMutation.mutate(currentMonth);
-                              }}
-                              disabled={syncPaymentRecordsMutation.isPending}
-                              className="w-full bg-blue-600 hover:bg-blue-700"
-                            >
-                              {syncPaymentRecordsMutation.isPending 
-                                ? "Syncing Payment Records..." 
-                                : `Sync Payment Records for ${new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}`
-                              }
-                            </Button>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    )}
-                  </TabsContent>
-
-                  <TabsContent value="manage" className="space-y-4">
-                    {/* Nested tabs for Payment Management */}
-                    <Tabs defaultValue="verification" className="w-full">
-                      <TabsList className="grid w-full grid-cols-2">
-                        <TabsTrigger value="verification">Payment Verification</TabsTrigger>
-                        <TabsTrigger value="all-payments">All Payments</TabsTrigger>
-                      </TabsList>
-
-                      {/* Payment Verification Tab */}
-                      <TabsContent value="verification" className="space-y-4">
-                        <Card>
-                          <CardHeader>
-                            <CardTitle>Payment Verification</CardTitle>
-                            <CardDescription>Verify payment proofs submitted by generators</CardDescription>
-                          </CardHeader>
-                          <CardContent>
-                            <div className="space-y-4">
-                              {payments.length > 0 ? (
-                                payments
-                                  .filter((payment: any) => payment.status === 'verification_pending')
-                                  .map((payment: any) => (
-                                    <Card key={payment.id} className="border-l-4 border-l-yellow-400">
-                                      <CardContent className="p-4">
-                                        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                                          <div className="flex-1">
-                                            <h4 className="font-semibold">{payment.headName}</h4>
-                                            <p className="text-sm text-muted-foreground">
-                                              House: {payment.houseNumber} | Month: {payment.month}
-                                            </p>
-                                            <p className="text-sm">Amount: ₹{payment.amount}</p>
-                                            {payment.submittedAt && (
-                                              <p className="text-xs text-muted-foreground">
-                                                Submitted: {new Date(payment.submittedAt).toLocaleString()}
-                                              </p>
-                                            )}
-                                          </div>
-                                          <div className="flex flex-col gap-2">
-                                            {payment.paymentProofUrl && (
-                                              <Button
-                                                size="sm"
-                                                variant="outline"
-                                                onClick={() => {
-                                                  setSelectedImageUrl(payment.paymentProofUrl);
-                                                  setShowImageModal(true);
-                                                }}
-                                              >
-                                                <Eye className="h-4 w-4 mr-1" />
-                                                View Proof
-                                              </Button>
-                                            )}
-                                            <div className="flex gap-2">
-                                              <Button
-                                                size="sm"
-                                                onClick={() => updatePaymentStatusMutation.mutate({
-                                                  paymentId: payment.id,
-                                                  status: 'paid'
-                                                })}
-                                                disabled={updatePaymentStatusMutation.isPending}
-                                              >
-                                                <CheckCircle className="h-4 w-4 mr-1" />
-                                                Accept
-                                              </Button>
-                                              <Button
-                                                size="sm"
-                                                variant="destructive"
-                                                onClick={() => updatePaymentStatusMutation.mutate({
-                                                  paymentId: payment.id,
-                                                  status: 'due'
-                                                })}
-                                                disabled={updatePaymentStatusMutation.isPending}
-                                              >
-                                                <XCircle className="h-4 w-4 mr-1" />
-                                                Reject
-                                              </Button>
-                                            </div>
-                                          </div>
-                                        </div>
-                                      </CardContent>
-                                    </Card>
-                                  ))
-                              ) : (
-                                <div className="text-center py-8">
-                                  <CreditCard className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-                                  <p className="text-muted-foreground">No payment verifications pending</p>
-                                </div>
-                              )}
-                            </div>
-                          </CardContent>
-                        </Card>
-                      </TabsContent>
-
-                      {/* All Payments Tab */}
-                      <TabsContent value="all-payments" className="space-y-4">
-                        <Card>
-                          <CardHeader>
-                            <CardTitle>All Payments</CardTitle>
-                            <CardDescription>Filter and search payments by status, month, and household</CardDescription>
-                          </CardHeader>
-                          <CardContent>
-                            {/* Payment Filters */}
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-                              <div>
-                                <Label htmlFor="payment-search">Search Household</Label>
-                                <Input
-                                  id="payment-search"
-                                  placeholder="Search by name or house number..."
-                                  value={paymentFilters.search}
-                                  onChange={(e) => setPaymentFilters(prev => ({ ...prev, search: e.target.value }))}
-                                />
-                              </div>
-                              <div>
-                                <Label htmlFor="payment-status">Payment Status</Label>
-                                <Select 
-                                  value={paymentFilters.status} 
-                                  onValueChange={(value) => setPaymentFilters(prev => ({ ...prev, status: value }))}
-                                >
-                                  <SelectTrigger>
-                                    <SelectValue placeholder="Select status" />
-                                  </SelectTrigger>
-                                  <SelectContent>
-                                    <SelectItem value="all">All Statuses</SelectItem>
-                                    <SelectItem value="due">Due</SelectItem>
-                                    <SelectItem value="verification_pending">Pending Verification</SelectItem>
-                                    <SelectItem value="paid">Paid</SelectItem>
-                                  </SelectContent>
-                                </Select>
-                              </div>
-                              <div>
-                                <Label htmlFor="payment-month">Month</Label>
-                                <Input
-                                  id="payment-month"
-                                  type="month"
-                                  value={paymentFilters.month}
-                                  onChange={(e) => setPaymentFilters(prev => ({ ...prev, month: e.target.value }))}
-                                />
-                              </div>
-                            </div>
-
-                            {/* Filtered Payments List */}
-                            <div className="space-y-3">
-                              {payments.length > 0 ? (
-                                payments
-                                  .filter((payment: any) => {
-                                    // Status filter
-                                    if (paymentFilters.status !== 'all' && payment.status !== paymentFilters.status) {
-                                      return false;
-                                    }
-                                    
-                                    // Month filter
-                                    if (paymentFilters.month && payment.month !== paymentFilters.month) {
-                                      return false;
-                                    }
-                                    
-                                    // Search filter
-                                    if (paymentFilters.search) {
-                                      const searchTerm = paymentFilters.search.toLowerCase();
-                                      const headName = (payment.headName || '').toLowerCase();
-                                      const houseNumber = (payment.houseNumber || '').toLowerCase();
-                                      return headName.includes(searchTerm) || houseNumber.includes(searchTerm);
-                                    }
-                                    
-                                    return true;
-                                  })
-                                  .map((payment: any) => (
-                                    <Card key={payment.id}>
-                                      <CardContent className="p-4">
-                                        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                                          <div className="flex-1">
-                                            <h4 className="font-semibold">{payment.headName}</h4>
-                                            <p className="text-sm text-muted-foreground">
-                                              House: {payment.houseNumber} | Month: {payment.month}
-                                            </p>
-                                            <p className="text-sm">Amount: ₹{payment.amount}</p>
-                                            {payment.submittedAt && (
-                                              <p className="text-xs text-muted-foreground">
-                                                Submitted: {new Date(payment.submittedAt).toLocaleString()}
-                                              </p>
-                                            )}
-                                            {payment.verifiedAt && (
-                                              <p className="text-xs text-muted-foreground">
-                                                Verified: {new Date(payment.verifiedAt).toLocaleString()}
-                                              </p>
-                                            )}
-                                          </div>
-                                          <div className="flex flex-col gap-2">
-                                            <Badge
-                                              variant={
-                                                payment.status === 'paid' ? 'default' :
-                                                payment.status === 'verification_pending' ? 'secondary' : 'destructive'
-                                              }
-                                            >
-                                              {payment.status === 'paid' ? 'Paid' :
-                                               payment.status === 'verification_pending' ? 'Pending Verification' : 'Due'}
-                                            </Badge>
-                                            
-                                            {/* Show proof image button for all payments that have proof */}
-                                            {payment.paymentProofUrl && (
-                                              <Button
-                                                size="sm"
-                                                variant="outline"
-                                                onClick={() => {
-                                                  setSelectedImageUrl(payment.paymentProofUrl);
-                                                  setShowImageModal(true);
-                                                }}
-                                              >
-                                                <Eye className="h-4 w-4 mr-1" />
-                                                View Proof
-                                              </Button>
-                                            )}
-                                            
-                                            {/* Action buttons for verification pending payments */}
-                                            {payment.status === 'verification_pending' && (
-                                              <div className="flex gap-2">
-                                                <Button
-                                                  size="sm"
-                                                  onClick={() => updatePaymentStatusMutation.mutate({
-                                                    paymentId: payment.id,
-                                                    status: 'paid'
-                                                  })}
-                                                  disabled={updatePaymentStatusMutation.isPending}
-                                                >
-                                                  <CheckCircle className="h-4 w-4 mr-1" />
-                                                  Accept
-                                                </Button>
-                                                <Button
-                                                  size="sm"
-                                                  variant="destructive"
-                                                  onClick={() => updatePaymentStatusMutation.mutate({
-                                                    paymentId: payment.id,
-                                                    status: 'due'
-                                                  })}
-                                                  disabled={updatePaymentStatusMutation.isPending}
-                                                >
-                                                  <XCircle className="h-4 w-4 mr-1" />
-                                                  Reject
-                                                </Button>
-                                              </div>
-                                            )}
-                                          </div>
-                                        </div>
-                                      </CardContent>
-                                    </Card>
-                                  ))
-                              ) : (
-                                <div className="text-center py-8">
-                                  <p className="text-muted-foreground">No payments found for the selected filters</p>
-                                </div>
-                              )}
-                            </div>
-                          </CardContent>
-                        </Card>
-                      </TabsContent>
-                    </Tabs>
-                  </TabsContent>
-                </Tabs>
-              </div>
-            )}
-
             {/* Issues Tab */}
             {activeTab === "issues" && (
               <div className="space-y-6">
-                <div className="flex justify-between items-center">
-                  <div>
-                    <h2 className="text-2xl font-bold">Issues Management</h2>
-                    <p className="text-muted-foreground">Manage village issues</p>
-                  </div>
-                  <Select value={filters.status} onValueChange={(value) => updateFilter("status", value)}>
-                    <SelectTrigger className="w-40">
-                      <SelectValue placeholder="Filter by status" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All Issues</SelectItem>
-                      <SelectItem value="open">Open</SelectItem>
-                      <SelectItem value="in_progress">In Progress</SelectItem>
-                      <SelectItem value="resolved">Resolved</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
                 <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
                   <StatCard
                     title="Total Issues"
@@ -3539,7 +2221,20 @@ export default function ManagerDashboard() {
 
                 <Card>
                   <CardHeader>
-                    <CardTitle>Issue Reports</CardTitle>
+                    <div className="flex justify-between">
+                      <CardTitle>Issue Reports</CardTitle>
+                      <Select value={filters.status} onValueChange={(value) => updateFilter("status", value)}>
+                        <SelectTrigger className="w-40">
+                          <SelectValue placeholder="Filter by status" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">All Issues</SelectItem>
+                          <SelectItem value="open">Open</SelectItem>
+                          <SelectItem value="in_progress">In Progress</SelectItem>
+                          <SelectItem value="resolved">Resolved</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
                   </CardHeader>
                   <CardContent>
                     {(() => {
@@ -4378,10 +3073,6 @@ export default function ManagerDashboard() {
             {/* Announcements Tab */}
             {activeTab === "announcements" && (
               <div className="space-y-6">
-                <div>
-                  <h2 className="text-2xl font-bold">Announcements</h2>
-                  <p className="text-muted-foreground">Send updates to your village</p>
-                </div>
 
                 <Card>
                   <CardHeader>
@@ -4624,165 +3315,6 @@ export default function ManagerDashboard() {
               </div>
             </form>
           )}
-        </DialogContent>
-      </Dialog>
-
-      {/* Image Modal Dialog */}
-      <Dialog open={showImageModal} onOpenChange={setShowImageModal}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden p-0">
-          <DialogHeader className="p-6 pb-0">
-            <DialogTitle>Payment Proof</DialogTitle>
-          </DialogHeader>
-          <div className="p-6 pt-4">
-            <div className="w-full max-h-[70vh] overflow-auto">
-              <img
-                src={selectedImageUrl}
-                alt="Payment proof"
-                className="w-full h-auto object-contain rounded-lg"
-                onError={(e) => {
-                  e.currentTarget.src = "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTIxIDEyVjdIMTlWNUMxOSAzLjg5NTQzIDE4LjEwNDYgMyAxNyAzSDdDNS44OTU0MyAzIDUgMy44OTU0MyA1IDVWMTlDNSAyMC4xMDQ2IDUuODk1NDMgMjEgNyAyMUgxMiIgc3Ryb2tlPSIjOTk5IiBzdHJva2Utd2lkdGg9IjIiLz4KPHBhdGggZD0iTTE0IDE0TDE3IDE3TDIxIDEzIiBzdHJva2U9IiM5OTkiIHN0cm9rZS13aWR0aD0iMiIvPgo8L3N2Zz4K";
-                }}
-              />
-            </div>
-            <div className="flex justify-end mt-4">
-              <Button variant="outline" onClick={() => setShowImageModal(false)}>
-                Close
-              </Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      {/* Excel Preview Dialog */}
-      <Dialog
-        open={showExcelPreview}
-        onOpenChange={!createBulkHouseholdsMutation.isPending ? setShowExcelPreview : undefined}
-      >
-        <DialogContent className="max-w-6xl max-h-[80vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>
-              {createBulkHouseholdsMutation.isPending
-                ? "Creating Households..."
-                : "Preview Households from Excel"}
-            </DialogTitle>
-            <p className="text-sm text-muted-foreground">
-              {createBulkHouseholdsMutation.isPending
-                ? "Please wait while households are being created. Do not close this window."
-                : "Review the households that will be created from your Excel file. Only valid entries are shown."}
-            </p>
-          </DialogHeader>
-
-          <div className="space-y-4">
-            {createBulkHouseholdsMutation.isPending ? (
-              <div className="flex items-center justify-center p-8 bg-yellow-50 rounded-lg border border-yellow-200">
-                <div className="text-center">
-                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-yellow-600 mx-auto mb-4"></div>
-                  <h4 className="font-medium text-yellow-900 mb-2">
-                    Creating {excelHouseholds.length} households...
-                  </h4>
-                  <p className="text-sm text-yellow-700">
-                    Please wait while households are being created with QR codes and login credentials.
-                  </p>
-                  <p className="text-xs text-yellow-600 mt-2">
-                    This may take a few moments. Do not close this window.
-                  </p>
-                </div>
-              </div>
-            ) : (
-              <div className="flex items-center justify-between p-3 bg-blue-50 rounded-lg">
-                <div>
-                  <h4 className="font-medium text-blue-900">
-                    {excelHouseholds.length} households ready to be created
-                  </h4>
-                  <p className="text-sm text-blue-700">
-                    Each household will get unique ID, QR code, and login credentials
-                  </p>
-                </div>
-                <Button
-                  onClick={confirmExcelUpload}
-                  disabled={createBulkHouseholdsMutation.isPending}
-                  className="bg-green-600 hover:bg-green-700"
-                >
-                  {createBulkHouseholdsMutation.isPending
-                    ? "Creating..."
-                    : `Confirm & Create ${excelHouseholds.length} Households`}
-                </Button>
-              </div>
-            )}
-
-            <div className="border rounded-lg overflow-hidden">
-              <div className="max-h-96 overflow-y-auto">
-                <table className="w-full border-collapse">
-                  <thead className="bg-gray-50 sticky top-0">
-                    <tr>
-                      <th className="border border-gray-200 px-3 py-2 text-left text-xs font-medium text-gray-700">
-                        S.No
-                      </th>
-                      <th className="border border-gray-200 px-3 py-2 text-left text-xs font-medium text-gray-700">
-                        Head Name
-                      </th>
-                      <th className="border border-gray-200 px-3 py-2 text-left text-xs font-medium text-gray-700">
-                        House Number
-                      </th>
-                      <th className="border border-gray-200 px-3 py-2 text-left text-xs font-medium text-gray-700">
-                        Phone
-                      </th>
-                      <th className="border border-gray-200 px-3 py-2 text-left text-xs font-medium text-gray-700">
-                        Ward/Sub-village
-                      </th>
-                      <th className="border border-gray-200 px-3 py-2 text-left text-xs font-medium text-gray-700">
-                        Address
-                      </th>
-                      <th className="border border-gray-200 px-3 py-2 text-left text-xs font-medium text-gray-700">
-                        Family Size
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {excelHouseholds.map((household, index) => (
-                      <tr key={index} className="hover:bg-gray-50">
-                        <td className="border border-gray-200 px-3 py-2 text-sm">{index + 1}</td>
-                        <td className="border border-gray-200 px-3 py-2 text-sm font-medium">
-                          {household.headName}
-                        </td>
-                        <td className="border border-gray-200 px-3 py-2 text-sm">{household.houseNumber}</td>
-                        <td className="border border-gray-200 px-3 py-2 text-sm">{household.phone}</td>
-                        <td className="border border-gray-200 px-3 py-2 text-sm font-medium">
-                          {household.ward}
-                        </td>
-                        <td className="border border-gray-200 px-3 py-2 text-sm">
-                          {household.address || "N/A"}
-                        </td>
-                        <td className="border border-gray-200 px-3 py-2 text-sm">
-                          {household.familySize || 1}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-
-            <div className="flex gap-2 pt-4">
-              <Button
-                variant="outline"
-                onClick={() => setShowExcelPreview(false)}
-                disabled={createBulkHouseholdsMutation.isPending}
-                className="flex-1"
-              >
-                {createBulkHouseholdsMutation.isPending ? "Please Wait..." : "Cancel"}
-              </Button>
-              <Button
-                onClick={confirmExcelUpload}
-                disabled={createBulkHouseholdsMutation.isPending}
-                className="flex-1 bg-green-600 hover:bg-green-700"
-              >
-                {createBulkHouseholdsMutation.isPending
-                  ? "Creating Households..."
-                  : `Create ${excelHouseholds.length} Households`}
-              </Button>
-            </div>
-          </div>
         </DialogContent>
       </Dialog>
 

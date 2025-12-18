@@ -39,12 +39,6 @@ export const getManagerTourSteps = (t: any): TourStep[] => [
     placement: 'top',
   },
   {
-    target: '.manager-payments-tab',
-    title: t('tour.manager.paymentsTitle', 'Payment Management'),
-    content: t('tour.manager.paymentsContent', 'Configure payment settings, verify payment proofs from households, and track payment status.'),
-    placement: 'top',
-  },
-  {
     target: '.manager-announcements-tab',
     title: t('tour.manager.announcementsTitle', 'Communication Hub'),
     content: t('tour.manager.announcementsContent', 'Send announcements to collectors and households, share important updates with photo attachments.'),

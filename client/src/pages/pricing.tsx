@@ -435,12 +435,6 @@ export default function Pricing(props: PricingProps = {}) {
                   <span className="text-gray-700 font-medium">All features included during early access</span>
                 </div>
               </div>
-              <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
-                <p className="text-sm text-yellow-800 flex items-start gap-2">
-                  <Info className="w-4 h-4 mt-0.5 flex-shrink-0" />
-                  no online payments gateway or autopay subscriptions available yet
-                </p>
-              </div>
             </CardContent>
           </Card>
         </div>

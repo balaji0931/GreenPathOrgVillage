@@ -137,11 +137,11 @@ export default function PublicHome({ initialSection = "home" }: PublicHomeProps 
       description: "Monitor waste collection status, segregation ratings, and collection schedules in real-time",
       icon: <Target className="w-6 h-6" />
     },
-    {
-      title: "Payment Management",
-      description: "Digital payment tracking with UPI integration for monthly waste management fees",
-      icon: <CheckCircle className="w-6 h-6" />
-    },
+    // {
+    //   title: "Payment Management",
+    //   description: "Digital payment tracking with UPI integration for monthly waste management fees",
+    //   icon: <CheckCircle className="w-6 h-6" />
+    // },
     {
       title: "Issue Reporting",
       description: "Report and track waste management issues with photo evidence and status updates",
@@ -569,19 +569,19 @@ export default function PublicHome({ initialSection = "home" }: PublicHomeProps 
                     "Issue reporting system"
                   ]
                 },
-                {
-                  step: 4,
-                  title: "Payment & Analytics",
-                  description: "Monthly fees processed digitally, performance analytics generated for continuous improvement",
-                  icon: <CheckCircle className="w-8 h-8 sm:w-10 sm:h-10 text-white" />,
-                  color: "from-orange-400 to-red-500",
-                  details: [
-                    "UPI-based digital payments",
-                    "Automated fee calculation",
-                    "Performance dashboards",
-                    "Community impact metrics"
-                  ]
-                }
+                // {
+                //   step: 4,
+                //   title: "Payment & Analytics",
+                //   description: "Monthly fees processed digitally, performance analytics generated for continuous improvement",
+                //   icon: <CheckCircle className="w-8 h-8 sm:w-10 sm:h-10 text-white" />,
+                //   color: "from-orange-400 to-red-500",
+                //   details: [
+                //     "UPI-based digital payments",
+                //     "Automated fee calculation",
+                //     "Performance dashboards",
+                //     "Community impact metrics"
+                //   ]
+                // }
               ].map((step, index) => (
                 <Card key={index} className="group relative border-0 shadow-xl hover:shadow-2xl transition-all duration-500 transform hover:-translate-y-3 bg-white/90 backdrop-blur-sm overflow-hidden cursor-pointer">
                   <div className="absolute inset-0 bg-gradient-to-br opacity-0 group-hover:opacity-10 transition-opacity duration-300" style={{backgroundImage: `linear-gradient(135deg, var(--tw-gradient-stops))`}}></div>
@@ -769,7 +769,7 @@ export default function PublicHome({ initialSection = "home" }: PublicHomeProps 
                   </p>
                   <p className="text-base sm:text-lg text-gray-600 leading-relaxed">
                     Our platform connects households, offices, waste collectors, facility managers, and administrators through 
-                    a unified system that tracks collections, manages payments, and ensures quality control throughout 
+                    a unified system that tracks collections, and ensures quality control throughout 
                     the waste management process across various settings.
                   </p>
                   <p className="text-base sm:text-lg text-gray-600 leading-relaxed">

@@ -499,28 +499,6 @@ export default function AdminDashboard() {
     },
   });
 
-  // Toggle village payments mutation
-  const toggleVillagePaymentsMutation = useMutation({
-    mutationFn: async ({ villageId, paymentsEnabled }: { villageId: string; paymentsEnabled: boolean }) => {
-      const response = await apiRequest("PATCH", `/api/villages/${villageId}/payments`, { paymentsEnabled });
-      return response.json();
-    },
-    onSuccess: () => {
-      toast({
-        title: "Success",
-        description: "Village payment settings updated successfully",
-      });
-      queryClient.invalidateQueries({ queryKey: ["/api/villages"] });
-    },
-    onError: () => {
-      toast({
-        title: "Error",
-        description: "Failed to update village payment settings",
-        variant: "destructive",
-      });
-    },
-  });
-
   const toggleImageUploadRequiredMutation = useMutation({
     mutationFn: async ({ villageId, imageUploadRequired }: { villageId: string; imageUploadRequired: boolean }) => {
       const response = await apiRequest("PUT", `/api/villages/${villageId}`, { imageUploadRequired });
@@ -950,7 +928,6 @@ export default function AdminDashboard() {
                   <TableHead className="text-xs sm:text-sm">Name</TableHead>
                   <TableHead className="text-xs sm:text-sm hidden sm:table-cell">Households</TableHead>
                   <TableHead className="text-xs sm:text-sm hidden sm:table-cell">Collectors</TableHead>
-                  <TableHead className="text-xs sm:text-sm">Payments</TableHead>
                   <TableHead className="text-xs sm:text-sm">Image Upload</TableHead>
                   <TableHead className="text-xs sm:text-sm">Actions</TableHead>
                 </TableRow>
@@ -962,19 +939,6 @@ export default function AdminDashboard() {
                     <TableCell className="text-xs sm:text-sm">{village.name}</TableCell>
                     <TableCell className="text-xs sm:text-sm hidden sm:table-cell">{village.totalHouseholds || 0}</TableCell>
                     <TableCell className="text-xs sm:text-sm hidden sm:table-cell">{village.totalCollectors || 0}</TableCell>
-                    <TableCell className="text-xs sm:text-sm">
-                      <Button
-                        size="sm"
-                        variant={village.paymentsEnabled ? "default" : "outline"}
-                        onClick={() => toggleVillagePaymentsMutation.mutate({
-                          villageId: village.villageId,
-                          paymentsEnabled: !village.paymentsEnabled
-                        })}
-                        className="text-xs"
-                      >
-                        {village.paymentsEnabled ? "Enabled" : "Disabled"}
-                      </Button>
-                    </TableCell>
                     <TableCell className="text-xs sm:text-sm">
                       <Button
                         size="sm"
@@ -3004,9 +2968,6 @@ className="p-1 sm:p-2"
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-3">
                 <img src="/logos/logo-full.svg" alt="GreenPath" className="h-10 w-auto" />
-                <div>
-                  <p className="text-sm text-muted-foreground">Admin Panel</p>
-                </div>
               </div>
             </div>
 
