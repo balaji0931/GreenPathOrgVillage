@@ -75,7 +75,7 @@ export const wasteCollections = pgTable("waste_collections", {
   id: serial("id").primaryKey(),
   householdId: integer("household_id").notNull().references(() => households.id),
   collectorId: integer("collector_id").notNull().references(() => collectors.id),
-  collectionDate: timestamp("collection_date").defaultNow(),
+  collectionDate: timestamp("collection_date"),
   segregationRating: integer("segregation_rating"), // 1-5 stars
   plasticRating: integer("plastic_rating"), // 1-5 stars
   observations: json("observations").$type<string[]>(), // checkboxes

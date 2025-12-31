@@ -2980,6 +2980,15 @@ export default function ManagerDashboard() {
                                 c.collectorId === collector.id &&
                                 new Date(c.collectionDate).toDateString() === new Date(targetDate).toDateString()
                               );
+                              const sortedCollections = [...collectorCollections].sort((a, b) => 
+                                new Date(a.collectionDate).getTime() - new Date(b.collectionDate).getTime()
+                              );
+                              const startTime = sortedCollections.length > 0 
+                                ? new Date(sortedCollections[0].collectionDate).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true })
+                                : null;
+                              const endTime = sortedCollections.length > 0 
+                                ? new Date(sortedCollections[sortedCollections.length - 1].collectionDate).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true })
+                                : null;
                               const avgRating = collectorCollections.length > 0
                                 ? (collectorCollections.reduce((sum, c) => sum + (c.segregationRating || 0), 0) / collectorCollections.length)
                                 : 0;
@@ -2990,7 +2999,7 @@ export default function ManagerDashboard() {
                                     <h4 className="font-medium">{collector.name}</h4>
                                     <Badge variant="outline">{collectorCollections.length} collections</Badge>
                                   </div>
-                                  <div className="flex items-center gap-2">
+                                  <div className="flex items-center gap-2 mb-2">
                                     <div className="flex-1 bg-gray-200 rounded-full h-2">
                                       <div 
                                         className={`h-2 rounded-full ${
@@ -3002,6 +3011,12 @@ export default function ManagerDashboard() {
                                     </div>
                                     <span className="text-sm font-medium">{avgRating.toFixed(1)}</span>
                                   </div>
+                                  {startTime && (
+                                    <div className="font-bold text-md flex justify-between text-[10px] text-muted-foreground border-t pt-1">
+                                      <span>Start: {startTime}</span>
+                                      <span>End: {endTime}</span>
+                                    </div>
+                                  )}
                                 </div>
                               );
                             })}

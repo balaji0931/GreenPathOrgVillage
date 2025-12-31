@@ -596,7 +596,6 @@ export default function CollectorDashboard() {
         remarks: collectionForm.remarks,
         missedReason: collectionForm.wasteAccepted ? null : collectionForm.notCollectedReason,
         collectionDate: new Date().toISOString(),
-        collectionTime: new Date().toLocaleTimeString(),
       };
 
       if (isOnline) {

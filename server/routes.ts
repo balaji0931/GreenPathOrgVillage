@@ -1420,7 +1420,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Waste collection routes
   app.post('/api/waste-collections', requireAuth, requireRole(['collector']), requireVillageAccess, async (req, res) => {
     try {
-      const { householdUid, segregationRating, plasticRating, observations, remarks, photoUrl, voiceUrl, status, missedReason } = req.body;
+      const { 
+        householdUid, 
+        segregationRating, 
+        plasticRating, 
+        observations, 
+        remarks, 
+        photoUrl, 
+        voiceUrl, 
+        status, 
+        missedReason,
+        collectionDate: clientCollectionDate
+      } = req.body;
 
       const household = await storage.getHouseholdByUid(householdUid);
       if (!household) {
@@ -1433,8 +1444,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Check for existing collection today
-      const today = new Date().toISOString().split('T')[0];
-      const existingCollection = await storage.checkExistingCollection(household.id, collector.id, today);
+      const collectionDate = clientCollectionDate ? new Date(clientCollectionDate) : new Date();
+      const dateStr = collectionDate.toISOString().split('T')[0];
+      const existingCollection = await storage.checkExistingCollection(household.id, collector.id, dateStr);
       
       if (existingCollection) {
         return res.status(409).json({ 
@@ -1446,6 +1458,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const collection = await storage.createWasteCollection({
         householdId: household.id,
         collectorId: collector.id,
+        collectionDate,
         segregationRating,
         plasticRating,
         observations,
