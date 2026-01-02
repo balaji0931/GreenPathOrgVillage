@@ -465,22 +465,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Lazy initialization function for admin user
-  async function ensureAdminUser() {
-    try {
-      const adminUser = await storage.getUserByUserId('ADMIN');
-      if (!adminUser) {
-        await storage.createUser({
-          userId: 'ADMIN',
-          password: await bcrypt.hash('admin', 10),
-          role: 'admin',
-          name: 'Administrator',
-          villageId: null,
-        });
-      }
-    } catch (error) {
-      console.error('Failed to initialize admin user:', error);
-    }
-  }
+  // async function ensureAdminUser() {
+  //   try {
+  //     const adminUser = await storage.getUserByUserId('ADMIN');
+  //     if (!adminUser) {
+  //       await storage.createUser({
+  //         userId: 'ADMIN',
+  //         password: await bcrypt.hash('admin', 10),
+  //         role: 'admin',
+  //         name: 'Administrator',
+  //         villageId: null,
+  //       });
+  //     }
+  //   } catch (error) {
+  //     console.error('Failed to initialize admin user:', error);
+  //   }
+  // }
 
   // CSRF token endpoint - provides token for authenticated sessions
   app.get('/api/auth/csrf-token', (req, res) => {
@@ -496,7 +496,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { userId, password } = req.body;
 
       // Initialize admin user only when someone attempts to login
-      await ensureAdminUser();
+      // await ensureAdminUser();
 
       const user = await storage.getUserByUserId(userId);
       if (!user) {
