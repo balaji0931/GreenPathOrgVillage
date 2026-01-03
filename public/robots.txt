@@ -15,6 +15,7 @@ Disallow: /manager
 Disallow: /collector
 Disallow: /generator
 Disallow: /moderator
+Disallow: /fieldworker
 Disallow: /api/
 
 Sitemap: https://greenpathorg.social/sitemap.xml
