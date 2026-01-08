@@ -1181,17 +1181,42 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/api/fieldworkers', requireAuth, requireRole(['manager']), async (req, res) => {
+app.post(
+  '/api/fieldworkers',
+  requireAuth,
+  requireRole(['manager']),
+  async (req, res) => {
     try {
       const { name, phone } = req.body;
       const villageId = req.session.villageId!;
 
-      // Generate UID: V001-FW001, V001-FW002, etc.
+      // Get existing fieldworkers (same as before)
       const existingFieldWorkers = await storage.getFieldWorkersByVillage(villageId);
-      const uid = `${villageId}-FW${String(existingFieldWorkers.length + 1).padStart(3, '0')}`;
+
+      /**
+       * Find the highest FW number ever used
+       * Example userId: V002-FW007 -> 7
+       */
+      let maxNumber = 0;
+
+      for (const fw of existingFieldWorkers) {
+        const match = fw.userId?.match(/FW(\d+)$/);
+        if (match) {
+          const num = parseInt(match[1], 10);
+          if (num > maxNumber) {
+            maxNumber = num;
+          }
+        }
+      }
+
+      const nextNumber = maxNumber + 1;
+
+      // Generate UID: V001-FW001, V001-FW002, etc.
+      const uid = `${villageId}-FW${String(nextNumber).padStart(3, '0')}`;
 
       // Create user account for field worker
       const hashedPassword = await bcrypt.hash(uid, 10);
+
       const fieldworker = await storage.createUser({
         userId: uid,
         password: hashedPassword,
@@ -1201,12 +1226,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
         villageId,
       });
 
-      res.json(fieldworker);
-    } catch (error) {
-      console.error("Create fieldworker error:", error);
-      res.status(500).json({ message: "Failed to create field worker" });
+      res.status(201).json(fieldworker);
+    } catch (error: any) {
+      console.error('Create fieldworker error:', error);
+
+      if (error.code === '23505') {
+        return res.status(409).json({
+          message: 'Fieldworker already exists. Please retry.',
+        });
+      }
+
+      res.status(500).json({
+        message: 'Failed to create field worker',
+      });
     }
-  });
+  }
+);
+
 
   app.delete('/api/fieldworkers/:userId', requireAuth, requireRole(['manager']), async (req, res) => {
     try {
