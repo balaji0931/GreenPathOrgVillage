@@ -1,147 +1,556 @@
-
-import { useTranslation } from 'react-i18next';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { ArrowLeft, Shield, Lock, Eye, Trash2 } from 'lucide-react';
-import { useLocation } from 'wouter';
+import { useTranslation } from "react-i18next";
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import {
+  ArrowLeft,
+  Shield,
+  Mail,
+  Globe,
+  Lock,
+  Info,
+  Server,
+  Image,
+  MapPin,
+  AlertCircle,
+  RefreshCcw,
+  Landmark,
+} from "lucide-react";
+import { useLocation } from "wouter";
 
 export default function DataProtection() {
-  const { t } = useTranslation();
   const [, setLocation] = useLocation();
 
   return (
-    <div className="min-h-screen bg-gray-50 p-4">
+    <div className="min-h-screen bg-slate-50 p-4 md:p-8 font-sans">
       <div className="max-w-4xl mx-auto">
-        <div className="mb-6">
-          <Button 
-            variant="outline" 
-            onClick={() => setLocation('/')}
-            className="mb-4"
+        <div className="mb-8 flex items-center justify-between">
+          <Button
+            variant="ghost"
+            onClick={() => setLocation("/")}
+            className="hover:bg-white text-slate-600 flex items-center bg-green-100"
           >
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Back to Home
+            <ArrowLeft className="h-4 w-4 sm:mr-2" />
+            <span className="hidden sm:inline">Back to Home</span>
           </Button>
+
+          <div className="text-right">
+            <div className="flex items-center justify-end gap-2 mb-1">
+              <h1 className="text-3xl font-bold text-slate-900 tracking-tight">
+                Data Protection Policy
+              </h1>
+            </div>
+            <p className="text-sm text-slate-500">Last updated: 2026</p>
+          </div>
         </div>
 
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-2xl flex items-center">
-              <Shield className="h-6 w-6 mr-2" />
-              Data Protection & Compliance
-            </CardTitle>
-            <p className="text-sm text-muted-foreground">
-              Information about how we protect your data and comply with regulations
-            </p>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            <section>
-              <h2 className="text-xl font-semibold mb-3 flex items-center">
-                <Lock className="h-5 w-5 mr-2" />
-                Data Security Measures
-              </h2>
-              <div className="space-y-3 text-sm">
-                <div className="bg-blue-50 p-3 rounded-lg">
-                  <h3 className="font-medium">Encryption</h3>
-                  <p>All data is encrypted both in transit (TLS 1.3) and at rest (AES-256)</p>
-                </div>
-                <div className="bg-green-50 p-3 rounded-lg">
-                  <h3 className="font-medium">Access Control</h3>
-                  <p>Role-based access control ensures users only see data relevant to their responsibilities</p>
-                </div>
-                <div className="bg-purple-50 p-3 rounded-lg">
-                  <h3 className="font-medium">Regular Audits</h3>
-                  <p>System access and data changes are logged and regularly audited</p>
-                </div>
-                <div className="bg-orange-50 p-3 rounded-lg">
-                  <h3 className="font-medium">Secure Infrastructure</h3>
-                  <p>Hosted on secure cloud infrastructure with regular security updates</p>
-                </div>
-              </div>
-            </section>
-
-            <section>
-              <h2 className="text-xl font-semibold mb-3">Regulatory Compliance</h2>
-              <div className="space-y-3 text-sm">
-                <div className="border p-3 rounded-lg">
-                  <h3 className="font-medium">Digital Personal Data Protection Act (India)</h3>
-                  <p>We comply with Indian data protection regulations including consent management and data minimization</p>
-                </div>
-                <div className="border p-3 rounded-lg">
-                  <h3 className="font-medium">Information Technology Act, 2000</h3>
-                  <p>Our systems follow IT Act guidelines for electronic data protection and privacy</p>
-                </div>
-                <div className="border p-3 rounded-lg">
-                  <h3 className="font-medium">Municipal Data Guidelines</h3>
-                  <p>Adheres to local government data handling and retention policies</p>
-                </div>
-              </div>
-            </section>
-
-            <section>
-              <h2 className="text-xl font-semibold mb-3 flex items-center">
-                <Eye className="h-5 w-5 mr-2" />
-                Your Data Rights
-              </h2>
-              <div className="grid md:grid-cols-2 gap-4 text-sm">
-                <div className="bg-gray-50 p-4 rounded-lg">
-                  <h3 className="font-medium mb-2">Right to Access</h3>
-                  <p>Request a copy of all personal data we hold about you</p>
-                </div>
-                <div className="bg-gray-50 p-4 rounded-lg">
-                  <h3 className="font-medium mb-2">Right to Rectification</h3>
-                  <p>Request correction of inaccurate or incomplete data</p>
-                </div>
-                <div className="bg-gray-50 p-4 rounded-lg">
-                  <h3 className="font-medium mb-2">Right to Erasure</h3>
-                  <p>Request deletion of your personal data (subject to legal obligations)</p>
-                </div>
-                <div className="bg-gray-50 p-4 rounded-lg">
-                  <h3 className="font-medium mb-2">Right to Portability</h3>
-                  <p>Request your data in a structured, machine-readable format</p>
-                </div>
-              </div>
-            </section>
-
-            <section>
-              <h2 className="text-xl font-semibold mb-3">Data Collection Justification</h2>
-              <div className="space-y-3 text-sm">
-                <div className="flex justify-between items-center p-3 border rounded-lg">
-                  <span><strong>Household Information:</strong> Required for waste collection service delivery</span>
-                  <span className="text-green-600 font-medium">Essential</span>
-                </div>
-                <div className="flex justify-between items-center p-3 border rounded-lg">
-                  <span><strong>Collection Photos:</strong> Used for quality assessment and issue resolution</span>
-                  <span className="text-blue-600 font-medium">Functional</span>
-                </div>
-                <div className="flex justify-between items-center p-3 border rounded-lg">
-                  <span><strong>Voice Recordings:</strong> Optional feedback mechanism for non-literate users</span>
-                  <span className="text-purple-600 font-medium">Optional</span>
-                </div>
-                <div className="flex justify-between items-center p-3 border rounded-lg">
-                  <span><strong>Usage Analytics:</strong> System improvement and performance monitoring</span>
-                  <span className="text-orange-600 font-medium">Legitimate Interest</span>
-                </div>
-              </div>
-            </section>
-
-            <section>
-              <h2 className="text-xl font-semibold mb-3">Contact Information</h2>
-              <div className="text-sm">
-                <p>For questions about data protection and compliance, contact:</p>
-                <p>Email: info@greenpathorg.social</p>
-              </div>
-            </section>
-
-            <section>
-              <h2 className="text-xl font-semibold mb-3">Incident Response</h2>
-              <p className="text-sm">
-                In case of a data breach or security incident, we will notify affected users and relevant authorities 
-                within 72 hours as required by law. Users will receive detailed information about the nature of the 
-                breach and recommended protective actions.
+        <div className="space-y-6">
+          <Card className="border-none shadow-sm bg-white overflow-hidden">
+            <CardContent className="p-8 prose prose-slate max-w-none">
+              <p className="text-slate-700 leading-relaxed mb-6">
+                This Data Protection Policy describes the technical and
+                organizational measures adopted by GreenPath to protect data
+                processed on its platform.
+                <br />
+                GreenPath provides a digital waste management platform for
+                Organizations such as Panchayats, NGOs, municipalities, and
+                institutions (“Organizations”). GreenPath operates as a data
+                processor, processing information on behalf of Organizations,
+                which act as data controllers.
               </p>
-            </section>
-          </CardContent>
-        </Card>
+
+              <div className="space-y-10">
+                <section>
+                  <h2 className="text-xl font-bold text-slate-900 mb-4 flex items-center gap-3">
+                    <span className="flex items-center justify-center w-8 h-8 rounded-lg bg-green-100 text-green-700 text-sm">
+                      1
+                    </span>
+                    Purpose of This Policy
+                  </h2>
+                  <p className="text-slate-600 mb-3">
+                    The purpose of this policy is to:
+                  </p>
+                  <ul className="list-none space-y-1 text-slate-600 ml-4 mb-4">
+                    <li className="flex gap-2">
+                      <span className="text-green-500 font-bold">*</span>{" "}
+                      Protect personal and operational data processed on the
+                      GreenPath platform
+                    </li>
+                    <li className="flex gap-2">
+                      <span className="text-green-500 font-bold">*</span> Define
+                      safeguards against unauthorized access, misuse, loss, or
+                      disclosure
+                    </li>
+                    <li className="flex gap-2">
+                      <span className="text-green-500 font-bold">*</span>{" "}
+                      Clarify GreenPath’s responsibilities as a platform
+                      provider
+                    </li>
+                  </ul>
+                  <p className="text-slate-600">
+                    This policy applies to all data processed through the
+                    GreenPath application, website, and supporting
+                    infrastructure.
+                  </p>
+                </section>
+
+                <section>
+                  <h2 className="text-xl font-bold text-slate-900 mb-4 flex items-center gap-3">
+                    <span className="flex items-center justify-center w-8 h-8 rounded-lg bg-green-100 text-green-700 text-sm">
+                      2
+                    </span>
+                    Data Protection Principles
+                  </h2>
+                  <p className="text-slate-600 mb-3">
+                    GreenPath follows these core principles:
+                  </p>
+                  <ul className="list-none space-y-2 text-slate-600 ml-4">
+                    <li className="flex gap-2">
+                      <span className="text-slate-400 font-bold">*</span>{" "}
+                      Purpose limitation: Data is processed only to deliver
+                      platform functionality
+                    </li>
+                    <li className="flex gap-2">
+                      <span className="text-slate-400 font-bold">*</span> Data
+                      minimization: Only data required for waste management
+                      operations is processed
+                    </li>
+                    <li className="flex gap-2">
+                      <span className="text-slate-400 font-bold">*</span> Access
+                      limitation: Data is accessible only to authorized users
+                      based on role
+                    </li>
+                    <li className="flex gap-2">
+                      <span className="text-slate-400 font-bold">*</span>{" "}
+                      Security by design: Protection is integrated into platform
+                      architecture
+                    </li>
+                    <li className="flex gap-2">
+                      <span className="text-slate-400 font-bold">*</span>{" "}
+                      Accountability: Processing is aligned with Organization
+                      instructions
+                    </li>
+                  </ul>
+                </section>
+
+                <section>
+                  <h2 className="text-xl font-bold text-slate-900 mb-4 flex items-center gap-3">
+                    <span className="flex items-center justify-center w-8 h-8 rounded-lg bg-green-100 text-green-700 text-sm">
+                      3
+                    </span>
+                    Role-Based Access Control
+                  </h2>
+                  <p className="text-slate-600 mb-3">
+                    GreenPath enforces least-privilege, role-based access,
+                    including:
+                  </p>
+                  <ul className="list-none space-y-2 text-slate-600 ml-4 mb-4">
+                    <li className="flex gap-2">
+                      <span className="text-slate-400 font-bold">*</span>{" "}
+                      Organizations control user creation and role assignment
+                    </li>
+                    <li className="flex gap-2">
+                      <span className="text-slate-400 font-bold">*</span>{" "}
+                      Managers access household-level data only for assigned
+                      villages
+                    </li>
+                    <li className="flex gap-2">
+                      <span className="text-slate-400 font-bold">*</span>{" "}
+                      Collectors access only the information required for
+                      collection activities
+                    </li>
+                    <li className="flex gap-2">
+                      <span className="text-slate-400 font-bold">*</span> Field
+                      workers can enter household data but do not retain access
+                      after mapping
+                    </li>
+                    <li className="flex gap-2">
+                      <span className="text-slate-400 font-bold">*</span>{" "}
+                      Households can view only their own data and collection
+                      history
+                    </li>
+                    <li className="flex gap-2">
+                      <span className="text-slate-400 font-bold">*</span>{" "}
+                      GreenPath administrators access aggregated and operational
+                      data only, not household-level personal data through
+                      dashboards
+                    </li>
+                  </ul>
+                  <p className="text-slate-600">
+                    This structure ensures that personal data is visible
+                    strictly on a need-to-know basis.
+                  </p>
+                </section>
+
+                <section>
+                  <h2 className="text-xl font-bold text-slate-900 mb-4 flex items-center gap-3">
+                    <span className="flex items-center justify-center w-8 h-8 rounded-lg bg-green-100 text-green-700 text-sm">
+                      4
+                    </span>
+                    Authentication & Account Security
+                  </h2>
+                  <p className="text-slate-600 mb-3">
+                    GreenPath implements multiple account security measures:
+                  </p>
+                  <ul className="list-none space-y-1 text-slate-600 ml-4 mb-4">
+                    <li className="flex gap-2">
+                      <span className="text-slate-400">*</span> Unique user IDs
+                      for all platform users
+                    </li>
+                    <li className="flex gap-2">
+                      <span className="text-slate-400">*</span>{" "}
+                      Password-protected accounts
+                    </li>
+                    <li className="flex gap-2">
+                      <span className="text-slate-400">*</span> Mandatory
+                      password change after first login
+                    </li>
+                    <li className="flex gap-2">
+                      <span className="text-slate-400">*</span> Role-based
+                      password reset permissions
+                    </li>
+                    <li className="flex gap-2">
+                      <span className="text-slate-400">*</span> Encrypted login
+                      sessions (HTTPS)
+                    </li>
+                  </ul>
+                  <p className="text-slate-600">
+                    GreenPath is transitioning to OTP-based authentication to
+                    further strengthen account security.
+                  </p>
+                </section>
+
+                <section>
+                  <h2 className="text-xl font-bold text-slate-900 mb-4 flex items-center gap-3">
+                    <span className="flex items-center justify-center w-8 h-8 rounded-lg bg-green-100 text-green-700 text-sm">
+                      5
+                    </span>
+                    Infrastructure & Secure Storage
+                  </h2>
+                  <p className="text-slate-600 mb-3 font-medium">
+                    GreenPath uses reputable third-party cloud service providers
+                    for:
+                  </p>
+                  <ul className="list-none space-y-1 text-slate-600 ml-4 mb-4">
+                    <li className="flex gap-2">
+                      <span className="text-slate-400">*</span> Application
+                      hosting
+                    </li>
+                    <li className="flex gap-2">
+                      <span className="text-slate-400">*</span> Database storage
+                    </li>
+                    <li className="flex gap-2">
+                      <span className="text-slate-400">*</span> Image and audio
+                      storage
+                    </li>
+                  </ul>
+                  <p className="text-slate-600 mb-3">
+                    Security measures include:
+                  </p>
+                  <ul className="list-none space-y-1 text-slate-600 ml-4 mb-4">
+                    <li className="flex gap-2">
+                      <span className="text-slate-400">*</span> Secure data
+                      centers
+                    </li>
+                    <li className="flex gap-2">
+                      <span className="text-slate-400">*</span> Network-level
+                      protections
+                    </li>
+                    <li className="flex gap-2">
+                      <span className="text-slate-400">*</span> Restricted
+                      administrative access
+                    </li>
+                    <li className="flex gap-2">
+                      <span className="text-slate-400">*</span> Logical
+                      separation of organization data
+                    </li>
+                  </ul>
+                  <p className="text-slate-600">
+                    GreenPath does not operate public or open-access databases.
+                  </p>
+                </section>
+
+                <section>
+                  <h2 className="text-xl font-bold text-slate-900 mb-4 flex items-center gap-3">
+                    <span className="flex items-center justify-center w-8 h-8 rounded-lg bg-green-100 text-green-700 text-sm">
+                      6
+                    </span>
+                    Images, Audio & User-Generated Content
+                  </h2>
+                  <ul className="list-none space-y-2 text-slate-600 ml-4 mb-4">
+                    <li className="flex gap-2">
+                      <span className="text-slate-400 font-bold">*</span> Images
+                      and audio files are uploaded only by authorized
+                      Organization users
+                    </li>
+                    <li className="flex gap-2">
+                      <span className="text-slate-400 font-bold">*</span>{" "}
+                      Content is stored securely and linked to the relevant
+                      collection records
+                    </li>
+                    <li className="flex gap-2">
+                      <span className="text-slate-400 font-bold">*</span>{" "}
+                      GreenPath does not routinely view, listen to, or analyze
+                      such content
+                    </li>
+                    <li className="flex gap-2">
+                      <span className="text-slate-400 font-bold">*</span> Only
+                      basic file validations (type and size) are performed
+                      before storage
+                    </li>
+                  </ul>
+                  <p className="text-slate-600 leading-relaxed">
+                    Any responsibility for the content captured rests with the
+                    Organization and its authorized users.
+                  </p>
+                </section>
+
+                <section>
+                  <h2 className="text-xl font-bold text-slate-900 mb-4 flex items-center gap-3">
+                    <span className="flex items-center justify-center w-8 h-8 rounded-lg bg-green-100 text-green-700 text-sm">
+                      7
+                    </span>
+                    Location Data Protection
+                  </h2>
+                  <ul className="list-none space-y-2 text-slate-600 ml-4 mb-4">
+                    <li className="flex gap-2">
+                      <span className="text-slate-400 font-bold">*</span> GPS
+                      location data is captured only if enabled by the
+                      Organization
+                    </li>
+                    <li className="flex gap-2">
+                      <span className="text-slate-400 font-bold">*</span>{" "}
+                      Location is typically collected during household mapping
+                      or collection activities
+                    </li>
+                    <li className="flex gap-2">
+                      <span className="text-slate-400 font-bold">*</span> Data
+                      is used solely for route visualization, coverage analysis,
+                      and reporting
+                    </li>
+                    <li className="flex gap-2">
+                      <span className="text-slate-400 font-bold">*</span>{" "}
+                      GreenPath does not perform continuous or background
+                      tracking
+                    </li>
+                  </ul>
+                </section>
+
+                <section>
+                  <h2 className="text-xl font-bold text-slate-900 mb-4 flex items-center gap-3">
+                    <span className="flex items-center justify-center w-8 h-8 rounded-lg bg-green-100 text-green-700 text-sm">
+                      8
+                    </span>
+                    Data Retention & Deletion
+                  </h2>
+                  <ul className="list-none space-y-2 text-slate-600 ml-4 mb-4">
+                    <li className="flex gap-2">
+                      <span className="text-slate-400 font-bold">*</span> Data
+                      remains stored while an Organization actively uses
+                      GreenPath
+                    </li>
+                    <li className="flex gap-2">
+                      <span className="text-slate-400 font-bold">*</span>{" "}
+                      Organizations may delete individual household records
+                      based on internal policies
+                    </li>
+                    <li className="flex gap-2">
+                      <span className="text-slate-400 font-bold">*</span> Upon
+                      permanent service discontinuation, data is deleted or
+                      returned as agreed
+                    </li>
+                    <li className="flex gap-2">
+                      <span className="text-slate-400 font-bold">*</span>{" "}
+                      Temporary suspension (such as for non-payment) does not
+                      trigger data deletion
+                    </li>
+                  </ul>
+                  <p className="text-slate-600">
+                    GreenPath does not delete operational data without
+                    Organization instruction, except where required by law.
+                  </p>
+                </section>
+
+                <section>
+                  <h2 className="text-xl font-bold text-slate-900 mb-4 flex items-center gap-3">
+                    <span className="flex items-center justify-center w-8 h-8 rounded-lg bg-green-100 text-green-700 text-sm">
+                      9
+                    </span>
+                    Third-Party Service Providers
+                  </h2>
+                  <p className="text-slate-600 mb-3">
+                    GreenPath may engage trusted third-party service providers
+                    for:
+                  </p>
+                  <ul className="list-none space-y-1 text-slate-600 ml-4 mb-4">
+                    <li className="flex gap-2">
+                      <span className="text-slate-400">*</span> Hosting and
+                      infrastructure
+                    </li>
+                    <li className="flex gap-2">
+                      <span className="text-slate-400">*</span> Storage services
+                    </li>
+                    <li className="flex gap-2">
+                      <span className="text-slate-400">*</span> Mapping and
+                      visualization
+                    </li>
+                    <li className="flex gap-2">
+                      <span className="text-slate-400">*</span> Messaging and
+                      payment processing (where enabled)
+                    </li>
+                  </ul>
+                  <p className="text-slate-600 mb-3">Such providers:</p>
+                  <ul className="list-none space-y-1 text-slate-600 ml-4">
+                    <li className="flex gap-2">
+                      <span className="text-slate-400">*</span> Process data
+                      only on GreenPath’s instructions
+                    </li>
+                    <li className="flex gap-2">
+                      <span className="text-slate-400">*</span> Are selected
+                      based on security and reliability standards
+                    </li>
+                  </ul>
+                </section>
+
+                <section>
+                  <h2 className="text-xl font-bold text-slate-900 mb-4 flex items-center gap-3">
+                    <span className="flex items-center justify-center w-8 h-8 rounded-lg bg-green-100 text-green-700 text-sm">
+                      10
+                    </span>
+                    Incident Response & Breach Management
+                  </h2>
+                  <p className="text-slate-600 mb-3">
+                    GreenPath maintains procedures to:
+                  </p>
+                  <ul className="list-none space-y-1 text-slate-600 ml-4 mb-4">
+                    <li className="flex gap-2">
+                      <span className="text-slate-400">*</span> Detect and
+                      respond to security incidents
+                    </li>
+                    <li className="flex gap-2">
+                      <span className="text-slate-400">*</span> Limit impact and
+                      prevent recurrence
+                    </li>
+                    <li className="flex gap-2">
+                      <span className="text-slate-400">*</span> Notify affected
+                      Organizations where appropriate
+                    </li>
+                  </ul>
+                  <p className="text-slate-600 leading-relaxed font-medium">
+                    Organizations are responsible for any further notifications
+                    required under applicable law.
+                  </p>
+                </section>
+
+                <section>
+                  <h2 className="text-xl font-bold text-slate-900 mb-4 flex items-center gap-3">
+                    <span className="flex items-center justify-center w-8 h-8 rounded-lg bg-green-100 text-green-700 text-sm">
+                      11
+                    </span>
+                    Monitoring & Improvements
+                  </h2>
+                  <p className="text-slate-600 mb-3 italic font-medium">
+                    GreenPath:
+                  </p>
+                  <ul className="list-none space-y-2 text-slate-600 ml-4 mb-4">
+                    <li className="flex gap-2">
+                      <span className="text-slate-400 font-bold">*</span>{" "}
+                      Regularly reviews access controls and platform
+                      configurations
+                    </li>
+                    <li className="flex gap-2">
+                      <span className="text-slate-400 font-bold">*</span>{" "}
+                      Applies security updates and patches
+                    </li>
+                    <li className="flex gap-2">
+                      <span className="text-slate-400 font-bold">*</span>{" "}
+                      Improves safeguards as technology and risk profiles evolve
+                    </li>
+                  </ul>
+                  <p className="text-slate-600 leading-relaxed">
+                    Security is treated as an ongoing process, not a one-time
+                    setup.
+                  </p>
+                </section>
+
+                <section>
+                  <h2 className="text-xl font-bold text-slate-900 mb-4 flex items-center gap-3">
+                    <span className="flex items-center justify-center w-8 h-8 rounded-lg bg-green-100 text-green-700 text-sm">
+                      12
+                    </span>
+                    Responsibilities of Organizations
+                  </h2>
+                  <p className="text-slate-600 mb-3 font-medium">
+                    Organizations using GreenPath are responsible for:
+                  </p>
+                  <ul className="list-none space-y-2 text-slate-600 ml-4 mb-4">
+                    <li className="flex gap-2">
+                      <span className="text-slate-400 font-bold">*</span> Lawful
+                      data collection and consent
+                    </li>
+                    <li className="flex gap-2">
+                      <span className="text-slate-400 font-bold">*</span> User
+                      training and access control
+                    </li>
+                    <li className="flex gap-2">
+                      <span className="text-slate-400 font-bold">*</span>{" "}
+                      Defining data retention and deletion policies
+                    </li>
+                    <li className="flex gap-2">
+                      <span className="text-slate-400 font-bold">*</span> Using
+                      platform features responsibly
+                    </li>
+                  </ul>
+                  <p className="text-slate-600">
+                    GreenPath provides the technical framework but does not
+                    control how Organizations enforce policies or actions.
+                  </p>
+                </section>
+
+                <section>
+                  <h2 className="text-xl font-bold text-slate-900 mb-4 flex items-center gap-3">
+                    <span className="flex items-center justify-center w-8 h-8 rounded-lg bg-green-100 text-green-700 text-sm">
+                      13
+                    </span>
+                    Changes to This Policy
+                  </h2>
+                  <p className="text-slate-600 leading-relaxed">
+                    This Data Protection Policy may be updated to reflect legal,
+                    technical, or operational changes. Revisions will be
+                    published through the GreenPath platform or website.
+                  </p>
+                </section>
+
+                <section>
+                  <h2 className="text-xl font-bold text-slate-900 mb-4 flex items-center gap-3">
+                    <span className="flex items-center justify-center w-8 h-8 rounded-lg bg-green-100 text-green-700 text-sm">
+                      14
+                    </span>
+                    Contact Information
+                  </h2>
+                  <p className="text-slate-600 mb-3">
+                    For questions related to data protection or security
+                    practices:
+                  </p>
+                  <div className="space-y-1 text-slate-700">
+                    <div className="flex items-center gap-2">
+                      <Mail className="h-4 w-4 text-slate-400" />
+                      <span>Email: info@greenpathorg.social</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Globe className="h-4 w-4 text-slate-400" />
+                      <span>Website: https://www.greenpathorg.social</span>
+                    </div>
+                  </div>
+                </section>
+              </div>
+            </CardContent>
+          </Card>
+          <div className="text-center pb-8">
+            <p className="text-xs text-slate-400 uppercase tracking-tighter">
+              GreenPath Data Security © 2026
+            </p>
+          </div>
+        </div>
       </div>
     </div>
   );
