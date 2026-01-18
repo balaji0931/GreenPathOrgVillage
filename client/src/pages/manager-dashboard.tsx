@@ -253,7 +253,7 @@ export default function ManagerDashboard() {
 
   // Simplified state management
   const [activeTab, setActiveTab] = useState("overview");
-  const [householdApproachTab, setHouseholdApproachTab] = useState("qr-first");
+  const [householdApproachTab, setHouseholdApproachTab] = useState("details");
   const [qrFirstSubTab, setQrFirstSubTab] = useState("generate-batch");
   const [showPasswordDialog, setShowPasswordDialog] = useState(false);
   const [selectedIssue, setSelectedIssue] = useState<Issue | null>(null);
@@ -289,6 +289,16 @@ export default function ManagerDashboard() {
   const [showCreateFieldWorkerDialog, setShowCreateFieldWorkerDialog] = useState(false);
   const [newFieldWorkerName, setNewFieldWorkerName] = useState("");
   const [newFieldWorkerPhone, setNewFieldWorkerPhone] = useState("");
+  const [selectedHousehold, setSelectedHousehold] = useState<Household | null>(null);
+  const [householdSearch, setHouseholdSearch] = useState("");
+  const [wardFilter, setWardFilter] = useState("all");
+
+  // Vehicle Management State
+  const [showVehicleForm, setShowVehicleForm] = useState(false);
+  const [editingVehicle, setEditingVehicle] = useState<{ registrationNumber: string; name: string; collectorIds: number[] } | null>(null);
+  const [newVehicleReg, setNewVehicleReg] = useState("");
+  const [newVehicleName, setNewVehicleName] = useState("");
+  const [selectedVehicleCollectors, setSelectedVehicleCollectors] = useState<number[]>([]);
 
   // Logout mutation
   const logoutMutation = useMutation({
@@ -308,7 +318,8 @@ export default function ManagerDashboard() {
     queryKey: ["/api/villages", user?.villageId],
     enabled: !!user?.villageId,
     queryFn: async () => {
-      const response = await apiRequest("GET", `/api/villages/${user?.villageId}`);
+      const response = await fetch(`/api/villages/${user?.villageId}`, { credentials: "include" });
+      if (!response.ok) throw new Error("Failed to fetch village data");
       return response.json();
     },
   });
@@ -612,6 +623,65 @@ export default function ManagerDashboard() {
     },
   });
 
+  // Vehicle Mutations
+  const addVehicleMutation = useMutation({
+    mutationFn: (data: { registrationNumber: string; name: string; collectorIds: number[] }) =>
+      apiRequest("POST", `/api/villages/${user?.villageId}/vehicles`, data),
+    onSuccess: () => {
+      toast({ title: "Vehicle added successfully!" });
+      queryClient.invalidateQueries({ queryKey: ["/api/villages", user?.villageId] });
+      queryClient.invalidateQueries({ queryKey: ["/api/collectors", user?.villageId] });
+      setNewVehicleReg("");
+      setNewVehicleName("");
+      setSelectedVehicleCollectors([]);
+      setShowVehicleForm(false);
+    },
+    onError: (error: any) => {
+      toast({ title: "Error", description: error.message || "Failed to add vehicle", variant: "destructive" });
+    },
+  });
+
+  const updateVehicleMutation = useMutation({
+    mutationFn: (data: { registrationNumber: string; name: string; collectorIds: number[] }) =>
+      apiRequest("PATCH", `/api/villages/${user?.villageId}/vehicles/${data.registrationNumber}`, {
+        name: data.name,
+        collectorIds: data.collectorIds
+      }),
+    onSuccess: () => {
+      toast({ title: "Vehicle updated successfully!" });
+      queryClient.invalidateQueries({ queryKey: ["/api/villages", user?.villageId] });
+      queryClient.invalidateQueries({ queryKey: ["/api/collectors", user?.villageId] });
+      setEditingVehicle(null);
+      setNewVehicleReg("");
+      setNewVehicleName("");
+      setSelectedVehicleCollectors([]);
+      setShowVehicleForm(false);
+    },
+    onError: (error: any) => {
+      toast({ title: "Error", description: error.message || "Failed to update vehicle", variant: "destructive" });
+    },
+  });
+
+  const removeVehicleMutation = useMutation({
+    mutationFn: (regNumber: string) =>
+      apiRequest("DELETE", `/api/villages/${user?.villageId}/vehicles/${regNumber}`),
+    onSuccess: () => {
+      toast({ title: "Vehicle removed successfully!" });
+      queryClient.invalidateQueries({ queryKey: ["/api/villages", user?.villageId] });
+      queryClient.invalidateQueries({ queryKey: ["/api/collectors", user?.villageId] });
+    },
+  });
+
+  const updateCollectorVehicleMutation = useMutation({
+    mutationFn: (data: { collectorId: number; registrationNumber: string | null }) =>
+      apiRequest("PATCH", `/api/collectors/${data.collectorId}/vehicle`, { registrationNumber: data.registrationNumber }),
+    onSuccess: () => {
+      toast({ title: "Collector vehicle updated!" });
+      queryClient.invalidateQueries({ queryKey: ["/api/collectors", user?.villageId] });
+      queryClient.invalidateQueries({ queryKey: ["/api/villages", user?.villageId] });
+    },
+  });
+
   // Helper functions
   const updateFilter = (key: keyof FilterState, value: string) => {
     setFilters(prev => ({ ...prev, [key]: value }));
@@ -674,6 +744,28 @@ export default function ManagerDashboard() {
                 <p className="text-sm text-blue-700">
                   ID: {collector.uid} | {t("collectors.phone")}: {collector.phone}
                 </p>
+                <div className="mt-2">
+                  <Label className="text-xs text-blue-800">Assigned Vehicle</Label>
+                  <Select 
+                    value={(collector as any).assignedVehicle || "none"} 
+                    onValueChange={(val) => updateCollectorVehicleMutation.mutate({ 
+                      collectorId: collector.id, 
+                      registrationNumber: val === "none" ? null : val 
+                    })}
+                  >
+                    <SelectTrigger className="h-8 bg-white border-blue-200">
+                      <SelectValue placeholder="Select Vehicle" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">No Vehicle</SelectItem>
+                      {villageData?.vehicles?.map((v: any) => (
+                        <SelectItem key={v.registrationNumber} value={v.registrationNumber}>
+                          {v.name} ({v.registrationNumber})
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
               <div className="grid grid-cols-3 gap-4 text-center">
                 <div>
@@ -845,16 +937,16 @@ export default function ManagerDashboard() {
               <TourButton className="text-black bg-white hover:bg-white"/>
               <LanguageSwitcher />
                 <button
-                  key={'profile'}
-                  onClick={() => setActiveTab('profile')}
+                  key={'settings'}
+                  onClick={() => setActiveTab('settings')}
                   className={cn(
                     "flex-1 flex items-center justify-center py-3 transition-colors",
-                    activeTab === 'profile'
-                      ? "text-green-600 bg-blue-50 p-2 rounded-md"
+                    activeTab === 'settings'
+                      ? "text-blue-600 bg-blue-50 p-2 rounded-md"
                       : "text-black p-2 bg-white rounded-md",
                   )}
                 >
-                  <User className="h-5 w-5" strokeWidth={3}/>
+                  <Settings className="h-5 w-5" strokeWidth={3}/>
                 </button>
 
             </div>
@@ -902,7 +994,7 @@ export default function ManagerDashboard() {
                   { id: "issues", icon: AlertTriangle, label: t("navigation.issues"), class: "manager-issues-tab" },
                   { id: "reports", icon: BarChart3, label: t("navigation.reports"), class: "manager-reports-tab" },
                   { id: "announcements", icon: Bell, label: t("navigation.announcements"), class: "manager-announcements-tab" },
-                  { id: "profile", icon: User, label: t("navigation.profile"), class: "manager-profile-tab" },
+                  { id: "settings", icon: Settings, label: t("navigation.settings"), class: "manager-settings-tab" },
                 ].map(({ id, icon: Icon, label, class: className }) => (
                   <button
                     key={id}
@@ -947,84 +1039,49 @@ export default function ManagerDashboard() {
                     description={t("reports.today")}
                   />
                   <StatCard
-                    title={t("issues.openIssues")}
-                    value={stats?.openIssues || 0}
-                    icon={AlertTriangle}
-                    description={t("app.pending")}
-                  />
-                </div>
+                  title={t("issues.openIssues")}
+                  value={stats?.openIssues || 0}
+                  icon={AlertTriangle}
+                  description={t("app.pending")}
+                />
+              </div>
 
-                {/* Ward Management */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <LayoutDashboard className="w-5 h-5 text-green-600" />
-                        Ward/Sub-Village Management
-                      </div>
-                      <Button
-                        size="sm"
-                        onClick={() => setShowWardForm(true)}
-                        className="flex items-center gap-2"
-                      >
-                        <Plus className="w-4 h-4" />
-                        Add Ward
-                      </Button>
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    {wards.length > 0 ? (
-                      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
-                        {wards.map((ward: string, index: number) => (
-                          <Badge key={index} variant="outline" className="justify-center py-2 px-3">
-                            {ward}
-                          </Badge>
-                        ))}
-                      </div>
-                    ) : (
-                      <p className="text-muted-foreground text-sm">
-                        No wards configured yet. Add your first ward to organize households.
-                      </p>
-                    )}
-                  </CardContent>
-                </Card>
-
-                {/* Recent Announcements */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <Bell className="w-5 h-5 text-blue-600" />
-                      {t("app.recentActivity")} {t("announcements.title")}
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    {announcements.length > 0 ? (
-                      <div className="space-y-3">
-                        {announcements.slice(0, 3).map((announcement: any) => (
-                          <div key={announcement.id} className="p-3 bg-blue-50 rounded-lg border-l-4 border-blue-400">
-                            <p className="text-sm text-gray-800 font-medium">
-                              {announcement.message}
-                            </p>
-                            <div className="flex justify-between items-center mt-2">
-                              <Badge variant="secondary" className="text-xs">
+              {/* Announcements Section */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Bell className="w-5 h-5 text-blue-600" />
+                    {t("app.recentActivity")} {t("announcements.title")}
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {announcements.length > 0 ? (
+                    <div className="space-y-3">
+                      {announcements.slice(0, 3).map((announcement: any) => (
+                        <div key={announcement.id} className="p-3 bg-blue-50 rounded-lg border-l-4 border-blue-400">
+                          <p className="text-sm text-gray-800 font-medium">
+                            {announcement.message}
+                          </p>
+                          <div className="flex justify-between items-center mt-2">
+                            <Badge variant="secondary" className="text-xs">
                                 {announcement.targetAudience}
                               </Badge>
                               <p className="text-xs text-gray-500">
-                                {new Date(announcement.createdAt).toLocaleDateString()}
+                              {new Date(announcement.createdAt).toLocaleDateString()}
                               </p>
-                            </div>
                           </div>
-                        ))}
-                      </div>
-                    ) : (
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
                       <p className="text-center text-muted-foreground py-4">
                         {t("announcements.checkLater")}
                       </p>
-                    )}
-                  </CardContent>
-                </Card>
-              </div>
-            )}
+                  )}
+                </CardContent>
+              </Card>
+            </div>
+          )}
 
             {/* Collectors Tab */}
             {activeTab === "collectors" && (
@@ -1095,6 +1152,12 @@ export default function ManagerDashboard() {
                                   <p className="text-sm text-muted-foreground break-words">
                                     ID: {collector.uid} | Phone: {collector.phone}
                                   </p>
+                                  {(collector as any).assignedVehicle && (
+                                    <p className="text-xs text-blue-600 mt-1 flex items-center gap-1">
+                                      <Package className="h-3 w-3" />
+                                      Vehicle: {(collector as any).assignedVehicle}
+                                    </p>
+                                  )}
 
                                   {/* Stats Grid */}
                                   <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 text-center mt-3">
@@ -1231,10 +1294,14 @@ export default function ManagerDashboard() {
               <div className="space-y-6">
                 {/* Main Approach Tabs */}
                 <Tabs value={householdApproachTab} onValueChange={setHouseholdApproachTab} className="w-full">
-                  <TabsList className="grid w-full grid-cols-1 gap-2 mb-4">
+                  <TabsList className="grid w-full grid-cols-2 gap-2 mb-4">
+                    <TabsTrigger value="details" className="flex items-center gap-2">
+                      <Users className="h-4 w-4" />
+                      Details
+                    </TabsTrigger>
                     <TabsTrigger value="qr-first" className="flex items-center gap-2">
                       <QrCode className="h-4 w-4" />
-                      QR First
+                      QR Codes
                     </TabsTrigger>
                   </TabsList>
 
@@ -1324,6 +1391,51 @@ export default function ManagerDashboard() {
                         </Card>
                       </TabsContent>
                     </Tabs>
+                  </TabsContent>
+
+                  <TabsContent value="details" className="space-y-4">
+                    <Card>
+                      <CardHeader>
+                        <CardTitle>Household Details</CardTitle>
+                        <CardDescription>Listing of all registered households</CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="space-y-4">
+                          <Input
+                            placeholder="Search by head name, UID, house number, or mobile..."
+                            value={householdSearch}
+                            onChange={(e) => setHouseholdSearch(e.target.value)}
+                          />
+                          <div className="space-y-2 max-h-[600px] overflow-y-auto pr-2">
+                            {households
+                              .filter(h => {
+                                const search = householdSearch.toLowerCase();
+                                return (
+                                  h.headName.toLowerCase().includes(search) ||
+                                  h.uid.toLowerCase().includes(search) ||
+                                  (h.houseNumber && h.houseNumber.toLowerCase().includes(search)) ||
+                                  (h.phone && h.phone.toLowerCase().includes(search))
+                                );
+                              })
+                              .map((h) => (
+                                <div
+                                  key={h.id}
+                                  className="p-3 border rounded-lg hover:bg-muted/50 cursor-pointer transition-colors"
+                                  onClick={() => setSelectedHousehold(h)}
+                                >
+                                  <div className="flex justify-between items-start">
+                                    <div>
+                                      <p className="font-medium">{h.headName}</p>
+                                      <p className="text-sm text-muted-foreground">UID: {h.uid}</p>
+                                    </div>
+                                    <Badge variant="outline">{h.ward || "N/A"}</Badge>
+                                  </div>
+                                </div>
+                              ))}
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
                   </TabsContent>
                 </Tabs>
               </div>
@@ -2124,19 +2236,28 @@ export default function ManagerDashboard() {
               </div>
             )}
 
-          {activeTab === "profile" && (
+          {activeTab === "settings" && (
           <div className="space-y-4 p-4">
-            {/* User Info */}
+            {/* Management Tabs */}
+            <Tabs defaultValue="settings" className="w-full">
+              <TabsList className="grid w-full grid-cols-3">
+                <TabsTrigger value="settings">Profile</TabsTrigger>
+                <TabsTrigger value="wards">Wards</TabsTrigger>
+                <TabsTrigger value="vehicles">Vehicles</TabsTrigger>
+              </TabsList>
+
+              <TabsContent value="settings" className="space-y-4 mt-4">
+                {/* User Info */}
             <Card>
               <CardHeader className="pb-3 items-center">
                 <CardTitle className="flex items-center text-2xl font-bold">
                   <User className="w-6 h-6 mr-2" strokeWidth={3}/>
-                  {t("profile.title")}
+                  User Info
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-3 text-center">
                 <div>
-                  <Label className="text-xs text-gray-600">{t("households.headName")}</Label>
+                  <Label className="text-xs text-gray-600">Manager Name</Label>
                   <p className="font-medium">{user?.name}</p>
                 </div>
                 <div>
@@ -2144,7 +2265,7 @@ export default function ManagerDashboard() {
                   <p className="font-medium">{user?.userId}</p>
                 </div>
                 <div>
-                  <Label className="text-xs text-gray-600">{t("villages.title")}</Label>
+                  <Label className="text-xs text-gray-600">Village</Label>
                   <p className="font-medium">{user?.villageId}</p>
                 </div>
                 <div>
@@ -2153,39 +2274,238 @@ export default function ManagerDashboard() {
                 </div>
               </CardContent>
             </Card>
+                <Card>
+                  <CardHeader className="pb-3">
+                    <CardTitle className="flex items-center text-lg">
+                      <User className="w-5 h-5 mr-2" />
+                      {t("navigation.settings")}
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setShowPasswordDialog(true)}
+                      className="flex items-center justify-center gap-1 sm:gap-2 text-xs sm:text-sm w-full"
+                    >
+                      <Settings className="h-3 w-3 sm:h-4 sm:w-4" />
+                      <span>{t("app.changePassword")}</span>
+                    </Button>
 
-            {/* Settings */}
-            <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="flex items-center text-lg">
-                  <Settings className="w-5 h-5 mr-2" />
-                  {t("navigation.settings")}
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                            {/* Password Button */}
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setShowPasswordDialog(true)}
-                className="flex items-center justify-center gap-1 sm:gap-2 flex-1 sm:flex-none text-xs sm:text-sm w-full"
-              >
-                <Settings className="h-3 w-3 sm:h-4 sm:w-4" />
-                <span className="">{t("app.changePassword")}</span>
-              </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => logoutMutation.mutate()}
+                      className="flex items-center justify-center gap-1 sm:gap-2 text-xs sm:text-sm w-full"
+                    >
+                      <LogOut className="h-3 w-3 sm:h-4 sm:w-4" />
+                      <span>{t("auth.logout")}</span>
+                    </Button>
+                  </CardContent>
+                </Card>
+              </TabsContent>
 
-              {/* Logout Button */}
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => logoutMutation.mutate()}
-                className="flex items-center justify-center gap-1 sm:gap-2 flex-1 sm:flex-none text-xs sm:text-sm w-full"
-              >
-                <LogOut className="h-3 w-3 sm:h-4 sm:w-4" />
-                <span className="">{t("auth.logout")}</span>
-              </Button>
-              </CardContent>
-            </Card>
+              <TabsContent value="wards" className="space-y-4 mt-4">
+                <div className="flex items-center justify-center gap-2 font-bold text-xl">
+                        Ward Management
+                </div>
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center justify-between">
+                      <Button
+                        size="sm"
+                        onClick={() => setShowWardForm(true)}
+                        className="flex items-center gap-2"
+                      >
+                        <Plus className="w-4 h-4" />
+                        Add Ward
+                      </Button>
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    {wards.length > 0 ? (
+                      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
+                        {wards.map((ward: string, index: number) => (
+                          <Badge key={index} variant="outline" className="justify-center py-2 px-3">
+                            {ward}
+                          </Badge>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-muted-foreground text-sm">
+                        No wards configured yet. Add your first ward to organize households.
+                      </p>
+                    )}
+                  </CardContent>
+                </Card>
+              </TabsContent>
+
+              <TabsContent value="vehicles" className="space-y-4 mt-4">
+                <div className="flex items-center justify-center gap-2 font-bold text-xl">
+                        <Package className="w-5 h-5 text-blue-600" />
+                        Vehicle Management
+                </div>
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center justify-between">
+                      <Button size="sm" className="flex items-center gap-2" onClick={() => {
+                        setEditingVehicle(null);
+                        setNewVehicleReg("");
+                        setNewVehicleName("");
+                        setSelectedVehicleCollectors([]);
+                        setShowVehicleForm(true);
+                      }}>
+                        <Plus className="w-4 h-4" />
+                        Add Vehicle
+                      </Button>
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    {showVehicleForm && (
+                      <Card className="mb-4">
+                        <CardHeader>
+                          <CardTitle>{editingVehicle ? "Edit Vehicle" : "Add New Vehicle"}</CardTitle>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                          <div className="space-y-2">
+                            <Label>Registration Number *</Label>
+                            <Input 
+                              value={newVehicleReg} 
+                              onChange={(e) => setNewVehicleReg(e.target.value)}
+                              disabled={!!editingVehicle}
+                              placeholder="e.g. MH-12-AB-1234"
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <Label>Vehicle Name *</Label>
+                            <Input 
+                              value={newVehicleName} 
+                              onChange={(e) => setNewVehicleName(e.target.value)}
+                              placeholder="e.g. Garbage Truck 1"
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <Label>Assign Collectors</Label>
+                            <div className="grid grid-cols-1 gap-2 max-h-40 overflow-y-auto p-2 border rounded-md">
+                              {collectors
+                                .filter(c => {
+                                  const vehicleWithCollector = (villageData?.vehicles || []).find((v: any) => 
+                                    (v.collectorIds || []).includes(c.id)
+                                  );
+                                  return !vehicleWithCollector || (editingVehicle && vehicleWithCollector.registrationNumber === editingVehicle.registrationNumber);
+                                })
+                                .map(c => (
+                                  <div key={c.id} className="flex items-center gap-2">
+                                    <input 
+                                      type="checkbox"
+                                      id={`v-collector-${c.id}`}
+                                      checked={selectedVehicleCollectors.includes(c.id)}
+                                      onChange={(e) => {
+                                        if (e.target.checked) {
+                                          setSelectedVehicleCollectors([...selectedVehicleCollectors, c.id]);
+                                        } else {
+                                          setSelectedVehicleCollectors(selectedVehicleCollectors.filter(id => id !== c.id));
+                                        }
+                                      }}
+                                    />
+                                    <label htmlFor={`v-collector-${c.id}`} className="text-sm cursor-pointer">{c.name} ({c.uid})</label>
+                                  </div>
+                                ))}
+                            </div>
+                            {collectors.filter(c => {
+                              const vehicleWithCollector = (villageData?.vehicles || []).find((v: any) => 
+                                (v.collectorIds || []).includes(c.id)
+                              );
+                              return !vehicleWithCollector || (editingVehicle && vehicleWithCollector.registrationNumber === editingVehicle.registrationNumber);
+                            }).length === 0 && (
+                              <p className="text-sm text-muted-foreground italic">No unassigned collectors available</p>
+                            )}
+                          </div>
+                          <div className="flex gap-2">
+                            <Button 
+                              className="flex-1"
+                              disabled={!newVehicleReg || !newVehicleName || addVehicleMutation.isPending || updateVehicleMutation.isPending}
+                              onClick={() => {
+                                if (editingVehicle) {
+                                  updateVehicleMutation.mutate({
+                                    registrationNumber: newVehicleReg,
+                                    name: newVehicleName,
+                                    collectorIds: selectedVehicleCollectors
+                                  });
+                                } else {
+                                  addVehicleMutation.mutate({
+                                    registrationNumber: newVehicleReg,
+                                    name: newVehicleName,
+                                    collectorIds: selectedVehicleCollectors
+                                  });
+                                }
+                              }}
+                            >
+                              {(addVehicleMutation.isPending || updateVehicleMutation.isPending) ? "Saving..." : (editingVehicle ? "Update Vehicle" : "Add Vehicle")}
+                            </Button>
+                            <Button variant="outline" className="flex-1" onClick={() => setShowVehicleForm(false)}>
+                              Cancel
+                            </Button>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    )}
+
+                    {villageData?.vehicles && villageData.vehicles.length > 0 ? (
+                      <div className="space-y-3">
+                        {villageData.vehicles.map((v: any) => (
+                          <div key={v.registrationNumber} className="flex items-center justify-between p-3 border rounded-lg">
+                            <div>
+                              <p className="font-medium">{v.name}</p>
+                              <p className="text-sm text-muted-foreground">{v.registrationNumber}</p>
+                              <div className="flex flex-wrap gap-1 mt-1">
+                                {v.collectorIds?.map((cid: number) => {
+                                  const collector = collectors.find(c => c.id === cid);
+                                  return collector ? (
+                                    <Badge key={cid} variant="secondary" className="text-[10px] px-1 py-0">
+                                      {collector.name}
+                                    </Badge>
+                                  ) : null;
+                                })}
+                              </div>
+                            </div>
+                            <div className="flex gap-1">
+                              <Button 
+                                variant="ghost" 
+                                size="sm" 
+                                onClick={() => {
+                                  setEditingVehicle(v);
+                                  setNewVehicleReg(v.registrationNumber);
+                                  setNewVehicleName(v.name);
+                                  setSelectedVehicleCollectors(v.collectorIds || []);
+                                  setShowVehicleForm(true);
+                                }}
+                              >
+                                <Edit className="h-4 w-4" />
+                              </Button>
+                              <Button 
+                                variant="ghost" 
+                                size="sm" 
+                                className="text-destructive"
+                                onClick={() => {
+                                  if (confirm("Are you sure you want to remove this vehicle?")) {
+                                    removeVehicleMutation.mutate(v.registrationNumber);
+                                  }
+                                }}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-muted-foreground text-sm">No vehicles added yet.</p>
+                    )}
+                  </CardContent>
+                </Card>
+              </TabsContent>
+            </Tabs>
           </div>
         )}
 
@@ -2801,7 +3121,7 @@ export default function ManagerDashboard() {
                         const remaining = totalHouses - collected;
 
                         return (
-                          <>
+                          <>ou
                             <Card className="bg-gradient-to-r from-yellow-50 to-yellow-100 border-yellow-200">
                               <CardHeader className="pb-2">
                                 <CardTitle className="text-sm font-medium text-yellow-800">Avg Segregation Rating</CardTitle>

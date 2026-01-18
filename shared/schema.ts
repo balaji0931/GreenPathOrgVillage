@@ -8,10 +8,9 @@ export const villages = pgTable("villages", {
   id: serial("id").primaryKey(),
   villageId: text("village_id").notNull().unique(), // V001, V002, etc.
   name: text("name").notNull(),
-  paymentLink: text("payment_link"), // UPI payment link
-  monthlyFee: decimal("monthly_fee", { precision: 10, scale: 2 }), // Monthly fee amount
   imageUploadRequired: boolean("image_upload_required").default(true), // Require image upload for collections
   wards: text("wards").array().default([]), // Array of ward names for this village
+  vehicles: json("vehicles").$type<{ registrationNumber: string; name: string; collectorIds: number[] }[]>().default([]), // Array of vehicles
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
@@ -64,6 +63,7 @@ export const collectors = pgTable("collectors", {
   villageId: text("village_id").notNull().references(() => villages.villageId),
   name: text("name").notNull(),
   phone: text("phone"),
+  assignedVehicle: text("assigned_vehicle"), // Registration number of assigned vehicle
   createdAt: timestamp("created_at").defaultNow(),
 }, (table) => [
   index("idx_collectors_village_id").on(table.villageId),
@@ -398,7 +398,6 @@ export type InsertWasteCollection = z.infer<typeof insertWasteCollectionSchema>;
 export type InsertIssue = z.infer<typeof insertIssueSchema>;
 export type InsertAnnouncement = z.infer<typeof insertAnnouncementSchema>;
 export type InsertFeedback = z.infer<typeof insertFeedbackSchema>;
-export type InsertPayment = any;
 export type InsertModerator = z.infer<typeof insertModeratorSchema>;
 export type InsertModeratorVillageAssignment = z.infer<typeof insertModeratorVillageAssignmentSchema>;
 export type InsertMonthlyVillageStats = z.infer<typeof insertMonthlyVillageStatsSchema>;

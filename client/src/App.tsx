@@ -85,6 +85,17 @@ function Router() {
         {() => <Redirect to="/" />}
       </Route>
 
+      {/* Public Pages allowed for logged-in users */}
+      <Route path="/privacy-policy" component={PrivacyPolicy} />
+      <Route path="/terms-of-service" component={TermsOfService} />
+      <Route path="/data-protection" component={DataProtection} />
+      <Route path="/pricing" component={Pricing} />
+
+      <Route path="/home">{() => <PublicHome initialSection="home" />}</Route>
+      <Route path="/about">{() => <PublicHome initialSection="about" />}</Route>
+      <Route path="/feedback">{() => <PublicHome initialSection="feedback" />}</Route>
+      <Route path="/contact">{() => <PublicHome initialSection="contact" />}</Route>
+
       {/* Role-specific routes */}
       <Route path="/admin">
         {() => user.role === "admin" ? <AdminDashboard /> : <Redirect to="/" />}

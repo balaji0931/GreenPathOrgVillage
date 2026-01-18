@@ -89,9 +89,6 @@ export default function GeneratorDashboard() {
   const [searchQuery, setSearchQuery] = useState("");
   const [showAllCollections, setShowAllCollections] = useState(false);
   const [currentAnnouncementIndex, setCurrentAnnouncementIndex] = useState(0);
-  const [showPaymentProofModal, setShowPaymentProofModal] = useState(false);
-  const [selectedPaymentId, setSelectedPaymentId] = useState<number | null>(null);
-  const [paymentProofFile, setPaymentProofFile] = useState<File | null>(null);
 
   const [newIssue, setNewIssue] = useState({
     title: "",

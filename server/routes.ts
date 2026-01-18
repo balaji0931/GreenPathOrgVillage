@@ -600,6 +600,64 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
   });
 
+  // Vehicle Management Routes
+  app.post('/api/villages/:villageId/vehicles', requireAuth, requireRole(['manager', 'admin']), requireVillageAccess, async (req, res) => {
+    try {
+      const { registrationNumber, name, collectorIds } = req.body;
+      if (!registrationNumber || !name) {
+        return res.status(400).json({ message: "Registration number and name are required" });
+      }
+
+      await storage.addVehicleToVillage(req.params.villageId, {
+        registrationNumber,
+        name,
+        collectorIds: collectorIds || []
+      });
+
+      res.status(201).json({ message: "Vehicle added successfully" });
+    } catch (error: any) {
+      console.error("Add vehicle error:", error);
+      res.status(500).json({ message: error.message || "Failed to add vehicle" });
+    }
+  });
+
+  app.patch('/api/villages/:villageId/vehicles/:registrationNumber', requireAuth, requireRole(['manager', 'admin']), requireVillageAccess, async (req, res) => {
+    try {
+      const { name, collectorIds } = req.body;
+      await storage.updateVehicleInVillage(req.params.villageId, req.params.registrationNumber, {
+        name,
+        collectorIds: collectorIds || []
+      });
+      res.json({ message: "Vehicle updated successfully" });
+    } catch (error: any) {
+      console.error("Update vehicle error:", error);
+      res.status(500).json({ message: error.message || "Failed to update vehicle" });
+    }
+  });
+
+  app.delete('/api/villages/:villageId/vehicles/:registrationNumber', requireAuth, requireRole(['manager', 'admin']), requireVillageAccess, async (req, res) => {
+    try {
+      await storage.removeVehicleFromVillage(req.params.villageId, req.params.registrationNumber);
+      res.json({ message: "Vehicle removed successfully" });
+    } catch (error: any) {
+      console.error("Remove vehicle error:", error);
+      res.status(500).json({ message: error.message || "Failed to remove vehicle" });
+    }
+  });
+
+  app.patch('/api/collectors/:collectorId/vehicle', requireAuth, requireRole(['manager', 'admin']), async (req, res) => {
+    try {
+      const { registrationNumber } = req.body;
+      const collectorId = parseInt(req.params.collectorId);
+      
+      await storage.updateCollectorVehicle(collectorId, registrationNumber);
+      res.json({ message: "Collector vehicle updated successfully" });
+    } catch (error: any) {
+      console.error("Update collector vehicle error:", error);
+      res.status(500).json({ message: error.message || "Failed to update collector vehicle" });
+    }
+  });
+
   app.post('/api/auth/change-password', requireAuth, async (req, res) => {
     try {
       const { newPassword } = req.body;
