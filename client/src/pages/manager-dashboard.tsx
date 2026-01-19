@@ -64,6 +64,8 @@ import {
   LayoutDashboard,
   CreditCard,
   XCircle,
+  ArrowLeft,
+  ArrowRight
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -3089,10 +3091,9 @@ export default function ManagerDashboard() {
                   <TabsContent value="daily" className="space-y-6">
                     {/* Date Filter for Daily Reports */}
                     <Card>
-                      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 p-4">
-                        <CardTitle>Select Date for Daily Report</CardTitle>
-                        <div className="flex flex-col sm:flex-row gap-4 flex-1 lg:flex-none">
-                          <div className="flex-1">
+                      <div className="flex items-center justify-between p-2">
+                        <CardTitle>Date: </CardTitle>
+                          <div className="flex">
                             <Input
                               id="daily-date"
                               type="date"
@@ -3100,7 +3101,6 @@ export default function ManagerDashboard() {
                               onChange={(e) => updateFilter("date", e.target.value)}
                             />
                           </div>
-                        </div>
                       </div>
                     </Card>
 
@@ -3121,7 +3121,7 @@ export default function ManagerDashboard() {
                         const remaining = totalHouses - collected;
 
                         return (
-                          <>ou
+                          <>
                             <Card className="bg-gradient-to-r from-yellow-50 to-yellow-100 border-yellow-200">
                               <CardHeader className="pb-2">
                                 <CardTitle className="text-sm font-medium text-yellow-800">Avg Segregation Rating</CardTitle>
@@ -3179,9 +3179,8 @@ export default function ManagerDashboard() {
                       {/* 1. Collection Status Pie Chart */}
                       <Card>
                         <CardHeader>
-                          <CardTitle className="flex items-center gap-2">
-                            <Package className="h-5 w-5 text-blue-600" />
-                            Collection Status Overview
+                          <CardTitle className="flex items-center justify-center gap-2">
+                            Collection Status
                           </CardTitle>
                         </CardHeader>
                         <CardContent>
@@ -3243,9 +3242,8 @@ export default function ManagerDashboard() {
                       {/* 2. Star Rating Distribution */}
                       <Card>
                         <CardHeader>
-                          <CardTitle className="flex items-center gap-2">
-                            <Star className="h-5 w-5 text-yellow-600" />
-                            Segregation Rating Distribution
+                          <CardTitle className="flex items-center justify-center gap-2">
+                            Segregation Rating
                           </CardTitle>
                         </CardHeader>
                         <CardContent>
@@ -3284,62 +3282,199 @@ export default function ManagerDashboard() {
                         </CardContent>
                       </Card>
 
-                      {/* 3. Collector Performance for the Day */}
+                      {/* 3. Vehicle Collection Performance */}
                       <Card>
-                        <CardHeader>
+                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                           <CardTitle className="flex items-center gap-2">
-                            <Users className="h-5 w-5 text-purple-600" />
-                            Collector Performance Today
+                            Collection Performance
                           </CardTitle>
+                          <Dialog>
+                            <DialogTrigger asChild>
+                              <Button variant="outline" size="sm" className="bg-green-200">Details</Button>
+                            </DialogTrigger>
+                            <DialogContent className="max-w-[100vw] w-full h-[100dvh] md:max-w-4xl md:h-[90vh] md:rounded-xl overflow-hidden p-0 flex flex-col border-none md:border">
+                              <DialogHeader className="p-2 border-b flex flex-row items-center justify-between space-y-0 bg-white sticky top-0 z-10">
+                                <DialogTrigger asChild>
+                                  <Button variant="ghost" size="sm" className="h-8 px-2 md:hidden bg-green-200 ">
+                                    <ArrowRight className="h-4 w-4 mr-1 rotate-180" strokeWidth={3}/>
+                                  </Button>
+                                </DialogTrigger>
+                                <div className="flex items-center gap-2">
+                                  <DialogTitle className="text-lg font-bold mr-8">Vehicle Session Report</DialogTitle>
+                                </div>
+                                
+                              </DialogHeader>
+                              
+                              <div className="flex-1 overflow-y-auto p-2 space-y-3 pb-20 md:pb-6">
+                                {(() => {
+                                  const targetDate = filters.date || new Date().toISOString().split('T')[0];
+                                  const villageVehicles = villageData?.vehicles || [];
+                                  
+                                  return villageVehicles.map((vehicle: any) => {
+                                    const vehicleCollections = allCollections
+                                      .filter(c => 
+                                        vehicle.collectorIds.includes(c.collectorId) &&
+                                        new Date(c.collectionDate).toDateString() === new Date(targetDate).toDateString()
+                                      )
+                                      .sort((a, b) => new Date(a.collectionDate).getTime() - new Date(b.collectionDate).getTime());
+
+                                    if (vehicleCollections.length === 0) return null;
+
+                                    const sessions: any[] = [];
+                                    let currentSession: any[] = [vehicleCollections[0]];
+                                    
+                                    for (let i = 1; i < vehicleCollections.length; i++) {
+                                      const prevTime = new Date(vehicleCollections[i-1].collectionDate).getTime();
+                                      const currTime = new Date(vehicleCollections[i].collectionDate).getTime();
+                                      const diffMinutes = (currTime - prevTime) / (1000 * 60);
+
+                                      if (diffMinutes > 20) {
+                                        sessions.push(currentSession);
+                                        currentSession = [vehicleCollections[i]];
+                                      } else {
+                                        currentSession.push(vehicleCollections[i]);
+                                      }
+                                    }
+                                    sessions.push(currentSession);
+
+                                    let totalWorkMs = 0;
+                                    let totalBreakMs = 0;
+
+                                    return (
+                                      <div key={vehicle.registrationNumber} className="bg-white rounded-xl border shadow-sm overflow-hidden">
+                                        <div className="bg-green-100 px-4 py-1 border-b flex items-center justify-between">
+                                          <div className="flex items-center gap-2">
+                                            <div className="w-1.5 h-1.5 rounded-full bg-purple-600 animate-pulse" />
+                                            <h3 className="font-bold text-purple-900 text-sm">{vehicle.name}</h3>
+                                          </div>
+                                          <span className="text-[10px] font-mono bg-purple-200 text-black px-2 py-0.5 rounded-full">{vehicle.registrationNumber}</span>
+                                        </div>
+
+                                        <div className="px-3 py-1 space-y-2">
+                                          <div className="grid grid-cols-1 gap-2">
+                                            {sessions.map((session, sIdx) => {
+                                              const start = new Date(session[0].collectionDate);
+                                              const end = new Date(session[session.length - 1].collectionDate);
+                                              const durationMs = end.getTime() - start.getTime();
+                                              totalWorkMs += durationMs;
+
+                                              let breakMs = 0;
+                                              if (sIdx > 0) {
+                                                const prevSessionEnd = new Date(sessions[sIdx-1][sessions[sIdx-1].length - 1].collectionDate);
+                                                breakMs = start.getTime() - prevSessionEnd.getTime();
+                                                totalBreakMs += breakMs;
+                                              }
+
+                                              const dH = Math.floor(durationMs / (1000 * 60 * 60));
+                                              const dM = Math.floor((durationMs % (1000 * 60 * 60)) / (1000 * 60));
+                                              const bH = Math.floor(breakMs / (1000 * 60 * 60));
+                                              const bM = Math.floor((breakMs % (1000 * 60 * 60)) / (1000 * 60));
+
+                                              return (
+                                                <div key={sIdx} className="relative pl-2 border-l-2 border-blue-200 py-1">
+                                                  {sIdx > 0 && (
+                                                    <div className="absolute -top-3 left-[-9px] flex items-center gap-1.5 bg-orange-50 px-2 py-0.5 rounded-md border border-orange-100">
+                                                      <span className="text-[9px] font-bold text-orange-600 uppercase tracking-tighter">Break: {bH}h {bM}m</span>
+                                                    </div>
+                                                  )}
+                                                  <div className="flex items-center justify-between gap-4">
+                                                    <div className="flex-1">
+                                                      <div className="flex items-center gap-2">
+                                                        <span className="text-[11px] font-black text-blue-600">S{sIdx + 1}</span>
+                                                        <span className="text-[11px] font-medium text-gray-700">
+                                                          {start.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})} - {end.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                                                        </span>
+                                                      </div>
+                                                    </div>
+                                                    <div className="flex items-center gap-3">
+                                                      <div className="text-center">
+                                                        <div className="text-[10px] text-muted-foreground leading-none">Collections</div>
+                                                        <div className="text-[11px] font-bold">{session.length}</div>
+                                                      </div>
+                                                      <div className="text-center">
+                                                        <div className="text-[10px] text-muted-foreground leading-none">Work time</div>
+                                                        <div className="text-[11px] font-bold text-green-700">{dH}h {dM}m</div>
+                                                      </div>
+                                                    </div>
+                                                  </div>
+                                                </div>
+                                              );
+                                            })}
+                                          </div>
+
+                                          <div className="pt-1 border-t grid grid-cols-3 bg-gray-50/50 rounded-lg p-1">
+                                            <div className="text-center">
+                                              <div className="text-[9px] text-muted-foreground uppercase font-bold tracking-tighter">Total collections</div>
+                                              <div className="text-sm font-black text-blue-900">{vehicleCollections.length}</div>
+                                            </div>
+                                            <div className="text-center border-x border-gray-100">
+                                              <div className="text-[9px] text-muted-foreground uppercase font-bold tracking-tighter">Total Work</div>
+                                              <div className="text-sm font-black text-green-700">
+                                                {Math.floor(totalWorkMs / (1000 * 60 * 60))}h {Math.floor((totalWorkMs % (1000 * 60 * 60)) / (1000 * 60))}m
+                                              </div>
+                                            </div>
+                                            <div className="text-center">
+                                              <div className="text-[9px] text-muted-foreground uppercase font-bold tracking-tighter">Total Break</div>
+                                              <div className="text-sm font-black text-orange-600">
+                                                {Math.floor(totalBreakMs / (1000 * 60 * 60))}h {Math.floor((totalBreakMs % (1000 * 60 * 60)) / (1000 * 60))}m
+                                              </div>
+                                            </div>
+                                          </div>
+                                        </div>
+                                      </div>
+                                    );
+                                  });
+                                })()}
+                              </div>
+                            </DialogContent>
+                          </Dialog>
                         </CardHeader>
                         <CardContent>
                           <div className="space-y-3">
-                            {collectors.map(collector => {
+                            {(() => {
                               const targetDate = filters.date || new Date().toISOString().split('T')[0];
-                              const collectorCollections = allCollections.filter(c => 
-                                c.collectorId === collector.id &&
-                                new Date(c.collectionDate).toDateString() === new Date(targetDate).toDateString()
-                              );
-                              const sortedCollections = [...collectorCollections].sort((a, b) => 
-                                new Date(a.collectionDate).getTime() - new Date(b.collectionDate).getTime()
-                              );
-                              const startTime = sortedCollections.length > 0 
-                                ? new Date(sortedCollections[0].collectionDate).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true })
-                                : null;
-                              const endTime = sortedCollections.length > 0 
-                                ? new Date(sortedCollections[sortedCollections.length - 1].collectionDate).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true })
-                                : null;
-                              const avgRating = collectorCollections.length > 0
-                                ? (collectorCollections.reduce((sum, c) => sum + (c.segregationRating || 0), 0) / collectorCollections.length)
-                                : 0;
+                              const villageVehicles = villageData?.vehicles || [];
+                              
+                              return villageVehicles.map((vehicle: any) => {
+                                // Find collections for this vehicle by looking at collectors assigned to it
+                                const vehicleCollections = allCollections.filter(c => 
+                                  vehicle.collectorIds.includes(c.collectorId) &&
+                                  new Date(c.collectionDate).toDateString() === new Date(targetDate).toDateString()
+                                );
 
-                              return (
-                                <div key={collector.id} className="p-3 bg-gray-50 rounded-lg">
-                                  <div className="flex items-center justify-between mb-2">
-                                    <h4 className="font-medium">{collector.name}</h4>
-                                    <Badge variant="outline">{collectorCollections.length} collections</Badge>
-                                  </div>
-                                  <div className="flex items-center gap-2 mb-2">
-                                    <div className="flex-1 bg-gray-200 rounded-full h-2">
-                                      <div 
-                                        className={`h-2 rounded-full ${
-                                          avgRating >= 4 ? 'bg-green-500' : 
-                                          avgRating >= 3 ? 'bg-yellow-500' : 'bg-red-500'
-                                        }`}
-                                        style={{ width: `${(avgRating / 5) * 100}%` }}
-                                      />
+                                const collectorNames = collectors
+                                  .filter(c => vehicle.collectorIds.includes(c.id))
+                                  .map(c => c.name)
+                                  .join(", ");
+
+                                const sortedCollections = [...vehicleCollections].sort((a, b) => 
+                                  new Date(a.collectionDate).getTime() - new Date(b.collectionDate).getTime()
+                                );
+                                
+                                const startTime = sortedCollections.length > 0 
+                                  ? new Date(sortedCollections[0].collectionDate).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true })
+                                  : "N/A";
+                                const endTime = sortedCollections.length > 0 
+                                  ? new Date(sortedCollections[sortedCollections.length - 1].collectionDate).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true })
+                                  : "N/A";
+
+                                return (
+                                  <div key={vehicle.registrationNumber} className="p-1 bg-gray-50 rounded-lg">
+                                    <div className="flex items-center justify-between mb-2">
+                                      <h4 className="text-sm font-bold">{vehicle.name}</h4>
+                                      <Badge variant="outline">{vehicleCollections.length} collections</Badge>
                                     </div>
-                                    <span className="text-sm font-medium">{avgRating.toFixed(1)}</span>
-                                  </div>
-                                  {startTime && (
-                                    <div className="font-bold text-md flex justify-between text-[10px] text-muted-foreground border-t pt-1">
+                                    <div className="text-xs text-muted-foreground mb-2">
+                                      <span className="font-bold">Collectors:</span> {collectorNames || "None assigned"}
+                                    </div>
+                                    <div className="font-bold text-md flex justify-between text-[10px] border-t pt-1">
                                       <span>Start: {startTime}</span>
                                       <span>End: {endTime}</span>
                                     </div>
-                                  )}
-                                </div>
-                              );
-                            })}
+                                  </div>
+                                );
+                              });
+                            })()}
                           </div>
                         </CardContent>
                       </Card>
@@ -3347,7 +3482,7 @@ export default function ManagerDashboard() {
                       {/* 4. Collection Timeline */}
                       <Card>
                         <CardHeader>
-                          <CardTitle className="flex items-center gap-2">
+                          <CardTitle className="flex items-center justify-center gap-2">
                             <BarChart3 className="h-5 w-5 text-indigo-600" />
                             Collection Timeline
                           </CardTitle>
@@ -3358,8 +3493,8 @@ export default function ManagerDashboard() {
                               const targetDate = filters.date || new Date().toISOString().split("T")[0];
                               const dateObj = new Date(targetDate);
 
-                              const counts = Array.from({ length: 12 }, (_, i) => {
-                                const hour = i + 6;
+                              const counts = Array.from({ length: 14 }, (_, i) => {
+                                const hour = i + 5;
                                 return allCollections.filter(c => {
                                   const d = new Date(c.collectionDate);
                                   return d.toDateString() === dateObj.toDateString() && d.getHours() === hour;
@@ -3369,12 +3504,12 @@ export default function ManagerDashboard() {
                               const maxCollections = Math.max(...counts, 0);
 
                               return counts.map((count, i) => {
-                                const hour = i + 6;
+                                const hour = i + 5;
                                 const percentage = maxCollections > 0 ? (count / maxCollections) * 100 : 0;
 
                                 return (
-                                  <div key={i} className="flex items-center gap-3">
-                                    <div className="w-16 text-xs text-muted-foreground">
+                                  <div key={i} className="flex items-center gap-2">
+                                    <div className="w-8 text-xs text-muted-foreground">
                                       {hour}:00
                                     </div>
                                     <div className="flex-1 bg-gray-200 rounded-full h-3 relative">
