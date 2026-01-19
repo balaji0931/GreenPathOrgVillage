@@ -3121,7 +3121,7 @@ export default function ManagerDashboard() {
                         const remaining = totalHouses - collected;
 
                         return (
-                          <>ou
+                          <>
                             <Card className="bg-gradient-to-r from-yellow-50 to-yellow-100 border-yellow-200">
                               <CardHeader className="pb-2">
                                 <CardTitle className="text-sm font-medium text-yellow-800">Avg Segregation Rating</CardTitle>
