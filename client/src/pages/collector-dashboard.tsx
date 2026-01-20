@@ -587,6 +587,24 @@ export default function CollectorDashboard() {
     setIsSubmitLocked(true);
 
     try {
+      // Get current location
+      let latitude = null;
+      let longitude = null;
+      
+      try {
+        const position = await new Promise<GeolocationPosition>((resolve, reject) => {
+          navigator.geolocation.getCurrentPosition(resolve, reject, {
+            enableHighAccuracy: true,
+            timeout: 5000,
+            maximumAge: 0
+          });
+        });
+        latitude = position.coords.latitude.toString();
+        longitude = position.coords.longitude.toString();
+      } catch (geoError) {
+        console.warn("Could not get geolocation", geoError);
+      }
+
       const collectionData = {
         householdUid: scannedHousehold.uid,
         status: collectionForm.wasteAccepted ? 'collected' : 'missed',
@@ -596,6 +614,8 @@ export default function CollectorDashboard() {
         remarks: collectionForm.remarks,
         missedReason: collectionForm.wasteAccepted ? null : collectionForm.notCollectedReason,
         collectionDate: new Date().toISOString(),
+        latitude,
+        longitude
       };
 
       if (isOnline) {

@@ -625,9 +625,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { name, collectorIds } = req.body;
       await storage.updateVehicleInVillage(req.params.villageId, req.params.registrationNumber, {
-        name,
+          name,
         collectorIds: collectorIds || []
-      });
+        });
       res.json({ message: "Vehicle updated successfully" });
     } catch (error: any) {
       console.error("Update vehicle error:", error);
@@ -1561,6 +1561,8 @@ app.post(
         voiceUrl,
         status,
         missedReason,
+        latitude: req.body.latitude,
+        longitude: req.body.longitude,
       });
 
       // Phase 4: Invalidate relevant caches

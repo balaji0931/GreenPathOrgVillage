@@ -613,24 +613,53 @@ export class DatabaseStorage implements IStorage {
     return existing;
   }
 
-  async createWasteCollection(insertCollection: InsertWasteCollection): Promise<WasteCollection> {
+  async createWasteCollection(insertCollection: InsertWasteCollection & { latitude?: string, longitude?: string }): Promise<WasteCollection> {
     const cache = getCache();
+    
+    // Ensure numeric values for ratings
+    const valuesToInsert = {
+      ...insertCollection,
+      segregationRating: Number(insertCollection.segregationRating),
+      plasticRating: Number(insertCollection.plasticRating),
+    };
+    // Remove latitude/longitude from valuesToInsert as they don't exist in waste_collections table
+    const { latitude, longitude, ...dbValues } = valuesToInsert as any;
+
     const [collection] = await db
       .insert(wasteCollections)
-      .values(insertCollection as any)
+      .values(dbValues)
       .returning();
     
     // Invalidate collections cache - lookup household to get villageId
-    const [household] = await db.select({ villageId: households.villageId })
+    const [household] = await db.select()
       .from(households)
       .where(eq(households.id, insertCollection.householdId))
       .limit(1);
     
-    if (household?.villageId) {
-      await cache.delete(cacheKeys.wasteCollections(household.villageId));
-      await cache.clear(`collections:${household.villageId}:*`);
-      await cache.delete(cacheKeys.villageStats(household.villageId));
-      await cache.delete(cacheKeys.adminStats());
+    if (household) {
+      // Store location for the first time if not already set
+      if (!household.latitude && !household.longitude && latitude && longitude) {
+        await db.update(households)
+          .set({ 
+            latitude: latitude, 
+            longitude: longitude 
+          })
+          .where(eq(households.id, household.id));
+        
+        // Invalidate household cache
+        await cache.delete(cacheKeys.households(household.villageId));
+        const patterns = [`households:${household.villageId}:*`];
+        for (const pattern of patterns) {
+          await cache.clear(pattern);
+        }
+      }
+
+      if (household.villageId) {
+        await cache.delete(cacheKeys.wasteCollections(household.villageId));
+        await cache.clear(`collections:${household.villageId}:*`);
+        await cache.delete(cacheKeys.villageStats(household.villageId));
+        await cache.delete(cacheKeys.adminStats());
+      }
     }
     
     return collection;

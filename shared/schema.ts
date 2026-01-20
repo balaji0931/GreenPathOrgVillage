@@ -49,6 +49,8 @@ export const households = pgTable("households", {
   qrPrinted: boolean("qr_printed").default(false), // Track if QR code has been printed
   generatorUserId: text("generator_user_id"),
   generatorPassword: text("generator_password"),
+  latitude: decimal("latitude", { precision: 10, scale: 8 }),
+  longitude: decimal("longitude", { precision: 11, scale: 8 }),
   createdAt: timestamp("created_at").defaultNow(),
 }, (table) => [
   index("idx_households_village_ward_status").on(table.villageId, table.ward, table.status),
