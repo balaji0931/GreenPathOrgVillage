@@ -14,6 +14,10 @@ import {
   websiteFeedback,
   contactSubmissions,
   qrCodes,
+  dailyWasteLog,
+  compostProductionLog,
+  dryWasteSales,
+  dryWasteSaleMaterials,
   type Village,
   type User,
   type Household,
@@ -28,6 +32,10 @@ import {
   type WebsiteFeedback,
   type ContactSubmission,
   type QRCode,
+  type DailyWasteLog,
+  type CompostProductionLog,
+  type DryWasteSale,
+  type DryWasteSaleMaterial,
   type InsertVillage,
   type InsertUser,
   type InsertHousehold,
@@ -42,6 +50,10 @@ import {
   type InsertWebsiteFeedback,
   type InsertContactSubmission,
   type InsertQRCode,
+  type InsertDailyWasteLog,
+  type InsertCompostProductionLog,
+  type InsertDryWasteSale,
+  type InsertDryWasteSaleMaterial,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, count, avg, sum, gte, lte, isNotNull, and, or, like, asc, sql, lt, inArray, isNull } from "drizzle-orm";
@@ -220,6 +232,28 @@ export interface IStorage {
   removeVehicleFromVillage(villageId: string, registrationNumber: string): Promise<void>;
   updateVehicleInVillage(villageId: string, registrationNumber: string, updates: { name: string; collectorIds: number[] }): Promise<void>;
   updateCollectorVehicle(collectorId: number, registrationNumber: string | null): Promise<void>;
+
+  // Material & Output Log operations (Manager-only)
+  // Daily Waste Log
+  createDailyWasteLog(log: InsertDailyWasteLog): Promise<DailyWasteLog>;
+  getDailyWasteLogsByVillage(villageId: string, startDate?: string, endDate?: string): Promise<DailyWasteLog[]>;
+  getDailyWasteLogByDate(villageId: string, date: string): Promise<DailyWasteLog | undefined>;
+  updateDailyWasteLog(id: number, updates: Partial<DailyWasteLog>): Promise<DailyWasteLog>;
+  deleteDailyWasteLog(id: number): Promise<void>;
+
+  // Compost Production Log
+  createCompostProductionLog(log: InsertCompostProductionLog): Promise<CompostProductionLog>;
+  getCompostProductionLogsByVillage(villageId: string, startDate?: string, endDate?: string): Promise<CompostProductionLog[]>;
+  getCompostProductionLogById(id: number): Promise<CompostProductionLog | undefined>;
+  updateCompostProductionLog(id: number, updates: Partial<CompostProductionLog>): Promise<CompostProductionLog>;
+  deleteCompostProductionLog(id: number): Promise<void>;
+
+  // Dry Waste Sales
+  createDryWasteSale(sale: InsertDryWasteSale, materials: InsertDryWasteSaleMaterial[]): Promise<DryWasteSale & { materials: DryWasteSaleMaterial[] }>;
+  getDryWasteSalesByVillage(villageId: string, startDate?: string, endDate?: string): Promise<(DryWasteSale & { materials: DryWasteSaleMaterial[] })[]>;
+  getDryWasteSaleById(id: number): Promise<(DryWasteSale & { materials: DryWasteSaleMaterial[] }) | undefined>;
+  updateDryWasteSale(id: number, sale: Partial<DryWasteSale>, materials?: InsertDryWasteSaleMaterial[]): Promise<DryWasteSale & { materials: DryWasteSaleMaterial[] }>;
+  deleteDryWasteSale(id: number): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -3330,6 +3364,223 @@ export class DatabaseStorage implements IStorage {
     await db.update(collectors)
       .set({ assignedVehicle: registrationNumber })
       .where(eq(collectors.id, collectorId));
+  }
+
+  // =====================================================
+  // MATERIAL & OUTPUT LOG OPERATIONS (Manager-only)
+  // =====================================================
+
+  // Daily Waste Log Operations
+  async createDailyWasteLog(log: InsertDailyWasteLog): Promise<DailyWasteLog> {
+    const [result] = await db
+      .insert(dailyWasteLog)
+      .values(log)
+      .returning();
+    return result;
+  }
+
+  async getDailyWasteLogsByVillage(villageId: string, startDate?: string, endDate?: string): Promise<DailyWasteLog[]> {
+    let conditions = [eq(dailyWasteLog.villageId, villageId)];
+    
+    if (startDate) {
+      conditions.push(gte(dailyWasteLog.date, startDate));
+    }
+    if (endDate) {
+      conditions.push(lte(dailyWasteLog.date, endDate));
+    }
+
+    return await db
+      .select()
+      .from(dailyWasteLog)
+      .where(and(...conditions))
+      .orderBy(desc(dailyWasteLog.date));
+  }
+
+  async getDailyWasteLogByDate(villageId: string, date: string): Promise<DailyWasteLog | undefined> {
+    const [result] = await db
+      .select()
+      .from(dailyWasteLog)
+      .where(and(
+        eq(dailyWasteLog.villageId, villageId),
+        eq(dailyWasteLog.date, date)
+      ));
+    return result || undefined;
+  }
+
+  async updateDailyWasteLog(id: number, updates: Partial<DailyWasteLog>): Promise<DailyWasteLog> {
+    const [result] = await db
+      .update(dailyWasteLog)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(dailyWasteLog.id, id))
+      .returning();
+    return result;
+  }
+
+  async deleteDailyWasteLog(id: number): Promise<void> {
+    await db.delete(dailyWasteLog).where(eq(dailyWasteLog.id, id));
+  }
+
+  // Compost Production Log Operations
+  async createCompostProductionLog(log: InsertCompostProductionLog): Promise<CompostProductionLog> {
+    const [result] = await db
+      .insert(compostProductionLog)
+      .values(log)
+      .returning();
+    return result;
+  }
+
+  async getCompostProductionLogsByVillage(villageId: string, startDate?: string, endDate?: string): Promise<CompostProductionLog[]> {
+    let conditions = [eq(compostProductionLog.villageId, villageId)];
+    
+    if (startDate) {
+      conditions.push(gte(compostProductionLog.date, startDate));
+    }
+    if (endDate) {
+      conditions.push(lte(compostProductionLog.date, endDate));
+    }
+
+    return await db
+      .select()
+      .from(compostProductionLog)
+      .where(and(...conditions))
+      .orderBy(desc(compostProductionLog.date));
+  }
+
+  async getCompostProductionLogById(id: number): Promise<CompostProductionLog | undefined> {
+    const [result] = await db
+      .select()
+      .from(compostProductionLog)
+      .where(eq(compostProductionLog.id, id));
+    return result || undefined;
+  }
+
+  async updateCompostProductionLog(id: number, updates: Partial<CompostProductionLog>): Promise<CompostProductionLog> {
+    const [result] = await db
+      .update(compostProductionLog)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(compostProductionLog.id, id))
+      .returning();
+    return result;
+  }
+
+  async deleteCompostProductionLog(id: number): Promise<void> {
+    await db.delete(compostProductionLog).where(eq(compostProductionLog.id, id));
+  }
+
+  // Dry Waste Sales Operations
+  async createDryWasteSale(sale: InsertDryWasteSale, materials: InsertDryWasteSaleMaterial[]): Promise<DryWasteSale & { materials: DryWasteSaleMaterial[] }> {
+    // Calculate total amount from materials
+    const totalAmount = materials.reduce((sum, m) => {
+      const amount = parseFloat(m.amount as string) || (parseFloat(m.quantityKg as string) * parseFloat(m.ratePerKg as string));
+      return sum + amount;
+    }, 0);
+
+    const [createdSale] = await db
+      .insert(dryWasteSales)
+      .values({ ...sale, totalAmount: totalAmount.toFixed(2) })
+      .returning();
+
+    // Insert materials with the sale ID
+    const materialsToInsert = materials.map(m => ({
+      ...m,
+      saleId: createdSale.id,
+      amount: (parseFloat(m.quantityKg as string) * parseFloat(m.ratePerKg as string)).toFixed(2),
+    }));
+
+    const createdMaterials = await db
+      .insert(dryWasteSaleMaterials)
+      .values(materialsToInsert)
+      .returning();
+
+    return { ...createdSale, materials: createdMaterials };
+  }
+
+  async getDryWasteSalesByVillage(villageId: string, startDate?: string, endDate?: string): Promise<(DryWasteSale & { materials: DryWasteSaleMaterial[] })[]> {
+    let conditions = [eq(dryWasteSales.villageId, villageId)];
+    
+    if (startDate) {
+      conditions.push(gte(dryWasteSales.saleDate, startDate));
+    }
+    if (endDate) {
+      conditions.push(lte(dryWasteSales.saleDate, endDate));
+    }
+
+    const sales = await db
+      .select()
+      .from(dryWasteSales)
+      .where(and(...conditions))
+      .orderBy(desc(dryWasteSales.saleDate));
+
+    // Fetch materials for each sale
+    const salesWithMaterials = await Promise.all(
+      sales.map(async (sale) => {
+        const materials = await db
+          .select()
+          .from(dryWasteSaleMaterials)
+          .where(eq(dryWasteSaleMaterials.saleId, sale.id));
+        return { ...sale, materials };
+      })
+    );
+
+    return salesWithMaterials;
+  }
+
+  async getDryWasteSaleById(id: number): Promise<(DryWasteSale & { materials: DryWasteSaleMaterial[] }) | undefined> {
+    const [sale] = await db
+      .select()
+      .from(dryWasteSales)
+      .where(eq(dryWasteSales.id, id));
+
+    if (!sale) return undefined;
+
+    const materials = await db
+      .select()
+      .from(dryWasteSaleMaterials)
+      .where(eq(dryWasteSaleMaterials.saleId, id));
+
+    return { ...sale, materials };
+  }
+
+  async updateDryWasteSale(id: number, saleUpdates: Partial<DryWasteSale>, materials?: InsertDryWasteSaleMaterial[]): Promise<DryWasteSale & { materials: DryWasteSaleMaterial[] }> {
+    let totalAmount = saleUpdates.totalAmount;
+
+    // If materials are provided, recalculate total and replace them
+    if (materials && materials.length > 0) {
+      totalAmount = materials.reduce((sum, m) => {
+        const amount = parseFloat(m.quantityKg as string) * parseFloat(m.ratePerKg as string);
+        return sum + amount;
+      }, 0).toFixed(2);
+
+      // Delete old materials
+      await db.delete(dryWasteSaleMaterials).where(eq(dryWasteSaleMaterials.saleId, id));
+
+      // Insert new materials
+      const materialsToInsert = materials.map(m => ({
+        ...m,
+        saleId: id,
+        amount: (parseFloat(m.quantityKg as string) * parseFloat(m.ratePerKg as string)).toFixed(2),
+      }));
+
+      await db.insert(dryWasteSaleMaterials).values(materialsToInsert);
+    }
+
+    const [updatedSale] = await db
+      .update(dryWasteSales)
+      .set({ ...saleUpdates, totalAmount, updatedAt: new Date() })
+      .where(eq(dryWasteSales.id, id))
+      .returning();
+
+    const updatedMaterials = await db
+      .select()
+      .from(dryWasteSaleMaterials)
+      .where(eq(dryWasteSaleMaterials.saleId, id));
+
+    return { ...updatedSale, materials: updatedMaterials };
+  }
+
+  async deleteDryWasteSale(id: number): Promise<void> {
+    // Materials will be deleted by cascade
+    await db.delete(dryWasteSales).where(eq(dryWasteSales.id, id));
   }
 }
 

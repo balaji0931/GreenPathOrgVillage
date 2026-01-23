@@ -65,8 +65,10 @@ import {
   CreditCard,
   XCircle,
   ArrowLeft,
-  ArrowRight
+  ArrowRight,
+  ClipboardList,
 } from "lucide-react";
+import { MaterialLog } from "@/components/manager/MaterialLog";
 import { cn } from "@/lib/utils";
 
 interface Collector {
@@ -964,6 +966,7 @@ export default function ManagerDashboard() {
                 { id: "collectors", icon: Users, class: "manager-collectors-tab" },
                 { id: "households", icon: Home, class: "manager-households-tab" },
                 { id: "collections", icon: Package, class: "manager-collections-tab" },
+                { id: "material-log", icon: ClipboardList, class: "manager-material-log-tab" },
                 { id: "issues", icon: AlertTriangle, class: "manager-issues-tab" },
                 { id: "reports", icon: BarChart3, class: "manager-reports-tab" },
                 { id: "announcements", icon: Bell, class: "manager-announcements-tab" },
@@ -993,6 +996,7 @@ export default function ManagerDashboard() {
                   { id: "collectors", icon: Users, label: "WorkForce", class: "manager-collectors-tab" },
                   { id: "households", icon: Home, label: t("navigation.households"), class: "manager-households-tab" },
                   { id: "collections", icon: Package, label: t("navigation.collections"), class: "manager-collections-tab" },
+                  { id: "material-log", icon: ClipboardList, label: "Material Log", class: "manager-material-log-tab" },
                   { id: "issues", icon: AlertTriangle, label: t("navigation.issues"), class: "manager-issues-tab" },
                   { id: "reports", icon: BarChart3, label: t("navigation.reports"), class: "manager-reports-tab" },
                   { id: "announcements", icon: Bell, label: t("navigation.announcements"), class: "manager-announcements-tab" },
@@ -1041,49 +1045,49 @@ export default function ManagerDashboard() {
                     description={t("reports.today")}
                   />
                   <StatCard
-                  title={t("issues.openIssues")}
-                  value={stats?.openIssues || 0}
-                  icon={AlertTriangle}
-                  description={t("app.pending")}
-                />
-              </div>
+                    title={t("issues.openIssues")}
+                    value={stats?.openIssues || 0}
+                    icon={AlertTriangle}
+                    description={t("app.pending")}
+                  />
+                </div>
 
               {/* Announcements Section */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Bell className="w-5 h-5 text-blue-600" />
-                    {t("app.recentActivity")} {t("announcements.title")}
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  {announcements.length > 0 ? (
-                    <div className="space-y-3">
-                      {announcements.slice(0, 3).map((announcement: any) => (
-                        <div key={announcement.id} className="p-3 bg-blue-50 rounded-lg border-l-4 border-blue-400">
-                          <p className="text-sm text-gray-800 font-medium">
-                            {announcement.message}
-                          </p>
-                          <div className="flex justify-between items-center mt-2">
-                            <Badge variant="secondary" className="text-xs">
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Bell className="w-5 h-5 text-blue-600" />
+                      {t("app.recentActivity")} {t("announcements.title")}
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    {announcements.length > 0 ? (
+                      <div className="space-y-3">
+                        {announcements.slice(0, 3).map((announcement: any) => (
+                          <div key={announcement.id} className="p-3 bg-blue-50 rounded-lg border-l-4 border-blue-400">
+                            <p className="text-sm text-gray-800 font-medium">
+                              {announcement.message}
+                            </p>
+                            <div className="flex justify-between items-center mt-2">
+                              <Badge variant="secondary" className="text-xs">
                                 {announcement.targetAudience}
                               </Badge>
                               <p className="text-xs text-gray-500">
-                              {new Date(announcement.createdAt).toLocaleDateString()}
+                                {new Date(announcement.createdAt).toLocaleDateString()}
                               </p>
+                            </div>
                           </div>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
+                        ))}
+                      </div>
+                    ) : (
                       <p className="text-center text-muted-foreground py-4">
                         {t("announcements.checkLater")}
                       </p>
-                  )}
-                </CardContent>
-              </Card>
-            </div>
-          )}
+                    )}
+                  </CardContent>
+                </Card>
+              </div>
+            )}
 
             {/* Collectors Tab */}
             {activeTab === "collectors" && (
@@ -2249,7 +2253,7 @@ export default function ManagerDashboard() {
               </TabsList>
 
               <TabsContent value="settings" className="space-y-4 mt-4">
-                {/* User Info */}
+            {/* User Info */}
             <Card>
               <CardHeader className="pb-3 items-center">
                 <CardTitle className="flex items-center text-2xl font-bold">
@@ -2276,41 +2280,41 @@ export default function ManagerDashboard() {
                 </div>
               </CardContent>
             </Card>
-                <Card>
-                  <CardHeader className="pb-3">
-                    <CardTitle className="flex items-center text-lg">
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="flex items-center text-lg">
                       <User className="w-5 h-5 mr-2" />
-                      {t("navigation.settings")}
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-3">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setShowPasswordDialog(true)}
+                  {t("navigation.settings")}
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowPasswordDialog(true)}
                       className="flex items-center justify-center gap-1 sm:gap-2 text-xs sm:text-sm w-full"
-                    >
-                      <Settings className="h-3 w-3 sm:h-4 sm:w-4" />
+              >
+                <Settings className="h-3 w-3 sm:h-4 sm:w-4" />
                       <span>{t("app.changePassword")}</span>
-                    </Button>
+              </Button>
 
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => logoutMutation.mutate()}
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => logoutMutation.mutate()}
                       className="flex items-center justify-center gap-1 sm:gap-2 text-xs sm:text-sm w-full"
-                    >
-                      <LogOut className="h-3 w-3 sm:h-4 sm:w-4" />
+              >
+                <LogOut className="h-3 w-3 sm:h-4 sm:w-4" />
                       <span>{t("auth.logout")}</span>
-                    </Button>
-                  </CardContent>
-                </Card>
+              </Button>
+              </CardContent>
+            </Card>
               </TabsContent>
 
               <TabsContent value="wards" className="space-y-4 mt-4">
                 <div className="flex items-center justify-center gap-2 font-bold text-xl">
                         Ward Management
-                </div>
+          </div>
                 <Card>
                   <CardHeader>
                     <CardTitle className="flex items-center justify-between">
@@ -2509,7 +2513,12 @@ export default function ManagerDashboard() {
               </TabsContent>
             </Tabs>
           </div>
-        )}
+            )}
+
+            {/* Material Log Tab */}
+            {activeTab === "material-log" && (
+              <MaterialLog />
+            )}
 
             {/* Issues Tab */}
             {activeTab === "issues" && (
@@ -3100,7 +3109,7 @@ export default function ManagerDashboard() {
                               value={filters.date || new Date().toISOString().split("T")[0]}
                               onChange={(e) => updateFilter("date", e.target.value)}
                             />
-                          </div>
+                        </div>
                       </div>
                     </Card>
 
@@ -3439,8 +3448,8 @@ export default function ManagerDashboard() {
                                 // Find collections for this vehicle by looking at collectors assigned to it
                                 const vehicleCollections = allCollections.filter(c => 
                                   vehicle.collectorIds.includes(c.collectorId) &&
-                                  new Date(c.collectionDate).toDateString() === new Date(targetDate).toDateString()
-                                );
+                                new Date(c.collectionDate).toDateString() === new Date(targetDate).toDateString()
+                              );
 
                                 const collectorNames = collectors
                                   .filter(c => vehicle.collectorIds.includes(c.id))
@@ -3448,22 +3457,22 @@ export default function ManagerDashboard() {
                                   .join(", ");
 
                                 const sortedCollections = [...vehicleCollections].sort((a, b) => 
-                                  new Date(a.collectionDate).getTime() - new Date(b.collectionDate).getTime()
-                                );
+                                new Date(a.collectionDate).getTime() - new Date(b.collectionDate).getTime()
+                              );
                                 
-                                const startTime = sortedCollections.length > 0 
-                                  ? new Date(sortedCollections[0].collectionDate).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true })
+                              const startTime = sortedCollections.length > 0 
+                                ? new Date(sortedCollections[0].collectionDate).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true })
                                   : "N/A";
-                                const endTime = sortedCollections.length > 0 
-                                  ? new Date(sortedCollections[sortedCollections.length - 1].collectionDate).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true })
+                              const endTime = sortedCollections.length > 0 
+                                ? new Date(sortedCollections[sortedCollections.length - 1].collectionDate).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true })
                                   : "N/A";
 
-                                return (
+                              return (
                                   <div key={vehicle.registrationNumber} className="p-1 bg-gray-50 rounded-lg">
-                                    <div className="flex items-center justify-between mb-2">
+                                  <div className="flex items-center justify-between mb-2">
                                       <h4 className="text-sm font-bold">{vehicle.name}</h4>
                                       <Badge variant="outline">{vehicleCollections.length} collections</Badge>
-                                    </div>
+                                  </div>
                                     <div className="text-xs text-muted-foreground mb-2">
                                       <span className="font-bold">Collectors:</span> {collectorNames || "None assigned"}
                                     </div>
@@ -3471,8 +3480,8 @@ export default function ManagerDashboard() {
                                       <span>Start: {startTime}</span>
                                       <span>End: {endTime}</span>
                                     </div>
-                                  </div>
-                                );
+                                </div>
+                              );
                               });
                             })()}
                           </div>

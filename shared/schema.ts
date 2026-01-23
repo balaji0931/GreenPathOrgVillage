@@ -421,3 +421,139 @@ export type MonthlyVillageStats = typeof monthlyVillageStats.$inferSelect;
 export type WebsiteFeedback = typeof websiteFeedback.$inferSelect;
 export type ContactSubmission = typeof contactSubmissions.$inferSelect;
 export type QRCode = typeof qrCodes.$inferSelect;
+
+// =====================================================
+// MATERIAL & OUTPUT LOG TABLES (Manager-only, Aggregated)
+// These tables are completely separate from household collection data
+// =====================================================
+
+// Daily Waste Quantity Log - One entry per date per village
+export const dailyWasteLog = pgTable("daily_waste_log", {
+  id: serial("id").primaryKey(),
+  villageId: text("village_id").notNull().references(() => villages.villageId),
+  date: date("date").notNull(),
+  wetWasteKg: decimal("wet_waste_kg", { precision: 10, scale: 2 }).default("0"),
+  wetWastePhotoUrl: text("wet_waste_photo_url"),
+  dryWasteKg: decimal("dry_waste_kg", { precision: 10, scale: 2 }).default("0"),
+  dryWastePhotoUrl: text("dry_waste_photo_url"),
+  rejectedWasteKg: decimal("rejected_waste_kg", { precision: 10, scale: 2 }).default("0"),
+  rejectedWastePhotoUrl: text("rejected_waste_photo_url"),
+  sanitaryWasteKg: decimal("sanitary_waste_kg", { precision: 10, scale: 2 }).default("0"),
+  sanitaryWastePhotoUrl: text("sanitary_waste_photo_url"),
+  remarks: text("remarks"),
+  createdBy: text("created_by").notNull(), // Manager user ID
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => [
+  uniqueIndex("idx_daily_waste_log_village_date").on(table.villageId, table.date),
+  index("idx_daily_waste_log_date").on(table.date),
+]);
+
+// Compost Production Log - Event-based logging
+export const compostProductionLog = pgTable("compost_production_log", {
+  id: serial("id").primaryKey(),
+  villageId: text("village_id").notNull().references(() => villages.villageId),
+  date: date("date").notNull(),
+  quantityKg: decimal("quantity_kg", { precision: 10, scale: 2 }).notNull(),
+  compostStatus: text("compost_status").notNull(), // 'good', 'average', 'bad'
+  photoUrl: text("photo_url").notNull(), // Mandatory
+  remarks: text("remarks"),
+  createdBy: text("created_by").notNull(), // Manager user ID
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => [
+  index("idx_compost_log_village_date").on(table.villageId, table.date),
+  index("idx_compost_log_date").on(table.date),
+]);
+
+// Dry Waste Sales Log - Parent table
+export const dryWasteSales = pgTable("dry_waste_sales", {
+  id: serial("id").primaryKey(),
+  villageId: text("village_id").notNull().references(() => villages.villageId),
+  saleDate: date("sale_date").notNull(),
+  totalAmount: decimal("total_amount", { precision: 12, scale: 2 }).default("0"), // Auto-calculated sum
+  receiptImageUrl: text("receipt_image_url"), // Optional
+  remarks: text("remarks"),
+  createdBy: text("created_by").notNull(), // Manager user ID
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => [
+  index("idx_dry_waste_sales_village_date").on(table.villageId, table.saleDate),
+  index("idx_dry_waste_sales_date").on(table.saleDate),
+]);
+
+// Dry Waste Sale Materials - Child table (multiple per sale)
+export const dryWasteSaleMaterials = pgTable("dry_waste_sale_materials", {
+  id: serial("id").primaryKey(),
+  saleId: integer("sale_id").notNull().references(() => dryWasteSales.id, { onDelete: "cascade" }),
+  materialType: text("material_type").notNull(), // From dropdown list
+  quantityKg: decimal("quantity_kg", { precision: 10, scale: 2 }).notNull(),
+  ratePerKg: decimal("rate_per_kg", { precision: 10, scale: 2 }).notNull(),
+  amount: decimal("amount", { precision: 12, scale: 2 }).notNull(), // Auto-calculated: quantity * rate
+}, (table) => [
+  index("idx_sale_materials_sale_id").on(table.saleId),
+]);
+
+// Relations for Material & Output Log tables
+export const dailyWasteLogRelations = relations(dailyWasteLog, ({ one }) => ({
+  village: one(villages, {
+    fields: [dailyWasteLog.villageId],
+    references: [villages.villageId],
+  }),
+}));
+
+export const compostProductionLogRelations = relations(compostProductionLog, ({ one }) => ({
+  village: one(villages, {
+    fields: [compostProductionLog.villageId],
+    references: [villages.villageId],
+  }),
+}));
+
+export const dryWasteSalesRelations = relations(dryWasteSales, ({ one, many }) => ({
+  village: one(villages, {
+    fields: [dryWasteSales.villageId],
+    references: [villages.villageId],
+  }),
+  materials: many(dryWasteSaleMaterials),
+}));
+
+export const dryWasteSaleMaterialsRelations = relations(dryWasteSaleMaterials, ({ one }) => ({
+  sale: one(dryWasteSales, {
+    fields: [dryWasteSaleMaterials.saleId],
+    references: [dryWasteSales.id],
+  }),
+}));
+
+// Insert schemas for Material & Output Log
+export const insertDailyWasteLogSchema = createInsertSchema(dailyWasteLog).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertCompostProductionLogSchema = createInsertSchema(compostProductionLog).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertDryWasteSaleSchema = createInsertSchema(dryWasteSales).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertDryWasteSaleMaterialSchema = createInsertSchema(dryWasteSaleMaterials).omit({
+  id: true,
+});
+
+// Types for Material & Output Log
+export type InsertDailyWasteLog = z.infer<typeof insertDailyWasteLogSchema>;
+export type InsertCompostProductionLog = z.infer<typeof insertCompostProductionLogSchema>;
+export type InsertDryWasteSale = z.infer<typeof insertDryWasteSaleSchema>;
+export type InsertDryWasteSaleMaterial = z.infer<typeof insertDryWasteSaleMaterialSchema>;
+
+export type DailyWasteLog = typeof dailyWasteLog.$inferSelect;
+export type CompostProductionLog = typeof compostProductionLog.$inferSelect;
+export type DryWasteSale = typeof dryWasteSales.$inferSelect;
+export type DryWasteSaleMaterial = typeof dryWasteSaleMaterials.$inferSelect;
