@@ -410,11 +410,11 @@ export default function GeneratorDashboard() {
 
   return (
     <div className="min-h-screen bg-gray-50 max-w-md mx-auto relative">
-      {/* Dashboard Tour Component */}
+      {/* Dashboard Tour Component
       <DashboardTour 
         userRole="generator" 
         shouldShowWelcome={user?.isFirstLogin}
-      />
+      /> */}
       
       {/* Mobile Header */}
       <div className="bg-green-600 text-white px-4 py-3 sticky top-0 z-10">

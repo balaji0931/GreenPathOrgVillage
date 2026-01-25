@@ -70,7 +70,7 @@ interface DryWasteSaleMaterial {
 interface DryWasteSale {
   id: number;
   villageId: string;
-  date: string;
+  saleDate: string;
   buyerName: string;
   buyerPhone?: string;
   totalQuantityKg: string;
@@ -242,7 +242,7 @@ export function MaterialLog() {
   };
 
   const LogTypeSelector = () => (
-    <div className="flex gap-2 p-2 bg-gray-100 rounded-2xl mb-4">
+    <div className="flex gap-2 bg-gray-100 rounded-2xl mb-4">
       {[
         { id: "daily" as LogType, icon: Package, label: "Daily Waste" },
         { id: "compost" as LogType, icon: Leaf, label: "Compost" },
@@ -258,7 +258,6 @@ export function MaterialLog() {
               : "text-gray-500 hover:bg-white/50"
           )}
         >
-          <Icon className="h-5 w-5" />
           <span className="text-xs font-medium">{label}</span>
         </button>
       ))}
@@ -266,9 +265,9 @@ export function MaterialLog() {
   );
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-1">
       <div className="flex items-center justify-between">
-        <h2 className="text-xl font-bold text-gray-900">Material & Output Log</h2>
+        <h2 className="text-xl font-bold text-gray-900">Material Log</h2>
         <Button
           onClick={() => {
             setEditingItem(null);
@@ -434,7 +433,7 @@ function PhotoUploadButton({
   };
 
   return (
-    <div className="space-y-2">
+    <div className="space-y-1">
       <Label className="text-sm font-medium">
         {label} {required && <span className="text-red-500">*</span>}
       </Label>
@@ -973,18 +972,16 @@ function DailyWasteList({
         return (
           <Card key={log.id} className="overflow-hidden">
             <div
-              className="flex items-center justify-between p-3 cursor-pointer hover:bg-gray-50"
+              className="flex items-center justify-between p-1 sm:p-3 cursor-pointer hover:bg-gray-50"
               onClick={() => setExpandedId(isExpanded ? null : log.id)}
             >
-              <div className="flex items-center gap-2 text-sm text-gray-700">
-                <Calendar className="h-4 w-4 text-gray-400" />
+              <div className="flex items-center gap-2 text-sm pl-1 text-gray-700">
                 <span className="font-medium">{formatDate(log.date)}</span>
               </div>
 
               <div className="flex items-center gap-3">
                 <div className="text-center">
-                  <span className="text-lg font-bold text-green-600">{total} kg</span>
-                  <span className="text-xs text-gray-500 ml-1">total</span>
+                  <span className="text-sm sm:text-lg font-bold text-green-600">{total} kg</span>
                 </div>
 
                 <div className="flex gap-1" onClick={(e) => e.stopPropagation()}>
@@ -1134,17 +1131,16 @@ function CompostList({
         return (
           <Card key={log.id} className="overflow-hidden">
             <div
-              className="flex items-center justify-between p-3 cursor-pointer hover:bg-gray-50"
+              className="flex items-center justify-between p-1 sm:p-3 cursor-pointer hover:bg-gray-50"
               onClick={() => setExpandedId(isExpanded ? null : log.id)}
             >
-              <div className="flex items-center gap-2 text-sm text-gray-700">
-                <Calendar className="h-4 w-4 text-gray-400" />
+              <div className="flex items-center gap-2 pl-1 text-sm text-gray-700">
                 <span className="font-medium">{formatDate(log.date)}</span>
               </div>
 
               <div className="flex items-center gap-3">
                 <div className="text-center">
-                  <span className="text-lg font-bold text-green-600">{log.quantityKg} kg</span>
+                  <span className="text-sm sm:text-lg font-bold text-green-600">{log.quantityKg} kg</span>
                 </div>
 
                 <div className="flex gap-1" onClick={(e) => e.stopPropagation()}>
@@ -1246,18 +1242,17 @@ function SalesList({
         return (
           <Card key={sale.id} className="overflow-hidden">
             <div
-              className="flex items-center justify-between p-3 cursor-pointer hover:bg-gray-50"
+              className="flex items-center justify-between p-1 sm:p-2 cursor-pointer hover:bg-gray-50"
               onClick={() => setExpandedId(isExpanded ? null : sale.id)}
             >
-              <div className="flex items-center gap-2 text-sm text-gray-700">
-                <Calendar className="h-4 w-4 text-gray-400" />
-                <span className="font-medium">{formatDate(sale.date)}</span>
+              <div className="flex items-center gap-2 pl-1 text-sm text-gray-700">
+                <span className="font-medium">{formatDate(sale.saleDate)}</span>
               </div>
 
               <div className="flex items-center gap-3">
                 <div className="text-right">
                   <div className="text-sm text-gray-600">{totalKg} kg</div>
-                  <div className="text-lg font-bold text-green-600">₹{totalAmount}</div>
+                  <div className="text-sm sm:text-lg font-bold text-green-600">₹{totalAmount}</div>
                 </div>
 
                 <div className="flex gap-1" onClick={(e) => e.stopPropagation()}>

@@ -924,22 +924,34 @@ export default function ManagerDashboard() {
   return (
     <>
       {/* Dashboard Tour Component */}
-      <DashboardTour 
+      {/* <DashboardTour 
         userRole="manager" 
         shouldShowWelcome={user?.isFirstLogin}
-      />
+      /> */}
       
       
       <div className="min-h-screen flex flex-col bg-gray-50">
         {/* Top Navbar */}
-        <div className="bg-green-600 text-white px-4 py-3 sticky top-0 z-10">
+        <div className="bg-green-600 text-white px-2 sm:px-7 py-1 sm:py-2 sticky top-0 z-10">
           <div className="flex items-center justify-between">
             <div className="flex items-center">
              <img src="/logos/logo-dark.svg" alt="GreenPath" className="w-auto h-9" />
           </div>
             <div className="flex items-center space-x-1">
-              <TourButton className="text-black bg-white hover:bg-white"/>
-              <LanguageSwitcher />
+              {/* <TourButton className="text-black bg-white hover:bg-white"/> */}
+            
+                <button
+                  key={'announcements'}
+                  onClick={() => setActiveTab('announcements')}
+                  className={cn(
+                    "flex-1 flex items-center justify-center py-3 transition-colors",
+                    activeTab === 'announcements'
+                      ? "text-blue-600 bg-blue-50 p-2 rounded-md"
+                      : "text-black p-2 bg-white rounded-md",
+                  )}
+                >
+                  <Bell className="h-5 w-5" strokeWidth={3}/>
+                </button>
                 <button
                   key={'settings'}
                   onClick={() => setActiveTab('settings')}
@@ -969,7 +981,7 @@ export default function ManagerDashboard() {
                 { id: "material-log", icon: ClipboardList, class: "manager-material-log-tab" },
                 { id: "issues", icon: AlertTriangle, class: "manager-issues-tab" },
                 { id: "reports", icon: BarChart3, class: "manager-reports-tab" },
-                { id: "announcements", icon: Bell, class: "manager-announcements-tab" },
+                // { id: "announcements", icon: Bell, class: "manager-announcements-tab" },
               ].map(({ id, icon: Icon, class: className }) => (
                 <button
                   key={id}
@@ -1021,7 +1033,7 @@ export default function ManagerDashboard() {
           </div>
 
           {/* Main Content Area */}
-          <div className="flex-1 p-3 sm:p-6 overflow-auto pb-20 md:pb-6">
+          <div className="flex-1 p-2 sm:p-6 overflow-auto pb-20 md:pb-6">
             {/* Overview Tab */}
             {activeTab === "overview" && (
               <div className="space-y-6">
@@ -2256,6 +2268,7 @@ export default function ManagerDashboard() {
             {/* User Info */}
             <Card>
               <CardHeader className="pb-3 items-center">
+                
                 <CardTitle className="flex items-center text-2xl font-bold">
                   <User className="w-6 h-6 mr-2" strokeWidth={3}/>
                   User Info
@@ -2288,6 +2301,11 @@ export default function ManagerDashboard() {
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
+              <div className="flex justify-center items-center space-x-3">
+                <h2 className="font-bold">Select Language: </h2>
+                <LanguageSwitcher />
+              </div>
+              
               <Button
                 variant="outline"
                 size="sm"
@@ -3555,7 +3573,7 @@ export default function ManagerDashboard() {
 
                 <Card>
                   <CardHeader>
-                    <CardTitle>Send New Announcement</CardTitle>
+                    <CardTitle>Announcement</CardTitle>
                   </CardHeader>
                   <CardContent>
                     <form

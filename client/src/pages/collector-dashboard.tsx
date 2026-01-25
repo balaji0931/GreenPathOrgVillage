@@ -847,11 +847,11 @@ export default function CollectorDashboard() {
 
   return (
     <div className="min-h-screen bg-gray-50 max-w-md mx-auto relative">
-      {/* Dashboard Tour Component */}
+      {/* Dashboard Tour Component
       <DashboardTour 
         userRole="collector" 
         shouldShowWelcome={user?.isFirstLogin}
-      />
+      /> */}
       
       {/* Mobile Header */}
       <div className="bg-green-600 text-white p-3 sticky top-0 z-10 ">
