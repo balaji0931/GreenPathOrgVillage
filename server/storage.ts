@@ -1132,8 +1132,7 @@ export class DatabaseStorage implements IStorage {
       .innerJoin(households, eq(wasteCollections.householdId, households.id))
       .innerJoin(collectors, eq(wasteCollections.collectorId, collectors.id))
       .where(and(...conditions))
-      .orderBy(desc(wasteCollections.collectionDate))
-      .limit(500);
+      .orderBy(desc(wasteCollections.collectionDate));
   }
 
   async getCollectionsByVillageWithDetailsPaginated(villageId: string, options: {

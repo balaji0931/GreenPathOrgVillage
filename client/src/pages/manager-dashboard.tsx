@@ -165,6 +165,207 @@ interface FilterState {
   collector: string;
 }
 
+// Lazy-loading household collection card - fetches collections only when clicked
+const HouseholdCollectionCard = ({ 
+  household, 
+  dateFilter 
+}: { 
+  household: Household; 
+  dateFilter: string;
+}) => {
+  const [open, setOpen] = useState(false);
+  const { t } = useTranslation();
+  
+  const { data: householdCollections = [], isLoading: collectionsLoading } = useQuery<WasteCollection[]>({
+    queryKey: ["/api/waste-collections/household", household.uid],
+    queryFn: async () => {
+      const response = await fetch(`/api/waste-collections/household/${household.uid}`, { credentials: "include" });
+      if (!response.ok) throw new Error("Failed to fetch collections");
+      return response.json();
+    },
+    enabled: open,
+  });
+  
+  const filteredCollections = dateFilter 
+    ? householdCollections.filter(c => {
+        const collectionDate = new Date(c.collectionDate);
+        return collectionDate.toDateString() === new Date(dateFilter).toDateString();
+      })
+    : householdCollections;
+  
+  const sortedCollections = [...filteredCollections].sort((a, b) => 
+    new Date(b.collectionDate).getTime() - new Date(a.collectionDate).getTime()
+  );
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <Card className="hover:shadow-md transition-shadow cursor-pointer">
+          <CardContent className="p-3 sm:p-4">
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex-1 min-w-0">
+                <h3 className="font-semibold text-sm sm:text-base truncate">
+                  {household.headName}
+                </h3>
+                <p className="text-xs sm:text-sm text-muted-foreground truncate">
+                  {household.uid} • House: {household.houseNumber}
+                </p>
+              </div>
+              <Badge variant="outline" className="text-xs whitespace-nowrap">
+                Click to view
+              </Badge>
+            </div>
+          </CardContent>
+        </Card>
+      </DialogTrigger>
+
+      <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>Collection Details - {household.headName}</DialogTitle>
+        </DialogHeader>
+        <div className="space-y-4">
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <Label>Household ID</Label>
+              <p className="font-medium">{household.uid}</p>
+            </div>
+            <div>
+              <Label>House Number</Label>
+              <p className="font-medium">{household.houseNumber}</p>
+            </div>
+          </div>
+
+          {collectionsLoading ? (
+            <div className="text-center py-8">
+              <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full mx-auto mb-3"></div>
+              <p className="text-muted-foreground">Loading collections...</p>
+            </div>
+          ) : sortedCollections.length > 0 ? (
+            <div className="space-y-3">
+              {sortedCollections.map((collection) => (
+                <Card key={collection.id}>
+                  <CardContent className="p-4">
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between">
+                        <h4 className="font-medium">Collection Details</h4>
+                        <div className="flex items-center gap-2">
+                          <Badge variant="outline">
+                            {new Date(collection.collectionDate).toLocaleDateString()}
+                          </Badge>
+                          <Badge variant={collection.status === "collected" ? "default" : "destructive"}>
+                            {collection.status || "collected"}
+                          </Badge>
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-4 text-sm">
+                        <div>
+                          <span className="text-muted-foreground">Collector:</span> {collection.collectorName || "Unknown"}
+                        </div>
+                        <div>
+                          <span className="text-muted-foreground">Time:</span> {new Date(collection.collectionDate).toLocaleTimeString()}
+                        </div>
+                      </div>
+
+                      <div className="border-t pt-3">
+                        <h5 className="font-medium text-sm mb-2">Ratings:</h5>
+                        <div className="space-y-2">
+                          <div className="flex items-center justify-between p-2 bg-gray-50 rounded">
+                            <span className="text-sm font-medium">Segregation Rating:</span>
+                            <div className="flex items-center gap-1">
+                              {Array.from({ length: 5 }).map((_, i) => (
+                                <Star
+                                  key={i}
+                                  className={`h-4 w-4 ${i < (collection.segregationRating || 0) ? "fill-yellow-400 text-yellow-400" : "text-gray-300"}`}
+                                />
+                              ))}
+                              <span className="ml-2 text-sm font-bold">
+                                ({collection.segregationRating || 0}/5)
+                              </span>
+                            </div>
+                          </div>
+
+                          {collection.plasticRating && (
+                            <div className="flex items-center justify-between p-2 bg-gray-50 rounded">
+                              <span className="text-sm font-medium">Plastic Rating:</span>
+                              <div className="flex items-center gap-1">
+                                {Array.from({ length: 5 }).map((_, i) => (
+                                  <Star
+                                    key={i}
+                                    className={`h-4 w-4 ${i < (collection.plasticRating || 0) ? "fill-blue-400 text-blue-400" : "text-gray-300"}`}
+                                  />
+                                ))}
+                                <span className="ml-2 text-sm font-bold">
+                                  ({collection.plasticRating}/5)
+                                </span>
+                              </div>
+                            </div>
+                          )}
+
+                          {collection.observations && (
+                            <div className="p-2 bg-blue-50 rounded">
+                              <span className="text-sm font-medium block mb-1">Observations:</span>
+                              <p className="text-sm text-gray-700">"{collection.observations}"</p>
+                            </div>
+                          )}
+
+                          {collection.remarks && (
+                            <div className="p-2 bg-green-50 rounded">
+                              <span className="text-sm font-medium block mb-1">Remarks:</span>
+                              <p className="text-sm text-gray-700">"{collection.remarks}"</p>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
+                      {(collection.photoUrl || collection.voiceUrl) && (
+                        <div className="space-y-3 pt-3 border-t">
+                          {collection.photoUrl && (
+                            <div className="space-y-2">
+                              <Label className="text-sm font-medium">Collection Photo:</Label>
+                              <div className="border rounded-lg overflow-hidden bg-gray-50">
+                                <img
+                                  src={collection.photoUrl}
+                                  alt="Collection photo"
+                                  className="w-full max-h-32 object-contain"
+                                  onError={(e) => {
+                                    e.currentTarget.style.display = 'none';
+                                  }}
+                                />
+                              </div>
+                            </div>
+                          )}
+                          {collection.voiceUrl && (
+                            <div className="space-y-2">
+                              <Label className="text-sm font-medium">Voice Recording:</Label>
+                              <audio controls className="w-full h-10" preload="metadata">
+                                <source src={collection.voiceUrl} type="audio/mpeg" />
+                                <source src={collection.voiceUrl} type="audio/wav" />
+                                Your browser does not support the audio element.
+                              </audio>
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-8">
+              <Package className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+              <p className="text-muted-foreground">
+                {dateFilter ? `No collections for ${new Date(dateFilter).toLocaleDateString()}` : "No collections recorded"}
+              </p>
+            </div>
+          )}
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+};
+
 // Simple dialog components
 const CreateCollectorDialog = ({ villageId }: { villageId: string }) => {
   const [open, setOpen] = useState(false);
@@ -283,6 +484,9 @@ export default function ManagerDashboard() {
     collector: "all"
   });
 
+  // Search input for collections tab
+  const [collectionsSearchInput, setCollectionsSearchInput] = useState("");
+
   // Excel upload state
   const [showWardForm, setShowWardForm] = useState(false);
   const [newWard, setNewWard] = useState("");
@@ -296,6 +500,9 @@ export default function ManagerDashboard() {
   const [selectedHousehold, setSelectedHousehold] = useState<Household | null>(null);
   const [householdSearch, setHouseholdSearch] = useState("");
   const [wardFilter, setWardFilter] = useState("all");
+  
+  // UI-only pagination for households in collections tab (limit 50 at a time)
+  const [collectionsHouseholdsLimit, setCollectionsHouseholdsLimit] = useState(50);
 
   // Vehicle Management State
   const [showVehicleForm, setShowVehicleForm] = useState(false);
@@ -333,60 +540,28 @@ export default function ManagerDashboard() {
     enabled: !!user?.villageId,
   });
 
-  // Paginated households query with infinite scroll support
-  const {
-    data: householdsData,
-    fetchNextPage: fetchNextHouseholdsPage,
-    hasNextPage: hasNextHouseholdsPage,
-    isFetchingNextPage: isFetchingNextHouseholdsPage,
-  } = useInfiniteQuery<PaginatedResponse<Household>>({
-    queryKey: ["/api/households/paginated", user?.villageId],
-    queryFn: async ({ pageParam = 1 }) => {
-      const response = await fetch(
-        `/api/households/paginated?page=${pageParam}&limit=1500`,
-        { credentials: "include" }
-      );
-      return response.json();
-    },
-    getNextPageParam: (lastPage) =>
-      lastPage.page < lastPage.totalPages ? lastPage.page + 1 : undefined,
-    initialPageParam: 1,
+  // Fetch ALL households at once (no pagination) for accurate totals
+  const { data: households = [] } = useQuery<Household[]>({
+    queryKey: ["/api/households", user?.villageId],
     enabled: !!user?.villageId,
   });
 
-  // Flatten households from all pages
-  const households = householdsData?.pages.flatMap((page) => page.data) ?? [];
-  const totalHouseholdsCount = householdsData?.pages[0]?.total ?? 0;
+  // Total households count is the actual length since we fetch all
+  const totalHouseholdsCount = households.length;
 
   const { data: collectorStats = [] } = useQuery<CollectorStats[]>({
     queryKey: ["/api/collectors/stats", user?.villageId],
     enabled: !!user?.villageId,
   });
 
-  // Paginated waste collections query with infinite scroll support
-  const {
-    data: collectionsData,
-    fetchNextPage: fetchNextCollectionsPage,
-    hasNextPage: hasNextCollectionsPage,
-    isFetchingNextPage: isFetchingNextCollectionsPage,
-  } = useInfiniteQuery<PaginatedResponse<WasteCollection>>({
-    queryKey: ["/api/waste-collections/village/paginated", user?.villageId],
-    queryFn: async ({ pageParam = 1 }) => {
-      const response = await fetch(
-        `/api/waste-collections/village/paginated?page=${pageParam}&limit=5000`,
-        { credentials: "include" }
-      );
-      return response.json();
-    },
-    getNextPageParam: (lastPage) =>
-      lastPage.page < lastPage.totalPages ? lastPage.page + 1 : undefined,
-    initialPageParam: 1,
+  // Fetch ALL waste collections at once (no pagination) for accurate aggregates and reports
+  const { data: allCollections = [] } = useQuery<WasteCollection[]>({
+    queryKey: ["/api/waste-collections/village", user?.villageId],
     enabled: !!user?.villageId,
   });
 
-  // Flatten collections from all pages
-  const allCollections = collectionsData?.pages.flatMap((page) => page.data) ?? [];
-  const totalCollectionsCount = collectionsData?.pages[0]?.total ?? 0;
+  // Total collections count is the actual length since we fetch all
+  const totalCollectionsCount = allCollections.length;
 
   // Paginated issues query with infinite scroll support
   const {
@@ -693,6 +868,7 @@ export default function ManagerDashboard() {
 
   const clearFilters = () => {
     setFilters({ search: "", date: "", status: "all", collector: "all" });
+    setCollectionsSearchInput("");
   };
 
   const StatCard = ({ title, value, icon: Icon, description }: any) => (
@@ -1476,8 +1652,8 @@ export default function ManagerDashboard() {
                             <Input
                               className="w-full"
                               placeholder={t("manager.searchPlaceholder")}
-                              value={filters.search}
-                              onChange={(e) => updateFilter("search", e.target.value)}
+                              value={collectionsSearchInput}
+                              onChange={(e) => setCollectionsSearchInput(e.target.value)}
                             />
                           </div>
 
@@ -1554,437 +1730,87 @@ export default function ManagerDashboard() {
                       </CardHeader>
                       <CardContent>
                         {(() => {
+                          // Get target date (selected date or today)
+                          const targetDate = filters.date || new Date().toISOString().split('T')[0];
+                          const targetDateObj = new Date(targetDate);
+                          
+                          // Create a map of household ID to their collection for the target date
+                          const householdCollectionMap = new Map<number, { hasCollection: boolean; collectionTime: number }>();
+                          allCollections.forEach(c => {
+                            const collectionDate = new Date(c.collectionDate);
+                            if (collectionDate.toDateString() === targetDateObj.toDateString()) {
+                              householdCollectionMap.set(c.householdId, {
+                                hasCollection: true,
+                                collectionTime: collectionDate.getTime()
+                              });
+                            }
+                          });
+                          
+                          // Filter by search
+                          const searchLower = collectionsSearchInput.toLowerCase();
                           const filteredHouseholds = households.filter(household => {
-                            if (!filters.search) return true;
-                            const search = filters.search.toLowerCase();
+                            if (!collectionsSearchInput) return true;
                             return (
-                              household.headName?.toLowerCase().includes(search) ||
-                              household.uid?.toLowerCase().includes(search) ||
-                              household.houseNumber?.toLowerCase().includes(search)
+                              household.headName?.toLowerCase().includes(searchLower) ||
+                              household.uid?.toLowerCase().includes(searchLower) ||
+                              household.houseNumber?.toLowerCase().includes(searchLower)
                             );
                           });
+                          
+                          // Sort by segregation rating (ascending) for today/selected date
+                          // Then by collection time (descending)
+                          const sortedHouseholds = [...filteredHouseholds].sort((a, b) => {
+                            const aData = householdCollectionMap.get(a.id);
+                            const bData = householdCollectionMap.get(b.id);
+                            
+                            const aRating = aData?.hasCollection ? (allCollections.find(c => c.householdId === a.id && new Date(c.collectionDate).toDateString() === targetDateObj.toDateString())?.segregationRating || 5) : 6;
+                            const bRating = bData?.hasCollection ? (allCollections.find(c => c.householdId === b.id && new Date(c.collectionDate).toDateString() === targetDateObj.toDateString())?.segregationRating || 5) : 6;
+
+                            if (aRating !== bRating) {
+                              return aRating - bRating;
+                            }
+
+                            if (aData?.hasCollection && bData?.hasCollection) {
+                              return bData.collectionTime - aData.collectionTime;
+                            }
+                            if (aData?.hasCollection) return -1;
+                            if (bData?.hasCollection) return 1;
+                            return 0;
+                          });
+                          
+                          // Apply UI-only pagination (limit 50 at a time with load more)
+                          const displayedHouseholds = sortedHouseholds.slice(0, collectionsHouseholdsLimit);
+                          const hasMoreHouseholds = sortedHouseholds.length > collectionsHouseholdsLimit;
+                          const remainingHouseholds = sortedHouseholds.length - collectionsHouseholdsLimit;
                           
                           return (
                             <>
                               <div className="space-y-3">
-                                {filteredHouseholds.map((household) => {
-                              const householdCollections = allCollections.filter(c => c.householdId === household.id);
-                              
-                              let targetCollection = null;
-                              let collectionStatus = "never";
-                              
-                              if (filters.date) {
-                                // Show collection for specific date
-                                targetCollection = householdCollections.find(c => {
-                                  const collectionDate = new Date(c.collectionDate);
-                                  return collectionDate.toDateString() === new Date(filters.date).toDateString();
-                                });
-                                collectionStatus = targetCollection ? "collected" : "pending";
-                              } else {
-                                // Show today's collection or latest
-                                const todayCollection = householdCollections.find(c => {
-                                  const collectionDate = new Date(c.collectionDate);
-                                  const today = new Date();
-                                  return collectionDate.toDateString() === today.toDateString();
-                                });
-                                
-                                if (todayCollection) {
-                                  targetCollection = todayCollection;
-                                  collectionStatus = "collected";
-                                } else if (householdCollections.length > 0) {
-                                  targetCollection = householdCollections.sort((a, b) => 
-                                    new Date(b.collectionDate).getTime() - new Date(a.collectionDate).getTime()
-                                  )[0];
-                                  collectionStatus = "done_before";
-                                } else {
-                                  collectionStatus = "never";
-                                }
-                              }
-
-                          return (
-                                <Dialog key={household.id}>
-                                  <DialogTrigger asChild>
-                                    <Card className="hover:shadow-md transition-shadow cursor-pointer">
-                                      <CardContent className="p-3 sm:p-4">
-                                        <div className="flex items-center justify-between gap-2">
-                                          <div className="flex-1 min-w-0">
-                                            <h3 className="font-semibold text-sm sm:text-base truncate">
-                                              {household.headName}
-                                            </h3>
-                                            <p className="text-xs sm:text-sm text-muted-foreground truncate">
-                                              {household.uid} • House: {household.houseNumber}
-                                            </p>
-                                            {targetCollection && (
-                                              <div className="mt-2 text-xs text-muted-foreground">
-                                                Rating: {targetCollection.segregationRating || "N/A"}/5 • 
-                                                Collector: {targetCollection.collectorName || "Unknown"}
-                                              </div>
-                                            )}
-                                          </div>
-                                          <div className="flex flex-col items-end gap-1">
-                                            <Badge
-                                              variant={
-                                                collectionStatus === "collected" ? "default" :
-                                                collectionStatus === "pending" ? "destructive" :
-                                                collectionStatus === "done_before" ? "secondary" : "destructive"
-                                              }
-                                              className="text-xs whitespace-nowrap"
-                                            >
-                                              {collectionStatus === "collected" ? "✅ Collected" :
-                                               collectionStatus === "pending" ? "⏳ Pending" :
-                                               collectionStatus === "done_before" ? "📅 Done Before" : "❌ Never"}
-                                            </Badge>
-                                            {targetCollection && (
-                                              <div className="text-xs text-muted-foreground">
-                                                {new Date(targetCollection.collectionDate).toLocaleDateString()}
-                                              </div>
-                                            )}
-                                          </div>
-                                        </div>
-                                      </CardContent>
-                                    </Card>
-                                  </DialogTrigger>
-
-                              <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
-                                    <DialogHeader>
-                                      <DialogTitle>Collection Details - {household.headName}</DialogTitle>
-                                    </DialogHeader>
-                                    <div className="space-y-4">
-                                      <div className="grid grid-cols-2 gap-4">
-                                        <div>
-                                          <Label>Household ID</Label>
-                                          <p className="font-medium">{household.uid}</p>
-                                        </div>
-                                        <div>
-                                          <Label>House Number</Label>
-                                          <p className="font-medium">{household.houseNumber}</p>
-                                        </div>
-                                      </div>
-
-                                      {filters.date && targetCollection ? (
-                                        <div>
-                                          <Label>Collection for {new Date(filters.date).toLocaleDateString()}</Label>
-                                          <Card className="mt-2">
-                                            <CardContent className="p-4">
-                                              <div className="space-y-3">
-                                                <div className="flex items-center justify-between">
-                                                  <h4 className="font-medium">Collection Details</h4>
-                                                  <div className="flex items-center gap-2">
-                                                    <Badge variant="outline">
-                                                      {new Date(targetCollection.collectionDate).toLocaleDateString()}
-                                                    </Badge>
-                                                    <Badge variant={targetCollection.status === "collected" ? "default" : "destructive"}>
-                                                      {targetCollection.status || "collected"}
-                                                    </Badge>
-                                                  </div>
-                                                </div>
-
-                                                <div className="grid grid-cols-2 gap-4 text-sm">
-                                                  <div>
-                                                    <span className="text-muted-foreground">Collector:</span> {targetCollection.collectorName || "Unknown"}
-                                                  </div>
-                                                  <div>
-                                                    <span className="text-muted-foreground">Time:</span> {new Date(targetCollection.collectionDate).toLocaleTimeString()}
-                                                  </div>
-                                                </div>
-
-                                                <div className="border-t pt-3">
-                                                  <h5 className="font-medium text-sm mb-2">Collection Details:</h5>
-                                                  <div className="space-y-2">
-                                                    <div className="flex items-center justify-between p-2 bg-gray-50 rounded">
-                                                      <span className="text-sm font-medium">Segregation Rating:</span>
-                                                      <div className="flex items-center gap-1">
-                                                        {Array.from({ length: 5 }).map((_, i) => (
-                                                          <Star
-                                                            key={i}
-                                                            className={`h-4 w-4 ${i < (targetCollection.segregationRating || 0) ? "fill-yellow-400 text-yellow-400" : "text-gray-300"}`}
-                                                          />
-                                                        ))}
-                                                        <span className="ml-2 text-sm font-bold">
-                                                          ({targetCollection.segregationRating || 0}/5)
-                                                        </span>
-                                                      </div>
-                                                    </div>
-
-                                                    {targetCollection.plasticRating && (
-                                                      <div className="flex items-center justify-between p-2 bg-gray-50 rounded">
-                                                        <span className="text-sm font-medium">Plastic Rating:</span>
-                                                        <div className="flex items-center gap-1">
-                                                          {Array.from({ length: 5 }).map((_, i) => (
-                                                            <Star
-                                                              key={i}
-                                                              className={`h-4 w-4 ${i < (targetCollection.plasticRating || 0) ? "fill-blue-400 text-blue-400" : "text-gray-300"}`}
-                                                            />
-                                                          ))}
-                                                          <span className="ml-2 text-sm font-bold">
-                                                            ({targetCollection.plasticRating}/5)
-                                                          </span>
-                                                        </div>
-                                                      </div>
-                                                    )}
-
-                                                    {targetCollection.observations && (
-                                                      <div className="p-2 bg-blue-50 rounded">
-                                                        <span className="text-sm font-medium block mb-1">Observations:</span>
-                                                        <p className="text-sm text-gray-700">"{targetCollection.observations}"</p>
-                                                      </div>
-                                                    )}
-
-                                                    {targetCollection.remarks && (
-                                                      <div className="p-2 bg-green-50 rounded">
-                                                        <span className="text-sm font-medium block mb-1">Remarks:</span>
-                                                        <p className="text-sm text-gray-700">"{targetCollection.remarks}"</p>
-                                                      </div>
-                                                    )}
-                                                  </div>
-                                                </div>
-
-                                                <div className="space-y-3 pt-3 border-t">
-                                                  {targetCollection.photoUrl && (
-                                                    <div className="space-y-2">
-                                                      <Label className="text-sm font-medium">Collection Photo:</Label>
-                                                      <div className="flex items-center gap-3">
-                                                        <div className="border rounded-lg overflow-hidden bg-gray-50 flex-1">
-                                                          <img
-                                                            src={targetCollection.photoUrl}
-                                                            alt="Collection photo"
-                                                            className="w-full max-h-32 object-contain"
-                                                            onError={(e) => {
-                                                              e.currentTarget.src = "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTIxIDEyVjdIMTlWNUMxOSAzLjg5NTQzIDE4LjEwNDYgMyAxNyAzSDdDNS44OTU0MyAzIDUgMy44OTU0MyA1IDVWMTlDNSAyMC4xMDQ2IDUuODk1NDMgMjEgNyAyMUgxMiIgc3Ryb2tlPSIjOTk5IiBzdHJva2Utd2lkdGg9IjIiLz4KPHBhdGggZD0iTTE0IDE0TDE3IDE3TDIxIDEzIiBzdHJva2U9IiM5OTkiIHN0cm9rZS13aWR0aD0iMiIvPgo8L3N2Zz4K";
-                                                            }}
-                                                          />
-                                                        </div>
-                                                        <Dialog>
-                                                          <DialogTrigger asChild>
-                                                            <Button variant="outline" size="sm">
-                                                              <Eye className="h-4 w-4 mr-2" />
-                                                              View Photo
-                                                            </Button>
-                                                          </DialogTrigger>
-                                                          <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden">
-                                                            <DialogHeader>
-                                                              <DialogTitle>Collection Photo - {household.headName}</DialogTitle>
-                                                              <p className="text-sm text-muted-foreground">
-                                                                Collected on {new Date(targetCollection.collectionDate).toLocaleString()}
-                                                              </p>
-                                                            </DialogHeader>
-                                                            <div className="flex items-center justify-center p-4 bg-gray-50 rounded-lg">
-                                                              <img
-                                                                src={targetCollection.photoUrl}
-                                                                alt="Collection photo - full size"
-                                                                className="max-w-full max-h-[70vh] object-contain rounded"
-                                                                onError={(e) => {
-                                                                  e.currentTarget.src = "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTIxIDEyVjdIMTlWNUMxOSAzLjg5NTQzIDE4LjEwNDYgMyAxNyAzSDdDNS44OTU0MyAzIDUgMy44OTU0MyA1IDVWMTlDNSAyMC4xMDQ2IDUuODk1NDMgMjEgNyAyMUgxMiIgc3Ryb2tlPSIjOTk5IiBzdHJva2Utd2lkdGg9IjIiLz4KUHBhdGggZD0iTTE0IDE0TDE3IDE3TDIxIDEzIiBzdHJva2U9IiM5OTkiIHN0cm9rZS13aWR0aD0iMiIvPgo8L3N2Zz4K";
-                                                                }}
-                                                              />
-                                                            </div>
-                                                          </DialogContent>
-                                                        </Dialog>
-                                                      </div>
-                                                    </div>
-                                                  )}
-                                                  {targetCollection.voiceUrl && (
-                                                    <div className="space-y-2">
-                                                      <Label className="text-sm font-medium">Voice Recording:</Label>
-                                                      <audio
-                                                        controls
-                                                        className="w-full h-10"
-                                                        preload="metadata"
-                                                      >
-                                                        <source src={targetCollection.voiceUrl} type="audio/mpeg" />
-                                                        <source src={targetCollection.voiceUrl} type="audio/wav" />
-                                                        <source src={targetCollection.voiceUrl} type="audio/ogg" />
-                                                        Your browser does not support the audio element.
-                                                      </audio>
-                                                    </div>
-                                                  )}
-                                                </div>
-                                              </div>
-                                            </CardContent>
-                                          </Card>
-                                        </div>
-                                      ) : (
-                                        <div>
-                                          <Label>Collection History ({householdCollections.length} total)</Label>
-                                          {householdCollections.length > 0 ? (
-                                            <div className="mt-2 space-y-3 max-h-96 overflow-y-auto">
-                                              {householdCollections
-                                                .sort((a, b) => new Date(b.collectionDate).getTime() - new Date(a.collectionDate).getTime())
-                                                .map((collection, index) => (
-                                                  <Card key={collection.id}>
-                                                    <CardContent className="p-4">
-                                                      <div className="space-y-3">
-                                                        <div className="flex items-center justify-between">
-                                                          <h4 className="font-medium">
-                                                            Collection #{householdCollections.length - index}
-                                                          </h4>
-                                                          <div className="flex items-center gap-2">
-                                                            <Badge variant="outline">
-                                                              {new Date(collection.collectionDate).toLocaleDateString()}
-                                                            </Badge>
-                                                            <Badge variant={collection.status === "collected" ? "default" : "destructive"}>
-                                                              {collection.status || "collected"}
-                                                            </Badge>
-                                                          </div>
-                                                        </div>
-
-                                                  <div className="grid grid-cols-2 gap-4 text-sm">
-                                                    <div>
-                                                      <span className="text-muted-foreground">Collector:</span> {collection.collectorName || "Unknown"}
-                                                    </div>
-                                                    <div>
-                                                      <span className="text-muted-foreground">Time:</span> {new Date(collection.collectionDate).toLocaleTimeString()}
-                                                    </div>
-                                                  </div>
-
-                                                  <div className="border-t pt-3">
-                                                    <h5 className="font-medium text-sm mb-2">Collection Details:</h5>
-                                                    <div className="space-y-2">
-                                                      <div className="flex items-center justify-between p-2 bg-gray-50 rounded">
-                                                        <span className="text-sm font-medium">Segregation Rating:</span>
-                                                        <div className="flex items-center gap-1">
-                                                          {Array.from({ length: 5 }).map((_, i) => (
-                                                            <Star
-                                                              key={i}
-                                                              className={`h-4 w-4 ${i < (collection.segregationRating || 0) ? "fill-yellow-400 text-yellow-400" : "text-gray-300"}`}
-                                                            />
-                                                          ))}
-                                                          <span className="ml-2 text-sm font-bold">
-                                                            ({collection.segregationRating || 0}/5)
-                                                          </span>
-                                                        </div>
-                                                      </div>
-
-                                                      {collection.plasticRating && (
-                                                        <div className="flex items-center justify-between p-2 bg-gray-50 rounded">
-                                                          <span className="text-sm font-medium">Plastic Rating:</span>
-                                                          <div className="flex items-center gap-1">
-                                                            {Array.from({ length: 5 }).map((_, i) => (
-                                                              <Star
-                                                                key={i}
-                                                                className={`h-4 w-4 ${i < (collection.plasticRating || 0) ? "fill-blue-400 text-blue-400" : "text-gray-300"}`}
-                                                              />
-                                                            ))}
-                                                            <span className="ml-2 text-sm font-bold">
-                                                              ({collection.plasticRating}/5)
-                                                            </span>
-                                                          </div>
-                                                        </div>
-                                                      )}
-
-                                                      {collection.observations && (
-                                                        <div className="p-2 bg-blue-50 rounded">
-                                                          <span className="text-sm font-medium block mb-1">Observations:</span>
-                                                          <p className="text-sm text-gray-700">"{collection.observations}"</p>
-                                                        </div>
-                                                      )}
-
-                                                      {collection.remarks && (
-                                                        <div className="p-2 bg-green-50 rounded">
-                                                          <span className="text-sm font-medium block mb-1">Remarks:</span>
-                                                          <p className="text-sm text-gray-700">"{collection.remarks}"</p>
-                                                        </div>
-                                                      )}
-                                                    </div>
-                                                  </div>
-
-                                                  <div className="space-y-3 pt-3 border-t">
-                                                    {collection.photoUrl && (
-                                                      <div className="space-y-2">
-                                                        <Label className="text-sm font-medium">Collection Photo:</Label>
-                                                        <div className="flex items-center gap-3">
-                                                          <div className="border rounded-lg overflow-hidden bg-gray-50 flex-1">
-                                                            <img
-                                                              src={collection.photoUrl}
-                                                              alt="Collection photo"
-                                                              className="w-full max-h-32 object-contain"
-                                                              onError={(e) => {
-                                                                e.currentTarget.src = "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTIxIDEyVjdIMTlWNUMxOSAzLjg5NTQzIDE4LjEwNDYgMyAxNyAzSDdDNS44OTU0MyAzIDUgMy44OTU0MyA1IDVWMTlDNSAyMC4xMDQ2IDUuODk1NDMgMjEgNyAyMUgxMiIgc3Ryb2tlPSIjOTk5IiBzdHJva2Utd2lkdGg9IjIiLz4KPHBhdGggZD0iTTE0IDE0TDE3IDE3TDIxIDEzIiBzdHJva2U9IiM5OTkiIHN0cm9rZS13aWR0aD0iMiIvPgo8L3N2Zz4K";
-                                                              }}
-                                                            />
-                                                          </div>
-                                                          <Dialog>
-                                                            <DialogTrigger asChild>
-                                                              <Button variant="outline" size="sm">
-                                                                <Eye className="h-4 w-4 mr-2" />
-                                                                View Photo
-                                                              </Button>
-                                                            </DialogTrigger>
-                                                            <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden">
-                                                              <DialogHeader>
-                                                                <DialogTitle>Collection Photo - {household.headName}</DialogTitle>
-                                                                <p className="text-sm text-muted-foreground">
-                                                                  Collected on {new Date(collection.collectionDate).toLocaleString()}
-                                                                </p>
-                                                              </DialogHeader>
-                                                              <div className="flex items-center justify-center p-4 bg-gray-50 rounded-lg">
-                                                                <img
-                                                                  src={collection.photoUrl}
-                                                                  alt="Collection photo - full size"
-                                                                  className="max-w-full max-h-[70vh] object-contain rounded"
-                                                                  onError={(e) => {
-                                                                    e.currentTarget.src = "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTIxIDEyVjdIMTlWNUMxOSAzLjg5NTQzIDE4LjEwNDYgMyAxNyAzSDdDNS44OTU0MyAzIDUgMy44OTU0MyA1IDVWMTlDNSAyMC4xMDQ2IDUuODk1NDMgMjEgNyAyMUgxMiIgc3Ryb2tlPSIjOTk5IiBzdHJva2Utd2lkdGg9IjIiLz4KPHBhdGggZD0iTTE0IDE0TDE3IDE3TDIxIDEzIiBzdHJva2U9IiM5OTkiIHN0cm9rZS13aWR0aD0iMiIvPgo8L3N2Zz4K";
-                                                                  }}
-                                                                />
-                                                              </div>
-                                                            </DialogContent>
-                                                          </Dialog>
-                                                        </div>
-                                                      </div>
-                                                    )}
-                                                    {collection.voiceUrl && (
-                                                      <div className="space-y-2">
-                                                        <Label className="text-sm font-medium">Voice Recording:</Label>
-                                                        <audio
-                                                          controls
-                                                          className="w-full h-10"
-                                                          preload="metadata"
-                                                        >
-                                                          <source src={collection.voiceUrl} type="audio/mpeg" />
-                                                          <source src={collection.voiceUrl} type="audio/wav" />
-                                                          <source src={collection.voiceUrl} type="audio/ogg" />
-                                                          Your browser does not support the audio element.
-                                                        </audio>
-                                                      </div>
-                                                    )}
-                                                  </div>
-                                                </div>
-                                              </CardContent>
-                                            </Card>
-                                          ))}
-                                            </div>
-                                          ) : (
-                                            <div className="text-center py-8">
-                                              <Package className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-                                              <p className="text-muted-foreground">No collections recorded</p>
-                                            </div>
-                                          )}
-                                        </div>
-                                      )}
-                                    </div>
-                                  </DialogContent>
-                                </Dialog>
-                              );
-                            })}
+                                {displayedHouseholds.map((household) => (
+                                  <HouseholdCollectionCard 
+                                    key={household.id} 
+                                    household={household} 
+                                    dateFilter={filters.date} 
+                                  />
+                                ))}
                               </div>
-                              
-                              {/* Load More Controls for Households - Server-side pagination */}
+
+                              {/* Load More Controls for Households - UI-only pagination */}
                               <div className="mt-4 flex justify-center gap-2">
-                                {hasNextHouseholdsPage && (
+                                {hasMoreHouseholds && (
                                   <Button
                                     variant="outline"
-                                    onClick={() => fetchNextHouseholdsPage()}
-                                    disabled={isFetchingNextHouseholdsPage}
+                                    onClick={() => setCollectionsHouseholdsLimit(prev => prev + 50)}
                                     data-testid="button-load-more-households"
                                   >
-                                    {isFetchingNextHouseholdsPage ? "Loading..." : `Load More (${totalHouseholdsCount - households.length} remaining)`}
+                                    Load More ({remainingHouseholds > 0 ? remainingHouseholds : 0} remaining)
                                   </Button>
                                 )}
                               </div>
                               
                               {/* Summary */}
                               <p className="text-sm text-muted-foreground text-center mt-2">
-                                Showing {filteredHouseholds.length} of {totalHouseholdsCount} households
+                                Showing {displayedHouseholds.length} of {sortedHouseholds.length} households
                               </p>
                             </>
                           );
