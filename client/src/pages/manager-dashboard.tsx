@@ -27,6 +27,7 @@ import {
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
@@ -67,7 +68,12 @@ import {
   ArrowLeft,
   ArrowRight,
   ClipboardList,
+  MapPin,
+  Phone,
 } from "lucide-react";
+import { SiGooglemaps } from "react-icons/si";
+import html2canvas from "html2canvas";
+import { jsPDF } from "jspdf";
 import { MaterialLog } from "@/components/manager/MaterialLog";
 import { cn } from "@/lib/utils";
 
@@ -91,6 +97,8 @@ interface Household {
   ward: string;
   qrCodeUrl: string;
   qrPrinted: boolean;
+  latitude: number | null;
+  longitude: number | null;
   createdAt: string;
 }
 
@@ -518,6 +526,140 @@ export default function ManagerDashboard() {
       window.location.href = "/login";
     },
   });
+
+  // Household Details Dialog State
+  const [showHouseholdDetails, setShowHouseholdDetails] = useState(false);
+  const [viewingHousehold, setViewingHousehold] = useState<Household | null>(null);
+
+const handleDownloadSingleQR = async (h: Household) => {
+  try {
+    const cardElement = document.createElement("div");
+
+    cardElement.style.width = "70mm";
+    cardElement.style.height = "99mm";
+    cardElement.style.backgroundColor = "white";
+    cardElement.style.display = "flex";
+    cardElement.style.flexDirection = "column";
+    cardElement.style.alignItems = "center";
+    cardElement.style.justifyContent = "center";
+    cardElement.style.boxSizing = "border-box";
+    cardElement.style.padding = "8mm";
+    cardElement.style.fontFamily = "sans-serif";
+    cardElement.style.textAlign = "center";
+    cardElement.style.position = "fixed";
+    cardElement.style.left = "-9999px";
+    cardElement.style.top = "-9999px";
+
+    cardElement.innerHTML = `
+      <!-- Logo (from public folder) -->
+      <img 
+        src="/logos/png/logo-full-1024x256.png"
+        style="width:40mm; margin-bottom:-2mm;"
+      />
+
+      <!-- Subheading -->
+      <div style="font-size:10pt; color:#555; margin-bottom:4mm;">
+        Waste Management System
+      </div>
+
+      <!-- QR -->
+      <div style="
+        width:45mm;
+        height:45mm;
+        display:flex;
+        align-items:center;
+        justify-content:center;
+      ">
+        <img 
+          src="${h.qrCodeUrl}" 
+          style="width:100%; height:100%; object-fit:contain;"
+        />
+      </div>
+
+      <!-- Info -->
+      <div style="font-size:11pt; font-weight:400; margin-bottom:2mm;">
+        House UID: GEN-${h.uid}
+      </div>
+
+      <div style="font-size:11pt; margin-bottom:3mm;">
+        Head: ${h.headName}
+      </div>
+
+      <div style="font-size:9pt; color:#555;">
+        Login & manage at:
+      </div>
+
+      <div style="font-size:12pt; color:#008000;">
+        www.greenpathorg.social
+      </div>
+    `;
+
+    document.body.appendChild(cardElement);
+
+    const canvas = await html2canvas(cardElement, {
+      scale: 3,
+      useCORS: true,
+      backgroundColor: "#ffffff",
+    });
+
+    const imgData = canvas.toDataURL("image/png");
+
+    const pdf = new jsPDF({
+      orientation: "portrait",
+      unit: "mm",
+      format: [70, 99],
+    });
+
+    pdf.addImage(imgData, "PNG", 0, 0, 70, 99);
+    pdf.save(`QR_Card_${h.uid}.pdf`);
+
+    document.body.removeChild(cardElement);
+
+    toast({ title: "QR Card downloaded successfully" });
+
+  } catch (err) {
+    console.error(err);
+    toast({
+      title: "Failed to download QR",
+      variant: "destructive",
+    });
+  }
+};
+
+
+
+
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deletingHousehold, setDeletingHousehold] = useState<Household | null>(null);
+
+  const deleteHouseholdMutation = useMutation({
+    mutationFn: (id: number) => apiRequest("DELETE", `/api/households/${id}`),
+    onSuccess: () => {
+      toast({ title: "Household deleted successfully" });
+      queryClient.invalidateQueries({ queryKey: ["/api/households"] });
+      setShowDeleteConfirm(false);
+      setShowHouseholdDetails(false);
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Failed to delete household",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleLocateHousehold = (h: Household) => {
+    if (h.latitude && h.longitude) {
+      window.open(`https://www.google.com/maps?q=${h.latitude},${h.longitude}`, '_blank');
+    } else {
+      toast({ 
+        title: "Location Unavailable", 
+        description: "Latitude and Longitude details are not available for this household.",
+        variant: "destructive" 
+      });
+    }
+  };
 
   // Data fetching
   const { data: stats } = useQuery<VillageStats>({
@@ -1615,7 +1757,10 @@ export default function ManagerDashboard() {
                                 <div
                                   key={h.id}
                                   className="p-3 border rounded-lg hover:bg-muted/50 cursor-pointer transition-colors"
-                                  onClick={() => setSelectedHousehold(h)}
+                                  onClick={() => {
+                                    setViewingHousehold(h);
+                                    setShowHouseholdDetails(true);
+                                  }}
                                 >
                                   <div className="flex justify-between items-start">
                                     <div>
@@ -3146,14 +3291,14 @@ export default function ManagerDashboard() {
                               <Button variant="outline" size="sm" className="bg-green-200">Details</Button>
                             </DialogTrigger>
                             <DialogContent className="max-w-[100vw] w-full h-[100dvh] md:max-w-4xl md:h-[90vh] md:rounded-xl overflow-hidden p-0 flex flex-col border-none md:border">
-                              <DialogHeader className="p-2 border-b flex flex-row items-center justify-between space-y-0 bg-white sticky top-0 z-10">
+                              <DialogHeader className="px-1 py-2 border-b flex flex-row items-center justify-between space-y-0 bg-white sticky top-0 z-10">
                                 <DialogTrigger asChild>
                                   <Button variant="ghost" size="sm" className="h-8 px-2 md:hidden bg-green-200 ">
                                     <ArrowRight className="h-4 w-4 mr-1 rotate-180" strokeWidth={3}/>
                                   </Button>
                                 </DialogTrigger>
                                 <div className="flex items-center gap-2">
-                                  <DialogTitle className="text-lg font-bold mr-8">Vehicle Session Report</DialogTitle>
+                                  <DialogTitle className="text-lg font-bold mr-8">Vehicle Session Report {new Date(filters.date || new Date()).toLocaleDateString()}</DialogTitle>
                                 </div>
                                 
                               </DialogHeader>
@@ -3693,6 +3838,154 @@ export default function ManagerDashboard() {
               </Button>
             </div>
           </form>
+        </DialogContent>
+      </Dialog>
+      {/* Household Details Fullscreen Popup */}
+      <Dialog open={showHouseholdDetails} onOpenChange={setShowHouseholdDetails}>
+        <DialogContent className="max-w-[100vw] w-screen h-screen m-0 p-0 rounded-none overflow-y-auto border-none">
+          <div className="flex flex-col h-full bg-background">
+            <header className="flex items-center gap-10 ml-1 p-2 border-b sticky top-0 bg-background z-10">
+              <Button variant="ghost" size="sm" className="h-8 px-2 !bg-green-200" onClick={() => setShowHouseholdDetails(false)}>
+                <ArrowLeft className="h-4 w-4 mr-1" strokeWidth={3}/>
+              </Button>
+              <h1 className="ml-3 text-xl font-bold">Household Details</h1>
+            </header>
+
+            <main className="flex-1 p-3 space-y-3 max-w-4xl mx-auto w-full">
+              {viewingHousehold && (
+                <div className="grid gap-2 md:grid-cols-2">
+                  <div className="space-y-1">
+                    <section>
+                      <Label className="text-muted-foreground">Household UID</Label>
+                      <p className="text-md font-mono font-bold">{`GEN-${viewingHousehold.uid}`}</p>
+                    </section>
+
+                    <section>
+                      <Label className="text-muted-foreground">Head Name</Label>
+                      <p className="text-md font-semibold">{viewingHousehold.headName}</p>
+                    </section>
+
+                    <section>
+                      <Label className="text-muted-foreground">Phone Number</Label>
+                      <div className="flex items-center gap-10">
+                        <p className="text-md">{viewingHousehold.phone || "Not provided"}</p>
+                        {viewingHousehold.phone && (
+                          <Button 
+                            variant="outline" 
+                            size="icon" 
+                            className="h-8 w-auto px-2 text-white bg-primary border-primary/20 hover:bg-primary/10"
+                            onClick={() => window.open(`tel:${viewingHousehold.phone}`)}
+                          >
+                            <Phone className="h-4 w-4" />
+                            Call
+                          </Button>
+                        )}
+                      </div>
+                    </section>
+
+                    <section>
+                      <Label className="text-muted-foreground">House Number</Label>
+                      <p className="text-md">{viewingHousehold.houseNumber || "N/A"}</p>
+                    </section>
+
+                    <div className="flex flex-col gap-2 pt-3">
+                      <Button 
+                        size="lg" 
+                        className="w-full"
+                        onClick={() => handleLocateHousehold(viewingHousehold)}
+                      >
+                        <MapPin />
+                        Locate On Map
+                      </Button>
+                    </div>
+                  </div>
+
+                  <div className="flex flex-col items-center justify-center p-3 bg-muted/30 rounded-2xl space-y-3">
+                    {viewingHousehold.qrCodeUrl ? (
+                      <>
+                        <div className="bg-white rounded-xl shadow-sm">
+                          <img 
+                            src={viewingHousehold.qrCodeUrl} 
+                            alt="QR Code" 
+                            className="w-48 h-48 object-contain"
+                          />
+                        </div>
+                        <Button 
+                          variant="outline" 
+                          size="lg" 
+                          className="w-full bg-blue-300"
+                          onClick={() => handleDownloadSingleQR(viewingHousehold)}
+                        >
+                          <Download className="mr-2 h-5 w-5" />
+                          Download QR Code Card
+                        </Button>
+                        <Button 
+                          variant="destructive" 
+                          size="lg" 
+                          className="w-full"
+                          onClick={() => {
+                            setDeletingHousehold(viewingHousehold);
+                            setShowDeleteConfirm(true);
+                          }}
+                        >
+                          <Trash2 className="mr-2 h-5 w-5" />
+                          Delete Household
+                        </Button>
+                      </>
+                    ) : (
+                      <div className="text-center py-12">
+                        <QrCode className="h-16 w-16 mx-auto text-muted-foreground mb-4 opacity-20" />
+                        <p className="text-muted-foreground">QR code not generated yet</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+            </main>
+          </div>
+        </DialogContent>
+      </Dialog>
+      {/* Delete Household Confirmation */}
+      <Dialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Confirm Deletion</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete this household? This action cannot be undone.
+              {(() => {
+                if (!deletingHousehold) return null;
+                const hhCollections = allCollections.filter(c => c.householdId === deletingHousehold.id);
+                if (hhCollections.length > 0) {
+                  const lastCollection = hhCollections.reduce((latest, current) => 
+                    new Date(current.collectionDate) > new Date(latest.collectionDate) ? current : latest
+                  );
+                  return (
+                    <div className="mt-4 p-3 bg-destructive/10 text-destructive rounded-lg border border-destructive/20">
+                      <p className="font-semibold">Collection History:</p>
+                      <ul className="list-disc list-inside text-sm mt-1">
+                        <li>Total collections: {hhCollections.length}</li>
+                        <li>Last collection: {new Date(lastCollection.collectionDate).toLocaleDateString()}</li>
+                      </ul>
+                      <p className="text-xs mt-2 italic text-destructive/80">
+                        * All collection records for this household will also be permanently deleted.
+                      </p>
+                    </div>
+                  );
+                }
+                return null;
+              })()}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex gap-2 justify-end mt-4">
+            <Button variant="outline" onClick={() => setShowDeleteConfirm(false)}>Cancel</Button>
+            <Button 
+              variant="destructive" 
+              onClick={() => deletingHousehold && deleteHouseholdMutation.mutate(deletingHousehold.id)}
+              disabled={deleteHouseholdMutation.isPending}
+            >
+              {deleteHouseholdMutation.isPending ? "Deleting..." : "Confirm Delete"}
+            </Button>
+          </div>
         </DialogContent>
       </Dialog>
     </>

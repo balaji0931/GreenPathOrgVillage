@@ -1160,6 +1160,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.delete('/api/households/:id', requireAuth, requireRole(['manager', 'admin']), async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      await storage.deleteHousehold(id);
+      res.json({ message: "Household and related records deleted successfully" });
+    } catch (error: any) {
+      console.error("Delete household error:", error);
+      res.status(500).json({ message: error.message || "Failed to delete household" });
+    }
+  });
+
   // Collector routes
   app.post('/api/collectors', requireAuth, requireRole(['manager']), async (req, res) => {
     try {

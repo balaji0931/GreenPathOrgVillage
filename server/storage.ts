@@ -1801,6 +1801,12 @@ export class DatabaseStorage implements IStorage {
       .where(eq(households.id, id))
       .limit(1);
     
+    if (!household) return;
+
+    // Delete related entities manually to ensure consistency
+    await db.delete(wasteCollections).where(eq(wasteCollections.householdId, id));
+    await db.delete(qrCodes).where(eq(qrCodes.householdId, id));
+    await db.delete(feedback).where(eq(feedback.fromHouseholdId, id));
     await db.delete(households).where(eq(households.id, id));
     
     // Invalidate household caches
