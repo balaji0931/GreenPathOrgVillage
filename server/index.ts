@@ -58,17 +58,6 @@ const app = express();
 // Trust proxy for accurate IP addresses when behind reverse proxy
 app.set("trust proxy", 1);
 
-// HTTPS enforcement in production - redirect HTTP to HTTPS
-if (process.env.NODE_ENV === "production") {
-  app.use((req, res, next) => {
-    // Check X-Forwarded-Proto header (set by reverse proxies like Replit/Cloudflare)
-    if (req.headers['x-forwarded-proto'] !== 'https' && req.hostname !== 'localhost') {
-      return res.redirect(301, `https://${req.hostname}${req.url}`);
-    }
-    next();
-  });
-}
-
 app.use((req, res, next) => {
   const host = req.headers.host?.replace(/^www\./, "");
 
@@ -81,6 +70,17 @@ app.use((req, res, next) => {
 
   next();
 });
+
+// HTTPS enforcement in production - redirect HTTP to HTTPS
+if (process.env.NODE_ENV === "production") {
+  app.use((req, res, next) => {
+    // Check X-Forwarded-Proto header (set by reverse proxies like Replit/Cloudflare)
+    if (req.headers['x-forwarded-proto'] !== 'https' && req.hostname !== 'localhost') {
+      return res.redirect(301, `https://${req.hostname}${req.url}`);
+    }
+    next();
+  });
+}
 
 
 // Security headers with Helmet - Relaxed CSP for development
