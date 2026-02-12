@@ -69,6 +69,20 @@ if (process.env.NODE_ENV === "production") {
   });
 }
 
+app.use((req, res, next) => {
+  const host = req.headers.host?.replace(/^www\./, "");
+
+  if (host === "greenpathorg.social") {
+    return res.redirect(
+      301,
+      "https://greenpathindia.in" + req.originalUrl
+    );
+  }
+
+  next();
+});
+
+
 // Security headers with Helmet - Relaxed CSP for development
 app.use(
   helmet({
