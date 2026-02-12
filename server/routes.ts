@@ -1447,10 +1447,20 @@ app.post(
   });
 
   // Field worker map household route
+  app.put('/api/villages/:villageId', requireAuth, requireRole(['admin']), async (req, res) => {
+    try {
+      const village = await storage.updateVillage(req.params.villageId, req.body);
+      res.json(village);
+    } catch (error: any) {
+      console.error("Update village error:", error);
+      res.status(500).json({ message: error.message || "Failed to update village" });
+    }
+  });
+
   app.post('/api/qr-codes/:uid/map', requireAuth, requireRole(['fieldworker']), async (req, res) => {
     try {
       const { uid } = req.params;
-      const { headName, phone, houseNumber, ward, familySize, address } = req.body;
+      const { headName, phone, houseNumber, ward, familySize, address, latitude, longitude } = req.body;
       const villageId = req.session.villageId!;
 
       const { toFullUid, generateGeneratorCredentials } = await import('./qr-service');
@@ -1488,6 +1498,8 @@ app.post(
         ward: ward || 'Ward-1',
         familySize: familySize || 1,
         address,
+        latitude,
+        longitude,
         status: 'active',
         qrCodeUrl: qrCode.qrCodeUrl,
         qrCodePublicId: qrCode.qrCodePublicId,
@@ -1516,7 +1528,7 @@ app.post(
           password: generatorUserId,
         },
       });
-    } catch (error) {
+    } catch (error: any) {
       console.error("Map QR code error:", error);
       res.status(500).json({ message: "Failed to map QR code" });
     }
@@ -1572,8 +1584,6 @@ app.post(
         voiceUrl,
         status,
         missedReason,
-        latitude: req.body.latitude,
-        longitude: req.body.longitude,
       });
 
       // Phase 4: Invalidate relevant caches
@@ -3239,24 +3249,24 @@ app.post(
       const { wetWasteKg, dryWasteKg, rejectedWasteKg, sanitaryWasteKg, 
               wetWastePhotoUrl, dryWastePhotoUrl, rejectedWastePhotoUrl, sanitaryWastePhotoUrl } = req.body;
       
-      if (parseFloat(wetWasteKg || '0') > 0 && !wetWastePhotoUrl) {
-        return res.status(400).json({ message: 'Photo required for wet waste when quantity > 0' });
-      }
-      if (parseFloat(dryWasteKg || '0') > 0 && !dryWastePhotoUrl) {
-        return res.status(400).json({ message: 'Photo required for dry waste when quantity > 0' });
-      }
-      if (parseFloat(rejectedWasteKg || '0') > 0 && !rejectedWastePhotoUrl) {
-        return res.status(400).json({ message: 'Photo required for rejected waste when quantity > 0' });
-      }
-      if (parseFloat(sanitaryWasteKg || '0') > 0 && !sanitaryWastePhotoUrl) {
-        return res.status(400).json({ message: 'Photo required for sanitary waste when quantity > 0' });
-      }
+      // if (parseFloat(wetWasteKg || '0') > 0 && !wetWastePhotoUrl) {
+      //   return res.status(400).json({ message: 'Photo required for wet waste when quantity > 0' });
+      // }
+      // if (parseFloat(dryWasteKg || '0') > 0 && !dryWastePhotoUrl) {
+      //   return res.status(400).json({ message: 'Photo required for dry waste when quantity > 0' });
+      // }
+      // if (parseFloat(rejectedWasteKg || '0') > 0 && !rejectedWastePhotoUrl) {
+      //   return res.status(400).json({ message: 'Photo required for rejected waste when quantity > 0' });
+      // }
+      // if (parseFloat(sanitaryWasteKg || '0') > 0 && !sanitaryWastePhotoUrl) {
+      //   return res.status(400).json({ message: 'Photo required for sanitary waste when quantity > 0' });
+      // }
       
-      // Check if entry already exists for this date
-      const existing = await storage.getDailyWasteLogByDate(villageId, req.body.date);
-      if (existing) {
-        return res.status(409).json({ message: 'An entry already exists for this date. Please edit the existing entry.' });
-      }
+      // // Check if entry already exists for this date
+      // const existing = await storage.getDailyWasteLogByDate(villageId, req.body.date);
+      // if (existing) {
+      //   return res.status(409).json({ message: 'An entry already exists for this date. Please edit the existing entry.' });
+      // }
       
       const validatedData = insertDailyWasteLogSchema.parse({
         ...req.body,
@@ -3283,18 +3293,18 @@ app.post(
       const { wetWasteKg, dryWasteKg, rejectedWasteKg, sanitaryWasteKg, 
               wetWastePhotoUrl, dryWastePhotoUrl, rejectedWastePhotoUrl, sanitaryWastePhotoUrl } = req.body;
       
-      if (parseFloat(wetWasteKg || '0') > 0 && !wetWastePhotoUrl) {
-        return res.status(400).json({ message: 'Photo required for wet waste when quantity > 0' });
-      }
-      if (parseFloat(dryWasteKg || '0') > 0 && !dryWastePhotoUrl) {
-        return res.status(400).json({ message: 'Photo required for dry waste when quantity > 0' });
-      }
-      if (parseFloat(rejectedWasteKg || '0') > 0 && !rejectedWastePhotoUrl) {
-        return res.status(400).json({ message: 'Photo required for rejected waste when quantity > 0' });
-      }
-      if (parseFloat(sanitaryWasteKg || '0') > 0 && !sanitaryWastePhotoUrl) {
-        return res.status(400).json({ message: 'Photo required for sanitary waste when quantity > 0' });
-      }
+      // if (parseFloat(wetWasteKg || '0') > 0 && !wetWastePhotoUrl) {
+      //   return res.status(400).json({ message: 'Photo required for wet waste when quantity > 0' });
+      // }
+      // if (parseFloat(dryWasteKg || '0') > 0 && !dryWastePhotoUrl) {
+      //   return res.status(400).json({ message: 'Photo required for dry waste when quantity > 0' });
+      // }
+      // if (parseFloat(rejectedWasteKg || '0') > 0 && !rejectedWastePhotoUrl) {
+      //   return res.status(400).json({ message: 'Photo required for rejected waste when quantity > 0' });
+      // }
+      // if (parseFloat(sanitaryWasteKg || '0') > 0 && !sanitaryWastePhotoUrl) {
+      //   return res.status(400).json({ message: 'Photo required for sanitary waste when quantity > 0' });
+      // }
       
       const log = await storage.updateDailyWasteLog(parseInt(id), req.body);
       res.json(log);

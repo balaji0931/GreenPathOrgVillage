@@ -10,6 +10,7 @@ export const villages = pgTable("villages", {
   name: text("name").notNull(),
   imageUploadRequired: boolean("image_upload_required").default(true), // Require image upload for collections
   wards: text("wards").array().default([]), // Array of ward names for this village
+  locationServicesEnabled: boolean("location_services_enabled").default(false), // Admin setting for location mapping
   vehicles: json("vehicles").$type<{ registrationNumber: string; name: string; collectorIds: number[] }[]>().default([]), // Array of vehicles
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),

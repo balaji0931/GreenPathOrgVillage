@@ -499,6 +499,27 @@ export default function AdminDashboard() {
     },
   });
 
+  const toggleLocationServicesMutation = useMutation({
+    mutationFn: async ({ villageId, locationServicesEnabled }: { villageId: string; locationServicesEnabled: boolean }) => {
+      const response = await apiRequest("PUT", `/api/villages/${villageId}`, { locationServicesEnabled });
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Success",
+        description: "Village location services settings updated successfully",
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/villages"] });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to update village location services settings",
+        variant: "destructive",
+      });
+    },
+  });
+
   const toggleImageUploadRequiredMutation = useMutation({
     mutationFn: async ({ villageId, imageUploadRequired }: { villageId: string; imageUploadRequired: boolean }) => {
       const response = await apiRequest("PUT", `/api/villages/${villageId}`, { imageUploadRequired });
@@ -929,6 +950,7 @@ export default function AdminDashboard() {
                   <TableHead className="text-xs sm:text-sm hidden sm:table-cell">Households</TableHead>
                   <TableHead className="text-xs sm:text-sm hidden sm:table-cell">Collectors</TableHead>
                   <TableHead className="text-xs sm:text-sm">Image Upload</TableHead>
+                  <TableHead className="text-xs sm:text-sm">Location Services</TableHead>
                   <TableHead className="text-xs sm:text-sm">Actions</TableHead>
                 </TableRow>
               </TableHeader>
@@ -950,6 +972,19 @@ export default function AdminDashboard() {
                         className="text-xs"
                       >
                         {village.imageUploadRequired ? "Required" : "Optional"}
+                      </Button>
+                    </TableCell>
+                    <TableCell className="text-xs sm:text-sm">
+                      <Button
+                        size="sm"
+                        variant={village.locationServicesEnabled ? "default" : "outline"}
+                        onClick={() => toggleLocationServicesMutation.mutate({
+                          villageId: village.villageId,
+                          locationServicesEnabled: !village.locationServicesEnabled
+                        })}
+                        className="text-xs"
+                      >
+                        {village.locationServicesEnabled ? "Enabled" : "Disabled"}
                       </Button>
                     </TableCell>
                     <TableCell>

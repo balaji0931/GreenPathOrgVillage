@@ -13,6 +13,7 @@ import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { QRScanner } from "@/components/qr-scanner";
+import MapPicker from "@/components/MapPicker";
 import { 
   LogOut, 
   MapPin, 
@@ -37,6 +38,8 @@ interface HouseholdForm {
   ward: string;
   familySize: number;
   address: string;
+  latitude?: string;
+  longitude?: string;
 }
 
 interface QRCodeData {
@@ -90,6 +93,10 @@ const { data: village } = useQuery<Village>({
       setHouseholdForm(prev => ({ ...prev, ward: wardOptions[0] }));
     }
   }, [wardOptions, householdForm.ward]);
+
+  const [showMapModal, setShowMapModal] = useState(false);
+  const [tempLocation, setTempLocation] = useState<{ lat: number; lng: number } | null>(null);
+
 
 
   const lookupQRCodeMutation = useMutation({
@@ -149,10 +156,40 @@ const { data: village } = useQuery<Village>({
       houseNumber: "",
       ward: "",
       familySize: 0,
-      address: ""
+      address: "",
+      latitude: undefined,
+      longitude: undefined
     });
     setSearchUid("");
   };
+
+  const fetchLocation = () => {
+    if (!navigator.geolocation) {
+      toast({
+        title: "Error",
+        description: "Geolocation is not supported by your browser",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        setTempLocation({
+          lat: position.coords.latitude,
+          lng: position.coords.longitude,
+        });
+      },
+      (error) => {
+        toast({
+          title: "Error",
+          description: "Failed to fetch location: " + error.message,
+          variant: "destructive",
+        });
+      }
+    );
+  };
+
 
   const handleQRScan = (qrData: string) => {
     setShowScanner(false);
@@ -208,23 +245,32 @@ const requiredFields: { key: keyof HouseholdForm; label: string }[] = [
   { key: "ward", label: "Ward" },
 ];
 
-const handlePreview = () => {
-  for (const { key, label } of requiredFields) {
-    const value = householdForm[key];
+  const handlePreview = () => {
+    for (const { key, label } of requiredFields) {
+      const value = householdForm[key];
 
-    if (!value || value.toString().trim() === "") {
+      if (!value || value.toString().trim() === "") {
+        toast({
+          title: "Missing  Information",
+          description: `${label} is required.`,
+          variant: "destructive",
+        });
+        return;
+      }
+    }
+
+    if (village?.locationServicesEnabled && (!householdForm.latitude || !householdForm.longitude)) {
       toast({
-        title: "Missing  Information",
-        description: `${label} is required.`,
+        title: "Location Required",
+        description: "Please fetch the live location before continuing.",
         variant: "destructive",
       });
       return;
     }
-  }
 
-  setShowForm(false);
-  setShowPreview(true);
-};
+    setShowForm(false);
+    setShowPreview(true);
+  };
 
 
 
@@ -526,7 +572,7 @@ const handlePreview = () => {
 
       {showForm && scannedQRCode && (
         <Dialog open={showForm} onOpenChange={(open) => { if (!open) resetForm(); }}>
-          <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto">
+          <DialogContent className="sm:max-w-md max-h-[100vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2">
                 <Home className="h-5 w-5" />
@@ -534,12 +580,12 @@ const handlePreview = () => {
               </DialogTitle>
             </DialogHeader>
             <div className="space-y-4">
-              <div className="bg-green-50 p-3 rounded-lg">
+              <div className="bg-green-50 p-1 rounded-lg text-center">
                 <p className="text-xs text-green-600 font-medium">QR Code UID</p>
                 <p className="text-sm font-mono">{scannedQRCode.uid}</p>
               </div>
               
-              <div className="space-y-5">
+              <div className="space-y-3">
                 <div className="space-y-1">
                   <Label htmlFor="headName" className="flex items-center gap-1">
                     <User className="h-4 w-4" />
@@ -557,7 +603,7 @@ const handlePreview = () => {
                 <div className="space-y-1">
                   <Label htmlFor="phone" className="flex items-center gap-1">
                     <Phone className="h-4 w-4" />
-                    Phone Number
+                    Phone Number <span className="text-red-500">*</span>
                   </Label>
                   <Input
                     id="phone"
@@ -572,7 +618,7 @@ const handlePreview = () => {
                 <div className="space-y-1">
                   <Label htmlFor="houseNumber" className="flex items-center gap-1">
                     <Home className="h-4 w-4" />
-                    House Number
+                    House Number <span className="text-red-500">*</span>
                   </Label>
                   <Input
                     id="houseNumber"
@@ -586,7 +632,7 @@ const handlePreview = () => {
                 <div className="space-y-1">
                   <Label htmlFor="ward" className="flex items-center gap-1">
                     <MapPinned className="h-4 w-4" />
-                    Ward
+                    Ward <span className="text-red-500">*</span>
                   </Label>
                   <Select 
                     value={householdForm.ward} 
@@ -631,6 +677,38 @@ const handlePreview = () => {
                     data-testid="input-address"
                   />
                 </div>
+
+                {village?.locationServicesEnabled && (
+                  <div className="space-y-3">
+
+                    <div className="flex flex-col gap-2">
+
+                      {/* Open Fullscreen Map Modal */}
+                      <Button 
+                        type="button" 
+                        variant="outline" 
+                        onClick={() => {
+                          setShowMapModal(true);
+                          fetchLocation(); // center to GPS
+                        }}
+                        className="bg-blue-50 border-blue-200 text-blue-700 hover:bg-blue-100"
+                      >
+                        <MapPin className="h-4 w-4 mr-2" />
+                        Capture Live Location <span className="text-red-500">*</span>
+                      </Button>
+
+                      {/* Show Selected Coordinates */}
+                      {householdForm.latitude && householdForm.longitude && (
+                        <div className="bg-blue-50 p-2 rounded text-xs text-blue-800 flex flex-col gap-1">
+                          <p>Lat: {householdForm.latitude}</p>
+                          <p>Long: {householdForm.longitude}</p>
+                        </div>
+                      )}
+
+                    </div>
+                  </div>
+                )}
+
               </div>
             </div>
             <DialogFooter className="gap-2 sm:gap-0">
@@ -780,6 +858,69 @@ const handlePreview = () => {
           </DialogContent>
         </Dialog>
       )}
+      {showMapModal && (
+        <Dialog open={showMapModal} onOpenChange={setShowMapModal}>
+          <DialogContent className="max-w-none w-[100vw] h-[100vh] px-1 py-1 flex flex-col">
+            {/* Header */}
+            <div className="flex justify-between items-center px-3">
+              <h2 className="text-lg font-semibold">
+                Household Location
+              </h2>
+              <Button
+                variant="ghost"
+                onClick={() => setShowMapModal(false)}
+              >
+              </Button>
+            </div>
+
+            {/* Map */}
+            <div className="flex-1">
+              <MapPicker
+                initialLocation={tempLocation || undefined}
+                onLocationSelect={(lat, lng) => {
+                  setTempLocation({ lat, lng });
+                }}
+              />
+            </div>
+            <p className="text-xs text-red-500 text-center">* Note: Select and Pin exact location of household</p>
+
+            {/* Footer */}
+            <div className="flex items-center justify-between p-1 space-x-2  bg-white">
+              
+              <Button 
+                type="button" 
+                variant="outline" 
+                onClick={fetchLocation}
+                className="bg-blue-50 border-blue-200 text-blue-700 hover:bg-blue-100 p-1"
+              >
+                <MapPin className="h-4 w-4" />
+                Live Location
+              </Button>
+
+              <Button
+                disabled={!tempLocation}
+                className="bg-green-600 hover:bg-green-700 "
+                onClick={() => {
+                  if (tempLocation) {
+                    setHouseholdForm(prev => ({
+                      ...prev,
+                      latitude: tempLocation.lat.toString(),
+                      longitude: tempLocation.lng.toString(),
+                    }));
+                  }
+                  setShowMapModal(false);
+                }}
+              >
+                Confirm Location
+              </Button>
+
+            </div>
+
+
+          </DialogContent>
+        </Dialog>
+      )}
+
     </div>
   );
 }
