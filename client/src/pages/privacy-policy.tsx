@@ -605,7 +605,7 @@ export default function PrivacyPolicy() {
                     </div>
                     <div className="flex items-center gap-2">
                       <Globe className="h-4 w-4 text-slate-400" />
-                      <span>Website: https://www.greenpathorg.social</span>
+                      <span>Website: https://www.greenpathindia.in</span>
                     </div>
                   </div>
                 </section>

@@ -59,7 +59,7 @@ export const generateBulkQRCodesPDF = async (
 ): Promise<Buffer> => {
   const pdf = new jsPDF('p', 'mm', 'a4');
     // Fetch logo only once per PDF generation
-  const logoUrl = "https://www.greenpathorg.social/logos/png/logo-full-1024x256.png";
+  const logoUrl = "https://www.greenpathindia.in/logos/png/logo-full-1024x256.png";
 
   const logoResponse = await fetch(logoUrl);
   const logoArrayBuffer = await logoResponse.arrayBuffer();
@@ -183,7 +183,7 @@ export const generateBulkQRCodesPDF = async (
     currentY += 6;
     pdf.setFontSize(12);
     pdf.setTextColor(0, 128, 0);
-    pdf.text('www.greenpathorg.social', centerX, currentY, { align: 'center' });
+    pdf.text('www.greenpathindia.in', centerX, currentY, { align: 'center' });
   }
 
   try {
@@ -278,7 +278,7 @@ export const generatePreMappedQRCodesPDF = async (
   const pdf = new jsPDF("p", "mm", "a4");
 
   // Load logo only once
-  const logoUrl = "https://www.greenpathorg.social/logos/png/logo-full-1024x256.png";
+  const logoUrl = "https://www.greenpathindia.in/logos/png/logo-full-1024x256.png";
   const logoResponse = await fetch(logoUrl);
   const logoArrayBuffer = await logoResponse.arrayBuffer();
   const logoBase64 = Buffer.from(logoArrayBuffer).toString("base64");
@@ -380,7 +380,7 @@ export const generatePreMappedQRCodesPDF = async (
 
     pdf.setFontSize(12);
     pdf.setTextColor(0, 128, 0);
-    pdf.text("www.greenpathorg.social", centerX, currentY, { align: "center" });
+    pdf.text("www.greenpathindia.in", centerX, currentY, { align: "center" });
   }
 
   // Return buffer

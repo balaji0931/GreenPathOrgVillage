@@ -18,4 +18,4 @@ Disallow: /moderator
 Disallow: /fieldworker
 Disallow: /api/
 
-Sitemap: https://greenpathorg.social/sitemap.xml
+Sitemap: https://greenpathindia.in/sitemap.xml

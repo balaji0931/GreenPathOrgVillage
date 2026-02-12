@@ -696,7 +696,7 @@ const handleDownloadSingleQR = async (h: Household) => {
       </div>
 
       <div style="font-size:12pt; color:#008000;">
-        www.greenpathorg.social
+        www.greenpathindia.in
       </div>
     `;
 
