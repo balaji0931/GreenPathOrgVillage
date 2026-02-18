@@ -71,39 +71,5 @@ export const uploadToCloudinary = async (
   });
 };
 
-/**
- * Delete a file from Cloudinary
- */
-export const deleteFromCloudinary = async (
-  public_id: string,
-  resource_type: 'image' | 'raw' | 'video' = 'image'
-): Promise<void> => {
-  if (!isCloudinaryConfigured) {
-    throw new Error('Cloudinary is not configured. Please provide CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, and CLOUDINARY_API_SECRET environment variables.');
-  }
-  await cloudinary.uploader.destroy(public_id, { resource_type });
-};
-
-/**
- * Generate a signed URL for secure access
- */
-export const generateSignedUrl = (
-  public_id: string,
-  options: {
-    resource_type?: 'image' | 'raw' | 'video';
-    format?: string;
-    transformation?: any;
-  } = {}
-): string => {
-  if (!isCloudinaryConfigured) {
-    throw new Error('Cloudinary is not configured. Please provide CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, and CLOUDINARY_API_SECRET environment variables.');
-  }
-  return cloudinary.url(public_id, {
-    resource_type: options.resource_type || 'image',
-    format: options.format,
-    transformation: options.transformation,
-    sign_url: true,
-  });
-};
 
 export default cloudinary;

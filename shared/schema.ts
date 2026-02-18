@@ -295,33 +295,6 @@ export const insertModeratorVillageAssignmentSchema = createInsertSchema(moderat
   assignedAt: true,
 });
 
-// Phase 2: Monthly village stats summary table (for performance optimization)
-export const monthlyVillageStats = pgTable("monthly_village_stats", {
-  id: serial("id").primaryKey(),
-  villageId: text("village_id").notNull().references(() => villages.villageId),
-  month: text("month").notNull(), // Format: YYYY-MM (e.g., "2024-12")
-  totalHouseholds: integer("total_households").default(0),
-  totalCollectors: integer("total_collectors").default(0),
-  collectionsCompleted: integer("collections_completed").default(0),
-  collectionsMissed: integer("collections_missed").default(0),
-  openIssues: integer("open_issues").default(0),
-  averageSegregationRating: real("average_segregation_rating"),
-  averagePlasticRating: real("average_plastic_rating"),
-  updatedAt: timestamp("updated_at").defaultNow(),
-}, (table) => [
-  index("idx_monthly_stats_village_id").on(table.villageId),
-  uniqueIndex("idx_monthly_stats_village_month").on(table.villageId, table.month),
-  index("idx_monthly_stats_month").on(table.month),
-  index("idx_monthly_stats_updated_at").on(table.updatedAt),
-]);
-
-// Relations for monthly_village_stats
-export const monthlyVillageStatsRelations = relations(monthlyVillageStats, ({ one }) => ({
-  village: one(villages, {
-    fields: [monthlyVillageStats.villageId],
-    references: [villages.villageId],
-  }),
-}));
 
 // Website feedback table (for public home page feedback form)
 export const websiteFeedback = pgTable("website_feedback", {
@@ -375,11 +348,6 @@ export const insertQRCodeSchema = createInsertSchema(qrCodes).omit({
   createdAt: true,
 });
 
-// Insert schemas for Phase 2 summary table
-export const insertMonthlyVillageStatsSchema = createInsertSchema(monthlyVillageStats).omit({
-  id: true,
-  updatedAt: true,
-});
 
 // Insert schemas for new tables
 export const insertWebsiteFeedbackSchema = createInsertSchema(websiteFeedback).omit({
@@ -403,7 +371,7 @@ export type InsertAnnouncement = z.infer<typeof insertAnnouncementSchema>;
 export type InsertFeedback = z.infer<typeof insertFeedbackSchema>;
 export type InsertModerator = z.infer<typeof insertModeratorSchema>;
 export type InsertModeratorVillageAssignment = z.infer<typeof insertModeratorVillageAssignmentSchema>;
-export type InsertMonthlyVillageStats = z.infer<typeof insertMonthlyVillageStatsSchema>;
+
 export type InsertWebsiteFeedback = z.infer<typeof insertWebsiteFeedbackSchema>;
 export type InsertContactSubmission = z.infer<typeof insertContactSubmissionSchema>;
 export type InsertQRCode = z.infer<typeof insertQRCodeSchema>;
@@ -418,7 +386,7 @@ export type Announcement = typeof announcements.$inferSelect;
 export type Feedback = typeof feedback.$inferSelect;
 export type Moderator = typeof moderators.$inferSelect;
 export type ModeratorVillageAssignment = typeof moderatorVillageAssignments.$inferSelect;
-export type MonthlyVillageStats = typeof monthlyVillageStats.$inferSelect;
+
 export type WebsiteFeedback = typeof websiteFeedback.$inferSelect;
 export type ContactSubmission = typeof contactSubmissions.$inferSelect;
 export type QRCode = typeof qrCodes.$inferSelect;

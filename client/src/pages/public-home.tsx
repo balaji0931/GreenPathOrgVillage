@@ -10,13 +10,13 @@ import { useMutation } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import Pricing from "@/pages/pricing";
 import { useLocation, Link } from "wouter";
-import { 
-  Recycle, 
-  Users, 
-  Target, 
-  CheckCircle, 
-  Phone, 
-  Mail, 
+import {
+  Recycle,
+  Users,
+  Target,
+  CheckCircle,
+  Phone,
+  Mail,
   MapPin,
   Heart,
   Star,
@@ -108,7 +108,7 @@ export default function PublicHome({ initialSection = "home" }: PublicHomeProps 
       responsibilities: ["Monitor location performance", "Support managers", "Quality assurance", "View reports"]
     },
     {
-      title: "Manager", 
+      title: "Manager",
       icon: <Settings className="w-8 h-8" />,
       description: "Location coordinator who manages households/units, collectors, and waste collection operations in villages, societies, apartments, or organizations.",
       responsibilities: ["Coordinate collections", "Manage households/units", "Oversee collectors", "Generate reports"]
@@ -340,7 +340,7 @@ export default function PublicHome({ initialSection = "home" }: PublicHomeProps 
           <div className="absolute inset-0 bg-black/20"></div>
           <div className="absolute top-10 left-10 w-48 sm:w-72 h-48 sm:h-72 bg-white/10 rounded-full blur-3xl animate-pulse"></div>
           <div className="absolute bottom-10 right-10 w-64 sm:w-96 h-64 sm:h-96 bg-white/5 rounded-full blur-3xl animate-pulse delay-1000"></div>
-          <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-[600px] sm:w-[800px] h-[400px] sm:h-[600px] bg-gradient-to-r from-transparent via-white/5 to-transparent rounded-full blur-3xl animate-spin" style={{animationDuration: '20s'}}></div>
+          <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-[600px] sm:w-[800px] h-[400px] sm:h-[600px] bg-gradient-to-r from-transparent via-white/5 to-transparent rounded-full blur-3xl animate-spin" style={{ animationDuration: '20s' }}></div>
         </div>
 
         {/* Hero Content */}
@@ -365,12 +365,12 @@ export default function PublicHome({ initialSection = "home" }: PublicHomeProps 
           </p>
 
           <p className="text-base sm:text-lg text-white/90 max-w-4xl mx-auto mb-8 sm:mb-12 leading-relaxed px-4">
-            Join the revolution in sustainable living. Our cutting-edge platform connects communities, 
+            Join the revolution in sustainable living. Our cutting-edge platform connects communities,
             streamlines waste collection, and creates cleaner, healthier environments for villages, organizations, societies, apartments, and more.
           </p>
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center px-4">
-            <Button 
+            <Button
               onClick={() => navigateToSection("contact")}
               size="lg"
               className="w-full sm:w-auto bg-white text-green-600 hover:bg-green-50 font-semibold px-6 sm:px-8 py-3 sm:py-4 text-base sm:text-lg rounded-full shadow-2xl transform hover:scale-105 transition-all duration-300"
@@ -379,7 +379,7 @@ export default function PublicHome({ initialSection = "home" }: PublicHomeProps 
               Get Started Now
               <ArrowRight className="w-4 h-4 sm:w-5 sm:h-5 ml-2" />
             </Button>
-            <Button 
+            <Button
               onClick={() => navigateToSection("about")}
               variant="outline"
               size="lg"
@@ -586,7 +586,7 @@ export default function PublicHome({ initialSection = "home" }: PublicHomeProps 
                 }
               ].map((step, index) => (
                 <Card key={index} className="group relative border-0 shadow-xl hover:shadow-2xl transition-all duration-500 transform hover:-translate-y-3 bg-white/90 backdrop-blur-sm overflow-hidden cursor-pointer">
-                  <div className="absolute inset-0 bg-gradient-to-br opacity-0 group-hover:opacity-10 transition-opacity duration-300" style={{backgroundImage: `linear-gradient(135deg, var(--tw-gradient-stops))`}}></div>
+                  <div className="absolute inset-0 bg-gradient-to-br opacity-0 group-hover:opacity-10 transition-opacity duration-300" style={{ backgroundImage: `linear-gradient(135deg, var(--tw-gradient-stops))` }}></div>
 
                   {/* Step Number Badge */}
                   <div className="absolute -top-3 -right-3 z-20">
@@ -687,7 +687,7 @@ export default function PublicHome({ initialSection = "home" }: PublicHomeProps 
             Join thousands of villages, organizations, societies, and residential complexes for smarter waste management using GreenPath
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center px-4">
-            <Button 
+            <Button
               onClick={() => window.location.href = "/login"}
               size="lg"
               className="w-full sm:w-auto bg-white text-green-600 hover:bg-green-50 font-semibold px-6 sm:px-8 py-3 sm:py-4 text-base sm:text-lg rounded-full shadow-2xl transform hover:scale-105 transition-all duration-300"
@@ -695,7 +695,7 @@ export default function PublicHome({ initialSection = "home" }: PublicHomeProps 
               <Zap className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
               Start Your Journey
             </Button>
-            <Button 
+            <Button
               onClick={() => navigateToSection("contact")}
               variant="outline"
               size="lg"
@@ -740,7 +740,7 @@ export default function PublicHome({ initialSection = "home" }: PublicHomeProps 
           </p>
 
           <p className="text-base sm:text-lg text-white/90 max-w-4xl mx-auto mb-8 sm:mb-12 leading-relaxed px-4">
-            Learn about our platform, our passionate founders, and the amazing community 
+            Learn about our platform, our passionate founders, and the amazing community
             that makes GreenPath a reality for villages across the nation.
           </p>
         </div>
@@ -761,21 +761,21 @@ export default function PublicHome({ initialSection = "home" }: PublicHomeProps 
               <div className="grid lg:grid-cols-2 gap-8 sm:gap-12 items-center">
                 <div className="space-y-6 sm:space-y-8">
                   <h3 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-800 leading-tight">
-                    Revolutionizing 
+                    Revolutionizing
                     <span className="bg-gradient-to-r from-green-600 to-blue-600 bg-clip-text text-transparent"> Community Waste Management</span>
                   </h3>
                   <p className="text-base sm:text-lg md:text-xl text-gray-700 leading-relaxed">
-                    GreenPath is a cutting-edge waste management platform built for diverse communities including villages, 
-                    organizations, residential societies, apartment complexes, and corporate offices. We transform traditional 
+                    GreenPath is a cutting-edge waste management platform built for diverse communities including villages,
+                    organizations, residential societies, apartment complexes, and corporate offices. We transform traditional
                     waste collection into a smart, digital process that benefits everyone involved.
                   </p>
                   <p className="text-base sm:text-lg text-gray-600 leading-relaxed">
-                    Our platform connects households, offices, waste collectors, facility managers, and administrators through 
-                    a unified system that tracks collections, and ensures quality control throughout 
+                    Our platform connects households, offices, waste collectors, facility managers, and administrators through
+                    a unified system that tracks collections, and ensures quality control throughout
                     the waste management process across various settings.
                   </p>
                   <p className="text-base sm:text-lg text-gray-600 leading-relaxed">
-                    By leveraging technology like QR codes, mobile apps, and real-time tracking, we make waste 
+                    By leveraging technology like QR codes, mobile apps, and real-time tracking, we make waste
                     management more efficient, transparent, and environmentally sustainable for any community or organization.
                   </p>
                 </div>
@@ -915,14 +915,14 @@ export default function PublicHome({ initialSection = "home" }: PublicHomeProps 
                 </div>
 
                 <p className="text-xl sm:text-2xl font-medium text-gray-800 leading-relaxed text-center">
-                  We extend our heartfelt gratitude to 
-                  <span className="font-bold text-orange-600"> Azim Premji University</span> and the 
-                  <span className="font-bold text-green-600"> Hasiru Dala team</span> for their invaluable 
+                  We extend our heartfelt gratitude to
+                  <span className="font-bold text-orange-600"> Azim Premji University</span> and the
+                  <span className="font-bold text-green-600"> Hasiru Dala team</span> for their invaluable
                   support, guidance, and collaboration in making GreenPath a reality.
                 </p>
 
                 <p className="text-lg sm:text-xl text-gray-600 leading-relaxed text-center">
-                  Their commitment to sustainability and community development has been instrumental 
+                  Their commitment to sustainability and community development has been instrumental
                   in shaping our platform and our mission to create cleaner, healthier villages.
                 </p>
 
@@ -996,7 +996,7 @@ export default function PublicHome({ initialSection = "home" }: PublicHomeProps 
               </CardHeader>
               <CardContent>
                 <p className="text-lg sm:text-xl leading-relaxed text-green-100 mb-6">
-                  To create sustainable, clean communities where technology empowers every individual and organization 
+                  To create sustainable, clean communities where technology empowers every individual and organization
                   to contribute to environmental preservation through efficient waste management across all settings.
                 </p>
                 <div className="space-y-3">
@@ -1027,8 +1027,8 @@ export default function PublicHome({ initialSection = "home" }: PublicHomeProps 
               </CardHeader>
               <CardContent>
                 <p className="text-lg sm:text-xl leading-relaxed text-green-100 mb-6">
-                  To digitize and streamline waste management processes across villages, organizations, societies, 
-                  and residential complexes, enabling transparency, accountability, and community participation 
+                  To digitize and streamline waste management processes across villages, organizations, societies,
+                  and residential complexes, enabling transparency, accountability, and community participation
                   in building cleaner, healthier living and working environments.
                 </p>
                 <div className="space-y-3">
@@ -1061,7 +1061,7 @@ export default function PublicHome({ initialSection = "home" }: PublicHomeProps 
           <div className="absolute inset-0 bg-black/20"></div>
           <div className="absolute top-10 left-10 w-48 sm:w-72 h-48 sm:h-72 bg-white/10 rounded-full blur-3xl animate-pulse"></div>
           <div className="absolute bottom-10 right-10 w-64 sm:w-96 h-64 sm:h-96 bg-white/5 rounded-full blur-3xl animate-pulse delay-1000"></div>
-          <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-[600px] sm:w-[800px] h-[400px] sm:h-[600px] bg-gradient-to-r from-transparent via-white/5 to-transparent rounded-full blur-3xl animate-spin" style={{animationDuration: '20s'}}></div>
+          <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-[600px] sm:w-[800px] h-[400px] sm:h-[600px] bg-gradient-to-r from-transparent via-white/5 to-transparent rounded-full blur-3xl animate-spin" style={{ animationDuration: '20s' }}></div>
         </div>
 
         <div className="relative z-10 max-w-6xl mx-auto">
@@ -1085,7 +1085,7 @@ export default function PublicHome({ initialSection = "home" }: PublicHomeProps 
           </p>
 
           <p className="text-base sm:text-lg text-white/90 max-w-4xl mx-auto mb-8 sm:mb-12 leading-relaxed px-4">
-            Your voice matters! Share suggestions, report bugs, or provide general feedback 
+            Your voice matters! Share suggestions, report bugs, or provide general feedback
             to help us make GreenPath even better for communities everywhere.
           </p>
         </div>
@@ -1126,21 +1126,21 @@ export default function PublicHome({ initialSection = "home" }: PublicHomeProps 
                 <div className="grid md:grid-cols-2 gap-4 sm:gap-6">
                   <div className="space-y-2">
                     <Label htmlFor="name" className="text-gray-800 font-medium text-sm sm:text-base">Name *</Label>
-                    <Input 
-                      id="name" 
-                      name="name" 
-                      required 
+                    <Input
+                      id="name"
+                      name="name"
+                      required
                       className="h-10 sm:h-12 text-sm sm:text-base border-gray-200 focus:border-purple-400 focus:ring-purple-400"
                       placeholder="Your full name"
                     />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="email" className="text-gray-800 font-medium text-sm sm:text-base">Email *</Label>
-                    <Input 
-                      id="email" 
-                      name="email" 
-                      type="email" 
-                      required 
+                    <Input
+                      id="email"
+                      name="email"
+                      type="email"
+                      required
                       className="h-10 sm:h-12 text-sm sm:text-base border-gray-200 focus:border-purple-400 focus:ring-purple-400"
                       placeholder="your.email@example.com"
                     />
@@ -1163,19 +1163,19 @@ export default function PublicHome({ initialSection = "home" }: PublicHomeProps 
 
                 <div className="space-y-2">
                   <Label htmlFor="message" className="text-gray-800 font-medium text-sm sm:text-base">Message *</Label>
-                  <Textarea 
-                    id="message" 
-                    name="message" 
+                  <Textarea
+                    id="message"
+                    name="message"
                     placeholder="Please share your feedback, suggestions, or report any issues you've encountered. Be as detailed as possible to help us understand and address your input effectively."
                     rows={6}
-                    required 
+                    required
                     className="text-sm sm:text-base border-gray-200 focus:border-purple-400 focus:ring-purple-400 resize-none"
                   />
                 </div>
 
                 <div className="pt-4">
-                  <Button 
-                    type="submit" 
+                  <Button
+                    type="submit"
                     className="w-full bg-gradient-to-r from-purple-500 to-pink-600 hover:from-purple-600 hover:to-pink-700 text-white font-semibold py-3 sm:py-4 text-sm sm:text-lg rounded-xl shadow-lg transform hover:scale-105 transition-all duration-300"
                     disabled={feedbackMutation.isPending}
                   >
@@ -1241,7 +1241,7 @@ export default function PublicHome({ initialSection = "home" }: PublicHomeProps 
           <div className="absolute inset-0 bg-black/20"></div>
           <div className="absolute top-10 left-10 w-48 sm:w-72 h-48 sm:h-72 bg-white/10 rounded-full blur-3xl animate-pulse"></div>
           <div className="absolute bottom-10 right-10 w-64 sm:w-96 h-64 sm:h-96 bg-white/5 rounded-full blur-3xl animate-pulse delay-1000"></div>
-          <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-[600px] sm:w-[800px] h-[400px] sm:h-[600px] bg-gradient-to-r from-transparent via-white/5 to-transparent rounded-full blur-3xl animate-spin" style={{animationDuration: '20s'}}></div>
+          <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-[600px] sm:w-[800px] h-[400px] sm:h-[600px] bg-gradient-to-r from-transparent via-white/5 to-transparent rounded-full blur-3xl animate-spin" style={{ animationDuration: '20s' }}></div>
         </div>
 
         <div className="relative z-10 max-w-6xl mx-auto">
@@ -1265,7 +1265,7 @@ export default function PublicHome({ initialSection = "home" }: PublicHomeProps 
           </p>
 
           <p className="text-base sm:text-lg text-white/90 max-w-4xl mx-auto mb-8 sm:mb-12 leading-relaxed px-4">
-            Watch our comprehensive video tutorials to learn how to use GreenPath effectively, 
+            Watch our comprehensive video tutorials to learn how to use GreenPath effectively,
             master waste segregation techniques, and become a champion of sustainable living.
           </p>
         </div>
@@ -1418,7 +1418,7 @@ export default function PublicHome({ initialSection = "home" }: PublicHomeProps 
             Start your learning journey today and make a positive impact on your community
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center px-4">
-            <Button 
+            <Button
               onClick={() => window.location.href = "/login"}
               size="lg"
               className="w-full sm:w-auto bg-white text-orange-600 hover:bg-orange-50 font-semibold px-6 sm:px-8 py-3 sm:py-4 text-base sm:text-lg rounded-full shadow-2xl transform hover:scale-105 transition-all duration-300"
@@ -1426,7 +1426,7 @@ export default function PublicHome({ initialSection = "home" }: PublicHomeProps 
               <Zap className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
               Start Learning Now
             </Button>
-            <Button 
+            <Button
               onClick={() => navigateToSection("contact")}
               variant="outline"
               size="lg"
@@ -1448,7 +1448,7 @@ export default function PublicHome({ initialSection = "home" }: PublicHomeProps 
           <div className="absolute inset-0 bg-black/20"></div>
           <div className="absolute top-10 left-10 w-48 sm:w-72 h-48 sm:h-72 bg-white/10 rounded-full blur-3xl animate-pulse"></div>
           <div className="absolute bottom-10 right-10 w-64 sm:w-96 h-64 sm:h-96 bg-white/5 rounded-full blur-3xl animate-pulse delay-1000"></div>
-          <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-[600px] sm:w-[800px] h-[400px] sm:h-[600px] bg-gradient-to-r from-transparent via-white/5 to-transparent rounded-full blur-3xl animate-spin" style={{animationDuration: '20s'}}></div>
+          <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-[600px] sm:w-[800px] h-[400px] sm:h-[600px] bg-gradient-to-r from-transparent via-white/5 to-transparent rounded-full blur-3xl animate-spin" style={{ animationDuration: '20s' }}></div>
         </div>
 
         <div className="relative z-10 max-w-6xl mx-auto">
@@ -1472,7 +1472,7 @@ export default function PublicHome({ initialSection = "home" }: PublicHomeProps 
           </p>
 
           <p className="text-base sm:text-lg text-white/90 max-w-4xl mx-auto mb-8 sm:mb-12 leading-relaxed px-4">
-            Ready to transform waste management in your Village, community, organization, or residential complex? Have questions about our platform? 
+            Ready to transform waste management in your Village, community, organization, or residential complex? Have questions about our platform?
             We're here to help and excited to hear from you!
           </p>
         </div>
@@ -1503,7 +1503,7 @@ export default function PublicHome({ initialSection = "home" }: PublicHomeProps 
               <span className="text-xl sm:text-2xl font-bold text-gray-800">Get In Touch</span>
             </div>
             <p className="text-base sm:text-lg text-gray-600 max-w-3xl mx-auto">
-              Whether you're interested in implementing GreenPath in your village, organization, society, apartment complex, 
+              Whether you're interested in implementing GreenPath in your village, organization, society, apartment complex,
               or have questions about our services, we'd love to connect with you
             </p>
           </div>
@@ -1523,21 +1523,21 @@ export default function PublicHome({ initialSection = "home" }: PublicHomeProps 
                   <div className="grid md:grid-cols-2 gap-4 sm:gap-6">
                     <div className="space-y-2">
                       <Label htmlFor="contact-name" className="text-gray-800 font-medium text-sm sm:text-base">Name *</Label>
-                      <Input 
-                        id="contact-name" 
-                        name="name" 
-                        required 
+                      <Input
+                        id="contact-name"
+                        name="name"
+                        required
                         className="h-10 sm:h-12 text-sm sm:text-base border-gray-200 focus:border-cyan-400 focus:ring-cyan-400"
                         placeholder="Your full name"
                       />
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="contact-email" className="text-gray-800 font-medium text-sm sm:text-base">Email *</Label>
-                      <Input 
-                        id="contact-email" 
-                        name="email" 
-                        type="email" 
-                        required 
+                      <Input
+                        id="contact-email"
+                        name="email"
+                        type="email"
+                        required
                         className="h-10 sm:h-12 text-sm sm:text-base border-gray-200 focus:border-cyan-400 focus:ring-cyan-400"
                         placeholder="your.email@example.com"
                       />
@@ -1547,10 +1547,10 @@ export default function PublicHome({ initialSection = "home" }: PublicHomeProps 
                   <div className="space-y-2">
                     <Label htmlFor="phone" className="text-gray-800 font-medium text-sm sm:text-base">Phone (Optional)</Label>
                     <Label htmlFor="phone" className="ml-4 text-gray-800 font-medium text-sm">suggested for quicker responses</Label>
-                    <Input 
-                      id="phone" 
-                      name="phone" 
-                      type="tel" 
+                    <Input
+                      id="phone"
+                      name="phone"
+                      type="tel"
                       className="h-10 sm:h-12 text-sm sm:text-base border-gray-200 focus:border-cyan-400 focus:ring-cyan-400"
                       placeholder="+91 98765 43210"
                     />
@@ -1558,29 +1558,29 @@ export default function PublicHome({ initialSection = "home" }: PublicHomeProps 
 
                   <div className="space-y-2">
                     <Label htmlFor="subject" className="text-gray-800 font-medium text-sm sm:text-base">Subject *</Label>
-                    <Input 
-                      id="subject" 
-                      name="subject" 
+                    <Input
+                      id="subject"
+                      name="subject"
                       placeholder="Waste management service inquiry"
-                      required 
+                      required
                       className="h-10 sm:h-12 text-sm sm:text-base border-gray-200 focus:border-cyan-400 focus:ring-cyan-400"
                     />
                   </div>
 
                   <div className="space-y-2">
                     <Label htmlFor="contact-message" className="text-gray-800 font-medium text-sm sm:text-base">Message *</Label>
-                    <Textarea 
-                      id="contact-message" 
-                      name="message" 
+                    <Textarea
+                      id="contact-message"
+                      name="message"
                       placeholder="Please describe your waste management needs, community/organization details, or any questions you have about GreenPath..."
                       rows={5}
-                      required 
+                      required
                       className="text-sm sm:text-base border-gray-200 focus:border-cyan-400 focus:ring-cyan-400 resize-none"
                     />
                   </div>
 
-                  <Button 
-                    type="submit" 
+                  <Button
+                    type="submit"
                     className="w-full bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white font-semibold py-3 sm:py-4 text-sm sm:text-lg rounded-xl shadow-lg transform hover:scale-105 transition-all duration-300"
                     disabled={contactMutation.isPending}
                   >
@@ -1698,8 +1698,8 @@ export default function PublicHome({ initialSection = "home" }: PublicHomeProps 
           </div>
         </div>
       </div>
-       {/* Implementation Guide Section */}
-       <div className="py-12 sm:py-20 px-4 sm:px-6 bg-gradient-to-br from-gray-50 to-stone-50">
+      {/* Implementation Guide Section */}
+      <div className="py-12 sm:py-20 px-4 sm:px-6 bg-gradient-to-br from-gray-50 to-stone-50">
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-12 sm:mb-16">
             <div className="inline-flex items-center gap-3 bg-white/80 backdrop-blur-sm px-4 sm:px-6 py-3 rounded-full shadow-lg mb-6">
@@ -1733,7 +1733,7 @@ export default function PublicHome({ initialSection = "home" }: PublicHomeProps 
                   <li className="text-sm sm:text-base text-gray-600">
                     Access to smartphones for collectors and managers
                   </li>
-                   <li className="text-sm sm:text-base text-gray-600">
+                  <li className="text-sm sm:text-base text-gray-600">
                     Basic internet connectivity
                   </li>
                   <li className="text-sm sm:text-base text-gray-600">
@@ -1764,7 +1764,7 @@ export default function PublicHome({ initialSection = "home" }: PublicHomeProps 
                   <li className="text-sm sm:text-base text-gray-600">
                     Week 2-3: Household registration and QR code distribution
                   </li>
-                   <li className="text-sm sm:text-base text-gray-600">
+                  <li className="text-sm sm:text-base text-gray-600">
                     Week 2-3: Go-live and monitoring
                   </li>
                 </ul>
@@ -1846,11 +1846,11 @@ export default function PublicHome({ initialSection = "home" }: PublicHomeProps 
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16 sm:h-20">
             {/* Logo */}
-              <div className="relative">
-                <div className="p-2">
-                  <img src="/logos/logo-full.svg" alt="GreenPath" className="w-auto sm:h-12 h-10" />
-                </div>
+            <div className="relative">
+              <div className="p-2">
+                <img src="/logos/logo-full.svg" alt="GreenPath" className="w-auto sm:h-12 h-10" />
               </div>
+            </div>
 
             {/* Desktop Navigation */}
             <div className="hidden lg:flex space-x-2">
@@ -1858,11 +1858,10 @@ export default function PublicHome({ initialSection = "home" }: PublicHomeProps 
                 <button
                   key={section.id}
                   onClick={() => navigateToSection(section.id)}
-                  className={`relative flex items-center gap-2 px-6 py-3 rounded-full text-sm font-semibold transition-all duration-300 transform hover:scale-105 ${
-                    activeSection === section.id
+                  className={`relative flex items-center gap-2 px-6 py-3 rounded-full text-sm font-semibold transition-all duration-300 transform hover:scale-105 ${activeSection === section.id
                       ? "bg-gradient-to-r from-green-500 to-emerald-600 text-white shadow-lg"
                       : "text-gray-600 hover:text-green-600 hover:bg-green-50"
-                  }`}
+                    }`}
                 >
                   {section.icon}
                   {section.label}
@@ -1876,7 +1875,7 @@ export default function PublicHome({ initialSection = "home" }: PublicHomeProps 
             {/* Mobile Menu Button and Login */}
             <div className="flex items-center gap-3">
               {window.location.pathname !== "/login" && (
-                <Button 
+                <Button
                   onClick={() => window.location.href = "/login"}
                   size="sm"
                   className="bg-gradient-to-r from-green-500 to-green-800 hover:from-blue-600 hover:to-purple-700 text-white font-semibold px-4 sm:px-6 py-2 sm:py-3 rounded-full shadow-lg transform hover:scale-105 transition-all duration-300"
@@ -1894,7 +1893,7 @@ export default function PublicHome({ initialSection = "home" }: PublicHomeProps 
                   onClick={() => setActiveSection(activeSection === "menu" ? "home" : "menu")}
                   className="px-2 bg-gradient-to-r from-green-500 to-green-800 hover:from-blue-600 text-white font-semibold"
                 >
-                  <Menu className="w-6 h-6 mr-1 sm:mr-2" strokeWidth={3}/>
+                  <Menu className="w-6 h-6 mr-1 sm:mr-2" strokeWidth={3} />
                 </Button>
               </div>
             </div>
@@ -1946,30 +1945,30 @@ export default function PublicHome({ initialSection = "home" }: PublicHomeProps 
               © 2025 GreenPath. All rights reserved.
             </p>
             <div className="flex flex-wrap justify-center gap-4 text-xs pt-3">
-                <a
-                  href="/privacy-policy"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-gray-500 hover:text-green-600 transition-colors underline"
-                >
-                  Privacy Policy
-                </a>
-                <a
-                  href="/terms-of-service"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-gray-500 hover:text-green-600 transition-colors underline"
-                >
-                  Terms of Service
-                </a>
-                <a
-                  href="/data-protection"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-gray-500 hover:text-green-600 transition-colors underline"
-                >
-                  Data Protection
-                </a>
+              <a
+                href="/privacy-policy"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-gray-500 hover:text-green-600 transition-colors underline"
+              >
+                Privacy Policy
+              </a>
+              <a
+                href="/terms-of-service"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-gray-500 hover:text-green-600 transition-colors underline"
+              >
+                Terms of Service
+              </a>
+              <a
+                href="/data-protection"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-gray-500 hover:text-green-600 transition-colors underline"
+              >
+                Data Protection
+              </a>
             </div>
           </div>
         </div>

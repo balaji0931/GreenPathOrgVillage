@@ -5,8 +5,7 @@ import { useQuery, useMutation, useQueryClient, useInfiniteQuery } from "@tansta
 import { apiRequest, fetchWithCsrf } from "@/lib/queryClient";
 import { useTranslation } from "react-i18next";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
-import { DashboardTour } from "@/components/tours/DashboardTour";
-import { TourButton } from "@/components/tours/TourButton";
+
 import {
   Card,
   CardContent,
@@ -174,15 +173,15 @@ interface FilterState {
 }
 
 // Lazy-loading household collection card - fetches collections only when clicked
-const HouseholdCollectionCard = ({ 
-  household, 
+const HouseholdCollectionCard = ({
+  household,
   onSelect
-}: { 
-  household: Household; 
+}: {
+  household: Household;
   onSelect: (h: Household) => void;
 }) => {
   return (
-    <Card 
+    <Card
       className="hover:shadow-md transition-shadow cursor-pointer border-l-4 border-l-primary/20 hover:border-l-primary"
       onClick={() => onSelect(household)}
     >
@@ -207,17 +206,17 @@ const HouseholdCollectionCard = ({
   );
 };
 
-const CollectionDetailView = ({ 
-  household, 
+const CollectionDetailView = ({
+  household,
   dateFilter,
   onBack
-}: { 
-  household: Household; 
+}: {
+  household: Household;
   dateFilter: string;
   onBack: () => void;
 }) => {
   const { t } = useTranslation();
-  
+
   const { data: householdCollections = [], isLoading: collectionsLoading } = useQuery<WasteCollection[]>({
     queryKey: ["/api/waste-collections/household", household.uid],
     queryFn: async () => {
@@ -226,15 +225,15 @@ const CollectionDetailView = ({
       return response.json();
     },
   });
-  
-  const filteredCollections = dateFilter 
+
+  const filteredCollections = dateFilter
     ? householdCollections.filter(c => {
-        const collectionDate = new Date(c.collectionDate);
-        return collectionDate.toDateString() === new Date(dateFilter).toDateString();
-      })
+      const collectionDate = new Date(c.collectionDate);
+      return collectionDate.toDateString() === new Date(dateFilter).toDateString();
+    })
     : householdCollections;
-  
-  const sortedCollections = [...filteredCollections].sort((a, b) => 
+
+  const sortedCollections = [...filteredCollections].sort((a, b) =>
     new Date(b.collectionDate).getTime() - new Date(a.collectionDate).getTime()
   );
 
@@ -366,9 +365,9 @@ const CollectionDetailView = ({
                                 alt="Collection evidence"
                                 className="w-full h-full object-cover transition-transform group-hover:scale-105"
                               />
-                              <Button 
-                                variant="secondary" 
-                                size="sm" 
+                              <Button
+                                variant="secondary"
+                                size="sm"
                                 className="absolute bottom-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity"
                                 onClick={() => window.open(collection.photoUrl, '_blank')}
                               >
@@ -516,7 +515,7 @@ export default function ManagerDashboard() {
     url: string;
     title: string;
   } | null>(null);
-  
+
   // Image modal state
   const [showImageModal, setShowImageModal] = useState(false);
   const [selectedImageUrl, setSelectedImageUrl] = useState<string>('');
@@ -549,7 +548,7 @@ export default function ManagerDashboard() {
   const [selectedHousehold, setSelectedHousehold] = useState<Household | null>(null);
   const [householdSearch, setHouseholdSearch] = useState("");
   const [wardFilter, setWardFilter] = useState("all");
-  
+
   // Fetch ALL waste collections at once (no pagination) for accurate aggregates and reports
   const { data: allCollections = [] } = useQuery<WasteCollection[]>({
     queryKey: ["/api/waste-collections/village", user?.villageId],
@@ -567,7 +566,7 @@ export default function ManagerDashboard() {
     // Get target date (selected date or today)
     const targetDate = filters.date || new Date().toISOString().split('T')[0];
     const targetDateObj = new Date(targetDate);
-    
+
     // Create a map of household ID to their collection for the target date
     const householdCollectionMap = new Map<number, { hasCollection: boolean; collectionTime: number }>();
     allCollections.forEach(c => {
@@ -579,7 +578,7 @@ export default function ManagerDashboard() {
         });
       }
     });
-    
+
     // Filter by search
     const searchLower = deferredCollectionsSearch.toLowerCase();
     const filteredHouseholds = households.filter(household => {
@@ -590,13 +589,13 @@ export default function ManagerDashboard() {
         household.houseNumber?.toLowerCase().includes(searchLower)
       );
     });
-    
+
     // Sort by segregation rating (ascending) for today/selected date
     // Then by collection time (descending)
     const sortedHouseholds = [...filteredHouseholds].sort((a, b) => {
       const aData = householdCollectionMap.get(a.id);
       const bData = householdCollectionMap.get(b.id);
-      
+
       const aRating = aData?.hasCollection ? (allCollections.find(c => c.householdId === a.id && new Date(c.collectionDate).toDateString() === targetDateObj.toDateString())?.segregationRating || 5) : 6;
       const bRating = bData?.hasCollection ? (allCollections.find(c => c.householdId === b.id && new Date(c.collectionDate).toDateString() === targetDateObj.toDateString())?.segregationRating || 5) : 6;
 
@@ -611,7 +610,7 @@ export default function ManagerDashboard() {
       if (bData?.hasCollection) return 1;
       return 0;
     });
-    
+
     return { sortedHouseholds, targetDate };
   }, [households, allCollections, deferredCollectionsSearch, filters.date]);
 
@@ -637,26 +636,26 @@ export default function ManagerDashboard() {
   // Collection detail view state
   const [selectedCollectionHousehold, setSelectedCollectionHousehold] = useState<Household | null>(null);
 
-const handleDownloadSingleQR = async (h: Household) => {
-  try {
-    const cardElement = document.createElement("div");
+  const handleDownloadSingleQR = async (h: Household) => {
+    try {
+      const cardElement = document.createElement("div");
 
-    cardElement.style.width = "70mm";
-    cardElement.style.height = "99mm";
-    cardElement.style.backgroundColor = "white";
-    cardElement.style.display = "flex";
-    cardElement.style.flexDirection = "column";
-    cardElement.style.alignItems = "center";
-    cardElement.style.justifyContent = "center";
-    cardElement.style.boxSizing = "border-box";
-    cardElement.style.padding = "8mm";
-    cardElement.style.fontFamily = "sans-serif";
-    cardElement.style.textAlign = "center";
-    cardElement.style.position = "fixed";
-    cardElement.style.left = "-9999px";
-    cardElement.style.top = "-9999px";
+      cardElement.style.width = "70mm";
+      cardElement.style.height = "99mm";
+      cardElement.style.backgroundColor = "white";
+      cardElement.style.display = "flex";
+      cardElement.style.flexDirection = "column";
+      cardElement.style.alignItems = "center";
+      cardElement.style.justifyContent = "center";
+      cardElement.style.boxSizing = "border-box";
+      cardElement.style.padding = "8mm";
+      cardElement.style.fontFamily = "sans-serif";
+      cardElement.style.textAlign = "center";
+      cardElement.style.position = "fixed";
+      cardElement.style.left = "-9999px";
+      cardElement.style.top = "-9999px";
 
-    cardElement.innerHTML = `
+      cardElement.innerHTML = `
       <!-- Logo (from public folder) -->
       <img 
         src="/logos/png/logo-full-1024x256.png"
@@ -700,37 +699,37 @@ const handleDownloadSingleQR = async (h: Household) => {
       </div>
     `;
 
-    document.body.appendChild(cardElement);
+      document.body.appendChild(cardElement);
 
-    const canvas = await html2canvas(cardElement, {
-      scale: 3,
-      useCORS: true,
-      backgroundColor: "#ffffff",
-    });
+      const canvas = await html2canvas(cardElement, {
+        scale: 3,
+        useCORS: true,
+        backgroundColor: "#ffffff",
+      });
 
-    const imgData = canvas.toDataURL("image/png");
+      const imgData = canvas.toDataURL("image/png");
 
-    const pdf = new jsPDF({
-      orientation: "portrait",
-      unit: "mm",
-      format: [70, 99],
-    });
+      const pdf = new jsPDF({
+        orientation: "portrait",
+        unit: "mm",
+        format: [70, 99],
+      });
 
-    pdf.addImage(imgData, "PNG", 0, 0, 70, 99);
-    pdf.save(`QR_Card_${h.uid}.pdf`);
+      pdf.addImage(imgData, "PNG", 0, 0, 70, 99);
+      pdf.save(`QR_Card_${h.uid}.pdf`);
 
-    document.body.removeChild(cardElement);
+      document.body.removeChild(cardElement);
 
-    toast({ title: "QR Card downloaded successfully" });
+      toast({ title: "QR Card downloaded successfully" });
 
-  } catch (err) {
-    console.error(err);
-    toast({
-      title: "Failed to download QR",
-      variant: "destructive",
-    });
-  }
-};
+    } catch (err) {
+      console.error(err);
+      toast({
+        title: "Failed to download QR",
+        variant: "destructive",
+      });
+    }
+  };
 
 
 
@@ -759,10 +758,10 @@ const handleDownloadSingleQR = async (h: Household) => {
     if (h.latitude && h.longitude) {
       window.open(`https://www.google.com/maps?q=${h.latitude},${h.longitude}`, '_blank');
     } else {
-      toast({ 
-        title: "Location Unavailable", 
+      toast({
+        title: "Location Unavailable",
         description: "Latitude and Longitude details are not available for this household.",
-        variant: "destructive" 
+        variant: "destructive"
       });
     }
   };
@@ -876,17 +875,17 @@ const handleDownloadSingleQR = async (h: Household) => {
         try {
           const formData = new FormData();
           formData.append('file', proofPhotoFile);
-          
+
           const uploadResponse = await fetchWithCsrf('/api/upload/manager-proof', {
             method: 'POST',
             body: formData,
             credentials: 'include'
           });
-          
+
           if (!uploadResponse.ok) {
             throw new Error('Proof photo upload failed');
           }
-          
+
           const uploadResult = await uploadResponse.json();
           managerProofPhotoUrl = uploadResult.url;
         } catch (uploadError) {
@@ -894,8 +893,8 @@ const handleDownloadSingleQR = async (h: Household) => {
         }
       }
 
-      return apiRequest("PATCH", `/api/issues/${issueId}`, { 
-        status, 
+      return apiRequest("PATCH", `/api/issues/${issueId}`, {
+        status,
         managerReply,
         managerProofPhotoUrl
       });
@@ -906,10 +905,10 @@ const handleDownloadSingleQR = async (h: Household) => {
       setShowIssueDialog(false);
     },
     onError: (error: any) => {
-      toast({ 
-        title: "Failed to update issue", 
+      toast({
+        title: "Failed to update issue",
         description: error.message || "Please try again",
-        variant: "destructive" 
+        variant: "destructive"
       });
     },
   });
@@ -921,9 +920,9 @@ const handleDownloadSingleQR = async (h: Household) => {
       return response.json();
     },
     onSuccess: (data) => {
-      toast({ 
-        title: "Field Worker Created", 
-        description: `User ID: ${data.userId}, Password: ${data.userId}` 
+      toast({
+        title: "Field Worker Created",
+        description: `User ID: ${data.userId}, Password: ${data.userId}`
       });
       queryClient.invalidateQueries({ queryKey: ["/api/fieldworkers"] });
       setShowCreateFieldWorkerDialog(false);
@@ -972,17 +971,17 @@ const handleDownloadSingleQR = async (h: Household) => {
         try {
           const formData = new FormData();
           formData.append('file', data.photoFile);
-          
+
           const uploadResponse = await fetchWithCsrf('/api/upload/photo', {
             method: 'POST',
             body: formData,
             credentials: 'include'
           });
-          
+
           if (!uploadResponse.ok) {
             throw new Error('Photo upload failed');
           }
-          
+
           const uploadResult = await uploadResponse.json();
           photoUrl = uploadResult.url;
         } catch (uploadError) {
@@ -1151,7 +1150,7 @@ const handleDownloadSingleQR = async (h: Household) => {
 
     // Calculate stats for this collector
     const collectorCollections = allCollections.filter(c => c.collectorId === collector.id);
-    const avgRating = filteredFeedbacks.length > 0 
+    const avgRating = filteredFeedbacks.length > 0
       ? (filteredFeedbacks.reduce((sum, f) => sum + (f.rating || 0), 0) / filteredFeedbacks.length).toFixed(1)
       : "0.0";
 
@@ -1168,11 +1167,11 @@ const handleDownloadSingleQR = async (h: Household) => {
                 </p>
                 <div className="mt-2">
                   <Label className="text-xs text-blue-800">Assigned Vehicle</Label>
-                  <Select 
-                    value={(collector as any).assignedVehicle || "none"} 
-                    onValueChange={(val) => updateCollectorVehicleMutation.mutate({ 
-                      collectorId: collector.id, 
-                      registrationNumber: val === "none" ? null : val 
+                  <Select
+                    value={(collector as any).assignedVehicle || "none"}
+                    onValueChange={(val) => updateCollectorVehicleMutation.mutate({
+                      collectorId: collector.id,
+                      registrationNumber: val === "none" ? null : val
                     })}
                   >
                     <SelectTrigger className="h-8 bg-white border-blue-200">
@@ -1234,8 +1233,8 @@ const handleDownloadSingleQR = async (h: Household) => {
               </Button>
             </div>
             <p className="text-xs text-muted-foreground mt-2">
-              {feedbackDateFilter 
-                ? `${t("app.filter")} ${new Date(feedbackDateFilter).toLocaleDateString()}` 
+              {feedbackDateFilter
+                ? `${t("app.filter")} ${new Date(feedbackDateFilter).toLocaleDateString()}`
                 : t("app.all")}
             </p>
           </CardContent>
@@ -1341,51 +1340,45 @@ const handleDownloadSingleQR = async (h: Household) => {
 
   return (
     <>
-      {/* Dashboard Tour Component */}
-      {/* <DashboardTour 
-        userRole="manager" 
-        shouldShowWelcome={user?.isFirstLogin}
-      /> */}
-      
-      
+
       <div className="min-h-screen flex flex-col bg-gray-50">
         {/* Top Navbar */}
         <div className="bg-green-600 text-white px-2 sm:px-7 py-1 sm:py-2 sticky top-0 z-10">
           <div className="flex items-center justify-between">
             <div className="flex items-center">
-             <img src="/logos/logo-dark.svg" alt="GreenPath" className="w-auto h-9" />
-          </div>
+              <img src="/logos/logo-dark.svg" alt="GreenPath" className="w-auto h-9" />
+            </div>
             <div className="flex items-center space-x-1">
-              {/* <TourButton className="text-black bg-white hover:bg-white"/> */}
-            
-                <button
-                  key={'announcements'}
-                  onClick={() => setActiveTab('announcements')}
-                  className={cn(
-                    "flex-1 flex items-center justify-center py-3 transition-colors",
-                    activeTab === 'announcements'
-                      ? "text-blue-600 bg-blue-50 p-2 rounded-md"
-                      : "text-black p-2 bg-white rounded-md",
-                  )}
-                >
-                  <Bell className="h-5 w-5" strokeWidth={3}/>
-                </button>
-                <button
-                  key={'settings'}
-                  onClick={() => setActiveTab('settings')}
-                  className={cn(
-                    "flex-1 flex items-center justify-center py-3 transition-colors",
-                    activeTab === 'settings'
-                      ? "text-blue-600 bg-blue-50 p-2 rounded-md"
-                      : "text-black p-2 bg-white rounded-md",
-                  )}
-                >
-                  <Settings className="h-5 w-5" strokeWidth={3}/>
-                </button>
+
+
+              <button
+                key={'announcements'}
+                onClick={() => setActiveTab('announcements')}
+                className={cn(
+                  "flex-1 flex items-center justify-center py-3 transition-colors",
+                  activeTab === 'announcements'
+                    ? "text-blue-600 bg-blue-50 p-2 rounded-md"
+                    : "text-black p-2 bg-white rounded-md",
+                )}
+              >
+                <Bell className="h-5 w-5" strokeWidth={3} />
+              </button>
+              <button
+                key={'settings'}
+                onClick={() => setActiveTab('settings')}
+                className={cn(
+                  "flex-1 flex items-center justify-center py-3 transition-colors",
+                  activeTab === 'settings'
+                    ? "text-blue-600 bg-blue-50 p-2 rounded-md"
+                    : "text-black p-2 bg-white rounded-md",
+                )}
+              >
+                <Settings className="h-5 w-5" strokeWidth={3} />
+              </button>
 
             </div>
+          </div>
         </div>
-      </div>
 
         <div className="flex flex-1 min-h-0">
           {/* Mobile Bottom Navigation */}
@@ -1411,7 +1404,7 @@ const handleDownloadSingleQR = async (h: Household) => {
                       : "text-gray-600 hover:text-gray-900 hover:bg-gray-50",
                   )}
                 >
-                  <Icon className="h-6 w-6" strokeWidth={2.5}/>
+                  <Icon className="h-6 w-6" strokeWidth={2.5} />
                 </button>
               ))}
             </div>
@@ -1482,7 +1475,7 @@ const handleDownloadSingleQR = async (h: Household) => {
                   />
                 </div>
 
-              {/* Announcements Section */}
+                {/* Announcements Section */}
                 <Card>
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
@@ -1530,9 +1523,9 @@ const handleDownloadSingleQR = async (h: Household) => {
 
                   <TabsContent value="collectors" className="space-y-4">
 
-                {/* Date Filter */}
+                    {/* Date Filter */}
                     <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
-                      
+
                       {/* Date Input */}
                       <div className="flex-1 w-full">
                         <Input
@@ -1558,85 +1551,85 @@ const handleDownloadSingleQR = async (h: Household) => {
                       <CreateCollectorDialog villageId={user?.villageId || ""} />
                     </div>
 
-                <div className="space-y-4">
-                  {collectors.map((collector) => {
-                    // Filter collections by date if selected
-                    const filteredCollections = allCollections.filter(c => {
-                      const collectionMatches = c.collectorId === collector.id;
-                      if (!filters.date) return collectionMatches;
-                      const collectionDate = new Date(c.collectionDate).toDateString();
-                      const filterDate = new Date(filters.date).toDateString();
-                      return collectionMatches && collectionDate === filterDate;
-                    });
+                    <div className="space-y-4">
+                      {collectors.map((collector) => {
+                        // Filter collections by date if selected
+                        const filteredCollections = allCollections.filter(c => {
+                          const collectionMatches = c.collectorId === collector.id;
+                          if (!filters.date) return collectionMatches;
+                          const collectionDate = new Date(c.collectionDate).toDateString();
+                          const filterDate = new Date(filters.date).toDateString();
+                          return collectionMatches && collectionDate === filterDate;
+                        });
 
-                    // Calculate real-time stats based on filtered data
-                    const totalCollections = filteredCollections.length;
-                    const averageRating = filteredCollections.length > 0 
-                      ? (filteredCollections.reduce((sum, c) => sum + (c.segregationRating || 0), 0) / filteredCollections.length).toFixed(1)
-                      : "0.0";
+                        // Calculate real-time stats based on filtered data
+                        const totalCollections = filteredCollections.length;
+                        const averageRating = filteredCollections.length > 0
+                          ? (filteredCollections.reduce((sum, c) => sum + (c.segregationRating || 0), 0) / filteredCollections.length).toFixed(1)
+                          : "0.0";
 
-                    return (
-                      <Dialog key={collector.id}>
-                        <DialogTrigger asChild>
-                          <Card className="cursor-pointer hover:shadow-md transition-shadow">
-                            <CardContent className="p-4">
-                              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                                
-                                {/* Left: Collector Info */}
-                                <div className="flex-1">
-                                  <h3 className="font-semibold break-words">{collector.name}</h3>
-                                  <p className="text-sm text-muted-foreground break-words">
-                                    ID: {collector.uid} | Phone: {collector.phone}
-                                  </p>
-                                  {(collector as any).assignedVehicle && (
-                                    <p className="text-xs text-blue-600 mt-1 flex items-center gap-1">
-                                      <Package className="h-3 w-3" />
-                                      Vehicle: {(collector as any).assignedVehicle}
-                                    </p>
-                                  )}
+                        return (
+                          <Dialog key={collector.id}>
+                            <DialogTrigger asChild>
+                              <Card className="cursor-pointer hover:shadow-md transition-shadow">
+                                <CardContent className="p-4">
+                                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
 
-                                  {/* Stats Grid */}
-                                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 text-center mt-3">
-                                    <div>
-                                      <div className="text-lg font-bold">{totalCollections}</div>
-                                      <div className="text-xs text-muted-foreground">Collections</div>
+                                    {/* Left: Collector Info */}
+                                    <div className="flex-1">
+                                      <h3 className="font-semibold break-words">{collector.name}</h3>
+                                      <p className="text-sm text-muted-foreground break-words">
+                                        ID: {collector.uid} | Phone: {collector.phone}
+                                      </p>
+                                      {(collector as any).assignedVehicle && (
+                                        <p className="text-xs text-blue-600 mt-1 flex items-center gap-1">
+                                          <Package className="h-3 w-3" />
+                                          Vehicle: {(collector as any).assignedVehicle}
+                                        </p>
+                                      )}
+
+                                      {/* Stats Grid */}
+                                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 text-center mt-3">
+                                        <div>
+                                          <div className="text-lg font-bold">{totalCollections}</div>
+                                          <div className="text-xs text-muted-foreground">Collections</div>
+                                        </div>
+                                        <div>
+                                          <div className="text-lg font-bold">{averageRating}</div>
+                                          <div className="text-xs text-muted-foreground">Avg Rating</div>
+                                        </div>
+                                      </div>
                                     </div>
-                                    <div>
-                                      <div className="text-lg font-bold">{averageRating}</div>
-                                      <div className="text-xs text-muted-foreground">Avg Rating</div>
+
+                                    {/* Right: Badge */}
+                                    <div className="sm:self-start">
+                                      <Badge className="text-xs whitespace-nowrap">
+                                        Click to view feedbacks
+                                      </Badge>
                                     </div>
                                   </div>
-                                </div>
+                                </CardContent>
+                              </Card>
 
-                                {/* Right: Badge */}
-                                <div className="sm:self-start">
-                                  <Badge className="text-xs whitespace-nowrap">
-                                    Click to view feedbacks
-                                  </Badge>
-                                </div>
-                              </div>
-                            </CardContent>
-                          </Card>
+                            </DialogTrigger>
 
-                        </DialogTrigger>
+                            <DialogContent className="max-w-6xl max-h-[80vh] overflow-y-auto">
+                              <DialogHeader>
+                                <DialogTitle className="flex items-center justify-between">
+                                  <span>Collector Feedbacks - {collector.name}</span>
+                                </DialogTitle>
+                              </DialogHeader>
 
-                        <DialogContent className="max-w-6xl max-h-[80vh] overflow-y-auto">
-                          <DialogHeader>
-                            <DialogTitle className="flex items-center justify-between">
-                              <span>Collector Feedbacks - {collector.name}</span>
-                            </DialogTitle>
-                          </DialogHeader>
-
-                          <CollectorFeedbackModal 
-                            collector={collector}
-                            allCollections={allCollections}
-                            feedbacks={feedbacks}
-                          />
-                        </DialogContent>
-                      </Dialog>
-                    );
-                  })}
-                </div>
+                              <CollectorFeedbackModal
+                                collector={collector}
+                                allCollections={allCollections}
+                                feedbacks={feedbacks}
+                              />
+                            </DialogContent>
+                          </Dialog>
+                        );
+                      })}
+                    </div>
                   </TabsContent>
 
                   <TabsContent value="fieldworkers" className="space-y-4">
@@ -1891,15 +1884,15 @@ const handleDownloadSingleQR = async (h: Household) => {
 
                   <TabsContent value="collections" className="space-y-4">
                     {selectedCollectionHousehold ? (
-                      <CollectionDetailView 
-                        household={selectedCollectionHousehold} 
+                      <CollectionDetailView
+                        household={selectedCollectionHousehold}
                         dateFilter={filters.date}
                         onBack={() => setSelectedCollectionHousehold(null)}
                       />
                     ) : (
                       <>
                         <div className="flex flex-col sm:flex-row gap-4 pt-3">
-                          
+
                           {/* Search Input */}
                           <div className="flex-1">
                             <Input
@@ -1961,7 +1954,7 @@ const handleDownloadSingleQR = async (h: Household) => {
                                   return collectionDate.toDateString() === new Date(filters.date).toDateString();
                                 });
                               }
-                              return filteredCollections.length > 0 
+                              return filteredCollections.length > 0
                                 ? (filteredCollections.reduce((sum, c) => sum + (c.segregationRating || 0), 0) / filteredCollections.length).toFixed(1)
                                 : "0.0";
                             })()}
@@ -1977,19 +1970,19 @@ const handleDownloadSingleQR = async (h: Household) => {
                           <CardContent>
                             {(() => {
                               const { sortedHouseholds } = collectionsResult;
-                              
+
                               // Apply UI-only pagination (limit 50 at a time with load more)
                               const displayedHouseholds = sortedHouseholds.slice(0, collectionsHouseholdsLimit);
                               const hasMoreHouseholds = sortedHouseholds.length > collectionsHouseholdsLimit;
                               const remainingHouseholds = sortedHouseholds.length - collectionsHouseholdsLimit;
-                              
+
                               return (
                                 <>
                                   <div className="space-y-3">
                                     {displayedHouseholds.map((household) => (
-                                      <HouseholdCollectionCard 
-                                        key={household.id} 
-                                        household={household} 
+                                      <HouseholdCollectionCard
+                                        key={household.id}
+                                        household={household}
                                         onSelect={setSelectedCollectionHousehold}
                                       />
                                     ))}
@@ -2007,7 +2000,7 @@ const handleDownloadSingleQR = async (h: Household) => {
                                       </Button>
                                     )}
                                   </div>
-                                  
+
                                   {/* Summary */}
                                   <p className="text-sm text-muted-foreground text-center mt-2">
                                     Showing {displayedHouseholds.length} of {sortedHouseholds.length} households
@@ -2031,13 +2024,13 @@ const handleDownloadSingleQR = async (h: Household) => {
                               .filter(c => c.householdId === household.id)
                               .sort((a, b) => new Date(b.collectionDate).getTime() - new Date(a.collectionDate).getTime())
                               .slice(0, 10); // Last 10 collections for this household
-                            
+
                             // Count collections where waste was not collected due to poor segregation or rating < 4
-                            const problemCollections = householdCollections.filter(c => 
-                              (c.segregationRating && c.segregationRating < 4) || 
+                            const problemCollections = householdCollections.filter(c =>
+                              (c.segregationRating && c.segregationRating < 4) ||
                               (c.status === "not_collected" && c.missedReason && c.missedReason.includes("segregat"))
                             ).length;
-                            
+
                             return problemCollections >= 3;
                           }).length;
                         })()}
@@ -2052,13 +2045,13 @@ const handleDownloadSingleQR = async (h: Household) => {
                               .filter(c => c.householdId === household.id)
                               .sort((a, b) => new Date(b.collectionDate).getTime() - new Date(a.collectionDate).getTime())
                               .slice(0, 10); // Last 10 collections for this household
-                            
+
                             // Count collections where waste was not collected due to poor segregation or rating < 4
-                            const problemCollections = householdCollections.filter(c => 
-                              (c.segregationRating && c.segregationRating < 4) || 
+                            const problemCollections = householdCollections.filter(c =>
+                              (c.segregationRating && c.segregationRating < 4) ||
                               (c.status === "not_collected" && c.missedReason && c.missedReason.includes("segregat"))
                             ).length;
-                            
+
                             return problemCollections < 3;
                           }).length;
                         })()}
@@ -2079,14 +2072,14 @@ const handleDownloadSingleQR = async (h: Household) => {
                               .filter(c => c.householdId === household.id)
                               .sort((a, b) => new Date(b.collectionDate).getTime() - new Date(a.collectionDate).getTime())
                               .slice(0, 10);
-                            
+
                             const uncollectedCount = 10 - householdCollections.length;
                             const lowRatingCount = householdCollections.filter(c => (c.segregationRating || 0) < 4).length;
                             const issues = uncollectedCount + lowRatingCount;
-                            
+
                             return sum + Math.max(0, (10 - issues) * 10);
                           }, 0);
-                          
+
                           return households.length > 0 ? Math.round(totalScore / households.length) : 0;
                         })()}
                         icon={Award}
@@ -2119,13 +2112,13 @@ const handleDownloadSingleQR = async (h: Household) => {
                                     .filter(c => c.householdId === household.id)
                                     .sort((a, b) => new Date(b.collectionDate).getTime() - new Date(a.collectionDate).getTime())
                                     .slice(0, 10); // Last 10 collections for this household
-                                  
+
                                   // Count collections where waste was not collected due to poor segregation or rating < 4
-                                  const problemCollections = householdCollections.filter(c => 
-                                    (c.segregationRating && c.segregationRating < 4) || 
+                                  const problemCollections = householdCollections.filter(c =>
+                                    (c.segregationRating && c.segregationRating < 4) ||
                                     (c.status === "not_collected" && c.missedReason && c.missedReason.includes("segregat"))
                                   ).length;
-                                  
+
                                   return problemCollections >= 3;
                                 })
                                 .map((household) => {
@@ -2133,12 +2126,12 @@ const handleDownloadSingleQR = async (h: Household) => {
                                     .filter(c => c.householdId === household.id)
                                     .sort((a, b) => new Date(b.collectionDate).getTime() - new Date(a.collectionDate).getTime())
                                     .slice(0, 10); // Last 10 collections for this household
-                                  
-                                  const problemCollections = householdCollections.filter(c => 
-                                    (c.segregationRating && c.segregationRating < 4) || 
+
+                                  const problemCollections = householdCollections.filter(c =>
+                                    (c.segregationRating && c.segregationRating < 4) ||
                                     (c.status === "not_collected" && c.missedReason && c.missedReason.includes("segregat"))
                                   ).length;
-                                  const avgRating = householdCollections.length > 0 
+                                  const avgRating = householdCollections.length > 0
                                     ? (householdCollections.reduce((sum, c) => sum + (c.segregationRating || 0), 0) / householdCollections.length).toFixed(1)
                                     : "0.0";
 
@@ -2179,19 +2172,19 @@ const handleDownloadSingleQR = async (h: Household) => {
                                 .filter(c => c.householdId === household.id)
                                 .sort((a, b) => new Date(b.collectionDate).getTime() - new Date(a.collectionDate).getTime())
                                 .slice(0, 10);
-                              
-                              const problemCollections = householdCollections.filter(c => 
-                                (c.segregationRating && c.segregationRating < 4) || 
+
+                              const problemCollections = householdCollections.filter(c =>
+                                (c.segregationRating && c.segregationRating < 4) ||
                                 (c.status === "not_collected" && c.missedReason && c.missedReason.includes("segregat"))
                               ).length;
-                              
+
                               return problemCollections >= 3;
                             }).length === 0 && (
-                              <div className="text-center py-8">
-                                <CheckCircle className="w-12 h-12 text-green-500 mx-auto mb-3" />
-                                <p className="text-muted-foreground">All households are performing well!</p>
-                              </div>
-                            )}
+                                <div className="text-center py-8">
+                                  <CheckCircle className="w-12 h-12 text-green-500 mx-auto mb-3" />
+                                  <p className="text-muted-foreground">All households are performing well!</p>
+                                </div>
+                              )}
                           </CardContent>
                         </Card>
                       </TabsContent>
@@ -2215,13 +2208,13 @@ const handleDownloadSingleQR = async (h: Household) => {
                                     .filter(c => c.householdId === household.id)
                                     .sort((a, b) => new Date(b.collectionDate).getTime() - new Date(a.collectionDate).getTime())
                                     .slice(0, 10); // Last 10 collections for this household
-                                  
+
                                   // Count collections where waste was not collected due to poor segregation or rating < 4
-                                  const problemCollections = householdCollections.filter(c => 
-                                    (c.segregationRating && c.segregationRating < 4) || 
+                                  const problemCollections = householdCollections.filter(c =>
+                                    (c.segregationRating && c.segregationRating < 4) ||
                                     (c.status === "not_collected" && c.missedReason && c.missedReason.includes("segregat"))
                                   ).length;
-                                  
+
                                   return problemCollections < 3;
                                 })
                                 .map((household) => {
@@ -2229,12 +2222,12 @@ const handleDownloadSingleQR = async (h: Household) => {
                                     .filter(c => c.householdId === household.id)
                                     .sort((a, b) => new Date(b.collectionDate).getTime() - new Date(a.collectionDate).getTime())
                                     .slice(0, 10); // Last 10 collections for this household
-                                  
-                                  const problemCollections = householdCollections.filter(c => 
-                                    (c.segregationRating && c.segregationRating < 4) || 
+
+                                  const problemCollections = householdCollections.filter(c =>
+                                    (c.segregationRating && c.segregationRating < 4) ||
                                     (c.status === "not_collected" && c.missedReason && c.missedReason.includes("segregat"))
                                   ).length;
-                                  const avgRating = householdCollections.length > 0 
+                                  const avgRating = householdCollections.length > 0
                                     ? (householdCollections.reduce((sum, c) => sum + (c.segregationRating || 0), 0) / householdCollections.length).toFixed(1)
                                     : "0.0";
 
@@ -2282,283 +2275,283 @@ const handleDownloadSingleQR = async (h: Household) => {
               </div>
             )}
 
-          {activeTab === "settings" && (
-          <div className="space-y-4 p-4">
-            {/* Management Tabs */}
-            <Tabs defaultValue="settings" className="w-full">
-              <TabsList className="grid w-full grid-cols-3">
-                <TabsTrigger value="settings">Profile</TabsTrigger>
-                <TabsTrigger value="wards">Wards</TabsTrigger>
-                <TabsTrigger value="vehicles">Vehicles</TabsTrigger>
-              </TabsList>
+            {activeTab === "settings" && (
+              <div className="space-y-4 p-4">
+                {/* Management Tabs */}
+                <Tabs defaultValue="settings" className="w-full">
+                  <TabsList className="grid w-full grid-cols-3">
+                    <TabsTrigger value="settings">Profile</TabsTrigger>
+                    <TabsTrigger value="wards">Wards</TabsTrigger>
+                    <TabsTrigger value="vehicles">Vehicles</TabsTrigger>
+                  </TabsList>
 
-              <TabsContent value="settings" className="space-y-4 mt-4">
-            {/* User Info */}
-            <Card>
-              <CardHeader className="pb-3 items-center">
-                
-                <CardTitle className="flex items-center text-2xl font-bold">
-                  <User className="w-6 h-6 mr-2" strokeWidth={3}/>
-                  User Info
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3 text-center">
-                <div>
-                  <Label className="text-xs text-gray-600">Manager Name</Label>
-                  <p className="font-medium">{user?.name}</p>
-                </div>
-                <div>
-                  <Label className="text-xs text-gray-600">{t("auth.userId")}</Label>
-                  <p className="font-medium">{user?.userId}</p>
-                </div>
-                <div>
-                  <Label className="text-xs text-gray-600">Village</Label>
-                  <p className="font-medium">{user?.villageId}</p>
-                </div>
-                <div>
-                  <Label className="text-xs text-gray-600 pr-3">{t("roles.manager")}</Label>
-                  <Badge variant="secondary">{user?.role}</Badge>
-                </div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="flex items-center text-lg">
-                      <User className="w-5 h-5 mr-2" />
-                  {t("navigation.settings")}
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-              <div className="flex justify-center items-center space-x-3">
-                <h2 className="font-bold">Select Language: </h2>
-                <LanguageSwitcher />
-              </div>
-              
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setShowPasswordDialog(true)}
-                      className="flex items-center justify-center gap-1 sm:gap-2 text-xs sm:text-sm w-full"
-              >
-                <Settings className="h-3 w-3 sm:h-4 sm:w-4" />
-                      <span>{t("app.changePassword")}</span>
-              </Button>
+                  <TabsContent value="settings" className="space-y-4 mt-4">
+                    {/* User Info */}
+                    <Card>
+                      <CardHeader className="pb-3 items-center">
 
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => logoutMutation.mutate()}
-                      className="flex items-center justify-center gap-1 sm:gap-2 text-xs sm:text-sm w-full"
-              >
-                <LogOut className="h-3 w-3 sm:h-4 sm:w-4" />
-                      <span>{t("auth.logout")}</span>
-              </Button>
-              </CardContent>
-            </Card>
-              </TabsContent>
+                        <CardTitle className="flex items-center text-2xl font-bold">
+                          <User className="w-6 h-6 mr-2" strokeWidth={3} />
+                          User Info
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent className="space-y-3 text-center">
+                        <div>
+                          <Label className="text-xs text-gray-600">Manager Name</Label>
+                          <p className="font-medium">{user?.name}</p>
+                        </div>
+                        <div>
+                          <Label className="text-xs text-gray-600">{t("auth.userId")}</Label>
+                          <p className="font-medium">{user?.userId}</p>
+                        </div>
+                        <div>
+                          <Label className="text-xs text-gray-600">Village</Label>
+                          <p className="font-medium">{user?.villageId}</p>
+                        </div>
+                        <div>
+                          <Label className="text-xs text-gray-600 pr-3">{t("roles.manager")}</Label>
+                          <Badge variant="secondary">{user?.role}</Badge>
+                        </div>
+                      </CardContent>
+                    </Card>
+                    <Card>
+                      <CardHeader className="pb-3">
+                        <CardTitle className="flex items-center text-lg">
+                          <User className="w-5 h-5 mr-2" />
+                          {t("navigation.settings")}
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent className="space-y-3">
+                        <div className="flex justify-center items-center space-x-3">
+                          <h2 className="font-bold">Select Language: </h2>
+                          <LanguageSwitcher />
+                        </div>
 
-              <TabsContent value="wards" className="space-y-4 mt-4">
-                <div className="flex items-center justify-center gap-2 font-bold text-xl">
-                        Ward Management
-          </div>
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center justify-between">
-                      <Button
-                        size="sm"
-                        onClick={() => setShowWardForm(true)}
-                        className="flex items-center gap-2"
-                      >
-                        <Plus className="w-4 h-4" />
-                        Add Ward
-                      </Button>
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    {wards.length > 0 ? (
-                      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
-                        {wards.map((ward: string, index: number) => (
-                          <Badge key={index} variant="outline" className="justify-center py-2 px-3">
-                            {ward}
-                          </Badge>
-                        ))}
-                      </div>
-                    ) : (
-                      <p className="text-muted-foreground text-sm">
-                        No wards configured yet. Add your first ward to organize households.
-                      </p>
-                    )}
-                  </CardContent>
-                </Card>
-              </TabsContent>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setShowPasswordDialog(true)}
+                          className="flex items-center justify-center gap-1 sm:gap-2 text-xs sm:text-sm w-full"
+                        >
+                          <Settings className="h-3 w-3 sm:h-4 sm:w-4" />
+                          <span>{t("app.changePassword")}</span>
+                        </Button>
 
-              <TabsContent value="vehicles" className="space-y-4 mt-4">
-                <div className="flex items-center justify-center gap-2 font-bold text-xl">
-                        <Package className="w-5 h-5 text-blue-600" />
-                        Vehicle Management
-                </div>
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center justify-between">
-                      <Button size="sm" className="flex items-center gap-2" onClick={() => {
-                        setEditingVehicle(null);
-                        setNewVehicleReg("");
-                        setNewVehicleName("");
-                        setSelectedVehicleCollectors([]);
-                        setShowVehicleForm(true);
-                      }}>
-                        <Plus className="w-4 h-4" />
-                        Add Vehicle
-                      </Button>
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    {showVehicleForm && (
-                      <Card className="mb-4">
-                        <CardHeader>
-                          <CardTitle>{editingVehicle ? "Edit Vehicle" : "Add New Vehicle"}</CardTitle>
-                        </CardHeader>
-                        <CardContent className="space-y-4">
-                          <div className="space-y-2">
-                            <Label>Registration Number *</Label>
-                            <Input 
-                              value={newVehicleReg} 
-                              onChange={(e) => setNewVehicleReg(e.target.value)}
-                              disabled={!!editingVehicle}
-                              placeholder="e.g. MH-12-AB-1234"
-                            />
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => logoutMutation.mutate()}
+                          className="flex items-center justify-center gap-1 sm:gap-2 text-xs sm:text-sm w-full"
+                        >
+                          <LogOut className="h-3 w-3 sm:h-4 sm:w-4" />
+                          <span>{t("auth.logout")}</span>
+                        </Button>
+                      </CardContent>
+                    </Card>
+                  </TabsContent>
+
+                  <TabsContent value="wards" className="space-y-4 mt-4">
+                    <div className="flex items-center justify-center gap-2 font-bold text-xl">
+                      Ward Management
+                    </div>
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="flex items-center justify-between">
+                          <Button
+                            size="sm"
+                            onClick={() => setShowWardForm(true)}
+                            className="flex items-center gap-2"
+                          >
+                            <Plus className="w-4 h-4" />
+                            Add Ward
+                          </Button>
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        {wards.length > 0 ? (
+                          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
+                            {wards.map((ward: string, index: number) => (
+                              <Badge key={index} variant="outline" className="justify-center py-2 px-3">
+                                {ward}
+                              </Badge>
+                            ))}
                           </div>
-                          <div className="space-y-2">
-                            <Label>Vehicle Name *</Label>
-                            <Input 
-                              value={newVehicleName} 
-                              onChange={(e) => setNewVehicleName(e.target.value)}
-                              placeholder="e.g. Garbage Truck 1"
-                            />
-                          </div>
-                          <div className="space-y-2">
-                            <Label>Assign Collectors</Label>
-                            <div className="grid grid-cols-1 gap-2 max-h-40 overflow-y-auto p-2 border rounded-md">
-                              {collectors
-                                .filter(c => {
-                                  const vehicleWithCollector = (villageData?.vehicles || []).find((v: any) => 
+                        ) : (
+                          <p className="text-muted-foreground text-sm">
+                            No wards configured yet. Add your first ward to organize households.
+                          </p>
+                        )}
+                      </CardContent>
+                    </Card>
+                  </TabsContent>
+
+                  <TabsContent value="vehicles" className="space-y-4 mt-4">
+                    <div className="flex items-center justify-center gap-2 font-bold text-xl">
+                      <Package className="w-5 h-5 text-blue-600" />
+                      Vehicle Management
+                    </div>
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="flex items-center justify-between">
+                          <Button size="sm" className="flex items-center gap-2" onClick={() => {
+                            setEditingVehicle(null);
+                            setNewVehicleReg("");
+                            setNewVehicleName("");
+                            setSelectedVehicleCollectors([]);
+                            setShowVehicleForm(true);
+                          }}>
+                            <Plus className="w-4 h-4" />
+                            Add Vehicle
+                          </Button>
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        {showVehicleForm && (
+                          <Card className="mb-4">
+                            <CardHeader>
+                              <CardTitle>{editingVehicle ? "Edit Vehicle" : "Add New Vehicle"}</CardTitle>
+                            </CardHeader>
+                            <CardContent className="space-y-4">
+                              <div className="space-y-2">
+                                <Label>Registration Number *</Label>
+                                <Input
+                                  value={newVehicleReg}
+                                  onChange={(e) => setNewVehicleReg(e.target.value)}
+                                  disabled={!!editingVehicle}
+                                  placeholder="e.g. MH-12-AB-1234"
+                                />
+                              </div>
+                              <div className="space-y-2">
+                                <Label>Vehicle Name *</Label>
+                                <Input
+                                  value={newVehicleName}
+                                  onChange={(e) => setNewVehicleName(e.target.value)}
+                                  placeholder="e.g. Garbage Truck 1"
+                                />
+                              </div>
+                              <div className="space-y-2">
+                                <Label>Assign Collectors</Label>
+                                <div className="grid grid-cols-1 gap-2 max-h-40 overflow-y-auto p-2 border rounded-md">
+                                  {collectors
+                                    .filter(c => {
+                                      const vehicleWithCollector = (villageData?.vehicles || []).find((v: any) =>
+                                        (v.collectorIds || []).includes(c.id)
+                                      );
+                                      return !vehicleWithCollector || (editingVehicle && vehicleWithCollector.registrationNumber === editingVehicle.registrationNumber);
+                                    })
+                                    .map(c => (
+                                      <div key={c.id} className="flex items-center gap-2">
+                                        <input
+                                          type="checkbox"
+                                          id={`v-collector-${c.id}`}
+                                          checked={selectedVehicleCollectors.includes(c.id)}
+                                          onChange={(e) => {
+                                            if (e.target.checked) {
+                                              setSelectedVehicleCollectors([...selectedVehicleCollectors, c.id]);
+                                            } else {
+                                              setSelectedVehicleCollectors(selectedVehicleCollectors.filter(id => id !== c.id));
+                                            }
+                                          }}
+                                        />
+                                        <label htmlFor={`v-collector-${c.id}`} className="text-sm cursor-pointer">{c.name} ({c.uid})</label>
+                                      </div>
+                                    ))}
+                                </div>
+                                {collectors.filter(c => {
+                                  const vehicleWithCollector = (villageData?.vehicles || []).find((v: any) =>
                                     (v.collectorIds || []).includes(c.id)
                                   );
                                   return !vehicleWithCollector || (editingVehicle && vehicleWithCollector.registrationNumber === editingVehicle.registrationNumber);
-                                })
-                                .map(c => (
-                                  <div key={c.id} className="flex items-center gap-2">
-                                    <input 
-                                      type="checkbox"
-                                      id={`v-collector-${c.id}`}
-                                      checked={selectedVehicleCollectors.includes(c.id)}
-                                      onChange={(e) => {
-                                        if (e.target.checked) {
-                                          setSelectedVehicleCollectors([...selectedVehicleCollectors, c.id]);
-                                        } else {
-                                          setSelectedVehicleCollectors(selectedVehicleCollectors.filter(id => id !== c.id));
-                                        }
-                                      }}
-                                    />
-                                    <label htmlFor={`v-collector-${c.id}`} className="text-sm cursor-pointer">{c.name} ({c.uid})</label>
-                                  </div>
-                                ))}
-                            </div>
-                            {collectors.filter(c => {
-                              const vehicleWithCollector = (villageData?.vehicles || []).find((v: any) => 
-                                (v.collectorIds || []).includes(c.id)
-                              );
-                              return !vehicleWithCollector || (editingVehicle && vehicleWithCollector.registrationNumber === editingVehicle.registrationNumber);
-                            }).length === 0 && (
-                              <p className="text-sm text-muted-foreground italic">No unassigned collectors available</p>
-                            )}
-                          </div>
-                          <div className="flex gap-2">
-                            <Button 
-                              className="flex-1"
-                              disabled={!newVehicleReg || !newVehicleName || addVehicleMutation.isPending || updateVehicleMutation.isPending}
-                              onClick={() => {
-                                if (editingVehicle) {
-                                  updateVehicleMutation.mutate({
-                                    registrationNumber: newVehicleReg,
-                                    name: newVehicleName,
-                                    collectorIds: selectedVehicleCollectors
-                                  });
-                                } else {
-                                  addVehicleMutation.mutate({
-                                    registrationNumber: newVehicleReg,
-                                    name: newVehicleName,
-                                    collectorIds: selectedVehicleCollectors
-                                  });
-                                }
-                              }}
-                            >
-                              {(addVehicleMutation.isPending || updateVehicleMutation.isPending) ? "Saving..." : (editingVehicle ? "Update Vehicle" : "Add Vehicle")}
-                            </Button>
-                            <Button variant="outline" className="flex-1" onClick={() => setShowVehicleForm(false)}>
-                              Cancel
-                            </Button>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    )}
-
-                    {villageData?.vehicles && villageData.vehicles.length > 0 ? (
-                      <div className="space-y-3">
-                        {villageData.vehicles.map((v: any) => (
-                          <div key={v.registrationNumber} className="flex items-center justify-between p-3 border rounded-lg">
-                            <div>
-                              <p className="font-medium">{v.name}</p>
-                              <p className="text-sm text-muted-foreground">{v.registrationNumber}</p>
-                              <div className="flex flex-wrap gap-1 mt-1">
-                                {v.collectorIds?.map((cid: number) => {
-                                  const collector = collectors.find(c => c.id === cid);
-                                  return collector ? (
-                                    <Badge key={cid} variant="secondary" className="text-[10px] px-1 py-0">
-                                      {collector.name}
-                                    </Badge>
-                                  ) : null;
-                                })}
+                                }).length === 0 && (
+                                    <p className="text-sm text-muted-foreground italic">No unassigned collectors available</p>
+                                  )}
                               </div>
-                            </div>
-                            <div className="flex gap-1">
-                              <Button 
-                                variant="ghost" 
-                                size="sm" 
-                                onClick={() => {
-                                  setEditingVehicle(v);
-                                  setNewVehicleReg(v.registrationNumber);
-                                  setNewVehicleName(v.name);
-                                  setSelectedVehicleCollectors(v.collectorIds || []);
-                                  setShowVehicleForm(true);
-                                }}
-                              >
-                                <Edit className="h-4 w-4" />
-                              </Button>
-                              <Button 
-                                variant="ghost" 
-                                size="sm" 
-                                className="text-destructive"
-                                onClick={() => {
-                                  if (confirm("Are you sure you want to remove this vehicle?")) {
-                                    removeVehicleMutation.mutate(v.registrationNumber);
-                                  }
-                                }}
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            </div>
+                              <div className="flex gap-2">
+                                <Button
+                                  className="flex-1"
+                                  disabled={!newVehicleReg || !newVehicleName || addVehicleMutation.isPending || updateVehicleMutation.isPending}
+                                  onClick={() => {
+                                    if (editingVehicle) {
+                                      updateVehicleMutation.mutate({
+                                        registrationNumber: newVehicleReg,
+                                        name: newVehicleName,
+                                        collectorIds: selectedVehicleCollectors
+                                      });
+                                    } else {
+                                      addVehicleMutation.mutate({
+                                        registrationNumber: newVehicleReg,
+                                        name: newVehicleName,
+                                        collectorIds: selectedVehicleCollectors
+                                      });
+                                    }
+                                  }}
+                                >
+                                  {(addVehicleMutation.isPending || updateVehicleMutation.isPending) ? "Saving..." : (editingVehicle ? "Update Vehicle" : "Add Vehicle")}
+                                </Button>
+                                <Button variant="outline" className="flex-1" onClick={() => setShowVehicleForm(false)}>
+                                  Cancel
+                                </Button>
+                              </div>
+                            </CardContent>
+                          </Card>
+                        )}
+
+                        {villageData?.vehicles && villageData.vehicles.length > 0 ? (
+                          <div className="space-y-3">
+                            {villageData.vehicles.map((v: any) => (
+                              <div key={v.registrationNumber} className="flex items-center justify-between p-3 border rounded-lg">
+                                <div>
+                                  <p className="font-medium">{v.name}</p>
+                                  <p className="text-sm text-muted-foreground">{v.registrationNumber}</p>
+                                  <div className="flex flex-wrap gap-1 mt-1">
+                                    {v.collectorIds?.map((cid: number) => {
+                                      const collector = collectors.find(c => c.id === cid);
+                                      return collector ? (
+                                        <Badge key={cid} variant="secondary" className="text-[10px] px-1 py-0">
+                                          {collector.name}
+                                        </Badge>
+                                      ) : null;
+                                    })}
+                                  </div>
+                                </div>
+                                <div className="flex gap-1">
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => {
+                                      setEditingVehicle(v);
+                                      setNewVehicleReg(v.registrationNumber);
+                                      setNewVehicleName(v.name);
+                                      setSelectedVehicleCollectors(v.collectorIds || []);
+                                      setShowVehicleForm(true);
+                                    }}
+                                  >
+                                    <Edit className="h-4 w-4" />
+                                  </Button>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className="text-destructive"
+                                    onClick={() => {
+                                      if (confirm("Are you sure you want to remove this vehicle?")) {
+                                        removeVehicleMutation.mutate(v.registrationNumber);
+                                      }
+                                    }}
+                                  >
+                                    <Trash2 className="h-4 w-4" />
+                                  </Button>
+                                </div>
+                              </div>
+                            ))}
                           </div>
-                        ))}
-                      </div>
-                    ) : (
-                      <p className="text-muted-foreground text-sm">No vehicles added yet.</p>
-                    )}
-                  </CardContent>
-                </Card>
-              </TabsContent>
-            </Tabs>
-          </div>
+                        ) : (
+                          <p className="text-muted-foreground text-sm">No vehicles added yet.</p>
+                        )}
+                      </CardContent>
+                    </Card>
+                  </TabsContent>
+                </Tabs>
+              </div>
             )}
 
             {/* Material Log Tab */}
@@ -2616,7 +2609,7 @@ const handleDownloadSingleQR = async (h: Household) => {
                   <CardContent>
                     {(() => {
                       const filteredIssues = allIssues.filter(issue => filters.status === "all" || issue.status === filters.status);
-                      
+
                       return (
                         <>
                           <div className="space-y-4">
@@ -2631,7 +2624,7 @@ const handleDownloadSingleQR = async (h: Household) => {
                                         <Badge
                                           variant={
                                             issue.status === "open" ? "destructive" :
-                                            issue.status === "in_progress" ? "secondary" : "default"
+                                              issue.status === "in_progress" ? "secondary" : "default"
                                           }
                                         >
                                           {issue.status.replace("_", " ").toUpperCase()}
@@ -2642,14 +2635,14 @@ const handleDownloadSingleQR = async (h: Household) => {
                                         Reported by: {issue.reportedBy} on {new Date(issue.createdAt).toLocaleDateString()}
                                       </p>
                                       <p className="text-sm break-words">{issue.description}</p>
-                                      
+
                                       {/* Show reporter's image if available */}
                                       {issue.photoUrl && (
                                         <div className="mt-2">
                                           <p className="text-xs font-medium mb-1">Reported with image:</p>
-                                          <img 
-                                            src={issue.photoUrl} 
-                                            alt="Issue photo" 
+                                          <img
+                                            src={issue.photoUrl}
+                                            alt="Issue photo"
                                             className="w-16 h-16 object-cover rounded cursor-pointer"
                                             onClick={() => window.open(issue.photoUrl, "_blank")}
                                           />
@@ -2665,9 +2658,9 @@ const handleDownloadSingleQR = async (h: Household) => {
                                           {issue.managerProofPhotoUrl && (
                                             <div className="mt-2">
                                               <p className="text-xs font-medium mb-1">Manager proof:</p>
-                                              <img 
-                                                src={issue.managerProofPhotoUrl} 
-                                                alt="Manager proof photo" 
+                                              <img
+                                                src={issue.managerProofPhotoUrl}
+                                                alt="Manager proof photo"
                                                 className="w-16 h-16 object-cover rounded cursor-pointer"
                                                 onClick={() => window.open(issue.managerProofPhotoUrl, "_blank")}
                                               />
@@ -2694,7 +2687,7 @@ const handleDownloadSingleQR = async (h: Household) => {
                               </Card>
                             ))}
                           </div>
-                          
+
                           {/* Load More Controls for Issues - Server-side pagination */}
                           <div className="mt-4 flex justify-center gap-2">
                             {hasNextIssuesPage && (
@@ -2708,7 +2701,7 @@ const handleDownloadSingleQR = async (h: Household) => {
                               </Button>
                             )}
                           </div>
-                          
+
                           {/* Summary */}
                           <p className="text-sm text-muted-foreground text-center mt-2">
                             Showing {filteredIssues.length} of {totalIssuesCount} issues
@@ -2745,7 +2738,7 @@ const handleDownloadSingleQR = async (h: Household) => {
                           <div className="text-3xl font-bold text-blue-900">
                             {(() => {
                               const targetDate = filters.date || new Date().toISOString().split('T')[0];
-                              const todayCollections = allCollections.filter(c => 
+                              const todayCollections = allCollections.filter(c =>
                                 new Date(c.collectionDate).toDateString() === new Date(targetDate).toDateString()
                               ).length;
                               return stats && stats.totalHouseholds > 0
@@ -2756,7 +2749,7 @@ const handleDownloadSingleQR = async (h: Household) => {
                           <p className="text-xs text-blue-700 mt-1">
                             {(() => {
                               const targetDate = filters.date || new Date().toISOString().split('T')[0];
-                              const todayCollections = allCollections.filter(c => 
+                              const todayCollections = allCollections.filter(c =>
                                 new Date(c.collectionDate).toDateString() === new Date(targetDate).toDateString()
                               ).length;
                               return `${todayCollections} of ${stats?.totalHouseholds || 0} households`;
@@ -2777,7 +2770,7 @@ const handleDownloadSingleQR = async (h: Household) => {
                             {(() => {
                               let filteredCollections = allCollections;
                               if (filters.date) {
-                                filteredCollections = allCollections.filter(c => 
+                                filteredCollections = allCollections.filter(c =>
                                   new Date(c.collectionDate).toDateString() === new Date(filters.date).toDateString()
                                 );
                               }
@@ -2790,7 +2783,7 @@ const handleDownloadSingleQR = async (h: Household) => {
                             Out of 5.0 stars ({(() => {
                               let filteredCollections = allCollections;
                               if (filters.date) {
-                                filteredCollections = allCollections.filter(c => 
+                                filteredCollections = allCollections.filter(c =>
                                   new Date(c.collectionDate).toDateString() === new Date(filters.date).toDateString()
                                 );
                               }
@@ -2817,11 +2810,11 @@ const handleDownloadSingleQR = async (h: Household) => {
                               const date = new Date();
                               date.setDate(date.getDate() - (6 - i));
                               const dateStr = date.toDateString();
-                              const collectionsForDay = allCollections.filter(c => 
+                              const collectionsForDay = allCollections.filter(c =>
                                 new Date(c.collectionDate).toDateString() === dateStr
                               ).length;
-                              const percentage = stats?.totalHouseholds > 0 
-                                ? (collectionsForDay / stats.totalHouseholds) * 100 
+                              const percentage = stats?.totalHouseholds > 0
+                                ? (collectionsForDay / stats.totalHouseholds) * 100
                                 : 0;
 
                               return (
@@ -2830,8 +2823,8 @@ const handleDownloadSingleQR = async (h: Household) => {
                                     {date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                                   </div>
                                   <div className="flex-1 bg-gray-200 rounded-full h-4 relative">
-                                    <div 
-                                      className="bg-blue-500 h-4 rounded-full transition-all" 
+                                    <div
+                                      className="bg-blue-500 h-4 rounded-full transition-all"
                                       style={{ width: `${Math.min(percentage, 100)}%` }}
                                     />
                                     <span className="absolute inset-0 flex items-center justify-center text-xs font-medium text-white">
@@ -2862,7 +2855,7 @@ const handleDownloadSingleQR = async (h: Household) => {
                               const date = new Date();
                               date.setDate(date.getDate() - (6 - i));
                               const dateStr = date.toDateString();
-                              const dayCollections = allCollections.filter(c => 
+                              const dayCollections = allCollections.filter(c =>
                                 new Date(c.collectionDate).toDateString() === dateStr
                               );
                               const avgRating = dayCollections.length > 0
@@ -2875,11 +2868,10 @@ const handleDownloadSingleQR = async (h: Household) => {
                                     {date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                                   </div>
                                   <div className="flex-1 bg-gray-200 rounded-full h-4 relative">
-                                    <div 
-                                      className={`h-4 rounded-full transition-all ${
-                                        avgRating >= 4 ? 'bg-green-500' : 
-                                        avgRating >= 3 ? 'bg-yellow-500' : 'bg-red-500'
-                                      }`}
+                                    <div
+                                      className={`h-4 rounded-full transition-all ${avgRating >= 4 ? 'bg-green-500' :
+                                          avgRating >= 3 ? 'bg-yellow-500' : 'bg-red-500'
+                                        }`}
                                       style={{ width: `${(avgRating / 5) * 100}%` }}
                                     />
                                   </div>
@@ -2906,7 +2898,7 @@ const handleDownloadSingleQR = async (h: Household) => {
                             {(() => {
                               let filteredCollections = allCollections;
                               if (filters.date) {
-                                filteredCollections = allCollections.filter(c => 
+                                filteredCollections = allCollections.filter(c =>
                                   new Date(c.collectionDate).toDateString() === new Date(filters.date).toDateString()
                                 );
                               }
@@ -2919,26 +2911,26 @@ const handleDownloadSingleQR = async (h: Household) => {
                               return (
                                 <div className="w-48 h-48 relative">
                                   <svg viewBox="0 0 100 100" className="w-full h-full transform -rotate-90">
-                                    <circle cx="50" cy="50" r="40" fill="none" stroke="#f3f4f6" strokeWidth="20"/>
+                                    <circle cx="50" cy="50" r="40" fill="none" stroke="#f3f4f6" strokeWidth="20" />
                                     {total > 0 && (
                                       <>
-                                        <circle 
-                                          cx="50" cy="50" r="40" fill="none" 
+                                        <circle
+                                          cx="50" cy="50" r="40" fill="none"
                                           stroke="#ef4444" strokeWidth="20"
-                                          strokeDasharray={`${(poor/total) * 251.3} 251.3`}
+                                          strokeDasharray={`${(poor / total) * 251.3} 251.3`}
                                           strokeDashoffset="0"
                                         />
-                                        <circle 
-                                          cx="50" cy="50" r="40" fill="none" 
+                                        <circle
+                                          cx="50" cy="50" r="40" fill="none"
                                           stroke="#eab308" strokeWidth="20"
-                                          strokeDasharray={`${(good/total) * 251.3} 251.3`}
-                                          strokeDashoffset={`-${(poor/total) * 251.3}`}
+                                          strokeDasharray={`${(good / total) * 251.3} 251.3`}
+                                          strokeDashoffset={`-${(poor / total) * 251.3}`}
                                         />
-                                        <circle 
-                                          cx="50" cy="50" r="40" fill="none" 
+                                        <circle
+                                          cx="50" cy="50" r="40" fill="none"
                                           stroke="#22c55e" strokeWidth="20"
-                                          strokeDasharray={`${(excellent/total) * 251.3} 251.3`}
-                                          strokeDashoffset={`-${((poor + good)/total) * 251.3}`}
+                                          strokeDasharray={`${(excellent / total) * 251.3} 251.3`}
+                                          strokeDashoffset={`-${((poor + good) / total) * 251.3}`}
                                         />
                                       </>
                                     )}
@@ -2986,7 +2978,7 @@ const handleDownloadSingleQR = async (h: Household) => {
                               const date = new Date();
                               date.setDate(date.getDate() - (6 - i));
                               const dateStr = date.toDateString();
-                              const dayCollections = allCollections.filter(c => 
+                              const dayCollections = allCollections.filter(c =>
                                 new Date(c.collectionDate).toDateString() === dateStr
                               );
 
@@ -3004,18 +2996,18 @@ const handleDownloadSingleQR = async (h: Household) => {
                                   <div className="flex h-6 bg-gray-200 rounded overflow-hidden">
                                     {total > 0 ? (
                                       <>
-                                        <div 
-                                          className="bg-green-500" 
+                                        <div
+                                          className="bg-green-500"
                                           style={{ width: `${(excellent / total) * 100}%` }}
                                           title={`Excellent: ${excellent}`}
                                         />
-                                        <div 
-                                          className="bg-yellow-500" 
+                                        <div
+                                          className="bg-yellow-500"
                                           style={{ width: `${(good / total) * 100}%` }}
                                           title={`Good: ${good}`}
                                         />
-                                        <div 
-                                          className="bg-red-500" 
+                                        <div
+                                          className="bg-red-500"
                                           style={{ width: `${(poor / total) * 100}%` }}
                                           title={`Poor: ${poor}`}
                                         />
@@ -3044,7 +3036,7 @@ const handleDownloadSingleQR = async (h: Household) => {
                             {(() => {
                               let filteredCollections = allCollections;
                               if (filters.date) {
-                                filteredCollections = allCollections.filter(c => 
+                                filteredCollections = allCollections.filter(c =>
                                   new Date(c.collectionDate).toDateString() === new Date(filters.date).toDateString()
                                 );
                               }
@@ -3057,13 +3049,13 @@ const handleDownloadSingleQR = async (h: Household) => {
                               return (
                                 <div className="w-40 h-40 relative">
                                   <svg viewBox="0 0 100 100" className="w-full h-full transform -rotate-90">
-                                    <circle cx="50" cy="50" r="35" fill="none" stroke="#f3f4f6" strokeWidth="25"/>
+                                    <circle cx="50" cy="50" r="35" fill="none" stroke="#f3f4f6" strokeWidth="25" />
                                     {total > 0 && (
                                       <>
-                                        <circle 
-                                          cx="50" cy="50" r="35" fill="none" 
+                                        <circle
+                                          cx="50" cy="50" r="35" fill="none"
                                           stroke="#22c55e" strokeWidth="25"
-                                          strokeDasharray={`${(composting/total) * 219.9} 219.9`}
+                                          strokeDasharray={`${(composting / total) * 219.9} 219.9`}
                                           strokeDashoffset="0"
                                         />
                                       </>
@@ -3107,7 +3099,7 @@ const handleDownloadSingleQR = async (h: Household) => {
                             {collectors.map(collector => {
                               let collectorCollections = allCollections.filter(c => c.collectorId === collector.id);
                               if (filters.date) {
-                                collectorCollections = collectorCollections.filter(c => 
+                                collectorCollections = collectorCollections.filter(c =>
                                   new Date(c.collectionDate).toDateString() === new Date(filters.date).toDateString()
                                 );
                               }
@@ -3122,11 +3114,10 @@ const handleDownloadSingleQR = async (h: Household) => {
                                     {collector.name}
                                   </div>
                                   <div className="flex-1 bg-gray-200 rounded-full h-3">
-                                    <div 
-                                      className={`h-3 rounded-full transition-all ${
-                                        avgRating >= 4 ? 'bg-green-500' : 
-                                        avgRating >= 3 ? 'bg-yellow-500' : 'bg-red-500'
-                                      }`}
+                                    <div
+                                      className={`h-3 rounded-full transition-all ${avgRating >= 4 ? 'bg-green-500' :
+                                          avgRating >= 3 ? 'bg-yellow-500' : 'bg-red-500'
+                                        }`}
                                       style={{ width: `${(avgRating / 5) * 100}%` }}
                                     />
                                   </div>
@@ -3148,13 +3139,13 @@ const handleDownloadSingleQR = async (h: Household) => {
                     <Card>
                       <div className="flex items-center justify-between p-2">
                         <CardTitle>Date: </CardTitle>
-                          <div className="flex">
-                            <Input
-                              id="daily-date"
-                              type="date"
-                              value={filters.date || new Date().toISOString().split("T")[0]}
-                              onChange={(e) => updateFilter("date", e.target.value)}
-                            />
+                        <div className="flex">
+                          <Input
+                            id="daily-date"
+                            type="date"
+                            value={filters.date || new Date().toISOString().split("T")[0]}
+                            onChange={(e) => updateFilter("date", e.target.value)}
+                          />
                         </div>
                       </div>
                     </Card>
@@ -3165,7 +3156,7 @@ const handleDownloadSingleQR = async (h: Household) => {
                     <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                       {(() => {
                         const targetDate = filters.date || new Date().toISOString().split('T')[0];
-                        const dayCollections = allCollections.filter(c => 
+                        const dayCollections = allCollections.filter(c =>
                           new Date(c.collectionDate).toDateString() === new Date(targetDate).toDateString()
                         );
                         const avgSegregationRating = dayCollections.length > 0
@@ -3242,7 +3233,7 @@ const handleDownloadSingleQR = async (h: Household) => {
                           <div className="flex items-center justify-center">
                             {(() => {
                               const targetDate = filters.date || new Date().toISOString().split('T')[0];
-                              const collected = allCollections.filter(c => 
+                              const collected = allCollections.filter(c =>
                                 new Date(c.collectionDate).toDateString() === new Date(targetDate).toDateString()
                               ).length;
                               const total = stats?.totalHouseholds || 0;
@@ -3251,20 +3242,20 @@ const handleDownloadSingleQR = async (h: Household) => {
                               return (
                                 <div className="w-48 h-48 relative">
                                   <svg viewBox="0 0 100 100" className="w-full h-full transform -rotate-90">
-                                    <circle cx="50" cy="50" r="40" fill="none" stroke="#f3f4f6" strokeWidth="20"/>
+                                    <circle cx="50" cy="50" r="40" fill="none" stroke="#f3f4f6" strokeWidth="20" />
                                     {total > 0 && (
                                       <>
-                                        <circle 
-                                          cx="50" cy="50" r="40" fill="none" 
+                                        <circle
+                                          cx="50" cy="50" r="40" fill="none"
                                           stroke="#22c55e" strokeWidth="20"
-                                          strokeDasharray={`${(collected/total) * 251.3} 251.3`}
+                                          strokeDasharray={`${(collected / total) * 251.3} 251.3`}
                                           strokeDashoffset="0"
                                         />
-                                        <circle 
-                                          cx="50" cy="50" r="40" fill="none" 
+                                        <circle
+                                          cx="50" cy="50" r="40" fill="none"
                                           stroke="#ef4444" strokeWidth="20"
-                                          strokeDasharray={`${(notCollected/total) * 251.3} 251.3`}
-                                          strokeDashoffset={`-${(collected/total) * 251.3}`}
+                                          strokeDasharray={`${(notCollected / total) * 251.3} 251.3`}
+                                          strokeDashoffset={`-${(collected / total) * 251.3}`}
                                         />
                                       </>
                                     )}
@@ -3305,7 +3296,7 @@ const handleDownloadSingleQR = async (h: Household) => {
                           <div className="space-y-3">
                             {[5, 4, 3, 2, 1].map(stars => {
                               const targetDate = filters.date || new Date().toISOString().split('T')[0];
-                              const dayCollections = allCollections.filter(c => 
+                              const dayCollections = allCollections.filter(c =>
                                 new Date(c.collectionDate).toDateString() === new Date(targetDate).toDateString()
                               );
                               const starCount = dayCollections.filter(c => (c.segregationRating || 0) === stars).length;
@@ -3319,8 +3310,8 @@ const handleDownloadSingleQR = async (h: Household) => {
                                     <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
                                   </div>
                                   <div className="flex-1 bg-gray-200 rounded-full h-4 relative">
-                                    <div 
-                                      className="bg-yellow-500 h-4 rounded-full transition-all" 
+                                    <div
+                                      className="bg-yellow-500 h-4 rounded-full transition-all"
                                       style={{ width: `${percentage}%` }}
                                     />
                                     <span className="absolute inset-0 flex items-center justify-center text-xs font-medium text-white">
@@ -3351,23 +3342,23 @@ const handleDownloadSingleQR = async (h: Household) => {
                               <DialogHeader className="px-1 py-2 border-b flex flex-row items-center justify-between space-y-0 bg-white sticky top-0 z-10">
                                 <DialogTrigger asChild>
                                   <Button variant="ghost" size="sm" className="h-8 px-2 md:hidden bg-green-200 ">
-                                    <ArrowRight className="h-4 w-4 mr-1 rotate-180" strokeWidth={3}/>
+                                    <ArrowRight className="h-4 w-4 mr-1 rotate-180" strokeWidth={3} />
                                   </Button>
                                 </DialogTrigger>
                                 <div className="flex items-center gap-2">
                                   <DialogTitle className="text-lg font-bold mr-8">Vehicle Session Report {new Date(filters.date || new Date()).toLocaleDateString()}</DialogTitle>
                                 </div>
-                                
+
                               </DialogHeader>
-                              
+
                               <div className="flex-1 overflow-y-auto p-2 space-y-3 pb-20 md:pb-6">
                                 {(() => {
                                   const targetDate = filters.date || new Date().toISOString().split('T')[0];
                                   const villageVehicles = villageData?.vehicles || [];
-                                  
+
                                   return villageVehicles.map((vehicle: any) => {
                                     const vehicleCollections = allCollections
-                                      .filter(c => 
+                                      .filter(c =>
                                         vehicle.collectorIds.includes(c.collectorId) &&
                                         new Date(c.collectionDate).toDateString() === new Date(targetDate).toDateString()
                                       )
@@ -3377,9 +3368,9 @@ const handleDownloadSingleQR = async (h: Household) => {
 
                                     const sessions: any[] = [];
                                     let currentSession: any[] = [vehicleCollections[0]];
-                                    
+
                                     for (let i = 1; i < vehicleCollections.length; i++) {
-                                      const prevTime = new Date(vehicleCollections[i-1].collectionDate).getTime();
+                                      const prevTime = new Date(vehicleCollections[i - 1].collectionDate).getTime();
                                       const currTime = new Date(vehicleCollections[i].collectionDate).getTime();
                                       const diffMinutes = (currTime - prevTime) / (1000 * 60);
 
@@ -3415,7 +3406,7 @@ const handleDownloadSingleQR = async (h: Household) => {
 
                                               let breakMs = 0;
                                               if (sIdx > 0) {
-                                                const prevSessionEnd = new Date(sessions[sIdx-1][sessions[sIdx-1].length - 1].collectionDate);
+                                                const prevSessionEnd = new Date(sessions[sIdx - 1][sessions[sIdx - 1].length - 1].collectionDate);
                                                 breakMs = start.getTime() - prevSessionEnd.getTime();
                                                 totalBreakMs += breakMs;
                                               }
@@ -3437,7 +3428,7 @@ const handleDownloadSingleQR = async (h: Household) => {
                                                       <div className="flex items-center gap-2">
                                                         <span className="text-[11px] font-black text-blue-600">S{sIdx + 1}</span>
                                                         <span className="text-[11px] font-medium text-gray-700">
-                                                          {start.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})} - {end.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                                                          {start.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} - {end.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                                         </span>
                                                       </div>
                                                     </div>
@@ -3489,36 +3480,36 @@ const handleDownloadSingleQR = async (h: Household) => {
                             {(() => {
                               const targetDate = filters.date || new Date().toISOString().split('T')[0];
                               const villageVehicles = villageData?.vehicles || [];
-                              
+
                               return villageVehicles.map((vehicle: any) => {
                                 // Find collections for this vehicle by looking at collectors assigned to it
-                                const vehicleCollections = allCollections.filter(c => 
+                                const vehicleCollections = allCollections.filter(c =>
                                   vehicle.collectorIds.includes(c.collectorId) &&
-                                new Date(c.collectionDate).toDateString() === new Date(targetDate).toDateString()
-                              );
+                                  new Date(c.collectionDate).toDateString() === new Date(targetDate).toDateString()
+                                );
 
                                 const collectorNames = collectors
                                   .filter(c => vehicle.collectorIds.includes(c.id))
                                   .map(c => c.name)
                                   .join(", ");
 
-                                const sortedCollections = [...vehicleCollections].sort((a, b) => 
-                                new Date(a.collectionDate).getTime() - new Date(b.collectionDate).getTime()
-                              );
-                                
-                              const startTime = sortedCollections.length > 0 
-                                ? new Date(sortedCollections[0].collectionDate).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true })
+                                const sortedCollections = [...vehicleCollections].sort((a, b) =>
+                                  new Date(a.collectionDate).getTime() - new Date(b.collectionDate).getTime()
+                                );
+
+                                const startTime = sortedCollections.length > 0
+                                  ? new Date(sortedCollections[0].collectionDate).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true })
                                   : "N/A";
-                              const endTime = sortedCollections.length > 0 
-                                ? new Date(sortedCollections[sortedCollections.length - 1].collectionDate).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true })
+                                const endTime = sortedCollections.length > 0
+                                  ? new Date(sortedCollections[sortedCollections.length - 1].collectionDate).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true })
                                   : "N/A";
 
-                              return (
+                                return (
                                   <div key={vehicle.registrationNumber} className="p-1 bg-gray-50 rounded-lg">
-                                  <div className="flex items-center justify-between mb-2">
+                                    <div className="flex items-center justify-between mb-2">
                                       <h4 className="text-sm font-bold">{vehicle.name}</h4>
                                       <Badge variant="outline">{vehicleCollections.length} collections</Badge>
-                                  </div>
+                                    </div>
                                     <div className="text-xs text-muted-foreground mb-2">
                                       <span className="font-bold">Collectors:</span> {collectorNames || "None assigned"}
                                     </div>
@@ -3526,8 +3517,8 @@ const handleDownloadSingleQR = async (h: Household) => {
                                       <span>Start: {startTime}</span>
                                       <span>End: {endTime}</span>
                                     </div>
-                                </div>
-                              );
+                                  </div>
+                                );
                               });
                             })()}
                           </div>
@@ -3568,8 +3559,8 @@ const handleDownloadSingleQR = async (h: Household) => {
                                       {hour}:00
                                     </div>
                                     <div className="flex-1 bg-gray-200 rounded-full h-3 relative">
-                                      <div 
-                                        className="bg-indigo-500 h-3 rounded-full transition-all" 
+                                      <div
+                                        className="bg-indigo-500 h-3 rounded-full transition-all"
                                         style={{ width: `${percentage}%` }}
                                       />
                                       {count > 0 && (
@@ -3773,9 +3764,9 @@ const handleDownloadSingleQR = async (h: Household) => {
                 {selectedIssue.photoUrl && (
                   <div className="mt-2">
                     <p className="text-xs font-medium mb-1">Reported with image:</p>
-                    <img 
-                      src={selectedIssue.photoUrl} 
-                      alt="Issue photo" 
+                    <img
+                      src={selectedIssue.photoUrl}
+                      alt="Issue photo"
                       className="w-20 h-20 object-cover rounded cursor-pointer"
                       onClick={() => window.open(selectedIssue.photoUrl, "_blank")}
                     />
@@ -3822,9 +3813,9 @@ const handleDownloadSingleQR = async (h: Household) => {
               {selectedIssue.managerProofPhotoUrl && (
                 <div>
                   <Label className="text-xs font-medium">Current Proof Photo:</Label>
-                  <img 
-                    src={selectedIssue.managerProofPhotoUrl} 
-                    alt="Manager proof photo" 
+                  <img
+                    src={selectedIssue.managerProofPhotoUrl}
+                    alt="Manager proof photo"
                     className="w-20 h-20 object-cover rounded cursor-pointer mt-1"
                     onClick={() => window.open(selectedIssue.managerProofPhotoUrl, "_blank")}
                   />
@@ -3886,8 +3877,8 @@ const handleDownloadSingleQR = async (h: Household) => {
               >
                 Cancel
               </Button>
-              <Button 
-                type="submit" 
+              <Button
+                type="submit"
                 className="flex-1"
                 disabled={addWardMutation.isPending}
               >
@@ -3903,7 +3894,7 @@ const handleDownloadSingleQR = async (h: Household) => {
           <div className="flex flex-col h-full bg-background">
             <header className="flex items-center gap-10 ml-1 p-2 border-b sticky top-0 bg-background z-10">
               <Button variant="ghost" size="sm" className="h-8 px-2 !bg-green-200" onClick={() => setShowHouseholdDetails(false)}>
-                <ArrowLeft className="h-4 w-4 mr-1" strokeWidth={3}/>
+                <ArrowLeft className="h-4 w-4 mr-1" strokeWidth={3} />
               </Button>
               <h1 className="ml-3 text-xl font-bold">Household Details</h1>
             </header>
@@ -3927,9 +3918,9 @@ const handleDownloadSingleQR = async (h: Household) => {
                       <div className="flex items-center gap-10">
                         <p className="text-md">{viewingHousehold.phone || "Not provided"}</p>
                         {viewingHousehold.phone && (
-                          <Button 
-                            variant="outline" 
-                            size="icon" 
+                          <Button
+                            variant="outline"
+                            size="icon"
                             className="h-8 w-auto px-2 text-white bg-primary border-primary/20 hover:bg-primary/10"
                             onClick={() => window.open(`tel:${viewingHousehold.phone}`)}
                           >
@@ -3946,8 +3937,8 @@ const handleDownloadSingleQR = async (h: Household) => {
                     </section>
 
                     <div className="flex flex-col gap-2 pt-3">
-                      <Button 
-                        size="lg" 
+                      <Button
+                        size="lg"
                         className="w-full"
                         onClick={() => handleLocateHousehold(viewingHousehold)}
                       >
@@ -3961,24 +3952,24 @@ const handleDownloadSingleQR = async (h: Household) => {
                     {viewingHousehold.qrCodeUrl ? (
                       <>
                         <div className="bg-white rounded-xl shadow-sm">
-                          <img 
-                            src={viewingHousehold.qrCodeUrl} 
-                            alt="QR Code" 
+                          <img
+                            src={viewingHousehold.qrCodeUrl}
+                            alt="QR Code"
                             className="w-48 h-48 object-contain"
                           />
                         </div>
-                        <Button 
-                          variant="outline" 
-                          size="lg" 
+                        <Button
+                          variant="outline"
+                          size="lg"
                           className="w-full bg-blue-300"
                           onClick={() => handleDownloadSingleQR(viewingHousehold)}
                         >
                           <Download className="mr-2 h-5 w-5" />
                           Download QR Code Card
                         </Button>
-                        <Button 
-                          variant="destructive" 
-                          size="lg" 
+                        <Button
+                          variant="destructive"
+                          size="lg"
                           className="w-full"
                           onClick={() => {
                             setDeletingHousehold(viewingHousehold);
@@ -4013,7 +4004,7 @@ const handleDownloadSingleQR = async (h: Household) => {
                 if (!deletingHousehold) return null;
                 const hhCollections = allCollections.filter(c => c.householdId === deletingHousehold.id);
                 if (hhCollections.length > 0) {
-                  const lastCollection = hhCollections.reduce((latest, current) => 
+                  const lastCollection = hhCollections.reduce((latest, current) =>
                     new Date(current.collectionDate) > new Date(latest.collectionDate) ? current : latest
                   );
                   return (
@@ -4035,8 +4026,8 @@ const handleDownloadSingleQR = async (h: Household) => {
           </DialogHeader>
           <div className="flex gap-2 justify-end mt-4">
             <Button variant="outline" onClick={() => setShowDeleteConfirm(false)}>Cancel</Button>
-            <Button 
-              variant="destructive" 
+            <Button
+              variant="destructive"
               onClick={() => deletingHousehold && deleteHouseholdMutation.mutate(deletingHousehold.id)}
               disabled={deleteHouseholdMutation.isPending}
             >

@@ -10,7 +10,7 @@ import { createLogger, format, transports } from "winston";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import { initializeCache } from "./cache";
-import { initializeJobProcessors, closeQueues } from "./jobs";
+
 import { storage } from "./storage";
 
 // Load environment variables from .env file
@@ -19,23 +19,7 @@ dotenv.config();
 // Initialize caching layer (Redis with fallback to memory)
 initializeCache();
 
-// Initialize background job processors (uses same Redis connection)
-try {
-  initializeJobProcessors(storage);
-  
-  // Phase 3: Schedule daily stats update job on startup
-  import('./jobs').then(({ scheduleCurrentMonthStatsUpdate }) => {
-    scheduleCurrentMonthStatsUpdate().then(() => {
-      console.log('✅ Phase 3: Daily stats update job scheduled (runs daily at 12:05 AM UTC)');
-    }).catch(err => {
-      console.warn('⚠️ Phase 3: Failed to schedule daily stats update:', err.message);
-    });
-  }).catch(err => {
-    console.warn('⚠️ Phase 3: Could not load job scheduler:', err.message);
-  });
-} catch (error) {
-  console.warn('⚠️ Background jobs not available (Redis required):', (error as Error).message);
-}
+
 
 // Create Winston logger for production
 const logger = createLogger({
@@ -90,14 +74,14 @@ app.use(
       directives: {
         defaultSrc: ["'self'"],
         styleSrc: [
-          "'self'", 
+          "'self'",
           "'unsafe-inline'", // Allow inline styles
           "https://fonts.googleapis.com"
         ],
         fontSrc: ["'self'", "https://fonts.gstatic.com"],
         imgSrc: [
-          "'self'", 
-          "data:", 
+          "'self'",
+          "data:",
           "https:", // Allow all HTTPS images
           "blob:"
         ],
@@ -107,13 +91,13 @@ app.use(
           "'unsafe-eval'" // Allow eval for development
         ],
         connectSrc: [
-          "'self'", 
+          "'self'",
           "https:",
           "wss:",
           "ws:" // Allow websockets for development
         ],
         mediaSrc: [
-          "'self'", 
+          "'self'",
           "https:",
           "blob:"
         ],
@@ -157,8 +141,8 @@ const corsOptions = {
   optionsSuccessStatus: 200,
   methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
   allowedHeaders: [
-    "Content-Type", 
-    "Authorization", 
+    "Content-Type",
+    "Authorization",
     "X-Requested-With",
     "X-CSRF-Token" // For CSRF protection
   ],
@@ -413,45 +397,8 @@ app.get("/favicon.ico", (_req, res) => {
   }
 });
 
-// PWA/TWA health check endpoint
-app.get("/api/pwa/health", (_req, res) => {
-  try {
-    const manifestPath = path.join(process.cwd(), "public", "manifest.json");
-    const iconsPath = path.join(process.cwd(), "public", "icons");
 
-    const manifestExists = fs.existsSync(manifestPath);
-    const iconsExist = fs.existsSync(iconsPath);
 
-    const iconFiles = fs
-      .readdirSync(iconsPath)
-      .filter((file) => file.endsWith(".png"));
-
-    res.json({
-      status: "healthy",
-      manifest: {
-        exists: manifestExists,
-        path: "/manifest.json",
-      },
-      icons: {
-        directory: iconsExist,
-        count: iconFiles.length,
-        files: iconFiles,
-        basePath: "/icons/",
-      },
-      assetLinks: {
-        path: "/.well-known/assetlinks.json",
-      },
-      timestamp: new Date().toISOString(),
-    });
-  } catch (error) {
-    console.error("PWA health check error:", error);
-    res.status(500).json({
-      status: "error",
-      error: "PWA health check failed",
-      timestamp: new Date().toISOString(),
-    });
-  }
-});
 
 (async () => {
   const server = await registerRoutes(app);
@@ -459,10 +406,10 @@ app.get("/api/pwa/health", (_req, res) => {
   // Enhanced error handling middleware - Security hardened
   app.use((err: any, req: Request, res: Response, _next: NextFunction) => {
     const status = err.status || err.statusCode || 500;
-    
+
     // Create error ID for tracking
     const errorId = Math.random().toString(36).substring(2, 15);
-    
+
     // Log error details securely (remove sensitive information in production)
     const logData = {
       errorId,
@@ -489,20 +436,20 @@ app.get("/api/pwa/health", (_req, res) => {
 
     // Secure error response - don't expose internal details in production
     const errorResponse = process.env.NODE_ENV === "production"
-      ? { 
-          error: status === 404 ? "Not Found" : 
-                 status === 403 ? "Forbidden" :
-                 status === 401 ? "Unauthorized" :
-                 "Internal Server Error",
-          status,
-          errorId // For support purposes only
-        }
-      : { 
-          error: err.message || "Internal Server Error", 
-          status, 
-          errorId,
-          ...(err.stack && { stack: err.stack })
-        };
+      ? {
+        error: status === 404 ? "Not Found" :
+          status === 403 ? "Forbidden" :
+            status === 401 ? "Unauthorized" :
+              "Internal Server Error",
+        status,
+        errorId // For support purposes only
+      }
+      : {
+        error: err.message || "Internal Server Error",
+        status,
+        errorId,
+        ...(err.stack && { stack: err.stack })
+      };
 
     res.status(status).json(errorResponse);
   });
@@ -521,14 +468,9 @@ app.get("/api/pwa/health", (_req, res) => {
   // Graceful shutdown handler
   const gracefulShutdown = async (signal: string) => {
     logger.info(`Received ${signal}. Graceful shutdown initiated.`);
-    
-    // Close background job queues
-    try {
-      await closeQueues();
-    } catch (error) {
-      logger.error('Error closing job queues:', error);
-    }
-    
+
+
+
     server.close(() => {
       logger.info("HTTP server closed.");
       process.exit(0);
@@ -550,12 +492,12 @@ app.get("/api/pwa/health", (_req, res) => {
   // ALWAYS serve the app on port 5000
   // this serves both the API and the client.
   // It is the only port that is not firewalled.
-  const port = 5000;
+  const port = 5001;
   server.listen(
     {
       port,
-      host: "0.0.0.0",
-      reusePort: true,
+      // host: "0.0.0.0",
+      // reusePort: true,
     },
     () => {
       log(`serving on port ${port}`);

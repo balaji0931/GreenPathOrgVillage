@@ -173,17 +173,16 @@ export function getCache(): ICache {
 export const cacheKeys = {
   village: (villageId: string) => `village:${villageId}`,
   villages: () => 'villages:all',
-  villagesPaginated: (page: number, limit: number) => `villages:paginated:${page}:${limit}`,
   collectors: (villageId: string) => `collectors:${villageId}`,
   collectorsPaginated: (villageId: string, page: number, limit: number) => `collectors:${villageId}:${page}:${limit}`,
   households: (villageId: string) => `households:${villageId}`,
-  householdsPaginated: (villageId: string, page: number, limit: number, filters?: string) => 
+  householdsPaginated: (villageId: string, page: number, limit: number, filters?: string) =>
     `households:${villageId}:${page}:${limit}:${filters || 'all'}`,
   issues: (villageId: string) => `issues:${villageId}`,
-  issuesPaginated: (villageId: string, page: number, limit: number, status?: string) => 
+  issuesPaginated: (villageId: string, page: number, limit: number, status?: string) =>
     `issues:${villageId}:${page}:${limit}:${status || 'all'}`,
   wasteCollections: (villageId: string) => `collections:${villageId}`,
-  wasteCollectionsPaginated: (villageId: string, page: number, limit: number, date?: string) => 
+  wasteCollectionsPaginated: (villageId: string, page: number, limit: number, date?: string) =>
     `collections:${villageId}:${page}:${limit}:${date || 'all'}`,
   announcements: (villageId: string) => `announcements:${villageId}`,
   announcementsPaginated: (page: number, limit: number) => `announcements:paginated:${page}:${limit}`,
@@ -191,7 +190,6 @@ export const cacheKeys = {
   managers: () => 'managers:all',
   managersPaginated: (page: number, limit: number) => `managers:paginated:${page}:${limit}`,
   moderators: () => 'moderators:all',
-  moderatorsPaginated: (page: number, limit: number) => `moderators:paginated:${page}:${limit}`,
   villageStats: (villageId: string) => `stats:village:${villageId}`,
   adminStats: () => 'stats:admin',
   moderatorStats: (moderatorId: string) => `stats:moderator:${moderatorId}`,

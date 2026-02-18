@@ -58,7 +58,7 @@ export const generateBulkQRCodesPDF = async (
   }>
 ): Promise<Buffer> => {
   const pdf = new jsPDF('p', 'mm', 'a4');
-    // Fetch logo only once per PDF generation
+  // Fetch logo only once per PDF generation
   const logoUrl = "https://www.greenpathindia.in/logos/png/logo-full-1024x256.png";
 
   const logoResponse = await fetch(logoUrl);
@@ -99,8 +99,8 @@ export const generateBulkQRCodesPDF = async (
     pdf.rect(x, y, boxWidth, boxHeight);
     pdf.setLineDashPattern([]); // Reset line style
 
-    const logoWidth = 40;   
-    const logoHeight = 10;       
+    const logoWidth = 40;
+    const logoHeight = 10;
 
     pdf.addImage(
       logoDataURL,

@@ -10,7 +10,7 @@ import {
   feedback,
   moderators,
   moderatorVillageAssignments,
-  monthlyVillageStats,
+
   websiteFeedback,
   contactSubmissions,
   qrCodes,
@@ -28,7 +28,7 @@ import {
   type Feedback,
   type Moderator,
   type ModeratorVillageAssignment,
-  type MonthlyVillageStats,
+
   type WebsiteFeedback,
   type ContactSubmission,
   type QRCode,
@@ -46,7 +46,7 @@ import {
   type InsertFeedback,
   type InsertModerator,
   type InsertModeratorVillageAssignment,
-  type InsertMonthlyVillageStats,
+
   type InsertWebsiteFeedback,
   type InsertContactSubmission,
   type InsertQRCode,
@@ -78,7 +78,6 @@ export interface IStorage {
   updateHousehold(id: number, updates: Partial<Household>): Promise<Household>;
   getWardsByVillage(villageId: string): Promise<string[]>;
   addWardToVillage(villageId: string, ward: string): Promise<string[]>;
-  markQRCodesPrinted(householdIds: number[]): Promise<void>;
 
   // Collector operations
   createCollector(collector: InsertCollector): Promise<Collector>;
@@ -204,20 +203,13 @@ export interface IStorage {
   createContactSubmission(contact: InsertContactSubmission): Promise<ContactSubmission>;
   getContactSubmissions(): Promise<ContactSubmission[]>;
 
-  // Phase 2: Monthly village stats operations
-  createOrUpdateMonthlyStats(stats: InsertMonthlyVillageStats): Promise<MonthlyVillageStats>;
-  getMonthlyStatsByVillageAndMonth(villageId: string, month: string): Promise<MonthlyVillageStats | undefined>;
-  backfillHistoricalStats(): Promise<number>; // Returns number of records created
 
-  // Phase 3: Daily stats update for current month
-  updateCurrentMonthStats(): Promise<number>; // Returns number of records updated
 
   // QR Code operations (for field worker mapping)
   createQRCode(qrCode: InsertQRCode): Promise<QRCode>;
   createBatchQRCodes(qrCodes: InsertQRCode[]): Promise<QRCode[]>;
   getQRCodeByUid(uid: string): Promise<QRCode | undefined>;
   getQRCodesByVillage(villageId: string): Promise<QRCode[]>;
-  getUnmappedQRCodesByVillage(villageId: string): Promise<QRCode[]>;
   getQRCodesByBatch(batchId: string): Promise<QRCode[]>;
   updateQRCodeStatus(uid: string, status: string, householdId?: number): Promise<QRCode>;
   getNextBatchId(villageId: string): Promise<string>;
@@ -283,11 +275,11 @@ export class DatabaseStorage implements IStorage {
       .insert(villages)
       .values(insertVillage)
       .returning();
-    
+
     // Invalidate village caches
     await cache.delete(cacheKeys.villages());
     await cache.clear('villages:paginated:*'); // Clear all paginated caches
-    
+
     return village;
   }
 
@@ -298,55 +290,6 @@ export class DatabaseStorage implements IStorage {
 
     const result = await db.select().from(villages).orderBy(villages.villageId).limit(500); // Safety limit
     await cache.set(cacheKeys.villages(), result, 3600); // 1 hour TTL
-    return result;
-  }
-
-  async getVillagesPaginated(options: {
-    page?: number;
-    limit?: number;
-    search?: string;
-  } = {}): Promise<{ data: Village[]; total: number; page: number; limit: number; totalPages: number }> {
-    const cache = getCache();
-    const page = Math.max(1, options.page || 1);
-    const limit = Math.min(100, Math.max(1, options.limit || 50));
-    const offset = (page - 1) * limit;
-
-    const cacheKey = cacheKeys.villagesPaginated(page, limit);
-    const cached = await cache.get(cacheKey);
-    if (cached && !options.search) return cached;
-
-    let whereClause = undefined;
-    if (options.search) {
-      whereClause = or(
-        like(villages.name, `%${options.search}%`),
-        like(villages.villageId, `%${options.search}%`)
-      );
-    }
-
-    const [countResult] = await db
-      .select({ count: count() })
-      .from(villages)
-      .where(whereClause);
-
-    const data = await db
-      .select()
-      .from(villages)
-      .where(whereClause)
-      .orderBy(villages.villageId)
-      .limit(limit)
-      .offset(offset);
-
-    const result = {
-      data,
-      total: countResult.count,
-      page,
-      limit,
-      totalPages: Math.ceil(countResult.count / limit)
-    };
-
-    if (!options.search) {
-      await cache.set(cacheKey, result, 600); // 10 min TTL
-    }
     return result;
   }
 
@@ -369,13 +312,13 @@ export class DatabaseStorage implements IStorage {
       .set({ ...updates, updatedAt: new Date() })
       .where(eq(villages.villageId, villageId))
       .returning();
-    
+
     // Invalidate all village caches including paginated
     await cache.delete(cacheKeys.village(villageId));
     await cache.delete(cacheKeys.villages());
     await cache.delete(cacheKeys.villageDetails(villageId));
     await cache.clear('villages:paginated:*'); // Clear all paginated village caches
-    
+
     return village;
   }
 
@@ -385,13 +328,13 @@ export class DatabaseStorage implements IStorage {
       .insert(households)
       .values(insertHousehold)
       .returning();
-    
+
     // Invalidate households cache
     await cache.delete(cacheKeys.households(insertHousehold.villageId));
     await cache.clear(`households:${insertHousehold.villageId}:*`);
     await cache.delete(cacheKeys.villageDetails(insertHousehold.villageId));
     await cache.delete(cacheKeys.villageStats(insertHousehold.villageId));
-    
+
     return household;
   }
 
@@ -407,7 +350,7 @@ export class DatabaseStorage implements IStorage {
       .where(eq(households.villageId, villageId))
       .orderBy(households.uid)
       .limit(5000); // Safety limit - use paginated method for larger datasets
-    
+
     await cache.set(cacheKey, result, 600); // 10 min TTL
     return result;
   }
@@ -424,7 +367,7 @@ export class DatabaseStorage implements IStorage {
     const offset = (page - 1) * limit;
 
     let conditions = [eq(households.villageId, villageId)];
-    
+
     if (options.search) {
       conditions.push(
         or(
@@ -434,11 +377,11 @@ export class DatabaseStorage implements IStorage {
         )!
       );
     }
-    
+
     if (options.ward && options.ward !== 'all') {
       conditions.push(eq(households.ward, options.ward));
     }
-    
+
     if (options.status && options.status !== 'all') {
       conditions.push(eq(households.status, options.status));
     }
@@ -479,12 +422,12 @@ export class DatabaseStorage implements IStorage {
       .set({ ...updates })
       .where(eq(households.id, id))
       .returning();
-    
+
     // Invalidate households cache
     await cache.delete(cacheKeys.households(household.villageId));
     await cache.clear(`households:${household.villageId}:*`);
     await cache.delete(cacheKeys.villageDetails(household.villageId));
-    
+
     return household;
   }
 
@@ -497,38 +440,38 @@ export class DatabaseStorage implements IStorage {
       .select({ wards: villages.wards })
       .from(villages)
       .where(eq(villages.villageId, villageId));
-    
+
     const wards = (village?.wards || [])
       .filter((ward: string | null) => ward && ward.trim() !== '')
       .sort();
-    
+
     await cache.set(cacheKeys.wards(villageId), wards, 3600);
     return wards;
   }
 
   async addWardToVillage(villageId: string, ward: string): Promise<string[]> {
     const cache = getCache();
-    
+
     const [village] = await db
       .select({ wards: villages.wards })
       .from(villages)
       .where(eq(villages.villageId, villageId));
-    
+
     const existingWards = village?.wards || [];
     if (existingWards.includes(ward)) {
       throw new Error("Ward already exists");
     }
-    
+
     const updatedWards = [...existingWards, ward].sort();
-    
+
     await db
       .update(villages)
       .set({ wards: updatedWards, updatedAt: new Date() })
       .where(eq(villages.villageId, villageId));
-    
+
     await cache.delete(cacheKeys.wards(villageId));
     await cache.delete(cacheKeys.village(villageId));
-    
+
     return updatedWards;
   }
 
@@ -538,13 +481,13 @@ export class DatabaseStorage implements IStorage {
       .insert(collectors)
       .values(insertCollector)
       .returning();
-    
+
     // Invalidate collector caches
     await cache.delete(cacheKeys.collectors(insertCollector.villageId));
     await cache.clear(`collectors:${insertCollector.villageId}:*`);
     await cache.delete(cacheKeys.villageDetails(insertCollector.villageId));
     await cache.delete(cacheKeys.villageStats(insertCollector.villageId));
-    
+
     return collector;
   }
 
@@ -559,7 +502,7 @@ export class DatabaseStorage implements IStorage {
       .where(eq(collectors.villageId, villageId))
       .orderBy(collectors.uid)
       .limit(500); // Safety limit
-    
+
     await cache.set(cacheKeys.collectors(villageId), result, 1800); // 30 min TTL
     return result;
   }
@@ -573,13 +516,13 @@ export class DatabaseStorage implements IStorage {
     const page = Math.max(1, options.page || 1);
     const limit = Math.min(100, Math.max(1, options.limit || 50));
     const offset = (page - 1) * limit;
-    
+
     const cacheKey = cacheKeys.collectorsPaginated(villageId, page, limit);
     const cached = await cache.get(cacheKey);
     if (cached && !options.search) return cached;
 
     let conditions = [eq(collectors.villageId, villageId)];
-    
+
     if (options.search) {
       conditions.push(
         or(
@@ -643,13 +586,13 @@ export class DatabaseStorage implements IStorage {
         )
       )
       .limit(1);
-    
+
     return existing;
   }
 
   async createWasteCollection(insertCollection: InsertWasteCollection & { latitude?: string, longitude?: string }): Promise<WasteCollection> {
     const cache = getCache();
-    
+
     // Ensure numeric values for ratings
     const valuesToInsert = {
       ...insertCollection,
@@ -663,23 +606,23 @@ export class DatabaseStorage implements IStorage {
       .insert(wasteCollections)
       .values(dbValues)
       .returning();
-    
+
     // Invalidate collections cache - lookup household to get villageId
     const [household] = await db.select()
       .from(households)
       .where(eq(households.id, insertCollection.householdId))
       .limit(1);
-    
+
     if (household) {
       // Store location for the first time if not already set
       if (!household.latitude && !household.longitude && latitude && longitude) {
         await db.update(households)
-          .set({ 
-            latitude: latitude, 
-            longitude: longitude 
+          .set({
+            latitude: latitude,
+            longitude: longitude
           })
           .where(eq(households.id, household.id));
-        
+
         // Invalidate household cache
         await cache.delete(cacheKeys.households(household.villageId));
         const patterns = [`households:${household.villageId}:*`];
@@ -695,7 +638,7 @@ export class DatabaseStorage implements IStorage {
         await cache.delete(cacheKeys.adminStats());
       }
     }
-    
+
     return collection;
   }
 
@@ -708,36 +651,6 @@ export class DatabaseStorage implements IStorage {
       .limit(limit);
   }
 
-  async getCollectionsByHouseholdPaginated(householdId: number, options: {
-    page?: number;
-    limit?: number;
-  } = {}): Promise<{ data: WasteCollection[]; total: number; page: number; limit: number; totalPages: number }> {
-    const page = Math.max(1, options.page || 1);
-    const limit = Math.min(1500, Math.max(1, options.limit || 1500));
-    const offset = (page - 1) * limit;
-
-    const [countResult] = await db
-      .select({ count: count() })
-      .from(wasteCollections)
-      .where(eq(wasteCollections.householdId, householdId));
-
-    const data = await db
-      .select()
-      .from(wasteCollections)
-      .where(eq(wasteCollections.householdId, householdId))
-      .orderBy(desc(wasteCollections.collectionDate))
-      .limit(limit)
-      .offset(offset);
-
-    return {
-      data,
-      total: countResult.count,
-      page,
-      limit,
-      totalPages: Math.ceil(countResult.count / limit)
-    };
-  }
-
   async getCollectionsByCollector(collectorId: number, limit: number = 500): Promise<WasteCollection[]> {
     return await db
       .select()
@@ -745,50 +658,6 @@ export class DatabaseStorage implements IStorage {
       .where(eq(wasteCollections.collectorId, collectorId))
       .orderBy(desc(wasteCollections.collectionDate))
       .limit(limit);
-  }
-
-  async getCollectionsByCollectorPaginated(collectorId: number, options: {
-    page?: number;
-    limit?: number;
-    date?: string;
-  } = {}): Promise<{ data: WasteCollection[]; total: number; page: number; limit: number; totalPages: number }> {
-    const page = Math.max(1, options.page || 1);
-    const limit = Math.min(1000, Math.max(1, options.limit || 5000));
-    const offset = (page - 1) * limit;
-
-    let conditions = [eq(wasteCollections.collectorId, collectorId)];
-
-    if (options.date) {
-      const startDate = new Date(options.date);
-      startDate.setHours(0, 0, 0, 0);
-      const endDate = new Date(options.date);
-      endDate.setHours(23, 59, 59, 999);
-      conditions.push(gte(wasteCollections.collectionDate, startDate));
-      conditions.push(lte(wasteCollections.collectionDate, endDate));
-    }
-
-    const whereClause = conditions.length > 1 ? and(...conditions) : conditions[0];
-
-    const [countResult] = await db
-      .select({ count: count() })
-      .from(wasteCollections)
-      .where(whereClause);
-
-    const data = await db
-      .select()
-      .from(wasteCollections)
-      .where(whereClause)
-      .orderBy(desc(wasteCollections.collectionDate))
-      .limit(limit)
-      .offset(offset);
-
-    return {
-      data,
-      total: countResult.count,
-      page,
-      limit,
-      totalPages: Math.ceil(countResult.count / limit)
-    };
   }
 
   async createIssue(insertIssue: InsertIssue): Promise<Issue> {
@@ -827,7 +696,7 @@ export class DatabaseStorage implements IStorage {
       .where(eq(issues.villageId, villageId))
       .orderBy(desc(issues.createdAt))
       .limit(500); // Safety limit - use paginated method for larger datasets
-    
+
     await cache.set(cacheKey, result, 300); // 5 min TTL
     return result;
   }
@@ -842,7 +711,7 @@ export class DatabaseStorage implements IStorage {
     const offset = (page - 1) * limit;
 
     let conditions = [eq(issues.villageId, villageId)];
-    
+
     if (options.status && options.status !== 'all') {
       conditions.push(eq(issues.status, options.status));
     }
@@ -878,7 +747,7 @@ export class DatabaseStorage implements IStorage {
       .set({ ...updates, updatedAt: new Date() })
       .where(eq(issues.id, id))
       .returning();
-    
+
     // Invalidate issues cache
     if (issue?.villageId) {
       await cache.delete(cacheKeys.issues(issue.villageId));
@@ -887,7 +756,7 @@ export class DatabaseStorage implements IStorage {
       await cache.delete(cacheKeys.villageDetails(issue.villageId));
     }
     await cache.delete(cacheKeys.adminStats());
-    
+
     return issue;
   }
 
@@ -903,14 +772,14 @@ export class DatabaseStorage implements IStorage {
       .insert(announcements)
       .values(data)
       .returning();
-    
+
     // Invalidate cache
     if (data.villageId) {
       await cache.delete(cacheKeys.announcements(data.villageId));
     } else {
       await cache.delete(cacheKeys.globalAnnouncements());
     }
-    
+
     return announcement;
   }
 
@@ -924,7 +793,7 @@ export class DatabaseStorage implements IStorage {
       .from(announcements)
       .where(eq(announcements.villageId, villageId))
       .orderBy(desc(announcements.createdAt));
-    
+
     await cache.set(cacheKeys.announcements(villageId), result, 1800);
     return result;
   }
@@ -939,7 +808,7 @@ export class DatabaseStorage implements IStorage {
       .from(announcements)
       .where(isNull(announcements.villageId))
       .orderBy(desc(announcements.createdAt));
-    
+
     await cache.set(cacheKeys.globalAnnouncements(), result, 1800);
     return result;
   }
@@ -954,9 +823,9 @@ export class DatabaseStorage implements IStorage {
       createdAt: announcements.createdAt,
       createdBy: announcements.createdBy,
     })
-    .from(announcements)
-    .orderBy(desc(announcements.createdAt))
-    .limit(200); // Safety limit
+      .from(announcements)
+      .orderBy(desc(announcements.createdAt))
+      .limit(200); // Safety limit
   }
 
   async getAllAnnouncementsPaginated(options: {
@@ -992,11 +861,11 @@ export class DatabaseStorage implements IStorage {
       createdAt: announcements.createdAt,
       createdBy: announcements.createdBy,
     })
-    .from(announcements)
-    .where(whereClause)
-    .orderBy(desc(announcements.createdAt))
-    .limit(limit)
-    .offset(offset);
+      .from(announcements)
+      .where(whereClause)
+      .orderBy(desc(announcements.createdAt))
+      .limit(limit)
+      .offset(offset);
 
     const result = {
       data,
@@ -1347,7 +1216,7 @@ export class DatabaseStorage implements IStorage {
       .from(users)
       .where(eq(users.role, 'manager'))
       .limit(500); // Safety limit
-    
+
     await cache.set(cacheKey, result, 600); // 10 min TTL
     return result;
   }
@@ -1421,62 +1290,8 @@ export class DatabaseStorage implements IStorage {
       .from(users)
       .where(eq(users.role, 'moderator'))
       .limit(500); // Safety limit
-    
+
     await cache.set(cacheKey, result, 600); // 10 min TTL
-    return result;
-  }
-
-  async getModeratorsListPaginated(options: {
-    page?: number;
-    limit?: number;
-    search?: string;
-  } = {}): Promise<{ data: User[]; total: number; page: number; limit: number; totalPages: number }> {
-    const cache = getCache();
-    const page = Math.max(1, options.page || 1);
-    const limit = Math.min(100, Math.max(1, options.limit || 50));
-    const offset = (page - 1) * limit;
-
-    const cacheKey = cacheKeys.moderatorsPaginated(page, limit);
-    const cached = await cache.get(cacheKey);
-    if (cached && !options.search) return cached;
-
-    let conditions = [eq(users.role, 'moderator')];
-
-    if (options.search) {
-      conditions.push(
-        or(
-          like(users.name, `%${options.search}%`),
-          like(users.userId, `%${options.search}%`)
-        )!
-      );
-    }
-
-    const whereClause = conditions.length > 1 ? and(...conditions) : conditions[0];
-
-    const [countResult] = await db
-      .select({ count: count() })
-      .from(users)
-      .where(whereClause);
-
-    const data = await db
-      .select()
-      .from(users)
-      .where(whereClause)
-      .orderBy(users.userId)
-      .limit(limit)
-      .offset(offset);
-
-    const result = {
-      data,
-      total: countResult.count,
-      page,
-      limit,
-      totalPages: Math.ceil(countResult.count / limit)
-    };
-
-    if (!options.search) {
-      await cache.set(cacheKey, result, 600); // 10 min TTL
-    }
     return result;
   }
 
@@ -1501,7 +1316,7 @@ export class DatabaseStorage implements IStorage {
       .where(sql`to_collector_id IN (SELECT id FROM collectors WHERE village_id = ${villageId})`);
 
     await db.delete(moderatorVillageAssignments)
-    .where(sql`village_id = ${villageId}`);
+      .where(sql`village_id = ${villageId}`);
 
 
     // 3. Delete main tables
@@ -1526,14 +1341,16 @@ export class DatabaseStorage implements IStorage {
         filters.startDate?.toISOString() || 'all',
         filters.endDate?.toISOString() || 'all'
       );
-      
+
       const cached = await cache.get(cacheKey);
       if (cached) return cached;
 
       const currentMonth = new Date().getFullYear() + '-' + String(new Date().getMonth() + 1).padStart(2, '0');
       const allVillages = await db.select().from(villages);
-      
+
       let result: any = { collections: [] };
+
+      const villageStatsPromises: any[] = [];
 
       for (const village of allVillages) {
         // Apply village filter
@@ -1541,32 +1358,31 @@ export class DatabaseStorage implements IStorage {
           continue;
         }
 
-        const villageStatsPromises = [];
-        
         // Get monthly stats from summary table for past months
         if (filters.startDate) {
           const startMonth = filters.startDate.getFullYear() + '-' + String(filters.startDate.getMonth() + 1).padStart(2, '0');
-          const endMonth = filters.endDate 
+          const endMonth = filters.endDate
             ? filters.endDate.getFullYear() + '-' + String(filters.endDate.getMonth() + 1).padStart(2, '0')
             : currentMonth;
 
-          // Get stats from monthly_village_stats for all months in range except current
+          // Get stats from live waste_collections data for all months in range
           let statsQuery = db
             .select({
-              villageId: monthlyVillageStats.villageId,
-              collections: sql<number>`${monthlyVillageStats.collectionsCompleted} + ${monthlyVillageStats.collectionsMissed}`,
-              avgSegregationRating: monthlyVillageStats.averageSegregationRating,
-              avgPlasticRating: monthlyVillageStats.averagePlasticRating,
+              villageId: households.villageId,
+              collections: count(wasteCollections.id),
+              avgSegregationRating: sql<number>`COALESCE(CAST(AVG(${wasteCollections.segregationRating}) AS DECIMAL(3,2)), 0)`,
+              avgPlasticRating: sql<number>`COALESCE(CAST(AVG(${wasteCollections.plasticRating}) AS DECIMAL(3,2)), 0)`,
             })
-            .from(monthlyVillageStats)
+            .from(wasteCollections)
+            .innerJoin(households, eq(wasteCollections.householdId, households.id))
             .where(
               and(
-                eq(monthlyVillageStats.villageId, village.villageId),
-                sql`${monthlyVillageStats.month} >= ${startMonth}`,
-                sql`${monthlyVillageStats.month} <= ${endMonth}`,
-                sql`${monthlyVillageStats.month} != ${currentMonth}` // Exclude current month from summary
+                eq(households.villageId, village.villageId),
+                gte(wasteCollections.collectionDate, new Date(`${startMonth}-01`)),
+                lte(wasteCollections.collectionDate, new Date(`${endMonth}-01`))
               )
-            );
+            )
+            .groupBy(households.villageId);
 
           villageStatsPromises.push(statsQuery);
         }
@@ -1613,7 +1429,7 @@ export class DatabaseStorage implements IStorage {
               avgPlasticRating: 0,
             };
           }
-          
+
           // Aggregate stats
           collectionsByVillage[villageId].collections += Number(stat.collections) || 0;
           if (stat.avgSegregationRating) {
@@ -1643,7 +1459,7 @@ export class DatabaseStorage implements IStorage {
   async getVillageDetails(villageId: string): Promise<any> {
     const cache = getCache();
     const cacheKey = cacheKeys.villageDetails(villageId);
-    
+
     const cached = await cache.get(cacheKey);
     if (cached) return cached;
 
@@ -1683,54 +1499,54 @@ export class DatabaseStorage implements IStorage {
   }
 
   async addManagerToVillage(villageData: {
-  villageId: string;
-  managerName: string;
-  managerPhone: string;
-}): Promise<User> {
-  const { villageId, managerName, managerPhone } = villageData;
+    villageId: string;
+    managerName: string;
+    managerPhone: string;
+  }): Promise<User> {
+    const { villageId, managerName, managerPhone } = villageData;
 
-  // Get all existing managers for the village
-  const existingManagers = await db
-    .select({ userId: users.userId })
-    .from(users)
-    .where(and(eq(users.villageId, villageId), eq(users.role, 'manager')));
+    // Get all existing managers for the village
+    const existingManagers = await db
+      .select({ userId: users.userId })
+      .from(users)
+      .where(and(eq(users.villageId, villageId), eq(users.role, 'manager')));
 
-  // Extract and parse manager numbers from user IDs like "V001-M3"
-  const usedNumbers = existingManagers
-    .map((u) => {
-      const match = u.userId.match(/-M(\d+)$/);
-      return match ? parseInt(match[1], 10) : 0;
-    })
-    .sort((a, b) => a - b);
+    // Extract and parse manager numbers from user IDs like "V001-M3"
+    const usedNumbers = existingManagers
+      .map((u) => {
+        const match = u.userId.match(/-M(\d+)$/);
+        return match ? parseInt(match[1], 10) : 0;
+      })
+      .sort((a, b) => a - b);
 
-  // Find the smallest unused manager number
-  let managerNumber = 1;
-  for (const num of usedNumbers) {
-    if (num === managerNumber) {
-      managerNumber++;
-    } else {
-      break;
+    // Find the smallest unused manager number
+    let managerNumber = 1;
+    for (const num of usedNumbers) {
+      if (num === managerNumber) {
+        managerNumber++;
+      } else {
+        break;
+      }
     }
+
+    const managerId = `${villageId}-M${managerNumber}`;
+    const hashedPassword = await bcrypt.hash(managerId, 10);
+
+    // Insert new manager
+    const [manager] = await db
+      .insert(users)
+      .values({
+        userId: managerId,
+        password: hashedPassword,
+        role: 'manager',
+        name: managerName,
+        phone: managerPhone,
+        villageId,
+      })
+      .returning();
+
+    return manager;
   }
-
-  const managerId = `${villageId}-M${managerNumber}`;
-  const hashedPassword = await bcrypt.hash(managerId, 10);
-
-  // Insert new manager
-  const [manager] = await db
-    .insert(users)
-    .values({
-      userId: managerId,
-      password: hashedPassword,
-      role: 'manager',
-      name: managerName,
-      phone: managerPhone,
-      villageId,
-    })
-    .returning();
-
-  return manager;
-}
 
 
   async deleteUser(userId: string): Promise<void> {
@@ -1745,9 +1561,9 @@ export class DatabaseStorage implements IStorage {
       .from(collectors)
       .where(eq(collectors.id, id))
       .limit(1);
-    
+
     await db.delete(collectors).where(eq(collectors.id, id));
-    
+
     // Invalidate collector caches
     if (collector?.villageId) {
       await cache.delete(cacheKeys.collectors(collector.villageId));
@@ -1772,8 +1588,8 @@ export class DatabaseStorage implements IStorage {
       .from(feedback)
       .where(eq(feedback.toCollectorId, collectorId));
 
-    const avgRating = feedbackResults.length > 0 
-      ? feedbackResults.reduce((sum, f) => sum + f.rating, 0) / feedbackResults.length 
+    const avgRating = feedbackResults.length > 0
+      ? feedbackResults.reduce((sum, f) => sum + f.rating, 0) / feedbackResults.length
       : 0;
 
     const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
@@ -1786,13 +1602,6 @@ export class DatabaseStorage implements IStorage {
 
   // Enhanced household operations
 
-
-  async markQRCodesPrinted(householdIds: number[]): Promise<void> {
-    await db.update(households)
-      .set({ qrPrinted: true })
-      .where(inArray(households.id, householdIds));
-  }
-
   async deleteHousehold(id: number): Promise<void> {
     const cache = getCache();
     // Get villageId before deleting
@@ -1800,7 +1609,7 @@ export class DatabaseStorage implements IStorage {
       .from(households)
       .where(eq(households.id, id))
       .limit(1);
-    
+
     if (!household) return;
 
     // Delete related entities manually to ensure consistency
@@ -1808,7 +1617,7 @@ export class DatabaseStorage implements IStorage {
     await db.delete(qrCodes).where(eq(qrCodes.householdId, id));
     await db.delete(feedback).where(eq(feedback.fromHouseholdId, id));
     await db.delete(households).where(eq(households.id, id));
-    
+
     // Invalidate household caches
     if (household?.villageId) {
       await cache.delete(cacheKeys.households(household.villageId));
@@ -1860,7 +1669,7 @@ export class DatabaseStorage implements IStorage {
     const dateKey = date || new Date().toISOString().split('T')[0];
     const villageKey = villageId || 'all';
     const cacheKey = cacheKeys.dailyReport(villageKey, dateKey);
-    
+
     const cached = await cache.get(cacheKey);
     if (cached) return cached;
 
@@ -1869,10 +1678,10 @@ export class DatabaseStorage implements IStorage {
     const nextDay = new Date(targetDate);
     nextDay.setDate(nextDay.getDate() + 1);
 
-    const villageCondition = villageId && villageId !== 'all' 
-      ? eq(households.villageId, villageId) 
+    const villageCondition = villageId && villageId !== 'all'
+      ? eq(households.villageId, villageId)
       : sql`1=1`;
-    
+
     const dateCondition = sql`${wasteCollections.collectionDate} >= ${targetDate} AND ${wasteCollections.collectionDate} < ${nextDay}`;
 
     const [householdsCount] = await db
@@ -1948,7 +1757,7 @@ export class DatabaseStorage implements IStorage {
         and(
           sql`${wasteCollections.collectionDate} >= ${targetDate} AND ${wasteCollections.collectionDate} < ${nextDay}`,
           villageId && villageId !== 'all' ? eq(households.villageId, villageId) : sql`1=1`
-        )      );
+        ));
 
     // Village/Collector performance
     let performanceQuery;
@@ -2284,7 +2093,7 @@ export class DatabaseStorage implements IStorage {
     totalCollectionsToday: number;
   }> {
     // Filter villageIds based on selectedVillageId if provided
-    const targetVillageIds = selectedVillageId && selectedVillageId !== 'all' 
+    const targetVillageIds = selectedVillageId && selectedVillageId !== 'all'
       ? [selectedVillageId].filter(id => villageIds.includes(id))
       : villageIds;
 
@@ -2369,8 +2178,8 @@ export class DatabaseStorage implements IStorage {
         );
 
       const [avgRating] = await db.select({
-          avg: sql<number>`COALESCE(AVG(CAST(${wasteCollections.segregationRating} AS DECIMAL(3,2))), 0)`
-        })
+        avg: sql<number>`COALESCE(AVG(CAST(${wasteCollections.segregationRating} AS DECIMAL(3,2))), 0)`
+      })
         .from(wasteCollections)
         .innerJoin(households, eq(wasteCollections.householdId, households.id))
         .where(and(
@@ -2380,10 +2189,10 @@ export class DatabaseStorage implements IStorage {
 
       // Collection trends (last 7 days) - Get actual data with total households context
       const collectionTrendsData = await db.select({
-          date: sql<string>`DATE(${wasteCollections.collectionDate})`,
-          collections: count(wasteCollections.id),
-          avgRating: sql<number>`COALESCE(AVG(CAST(${wasteCollections.segregationRating} AS DECIMAL(3,2))), 0)`
-        })
+        date: sql<string>`DATE(${wasteCollections.collectionDate})`,
+        collections: count(wasteCollections.id),
+        avgRating: sql<number>`COALESCE(AVG(CAST(${wasteCollections.segregationRating} AS DECIMAL(3,2))), 0)`
+      })
         .from(wasteCollections)
         .innerJoin(households, eq(wasteCollections.householdId, households.id))
         .where(
@@ -2415,9 +2224,9 @@ export class DatabaseStorage implements IStorage {
 
       // Segregation rate distribution
       const segregationRateDistributionData = await db.select({
-          rating: wasteCollections.segregationRating,
-          count: count()
-        })
+        rating: wasteCollections.segregationRating,
+        count: count()
+      })
         .from(wasteCollections)
         .innerJoin(households, eq(wasteCollections.householdId, households.id))
         .where(
@@ -2431,11 +2240,11 @@ export class DatabaseStorage implements IStorage {
 
       // Top performing villages
       const villageStats = await db.select({
-          villageId: households.villageId,
-          villageName: villages.name,
-          collections: count(wasteCollections.id),
-          avgRating: sql<number>`COALESCE(AVG(CAST(${wasteCollections.segregationRating} AS DECIMAL(3,2))), 0)`
-        })
+        villageId: households.villageId,
+        villageName: villages.name,
+        collections: count(wasteCollections.id),
+        avgRating: sql<number>`COALESCE(AVG(CAST(${wasteCollections.segregationRating} AS DECIMAL(3,2))), 0)`
+      })
         .from(wasteCollections)
         .innerJoin(households, eq(wasteCollections.householdId, households.id))
         .innerJoin(villages, eq(households.villageId, villages.villageId))
@@ -2675,7 +2484,7 @@ export class DatabaseStorage implements IStorage {
     try {
       const cache = getCache();
       const cacheKey = cacheKeys.adminStats() + (villageFilter ? `:${villageFilter}` : '');
-      
+
       const cached = await cache.get(cacheKey);
       if (cached) return cached;
 
@@ -2729,31 +2538,32 @@ export class DatabaseStorage implements IStorage {
         );
 
       const [avgSegregation] = await db.select({
-          avg: sql<number>`COALESCE(AVG(CAST(${wasteCollections.segregationRating} AS DECIMAL(3,2))), 0)`
-        })
+        avg: sql<number>`COALESCE(AVG(CAST(${wasteCollections.segregationRating} AS DECIMAL(3,2))), 0)`
+      })
         .from(wasteCollections)
         .innerJoin(households, eq(wasteCollections.householdId, households.id))
         .where(and(villageCondition, sql`${wasteCollections.segregationRating} IS NOT NULL`));
 
-      // Use monthly stats for top villages historical data combined with current month live data
+      // Use live waste_collections data for top villages
       const topVillages = await db.select({
-          villageName: villages.name,
-          avgRating: sql<number>`COALESCE(AVG(CAST(${monthlyVillageStats.averageSegregationRating} AS DECIMAL(3,2))), 0)`,
-          collections: sql<number>`SUM(${monthlyVillageStats.collectionsCompleted})`
-        })
-        .from(monthlyVillageStats)
-        .innerJoin(villages, eq(monthlyVillageStats.villageId, villages.villageId))
+        villageName: villages.name,
+        avgRating: sql<number>`COALESCE(AVG(CAST(${wasteCollections.segregationRating} AS DECIMAL(3,2))), 0)`,
+        collections: count(wasteCollections.id)
+      })
+        .from(wasteCollections)
+        .innerJoin(households, eq(wasteCollections.householdId, households.id))
+        .innerJoin(villages, eq(households.villageId, villages.villageId))
         .where(villageFilterCondition)
         .groupBy(villages.villageId, villages.name)
-        .orderBy(desc(sql`COALESCE(AVG(CAST(${monthlyVillageStats.averageSegregationRating} AS DECIMAL(3,2))), 0)`))
+        .orderBy(desc(sql`COALESCE(AVG(CAST(${wasteCollections.segregationRating} AS DECIMAL(3,2))), 0)`))
         .limit(5);
 
       // Get last 7 days trends from live data
       const collectionTrends = await db.select({
-          date: sql<string>`DATE(${wasteCollections.collectionDate})`,
-          collections: count(wasteCollections.id),
-          avgRating: sql<number>`COALESCE(AVG(CAST(${wasteCollections.segregationRating} AS DECIMAL(3,2))), 0)`
-        })
+        date: sql<string>`DATE(${wasteCollections.collectionDate})`,
+        collections: count(wasteCollections.id),
+        avgRating: sql<number>`COALESCE(AVG(CAST(${wasteCollections.segregationRating} AS DECIMAL(3,2))), 0)`
+      })
         .from(wasteCollections)
         .innerJoin(households, eq(wasteCollections.householdId, households.id))
         .where(villageCondition)
@@ -2762,9 +2572,9 @@ export class DatabaseStorage implements IStorage {
         .limit(7);
 
       const segregationDistribution = await db.select({
-          rating: wasteCollections.segregationRating,
-          count: count()
-        })
+        rating: wasteCollections.segregationRating,
+        count: count()
+      })
         .from(wasteCollections)
         .innerJoin(households, eq(wasteCollections.householdId, households.id))
         .where(
@@ -2787,7 +2597,7 @@ export class DatabaseStorage implements IStorage {
         totalCollectionsThisWeek: Number(collectionsThisWeek?.count) || 0,
         averageSegregationRating: parseFloat(avgRating.toFixed(2)),
         topPerformingVillages: topVillages.map(v => ({
-          ...v, 
+          ...v,
           avgRating: parseFloat((Number(v.avgRating) || 0).toFixed(2)),
           collections: Number(v.collections) || 0
         })),
@@ -2829,8 +2639,8 @@ export class DatabaseStorage implements IStorage {
       .orderBy(desc(wasteCollections.collectionDate))
       .limit(10); // Last 10 collections
 
-    const problemCollections = householdCollections.filter(c => 
-      (c.segregationRating && c.segregationRating < 4) || 
+    const problemCollections = householdCollections.filter(c =>
+      (c.segregationRating && c.segregationRating < 4) ||
       (c.status === "not_collected" && c.missedReason && c.missedReason.includes("segregat"))
     ).length;
 
@@ -2869,235 +2679,6 @@ export class DatabaseStorage implements IStorage {
       .orderBy(desc(contactSubmissions.createdAt));
   }
 
-  // Phase 2: Monthly village stats operations
-  async createOrUpdateMonthlyStats(stats: InsertMonthlyVillageStats): Promise<MonthlyVillageStats> {
-    // Try to update existing record first
-    const [existing] = await db
-      .select()
-      .from(monthlyVillageStats)
-      .where(
-        and(
-          eq(monthlyVillageStats.villageId, stats.villageId),
-          eq(monthlyVillageStats.month, stats.month)
-        )
-      );
-
-    if (existing) {
-      // Update existing record
-      const [updated] = await db
-        .update(monthlyVillageStats)
-        .set({
-          ...stats,
-          updatedAt: new Date(),
-        })
-        .where(
-          and(
-            eq(monthlyVillageStats.villageId, stats.villageId),
-            eq(monthlyVillageStats.month, stats.month)
-          )
-        )
-        .returning();
-      return updated;
-    } else {
-      // Create new record
-      const [created] = await db
-        .insert(monthlyVillageStats)
-        .values(stats)
-        .returning();
-      return created;
-    }
-  }
-
-  async getMonthlyStatsByVillageAndMonth(villageId: string, month: string): Promise<MonthlyVillageStats | undefined> {
-    const [stats] = await db
-      .select()
-      .from(monthlyVillageStats)
-      .where(
-        and(
-          eq(monthlyVillageStats.villageId, villageId),
-          eq(monthlyVillageStats.month, month)
-        )
-      );
-    return stats || undefined;
-  }
-
-  async backfillHistoricalStats(): Promise<number> {
-    try {
-      let recordsCreated = 0;
-
-      // Get all villages
-      const allVillages = await db.select().from(villages);
-
-      for (const village of allVillages) {
-        // Get unique months from waste_collections
-        const monthsResult = await db
-          .selectDistinct({
-            month: sql<string>`to_char(${wasteCollections.collectionDate}, 'YYYY-MM')`,
-          })
-          .from(wasteCollections)
-          .innerJoin(households, eq(wasteCollections.householdId, households.id))
-          .where(eq(households.villageId, village.villageId))
-          .orderBy(sql`to_char(${wasteCollections.collectionDate}, 'YYYY-MM')`);
-
-        for (const { month } of monthsResult) {
-          if (!month) continue;
-
-          // Calculate stats for this village and month
-          const monthStart = new Date(`${month}-01`);
-          const monthEnd = new Date(monthStart.getFullYear(), monthStart.getMonth() + 1, 0, 23, 59, 59);
-
-          // Get total households in village (at any point during this month)
-          const householdsCount = await db
-            .select({ count: count() })
-            .from(households)
-            .where(eq(households.villageId, village.villageId));
-
-          // Get total collectors in village (at any point during this month)
-          const collectorsCount = await db
-            .select({ count: count() })
-            .from(collectors)
-            .where(eq(collectors.villageId, village.villageId));
-
-          // Get collections data for this month
-          const collectionsData = await db
-            .select({
-              completed: count(),
-              missed: sql<number>`COUNT(*) FILTER (WHERE ${wasteCollections.status} = 'missed')`,
-              avgSegregation: avg(wasteCollections.segregationRating),
-              avgPlastic: avg(wasteCollections.plasticRating),
-            })
-            .from(wasteCollections)
-            .innerJoin(households, eq(wasteCollections.householdId, households.id))
-            .where(
-              and(
-                eq(households.villageId, village.villageId),
-                gte(wasteCollections.collectionDate, monthStart),
-                lte(wasteCollections.collectionDate, monthEnd)
-              )
-            );
-
-          // Get open issues count for this month
-          const openIssuesData = await db
-            .select({ count: count() })
-            .from(issues)
-            .where(
-              and(
-                eq(issues.villageId, village.villageId),
-                eq(issues.status, 'open'),
-                gte(issues.createdAt, monthStart),
-                lte(issues.createdAt, monthEnd)
-              )
-            );
-
-          // Create or update stats record
-          const stats = {
-            villageId: village.villageId,
-            month,
-            totalHouseholds: householdsCount[0]?.count || 0,
-            totalCollectors: collectorsCount[0]?.count || 0,
-            collectionsCompleted: collectionsData[0]?.completed || 0,
-            collectionsMissed: collectionsData[0]?.missed || 0,
-            openIssues: openIssuesData[0]?.count || 0,
-            averageSegregationRating: collectionsData[0]?.avgSegregation ? Number(collectionsData[0].avgSegregation) : undefined,
-            averagePlasticRating: collectionsData[0]?.avgPlastic ? Number(collectionsData[0].avgPlastic) : undefined,
-          };
-
-          await this.createOrUpdateMonthlyStats(stats as InsertMonthlyVillageStats);
-          recordsCreated++;
-        }
-      }
-
-      console.log(`✅ Phase 2 backfill completed: ${recordsCreated} monthly stats records created/updated`);
-      return recordsCreated;
-    } catch (error) {
-      console.error('Phase 2 backfill failed:', error);
-      throw error;
-    }
-  }
-
-  // Phase 3: Daily job to update current month stats
-  async updateCurrentMonthStats(): Promise<number> {
-    try {
-      let recordsUpdated = 0;
-      const today = new Date();
-      const currentMonth = today.getFullYear() + '-' + String(today.getMonth() + 1).padStart(2, '0');
-
-      // Get all villages
-      const allVillages = await db.select().from(villages);
-
-      for (const village of allVillages) {
-        // Calculate current month stats
-        const monthStart = new Date(`${currentMonth}-01`);
-        const monthEnd = new Date(monthStart.getFullYear(), monthStart.getMonth() + 1, 0, 23, 59, 59);
-
-        // Get total households
-        const householdsCount = await db
-          .select({ count: count() })
-          .from(households)
-          .where(eq(households.villageId, village.villageId));
-
-        // Get total collectors
-        const collectorsCount = await db
-          .select({ count: count() })
-          .from(collectors)
-          .where(eq(collectors.villageId, village.villageId));
-
-        // Get collections data for current month
-        const collectionsData = await db
-          .select({
-            completed: count(),
-            missed: sql<number>`COUNT(*) FILTER (WHERE ${wasteCollections.status} = 'missed')`,
-            avgSegregation: avg(wasteCollections.segregationRating),
-            avgPlastic: avg(wasteCollections.plasticRating),
-          })
-          .from(wasteCollections)
-          .innerJoin(households, eq(wasteCollections.householdId, households.id))
-          .where(
-            and(
-              eq(households.villageId, village.villageId),
-              gte(wasteCollections.collectionDate, monthStart),
-              lte(wasteCollections.collectionDate, monthEnd)
-            )
-          );
-
-        // Get open issues count
-        const openIssuesData = await db
-          .select({ count: count() })
-          .from(issues)
-          .where(
-            and(
-              eq(issues.villageId, village.villageId),
-              eq(issues.status, 'open'),
-              gte(issues.createdAt, monthStart),
-              lte(issues.createdAt, monthEnd)
-            )
-          );
-
-        // Update current month stats
-        const stats = {
-          villageId: village.villageId,
-          month: currentMonth,
-          totalHouseholds: householdsCount[0]?.count || 0,
-          totalCollectors: collectorsCount[0]?.count || 0,
-          collectionsCompleted: collectionsData[0]?.completed || 0,
-          collectionsMissed: collectionsData[0]?.missed || 0,
-          openIssues: openIssuesData[0]?.count || 0,
-          averageSegregationRating: collectionsData[0]?.avgSegregation ? Number(collectionsData[0].avgSegregation) : undefined,
-          averagePlasticRating: collectionsData[0]?.avgPlastic ? Number(collectionsData[0].avgPlastic) : undefined,
-        };
-
-        await this.createOrUpdateMonthlyStats(stats as InsertMonthlyVillageStats);
-        recordsUpdated++;
-      }
-
-      console.log(`✅ Phase 3: Updated ${recordsUpdated} current month stats records for ${currentMonth}`);
-      return recordsUpdated;
-    } catch (error) {
-      console.error('Phase 3: updateCurrentMonthStats failed:', error);
-      throw error;
-    }
-  }
-
   // QR Code operations
   async createQRCode(insertQRCode: InsertQRCode): Promise<QRCode> {
     const [qrCode] = await db
@@ -3130,19 +2711,6 @@ export class DatabaseStorage implements IStorage {
       .from(qrCodes)
       .where(eq(qrCodes.villageId, villageId))
       .orderBy(desc(qrCodes.createdAt));
-  }
-
-  async getUnmappedQRCodesByVillage(villageId: string): Promise<QRCode[]> {
-    return await db
-      .select()
-      .from(qrCodes)
-      .where(
-        and(
-          eq(qrCodes.villageId, villageId),
-          eq(qrCodes.status, 'notMapped')
-        )
-      )
-      .orderBy(qrCodes.uid);
   }
 
   async getQRCodesByBatch(batchId: string): Promise<QRCode[]> {
@@ -3277,7 +2845,7 @@ export class DatabaseStorage implements IStorage {
     await db.update(villages)
       .set({ vehicles: updatedVehicles })
       .where(eq(villages.villageId, villageId));
-    
+
     // Clear cache
     const { getCache, cacheKeys } = await import('./cache');
     await getCache().delete(cacheKeys.village(villageId));
@@ -3301,7 +2869,7 @@ export class DatabaseStorage implements IStorage {
         eq(collectors.villageId, villageId),
         eq(collectors.assignedVehicle, registrationNumber)
       ));
-    
+
     // Clear cache
     const { getCache, cacheKeys } = await import('./cache');
     await getCache().delete(cacheKeys.village(villageId));
@@ -3340,9 +2908,9 @@ export class DatabaseStorage implements IStorage {
     // Create a new array to ensure update is picked up
     const updatedVehicles = [...vehicles];
     updatedVehicles[vehicleIndex] = { ...updatedVehicles[vehicleIndex], ...updates };
-    
+
     await db.update(villages).set({ vehicles: updatedVehicles }).where(eq(villages.villageId, villageId));
-    
+
     // Clear cache
     const { getCache, cacheKeys } = await import('./cache');
     await getCache().delete(cacheKeys.village(villageId));
@@ -3386,7 +2954,7 @@ export class DatabaseStorage implements IStorage {
 
   async getDailyWasteLogsByVillage(villageId: string, startDate?: string, endDate?: string): Promise<DailyWasteLog[]> {
     let conditions = [eq(dailyWasteLog.villageId, villageId)];
-    
+
     if (startDate) {
       conditions.push(gte(dailyWasteLog.date, startDate));
     }
@@ -3436,7 +3004,7 @@ export class DatabaseStorage implements IStorage {
 
   async getCompostProductionLogsByVillage(villageId: string, startDate?: string, endDate?: string): Promise<CompostProductionLog[]> {
     let conditions = [eq(compostProductionLog.villageId, villageId)];
-    
+
     if (startDate) {
       conditions.push(gte(compostProductionLog.date, startDate));
     }
@@ -3502,7 +3070,7 @@ export class DatabaseStorage implements IStorage {
 
   async getDryWasteSalesByVillage(villageId: string, startDate?: string, endDate?: string): Promise<(DryWasteSale & { materials: DryWasteSaleMaterial[] })[]> {
     let conditions = [eq(dryWasteSales.villageId, villageId)];
-    
+
     if (startDate) {
       conditions.push(gte(dryWasteSales.saleDate, startDate));
     }
