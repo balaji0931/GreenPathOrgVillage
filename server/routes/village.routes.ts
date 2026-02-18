@@ -72,32 +72,7 @@ export function registerVillageRoutes(app: Express, requireAuth: any, requireRol
     }
   });
 
-  // Paginated villages endpoint
-  app.get('/api/villages/paginated', requireAuth, requireRole(['admin']), async (req, res) => {
-    try {
-      const page = parseInt(req.query.page as string) || 1;
-      const limit = Math.min(parseInt(req.query.limit as string) || 50, 100);
-      const search = req.query.search as string;
 
-      const result = await storage.getVillagesPaginated({ page, limit, search });
-
-      // Get stats for the paginated results (parallel processing)
-      const villagesWithStats = await Promise.all(
-        result.data.map(async (village) => {
-          const stats = await storage.getVillageStats(village.villageId);
-          return { ...village, ...stats };
-        })
-      );
-
-      res.json({
-        ...result,
-        data: villagesWithStats
-      });
-    } catch (error) {
-      console.error("Get paginated villages error:", error);
-      res.status(500).json({ message: "Failed to get villages" });
-    }
-  });
 
   app.get('/api/villages/:villageId', requireAuth, requireRole(['admin', 'manager', 'collector', 'generator', 'fieldworker']), requireVillageAccess, async (req, res) => {
     try {

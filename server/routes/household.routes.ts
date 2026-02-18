@@ -327,22 +327,7 @@ export function registerHouseholdRoutes(app: Express, requireAuth: any, requireR
     }
   });
 
-  // Mark QR codes as printed
-  app.post('/api/qr-codes/mark-printed', requireAuth, requireRole(['manager']), async (req, res) => {
-    try {
-      const { householdIds } = req.body;
 
-      if (!Array.isArray(householdIds) || householdIds.length === 0) {
-        return res.status(400).json({ message: 'Invalid household IDs' });
-      }
-
-      await storage.markQRCodesPrinted(householdIds);
-      res.json({ message: 'QR codes marked as printed successfully' });
-    } catch (error) {
-      console.error('Error marking QR codes as printed:', error);
-      res.status(500).json({ message: 'Internal server error' });
-    }
-  });
 
   app.delete('/api/households/:id', requireAuth, requireRole(['manager', 'admin']), async (req, res) => {
     try {

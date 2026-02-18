@@ -313,17 +313,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Announcements routes
   registerAnnouncementRoutes(app, requireAuth, requireRole);
 
-// Manager stats route
+  // Manager stats route
   // Stats routes
   registerStatsRoutes(app, requireAuth, requireRole);
 
-// Get moderator villages
+  // Get moderator villages
   // Moderator routes
   registerModeratorRoutes(app, requireAuth, requireRole);
 
 
 
-// Admin management routes
+  // Admin management routes
   // Admin user management routes
   registerAdminUsersRoutes(app, requireAuth, requireRole, requireVillageAccess);
 
@@ -331,13 +331,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   registerProfileRoutes(app, requireAuth);
 
 
-// Moderator-specific API endpoints
+  // Moderator-specific API endpoints
 
 
 
 
 
-// Moderator routes
+  // Moderator routes
 
 
 
@@ -345,18 +345,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Feedback and admin routes
   registerAdminRoutes(app, requireAuth, requireRole);
 
-// Note: manifest.json and icon routes are handled in server/index.ts to avoid conflicts
+  // Note: manifest.json and icon routes are handled in server/index.ts to avoid conflicts
 
-// Serve uploaded files
-app.use('/uploads', express.static('uploads'));
+  // Serve uploaded files
+  app.use('/uploads', express.static('uploads'));
 
-// Admin routes for website feedback and contact submissions
-
-// =====================================================
-// MATERIAL & OUTPUT LOG APIs (Manager-only)
-// =====================================================
-
-// Daily Waste Log endpoints
 
   // Legal compliance routes
   registerLegalRoutes(app);

@@ -57,16 +57,7 @@ export function registerQRCodeRoutes(app: Express, requireAuth: any, requireRole
     }
   });
 
-  app.get('/api/qr-codes/unmapped', requireAuth, requireRole(['manager', 'fieldworker']), async (req, res) => {
-    try {
-      const villageId = req.session.villageId!;
-      const qrCodes = await storage.getUnmappedQRCodesByVillage(villageId);
-      res.json(qrCodes);
-    } catch (error) {
-      console.error("Get unmapped QR codes error:", error);
-      res.status(500).json({ message: "Failed to get unmapped QR codes" });
-    }
-  });
+
 
   app.get('/api/qr-codes/batch/:batchId/pdf', requireAuth, requireRole(['manager']), async (req, res) => {
     try {

@@ -107,41 +107,4 @@ app.post('/api/admin/schedule-report', requireAuth, requireRole(['admin']), asyn
 });
 
 // Phase 3: Admin endpoints for manual stats management
-app.post('/api/admin/backfill-stats', requireAuth, requireRole(['admin']), async (req, res) => {
-  try {
-    const recordsCreated = await storage.backfillHistoricalStats();
-
-    // Clear all report and stats caches after backfill
-    const cache = getCache();
-    await cache.clear('stats:*');
-    await cache.clear('report:*');
-
-    res.json({
-      message: `✅ Backfill completed: ${recordsCreated} monthly stats records created/updated`,
-      recordsCreated
-    });
-  } catch (error) {
-    console.error('Admin backfill stats error:', error);
-    res.status(500).json({ message: 'Failed to backfill historical stats' });
-  }
-});
-
-app.post('/api/admin/update-current-stats', requireAuth, requireRole(['admin']), async (req, res) => {
-  try {
-    const recordsUpdated = await storage.updateCurrentMonthStats();
-
-    // Clear all stats caches after update
-    const cache = getCache();
-    await cache.clear('stats:*');
-    await cache.clear('report:*');
-
-    res.json({
-      message: `✅ Current month stats updated: ${recordsUpdated} records updated`,
-      recordsUpdated
-    });
-  } catch (error) {
-    console.error('Admin update current stats error:', error);
-    res.status(500).json({ message: 'Failed to update current month stats' });
-  }
-});
 }
