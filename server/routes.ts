@@ -1,4 +1,4 @@
-import type { Express} from "express";
+import type { Express } from "express";
 import { createServer, type Server } from "http";
 import express from "express";
 import multer from "multer";
@@ -25,6 +25,7 @@ import { registerStatsRoutes } from "./routes/stats.routes";
 import { registerModeratorRoutes } from "./routes/moderator.routes";
 import { registerAdminUsersRoutes } from "./routes/admin-users.routes";
 import { registerProfileRoutes } from "./routes/profile.routes";
+import { registerMaterialLogRoutes } from "./routes/material-log.routes";
 
 // Configure multer for file uploads with enhanced security
 const upload = multer({
@@ -317,6 +318,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Profile routes
   registerProfileRoutes(app, requireAuth);
+
+  // Material log routes (Daily Waste, Compost, Dry Waste Sales)
+  registerMaterialLogRoutes(app, requireAuth, requireRole, requireVillageAccess, upload);
 
 
   // Moderator-specific API endpoints
