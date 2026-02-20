@@ -72,6 +72,16 @@ interface PublicHomeProps {
   initialSection?: string;
 }
 
+// Learning videos used in the Video Tutorials section
+const learningVideos = [
+  { id: 1, youtubeId: "dQw4w9WgXcQ", title: "Introduction to Waste Segregation", category: "Basics", duration: "5:30", description: "Learn the fundamentals of separating wet, dry, and hazardous waste." },
+  { id: 2, youtubeId: "dQw4w9WgXcQ", title: "How to Use GreenPath App", category: "Tutorial", duration: "4:15", description: "Step-by-step walkthrough of all GreenPath features for households." },
+  { id: 3, youtubeId: "dQw4w9WgXcQ", title: "Composting at Home", category: "Composting", duration: "7:00", description: "Turn your kitchen and garden waste into rich compost for your plants." },
+  { id: 4, youtubeId: "dQw4w9WgXcQ", title: "Dry Waste Management", category: "Dry Waste", duration: "6:20", description: "Properly handle plastics, paper, glass, and metals for recycling." },
+  { id: 5, youtubeId: "dQw4w9WgXcQ", title: "Community Collection Tips", category: "Community", duration: "5:45", description: "Best practices for households during community waste collection drives." },
+  { id: 6, youtubeId: "dQw4w9WgXcQ", title: "Understanding Reports", category: "Reports", duration: "3:50", description: "How to read and use village-level waste management data and reports." },
+];
+
 export default function PublicHome({ initialSection = "home" }: PublicHomeProps = {}) {
   const [activeSection, setActiveSection] = useState(initialSection);
   const [, setLocation] = useLocation();

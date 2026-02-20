@@ -48,7 +48,7 @@ function Router() {
         <Route path="/privacy-policy" component={PrivacyPolicy} />
         <Route path="/terms-of-service" component={TermsOfService} />
         <Route path="/data-protection" component={DataProtection} />
-        <Route path="/pricing" component={Pricing} />
+        <Route path="/pricing">{() => <Pricing />}</Route>
 
         <Route path="/home">{() => <PublicHome initialSection="home" />}</Route>
         <Route path="/about">{() => <PublicHome initialSection="about" />}</Route>
@@ -89,7 +89,7 @@ function Router() {
       <Route path="/privacy-policy" component={PrivacyPolicy} />
       <Route path="/terms-of-service" component={TermsOfService} />
       <Route path="/data-protection" component={DataProtection} />
-      <Route path="/pricing" component={Pricing} />
+      <Route path="/pricing">{() => <Pricing />}</Route>
 
       <Route path="/home">{() => <PublicHome initialSection="home" />}</Route>
       <Route path="/about">{() => <PublicHome initialSection="about" />}</Route>

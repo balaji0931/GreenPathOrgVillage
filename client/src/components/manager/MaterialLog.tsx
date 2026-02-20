@@ -698,8 +698,8 @@ function CompostForm({
                   ? status === "good"
                     ? "bg-green-100 border-green-500 text-green-700"
                     : status === "average"
-                    ? "bg-yellow-100 border-yellow-500 text-yellow-700"
-                    : "bg-red-100 border-red-500 text-red-700"
+                      ? "bg-yellow-100 border-yellow-500 text-yellow-700"
+                      : "bg-red-100 border-red-500 text-red-700"
                   : "bg-gray-50 border-gray-200 text-gray-600"
               )}
             >
@@ -752,7 +752,7 @@ function SalesForm({
   setUploading: (key: string | null) => void;
 }) {
   const [formData, setFormData] = useState({
-    saleDate: editingItem?.date || new Date().toISOString().split("T")[0],
+    saleDate: editingItem?.saleDate || new Date().toISOString().split("T")[0],
     receiptImageUrl: editingItem?.receiptPhotoUrl || "",
     remarks: editingItem?.notes || "",
   });

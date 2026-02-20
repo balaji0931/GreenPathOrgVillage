@@ -273,7 +273,7 @@ export class DatabaseStorage implements IStorage {
     const cache = getCache();
     const [village] = await db
       .insert(villages)
-      .values(insertVillage)
+      .values(insertVillage as any)
       .returning();
 
     // Invalidate village caches
@@ -893,7 +893,7 @@ export class DatabaseStorage implements IStorage {
         targetAudience: data.targetAudience,
         photoUrl: data.photoUrl,
       })
-      .where(eq(announcements.id, id))
+      .where(eq(announcements.id, parseInt(id)))
       .returning();
 
     return updated;
@@ -901,7 +901,7 @@ export class DatabaseStorage implements IStorage {
 
   async deleteAnnouncement(id: string, deletedBy: string) {
     const [deleted] = await db.delete(announcements)
-      .where(eq(announcements.id, id))
+      .where(eq(announcements.id, parseInt(id)))
       .returning();
 
     return deleted;
@@ -1597,6 +1597,7 @@ export class DatabaseStorage implements IStorage {
     return {
       totalCollections: collectionCount.count || 0,
       averageRating: avgRating,
+      complaintsCount: 0,
     };
   }
 
@@ -1976,36 +1977,29 @@ export class DatabaseStorage implements IStorage {
     }
 
     try {
-      let collectionsQuery = db
+
+      let whereConditions: any[] = [inArray(households.villageId, villageIds)];
+
+      if (filters.startDate) {
+        whereConditions.push(sql`${wasteCollections.collectionDate} >= ${filters.startDate}`);
+      }
+      if (filters.endDate) {
+        whereConditions.push(sql`${wasteCollections.collectionDate} <= ${filters.endDate}`);
+      }
+
+      const collectionsQuery = db
         .select({
           villageId: households.villageId,
           villageName: villages.name,
-          collections: count(wasteCollections.id),
+          collections: sql<number>`COUNT(${wasteCollections.id})`,
           avgSegregationRating: sql<number>`COALESCE(CAST(AVG(${wasteCollections.segregationRating}) AS DECIMAL(3,2)), 0)`,
           avgPlasticRating: sql<number>`COALESCE(CAST(AVG(${wasteCollections.plasticRating}) AS DECIMAL(3,2)), 0)`,
         })
         .from(wasteCollections)
         .innerJoin(households, eq(wasteCollections.householdId, households.id))
         .innerJoin(villages, eq(households.villageId, villages.villageId))
-        .where(inArray(households.villageId, villageIds))
+        .where(and(...whereConditions))
         .groupBy(households.villageId, villages.name);
-
-      if (filters.startDate) {
-        collectionsQuery = collectionsQuery.where(
-          and(
-            inArray(households.villageId, villageIds),
-            sql`${wasteCollections.collectionDate} >= ${filters.startDate}`
-          )
-        );
-      }
-      if (filters.endDate) {
-        collectionsQuery = collectionsQuery.where(
-          and(
-            inArray(households.villageId, villageIds),
-            sql`${wasteCollections.collectionDate} <= ${filters.endDate}`
-          )
-        );
-      }
 
       const collectionsData = await collectionsQuery;
 

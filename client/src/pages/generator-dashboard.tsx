@@ -95,25 +95,25 @@ export default function GeneratorDashboard() {
   });
 
   // Fetch household collection history
-  const { data: collectionHistory, isLoading: historyLoading } = useQuery({
+  const { data: collectionHistory, isLoading: historyLoading } = useQuery<any[]>({
     queryKey: ["/api/waste-collections/household"],
     refetchInterval: 30000, // Refetch every 30 seconds for real-time updates
   });
 
   // Fetch village issues
-  const { data: issues, isLoading: issuesLoading } = useQuery({
+  const { data: issues, isLoading: issuesLoading } = useQuery<any[]>({
     queryKey: ["/api/issues"],
     refetchInterval: 60000, // Refetch every minute
   });
 
   // Fetch announcements
-  const { data: announcements, isLoading: announcementsLoading } = useQuery({
+  const { data: announcements, isLoading: announcementsLoading } = useQuery<any[]>({
     queryKey: ["/api/announcements"],
     refetchInterval: 60000, // Refetch every minute
   });
 
   // Fetch household data for QR code display
-  const { data: householdData, isLoading: householdLoading, error: householdError } = useQuery({
+  const { data: householdData, isLoading: householdLoading, error: householdError } = useQuery<any>({
     queryKey: ["/api/generator/household"],
     enabled: !!user?.userId,
     queryFn: async () => {
@@ -367,7 +367,7 @@ export default function GeneratorDashboard() {
 
     if (newPassword.length < 6) {
       toast({
-        title: "Error", 
+        title: "Error",
         description: "Password must be at least 6 characters",
         variant: "destructive",
       });
@@ -382,11 +382,11 @@ export default function GeneratorDashboard() {
     totalCollections: collectionHistory?.length || 0,
     avgSegregationRating: collectionHistory?.length
       ? (
-          collectionHistory.reduce(
-            (sum: number, item: any) => sum + (item.segregationRating || 0),
-            0,
-          ) / collectionHistory.length
-        ).toFixed(1)
+        collectionHistory.reduce(
+          (sum: number, item: any) => sum + (item.segregationRating || 0),
+          0,
+        ) / collectionHistory.length
+      ).toFixed(1)
       : "0.0",
     thisMonthCollections:
       collectionHistory?.filter((item: any) => {
@@ -406,7 +406,7 @@ export default function GeneratorDashboard() {
         userRole="generator" 
         shouldShowWelcome={user?.isFirstLogin}
       /> */}
-      
+
       {/* Mobile Header */}
       <div className="bg-green-600 text-white px-4 py-3 sticky top-0 z-10">
         <div className="flex items-center justify-between">
@@ -474,9 +474,9 @@ export default function GeneratorDashboard() {
                               </p>
                               {announcement.photoUrl && (
                                 <div className="mt-2">
-                                  <img 
-                                    src={announcement.photoUrl} 
-                                    alt="Announcement" 
+                                  <img
+                                    src={announcement.photoUrl}
+                                    alt="Announcement"
                                     className="max-w-full h-24 object-cover rounded border"
                                   />
                                 </div>
@@ -496,13 +496,12 @@ export default function GeneratorDashboard() {
                           <button
                             key={index}
                             onClick={() => setCurrentAnnouncementIndex(index)}
-                            className={`w-2 h-2 rounded-full transition-colors ${
-                              index ===
+                            className={`w-2 h-2 rounded-full transition-colors ${index ===
                               currentAnnouncementIndex %
-                                Math.min(announcements.length, 3)
-                                ? "bg-blue-600"
-                                : "bg-gray-300"
-                            }`}
+                              Math.min(announcements.length, 3)
+                              ? "bg-blue-600"
+                              : "bg-gray-300"
+                              }`}
                           />
                         ))}
                       </div>
@@ -960,7 +959,7 @@ export default function GeneratorDashboard() {
                 {issues
                   .filter((issue: any) => {
                     if (issueFilter === "All") return true;
-                    if (issueFilter === "Open") return issue.status ==="open";
+                    if (issueFilter === "Open") return issue.status === "open";
                     if (issueFilter === "In Progress")
                       return issue.status === "in_progress";
                     if (issueFilter === "Resolved")
@@ -1043,9 +1042,9 @@ export default function GeneratorDashboard() {
                             {issue.managerProofPhotoUrl && (
                               <div className="mt-2">
                                 <p className="text-xs font-medium text-green-800 mb-1">Manager proof photo:</p>
-                                <img 
-                                  src={issue.managerProofPhotoUrl} 
-                                  alt="Manager proof photo" 
+                                <img
+                                  src={issue.managerProofPhotoUrl}
+                                  alt="Manager proof photo"
                                   className="w-16 h-16 object-cover rounded cursor-pointer"
                                   onClick={() => window.open(issue.managerProofPhotoUrl, "_blank")}
                                 />
@@ -1128,7 +1127,7 @@ export default function GeneratorDashboard() {
                 <p className="text-gray-500 mb-4">
                   Unable to load your household information. Please try refreshing the page.
                 </p>
-                <Button 
+                <Button
                   onClick={() => queryClient.invalidateQueries({ queryKey: ["/api/generator/household"] })}
                   variant="outline"
                   size="sm"
@@ -1156,7 +1155,7 @@ export default function GeneratorDashboard() {
                             className="w-48 h-48 mx-auto"
                           />
                         </div>
-                        
+
                         <div className="space-y-2 text-center">
                           <div className="p-3 bg-green-50 rounded-lg border-l-4 border-green-400">
                             <p className="text-sm text-green-800 font-medium">
@@ -1193,31 +1192,31 @@ export default function GeneratorDashboard() {
                         <Label className="text-xs text-gray-600">Household Head</Label>
                         <p className="font-medium text-gray-900">{householdData.headName}</p>
                       </div>
-                      
+
                       <div className="p-3 bg-gray-50 rounded-lg">
                         <Label className="text-xs text-gray-600">House ID</Label>
                         <p className="font-medium text-gray-900">{householdData.uid}</p>
                       </div>
-                      
+
                       <div className="p-3 bg-gray-50 rounded-lg">
                         <Label className="text-xs text-gray-600">House Number</Label>
                         <p className="font-medium text-gray-900">{householdData.houseNumber || 'Not specified'}</p>
                       </div>
-                      
+
                       {householdData.phone && (
                         <div className="p-3 bg-gray-50 rounded-lg">
                           <Label className="text-xs text-gray-600">Phone</Label>
                           <p className="font-medium text-gray-900">{householdData.phone}</p>
                         </div>
                       )}
-                      
+
                       {householdData.address && (
                         <div className="p-3 bg-gray-50 rounded-lg">
                           <Label className="text-xs text-gray-600">Address</Label>
                           <p className="font-medium text-gray-900">{householdData.address}</p>
                         </div>
                       )}
-                      
+
                       <div className="p-3 bg-gray-50 rounded-lg">
                         <Label className="text-xs text-gray-600">Family Size</Label>
                         <p className="font-medium text-gray-900">{householdData.familySize || 1} members</p>
@@ -1240,17 +1239,17 @@ export default function GeneratorDashboard() {
                         <div className="w-6 h-6 bg-green-100 text-green-600 rounded-full flex items-center justify-center text-xs font-bold">1</div>
                         <p className="text-gray-700">Show your QR code to the waste collector when they arrive for pickup</p>
                       </div>
-                      
+
                       <div className="flex items-start space-x-3">
                         <div className="w-6 h-6 bg-green-100 text-green-600 rounded-full flex items-center justify-center text-xs font-bold">2</div>
                         <p className="text-gray-700">The collector will scan it to record your waste collection</p>
                       </div>
-                      
+
                       <div className="flex items-start space-x-3">
                         <div className="w-6 h-6 bg-green-100 text-green-600 rounded-full flex items-center justify-center text-xs font-bold">3</div>
                         <p className="text-gray-700">You'll receive a rating based on waste segregation quality</p>
                       </div>
-                      
+
                       <div className="flex items-start space-x-3">
                         <div className="w-6 h-6 bg-green-100 text-green-600 rounded-full flex items-center justify-center text-xs font-bold">4</div>
                         <p className="text-gray-700">Track your collection history in the Collections tab</p>
@@ -1319,7 +1318,7 @@ export default function GeneratorDashboard() {
                   onClick={() => setShowPasswordModal(true)}
                 >
                   <Settings className="mr-3" size={20} />
-                {t('auth.changePassword')}
+                  {t('auth.changePassword')}
                 </Button>
 
                 <Separator />
@@ -1327,7 +1326,7 @@ export default function GeneratorDashboard() {
                 <Button
                   variant="outline"
                   className="w-full justify-start text-red-600 hover:text-red-700"
-                  onClick={logout}
+                  onClick={() => logout()}
                 >
                   <LogOut className="w-4 h-4 mr-2" />
                   Logout
@@ -1340,29 +1339,28 @@ export default function GeneratorDashboard() {
 
       {/* Bottom Navigation */}
       <div className="fixed bottom-0 left-1/2 transform -translate-x-1/2 w-full max-w-md bg-white border-t border-gray-200 px-2 py-2 rounded-lg">
-          <div className="flex justify-around">
-            {[
-              { id: "home", icon: Home, class: "generator-home-tab" },
-              { id: "reports", icon: BarChart3, class: "generator-collection-stats" },
-              { id: "collections", icon: FileText, class: "generator-collections-tab" },
-              { id: "qr-code", icon: QrCode, class: "generator-qr-tab" },
-              { id: "issues", icon: AlertTriangle, class: "generator-issues-tab" },
-              { id: "profile", icon: User, class: "generator-profile-tab" },
-            ].map((tab) => (
+        <div className="flex justify-around">
+          {[
+            { id: "home", icon: Home, class: "generator-home-tab", label: "Home" },
+            { id: "reports", icon: BarChart3, class: "generator-collection-stats", label: "Reports" },
+            { id: "collections", icon: FileText, class: "generator-collections-tab", label: "History" },
+            { id: "qr-code", icon: QrCode, class: "generator-qr-tab", label: "QR Code" },
+            { id: "issues", icon: AlertTriangle, class: "generator-issues-tab", label: "Issues" },
+            { id: "profile", icon: User, class: "generator-profile-tab", label: "Profile" },
+          ].map((tab) => (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`${tab.class} flex flex-col items-center py-1 px-3 rounded-lg transition-colors ${
-                activeTab === tab.id
-                  ? "text-green-600 bg-green-50"
-                  : "text-gray-500 hover:text-gray-700"
-              }`}
+              className={`${tab.class} flex flex-col items-center py-1 px-3 rounded-lg transition-colors ${activeTab === tab.id
+                ? "text-green-600 bg-green-50"
+                : "text-gray-500 hover:text-gray-700"
+                }`}
             >
               <tab.icon className="w-6 h-6 mb-1" strokeWidth={2.5} />
               <span className="text-xs font-medium">{tab.label}</span>
             </button>
           ))}
-          </div>
+        </div>
       </div>
 
       {/* Issue Report Modal - Enhanced Mobile-First Design */}
@@ -1617,11 +1615,10 @@ export default function GeneratorDashboard() {
                         rating: star,
                       })
                     }
-                    className={`p-2 transition-all duration-200 ${
-                      collectorFeedback.rating >= star
-                        ? "text-yellow-500 scale-110"
-                        : "text-gray-300 hover:text-yellow-400"
-                    }`}
+                    className={`p-2 transition-all duration-200 ${collectorFeedback.rating >= star
+                      ? "text-yellow-500 scale-110"
+                      : "text-gray-300 hover:text-yellow-400"
+                      }`}
                   >
                     <Star className="w-8 h-8 fill-current" />
                   </button>

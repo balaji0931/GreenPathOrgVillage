@@ -49,13 +49,13 @@ class OfflineStorageManager {
           resolve(event.data);
         };
 
-        registration.active.postMessage(
+        registration.active!.postMessage(
           { type: 'STORE_OFFLINE_COLLECTION', data: collectionData },
           [messageChannel.port2]
         );
       });
     } catch (error) {
-      return { success: false, error: error.message };
+      return { success: false, error: (error as Error).message };
     }
   }
 
@@ -73,13 +73,13 @@ class OfflineStorageManager {
           resolve(event.data);
         };
 
-        registration.active.postMessage(
+        registration.active!.postMessage(
           { type: 'STORE_OFFLINE_FILE', data: { file, type } },
           [messageChannel.port2]
         );
       });
     } catch (error) {
-      return { success: false, error: error.message };
+      return { success: false, error: (error as Error).message };
     }
   }
 
@@ -97,13 +97,13 @@ class OfflineStorageManager {
           resolve(event.data);
         };
 
-        registration.active.postMessage(
+        registration.active!.postMessage(
           { type: 'GET_PENDING_COLLECTIONS' },
           [messageChannel.port2]
         );
       });
     } catch (error) {
-      return { success: false, error: error.message };
+      return { success: false, error: (error as Error).message };
     }
   }
 
@@ -117,7 +117,7 @@ class OfflineStorageManager {
 
       // Try background sync first
       if ('sync' in registration) {
-        await registration.sync.register('sync-offline-collections');
+        await (registration as any).sync.register('sync-offline-collections');
       }
 
       // Also force immediate sync
@@ -127,13 +127,13 @@ class OfflineStorageManager {
           resolve(event.data);
         };
 
-        registration.active.postMessage(
+        registration.active!.postMessage(
           { type: 'FORCE_SYNC' },
           [messageChannel.port2]
         );
       });
     } catch (error) {
-      return { success: false, error: error.message };
+      return { success: false, error: (error as Error).message };
     }
   }
 
@@ -218,7 +218,7 @@ export function useOfflineStorage() {
     if (isSyncing) {
       return { success: false, error: 'Sync already in progress' };
     }
-    
+
     setIsSyncing(true);
     try {
       const result = await offlineStorage.forceSync();

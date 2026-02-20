@@ -59,10 +59,10 @@ export const DashboardTour: React.FC<DashboardTourProps> = ({
   const handleJoyrideCallback = (data: CallBackProps) => {
     const { action, index, status, type } = data;
 
-    if ([EVENTS.STEP_AFTER, EVENTS.TARGET_NOT_FOUND].includes(type)) {
+    if (([EVENTS.STEP_AFTER, EVENTS.TARGET_NOT_FOUND] as string[]).includes(type as string)) {
       // Update step index
       setStepIndex(index + (action === ACTIONS.PREV ? -1 : 1));
-    } else if ([STATUS.FINISHED, STATUS.SKIPPED].includes(status)) {
+    } else if (([STATUS.FINISHED, STATUS.SKIPPED] as string[]).includes(status as string)) {
       // Tour finished or skipped
       resetTour();
     }

@@ -95,9 +95,9 @@ export const generateBulkQRCodesPDF = async (
     // ✅ Dashed box around section
     pdf.setDrawColor(0);
     pdf.setLineWidth(0.2);
-    pdf.setLineDashPattern([1, 1]);
+    pdf.setLineDashPattern([1, 1], 0);
     pdf.rect(x, y, boxWidth, boxHeight);
-    pdf.setLineDashPattern([]); // Reset line style
+    pdf.setLineDashPattern([], 0); // Reset line style
 
     const logoWidth = 40;
     const logoHeight = 10;
@@ -161,7 +161,7 @@ export const generateBulkQRCodesPDF = async (
     } catch (error) {
       console.error('QR error for', household.uid, error);
       pdf.setDrawColor(200);
-      pdf.setFillColor(245);
+      pdf.setFillColor(245, 245, 245);
       pdf.rect(qrX, currentY, qrSize, qrSize, 'FD');
       pdf.setTextColor(100);
       pdf.setFontSize(8);
@@ -317,9 +317,9 @@ export const generatePreMappedQRCodesPDF = async (
     // Dashed border box
     pdf.setDrawColor(0);
     pdf.setLineWidth(0.2);
-    pdf.setLineDashPattern([1, 1]);
+    pdf.setLineDashPattern([1, 1], 0);
     pdf.rect(x, y, boxWidth, boxHeight);
-    pdf.setLineDashPattern([]);
+    pdf.setLineDashPattern([], 0);
 
     // Logo (same size as bulk PDF)
     const logoWidth = 44;
@@ -355,7 +355,7 @@ export const generatePreMappedQRCodesPDF = async (
     } catch (err) {
       console.error("QR error for", qr.uid, err);
       pdf.setDrawColor(200);
-      pdf.setFillColor(245);
+      pdf.setFillColor(245, 245, 245);
       pdf.rect(qrX, currentY, qrSize, qrSize, "FD");
       pdf.setFontSize(8);
       pdf.setTextColor(120);

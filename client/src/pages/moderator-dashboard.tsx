@@ -52,6 +52,7 @@ import {
   Star,
   Award,
   Package,
+  Leaf,
 } from "lucide-react";
 import {
   BarChart,
@@ -79,7 +80,7 @@ export default function ModeratorDashboard() {
   const [announcement, setAnnouncement] = useState({
     message: "",
     targetAudience: "all",
-    photoFile: null,
+    photoFile: null as File | null,
   });
 
   const [profileData, setProfileData] = useState({
@@ -97,17 +98,17 @@ export default function ModeratorDashboard() {
   });
 
   // Fetch moderator stats
-  const { data: stats, isLoading: statsLoading } = useQuery({
+  const { data: stats, isLoading: statsLoading } = useQuery<any>({
     queryKey: ["/api/stats/moderator"],
   });
 
   // Fetch moderator villages
-  const { data: villages, isLoading: villagesLoading } = useQuery({
+  const { data: villages, isLoading: villagesLoading } = useQuery<any[]>({
     queryKey: ["/api/moderator/villages"],
   });
 
   // Fetch moderator managers
-  const { data: managers, isLoading: managersLoading } = useQuery({
+  const { data: managers, isLoading: managersLoading } = useQuery<any[]>({
     queryKey: ["/api/moderator/managers"],
     queryFn: async () => {
       // Get all managers for moderator's villages
@@ -133,7 +134,7 @@ export default function ModeratorDashboard() {
 
 
   // Fetch moderator reports
-  const { data: reportData, isLoading: reportLoading } = useQuery({
+  const { data: reportData, isLoading: reportLoading } = useQuery<any>({
     queryKey: ["/api/moderator/reports", reportFilters],
     enabled: activeTab === "reports",
     queryFn: async () => {
@@ -152,7 +153,7 @@ export default function ModeratorDashboard() {
   });
 
   // Fetch moderator system analytics
-  const { data: systemAnalytics, isLoading: analyticsLoading } = useQuery({
+  const { data: systemAnalytics, isLoading: analyticsLoading } = useQuery<any>({
     queryKey: ["/api/moderator/analytics/system", reportFilters.village],
     enabled: activeTab === "reports",
     queryFn: async () => {
@@ -1431,12 +1432,12 @@ export default function ModeratorDashboard() {
                           <div className="flex-1 bg-gray-200 rounded-full h-4 relative">
                             <div
                               className={`h-4 rounded-full transition-all ${avgRating >= 4
-                                  ? "bg-green-500"
-                                  : avgRating >= 3
-                                    ? "bg-yellow-500"
-                                    : avgRating > 0
-                                      ? "bg-red-500"
-                                      : "bg-gray-300"
+                                ? "bg-green-500"
+                                : avgRating >= 3
+                                  ? "bg-yellow-500"
+                                  : avgRating > 0
+                                    ? "bg-red-500"
+                                    : "bg-gray-300"
                                 }`}
                               style={{
                                 width: `${avgRating > 0 ? Math.max((avgRating / 5) * 100, 5) : 5}%`,
@@ -1697,12 +1698,12 @@ export default function ModeratorDashboard() {
                             <div className="flex h-6 bg-gray-200 rounded overflow-hidden">
                               <div
                                 className={`transition-all ${avgRating >= 4
-                                    ? "bg-green-500"
-                                    : avgRating >= 3
-                                      ? "bg-yellow-500"
-                                      : avgRating > 0
-                                        ? "bg-red-500"
-                                        : "bg-gray-300"
+                                  ? "bg-green-500"
+                                  : avgRating >= 3
+                                    ? "bg-yellow-500"
+                                    : avgRating > 0
+                                      ? "bg-red-500"
+                                      : "bg-gray-300"
                                   }`}
                                 style={{
                                   width: `${avgRating > 0 ? (avgRating / 5) * 100 : 0}%`,
@@ -2187,12 +2188,12 @@ export default function ModeratorDashboard() {
                               <div className="flex-1 bg-gray-200 rounded-full h-2">
                                 <div
                                   className={`h-2 rounded-full ${avgRating >= 4
-                                      ? "bg-green-500"
-                                      : avgRating >= 3
-                                        ? "bg-yellow-500"
-                                        : avgRating > 0
-                                          ? "bg-red-500"
-                                          : "bg-gray-300"
+                                    ? "bg-green-500"
+                                    : avgRating >= 3
+                                      ? "bg-yellow-500"
+                                      : avgRating > 0
+                                        ? "bg-red-500"
+                                        : "bg-gray-300"
                                     }`}
                                   style={{
                                     width: `${avgRating > 0 ? (avgRating / 5) * 100 : 0}%`,
@@ -2280,7 +2281,7 @@ export default function ModeratorDashboard() {
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <img Leaf className="h-5 w-5" />
+                  <Leaf className="h-5 w-5" />
                   Home Composting Rate
                 </CardTitle>
               </CardHeader>
@@ -2603,7 +2604,7 @@ export default function ModeratorDashboard() {
             <img src="/logos/logo-dark.svg" alt="GreenPath" className="h-9 w-auto" />
           </div>
           <div className="">
-            <Button onClick={logout} variant="ghost" size="md" className="p-2">
+            <Button onClick={() => logout()} variant="ghost" size="default" className="p-2">
               <LogOut className="h-7 w-7 text-white" strokeWidth={3} />
             </Button>
           </div>
@@ -2648,7 +2649,7 @@ export default function ModeratorDashboard() {
                   Profile
                 </Button>
                 <Button
-                  onClick={logout}
+                  onClick={() => logout()}
                   variant="ghost"
                   size="sm"
                   className="flex-1 h-8 text-xs"
@@ -2672,8 +2673,8 @@ export default function ModeratorDashboard() {
                       key={item.id}
                       onClick={() => setActiveTab(item.id)}
                       className={`w-full flex items-center space-x-3 px-3 py-2 rounded-lg text-left transition-colors ${activeTab === item.id
-                          ? "bg-primary text-primary-foreground"
-                          : "hover:bg-muted"
+                        ? "bg-primary text-primary-foreground"
+                        : "hover:bg-muted"
                         }`}
                     >
                       <Icon className="h-5 w-5" />

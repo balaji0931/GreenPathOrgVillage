@@ -69,27 +69,27 @@ export default function AdminDashboard() {
   });
 
   // Fetch admin stats
-  const { data: stats, isLoading: statsLoading } = useQuery({
+  const { data: stats, isLoading: statsLoading } = useQuery<any>({
     queryKey: ["/api/stats/admin"],
   });
 
   // Fetch villages
-  const { data: villages, isLoading: villagesLoading } = useQuery({
+  const { data: villages, isLoading: villagesLoading } = useQuery<any[]>({
     queryKey: ["/api/villages"],
   });
 
   // Fetch managers
-  const { data: managers, isLoading: managersLoading } = useQuery({
+  const { data: managers, isLoading: managersLoading } = useQuery<any[]>({
     queryKey: ["/api/managers"],
   });
 
   // Fetch moderators
-  const { data: moderators, isLoading: moderatorsLoading } = useQuery({
+  const { data: moderators, isLoading: moderatorsLoading } = useQuery<any[]>({
     queryKey: ["/api/moderators"],
   });
 
   // Fetch reports
-  const { data: reportData, isLoading: reportLoading } = useQuery({
+  const { data: reportData, isLoading: reportLoading } = useQuery<any>({
     queryKey: ["/api/reports", reportFilters],
     enabled: activeTab === "reports",
     queryFn: async () => {
@@ -105,7 +105,7 @@ export default function AdminDashboard() {
   });
 
   // Fetch system analytics with village filter
-  const { data: systemAnalytics, isLoading: analyticsLoading } = useQuery({
+  const { data: systemAnalytics, isLoading: analyticsLoading } = useQuery<any>({
     queryKey: ["/api/analytics/system", reportFilters.village],
     enabled: activeTab === "reports",
     queryFn: async () => {
@@ -118,7 +118,7 @@ export default function AdminDashboard() {
   });
 
   // Fetch daily analytics with proper filters
-  const { data: dailyAnalytics, isLoading: dailyLoading } = useQuery({
+  const { data: dailyAnalytics, isLoading: dailyLoading } = useQuery<any>({
     queryKey: ["/api/analytics/daily", reportFilters.village, reportFilters.startDate || new Date().toISOString().split('T')[0]],
     enabled: activeTab === "reports",
     queryFn: async () => {
@@ -132,25 +132,25 @@ export default function AdminDashboard() {
   });
 
   // Fetch existing announcements
-  const { data: existingAnnouncements, isLoading: announcementsLoading } = useQuery({
+  const { data: existingAnnouncements, isLoading: announcementsLoading } = useQuery<any[]>({
     queryKey: ["/api/admin/announcements"],
     enabled: activeTab === "announcements",
   });
 
   // Fetch website feedback submissions
-  const { data: websiteFeedback, isLoading: feedbackLoading } = useQuery({
+  const { data: websiteFeedback, isLoading: feedbackLoading } = useQuery<any[]>({
     queryKey: ["/api/admin/website-feedback"],
     enabled: activeTab === "website-feedback",
   });
 
   // Fetch contact submissions
-  const { data: contactSubmissions, isLoading: contactLoading } = useQuery({
+  const { data: contactSubmissions, isLoading: contactLoading } = useQuery<any[]>({
     queryKey: ["/api/admin/contact-submissions"],
     enabled: activeTab === "contact-submissions",
   });
 
   // Village details query
-  const { data: villageDetails } = useQuery({
+  const { data: villageDetails } = useQuery<any>({
     queryKey: ["/api/villages", selectedVillage, "details"],
     enabled: !!selectedVillage,
   });
@@ -989,7 +989,7 @@ export default function AdminDashboard() {
                     <TableCell>
                       <div className="flex space-x-3 sm:space-x-2">
                         <Button
-                          size="md"
+                          size="default"
                           variant="outline"
                           onClick={() => setSelectedVillage(village.villageId)}
                           className="p-1 sm:p-2"
@@ -1842,8 +1842,8 @@ export default function AdminDashboard() {
                         <div className="flex-1 bg-gray-200 rounded-full h-4 relative">
                           <div
                             className={`h-4 rounded-full transition-all ${avgRating >= 4 ? 'bg-green-500' :
-                                avgRating >= 3 ? 'bg-yellow-500' :
-                                  avgRating > 0 ? 'bg-red-500' : 'bg-gray-300'
+                              avgRating >= 3 ? 'bg-yellow-500' :
+                                avgRating > 0 ? 'bg-red-500' : 'bg-gray-300'
                               }`}
                             style={{ width: `${avgRating > 0 ? (avgRating / 5) * 100 : 0}%` }}
                           />
@@ -1975,8 +1975,8 @@ export default function AdminDashboard() {
                           <div className="flex h-6 bg-gray-200 rounded overflow-hidden">
                             <div
                               className={`transition-all ${avgRating >= 4 ? 'bg-green-500' :
-                                  avgRating >= 3 ? 'bg-yellow-500' :
-                                    avgRating > 0 ? 'bg-red-500' : 'bg-gray-300'
+                                avgRating >= 3 ? 'bg-yellow-500' :
+                                  avgRating > 0 ? 'bg-red-500' : 'bg-gray-300'
                                 }`}
                               style={{ width: `${avgRating > 0 ? (avgRating / 5) * 100 : 0}%` }}
                               title={`Rating: ${avgRating.toFixed(1)}`}
@@ -2339,8 +2339,8 @@ export default function AdminDashboard() {
                             <div className="flex-1 bg-gray-200 rounded-full h-2">
                               <div
                                 className={`h-2 rounded-full ${avgRating >= 4 ? 'bg-green-500' :
-                                    avgRating >= 3 ? 'bg-yellow-500' :
-                                      avgRating > 0 ? 'bg-red-500' : 'bg-gray-300'
+                                  avgRating >= 3 ? 'bg-yellow-500' :
+                                    avgRating > 0 ? 'bg-red-500' : 'bg-gray-300'
                                   }`}
                                 style={{ width: `${avgRating > 0 ? (avgRating / 5) * 100 : 0}%` }}
                               />
@@ -2980,9 +2980,9 @@ export default function AdminDashboard() {
           </div>
           <div className="flex items-center space-x-2">
             <Button
-              onClick={logout}
+              onClick={() => logout()}
               variant="ghost"
-              size="md"
+              size="default"
               className="p-2"
             >
               <LogOut className="h-6 w-6 text-white" strokeWidth={3} />
@@ -3026,7 +3026,7 @@ export default function AdminDashboard() {
                   Profile
                 </Button>
                 <Button
-                  onClick={logout}
+                  onClick={() => logout()}
                   variant="ghost"
                   size="sm"
                   className="flex-1 h-8 text-xs"
@@ -3048,8 +3048,8 @@ export default function AdminDashboard() {
                     key={item.id}
                     onClick={() => setActiveTab(item.id)}
                     className={`w-full flex items-center space-x-3 px-3 py-2 rounded-lg text-left transition-colors ${activeTab === item.id
-                        ? 'bg-primary text-primary-foreground'
-                        : 'hover:bg-muted'
+                      ? 'bg-primary text-primary-foreground'
+                      : 'hover:bg-muted'
                       }`}
                   >
                     <Icon className="h-5 w-5" />

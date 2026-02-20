@@ -122,7 +122,7 @@ export default function CollectorDashboard() {
   });
 
   // Fetch today's route (households)
-  const householdsQuery = useQuery({
+  const householdsQuery = useQuery<any[]>({
     queryKey: ["/api/households"],
     queryFn: async () => {
       const response = await apiRequest("GET", "/api/households");
@@ -131,7 +131,7 @@ export default function CollectorDashboard() {
   });
 
   // Fetch collections for today
-  const collectionsQuery = useQuery({
+  const collectionsQuery = useQuery<any[]>({
     queryKey: ["/api/waste-collections/collector"],
     queryFn: async () => {
       const response = await apiRequest("GET", "/api/waste-collections/collector");
@@ -140,19 +140,19 @@ export default function CollectorDashboard() {
   });
 
   // Fetch announcements
-  const { data: announcements, isLoading: announcementsLoading } = useQuery({
+  const { data: announcements, isLoading: announcementsLoading } = useQuery<any[]>({
     queryKey: ["/api/announcements"],
     refetchInterval: 60000, // Refetch every minute
   });
 
   // Fetch village issues
-  const { data: issues, isLoading: issuesLoading } = useQuery({
+  const { data: issues, isLoading: issuesLoading } = useQuery<any[]>({
     queryKey: ["/api/issues"],
     refetchInterval: 60000, // Refetch every minute
   });
 
   // Fetch current village data to get image upload requirements
-  const { data: villageData } = useQuery({
+  const { data: villageData } = useQuery<any>({
     queryKey: ["/api/villages", user?.villageId, "details"],
     queryFn: async () => {
       if (!user?.villageId) return null;
@@ -965,8 +965,8 @@ export default function CollectorDashboard() {
                           </div>
                           <div className="flex items-center space-x-2">
                             <div className={`px-2 py-1 rounded-full text-xs ${status === 'completed'
-                                ? 'bg-green-100 text-green-800'
-                                : 'bg-orange-100 text-orange-800'
+                              ? 'bg-green-100 text-green-800'
+                              : 'bg-orange-100 text-orange-800'
                               }`}>
                               {status === 'completed' ? '✅ Done' : '⏳ Pending'}
                             </div>
@@ -1277,7 +1277,7 @@ export default function CollectorDashboard() {
                 <Button
                   variant="outline"
                   className="w-full justify-start text-red-600 border-red-200 hover:bg-red-50"
-                  onClick={logout}
+                  onClick={() => logout()}
                 >
                   <LogOut className="mr-3" size={20} />
                   {t('auth.logout')}
@@ -1324,8 +1324,8 @@ export default function CollectorDashboard() {
                   variant={collectionForm.wasteSegregated === true ? "default" : "outline"}
                   onClick={() => setCollectionForm({ ...collectionForm, wasteSegregated: true })}
                   className={`flex-1 py-4 text-lg font-bold ${collectionForm.wasteSegregated === true
-                      ? 'bg-green-600 hover:bg-green-700 text-white'
-                      : 'bg-white border-2 border-green-300 text-green-700 hover:bg-green-50'
+                    ? 'bg-green-600 hover:bg-green-700 text-white'
+                    : 'bg-white border-2 border-green-300 text-green-700 hover:bg-green-50'
                     }`}
                 >
                   ✅ {t('app.yes')}
@@ -1334,8 +1334,8 @@ export default function CollectorDashboard() {
                   variant={collectionForm.wasteSegregated === false ? "destructive" : "outline"}
                   onClick={() => setCollectionForm({ ...collectionForm, wasteSegregated: false })}
                   className={`flex-1 py-4 text-lg font-bold ${collectionForm.wasteSegregated === false
-                      ? 'bg-red-600 hover:bg-red-700 text-white'
-                      : 'bg-white border-2 border-red-300 text-red-700 hover:bg-red-50'
+                    ? 'bg-red-600 hover:bg-red-700 text-white'
+                    : 'bg-white border-2 border-red-300 text-red-700 hover:bg-red-50'
                     }`}
                 >
                   ❌ {t('app.no')}
@@ -1354,8 +1354,8 @@ export default function CollectorDashboard() {
                     key={rating}
                     type="button"
                     className={`w-12 h-12 rounded-full border-2 transition-all hover:scale-110 ${rating <= collectionForm.segregationRating
-                        ? 'bg-yellow-400 border-yellow-500 shadow-lg'
-                        : 'bg-white border-gray-300'
+                      ? 'bg-yellow-400 border-yellow-500 shadow-lg'
+                      : 'bg-white border-gray-300'
                       }`}
                     onClick={() => handleStarClick('segregation', rating)}
                   >
@@ -1551,8 +1551,8 @@ export default function CollectorDashboard() {
 
             {/* Photo Upload - Conditional Requirement */}
             <div className={`p-4 border-2 rounded-xl ${isPhotoRequired
-                ? 'border-red-200 bg-red-50'
-                : 'border-blue-200 bg-blue-50'
+              ? 'border-red-200 bg-red-50'
+              : 'border-blue-200 bg-blue-50'
               }`}>
               <Label className="text-lg font-bold text-center block mb-3">
                 📸 Take Photo of Waste {isPhotoRequired ? '*' : '(Optional)'}
@@ -1574,10 +1574,10 @@ export default function CollectorDashboard() {
                   }}
                 />
                 <div className={`border-4 border-dashed rounded-xl p-6 text-center transition-all ${collectionForm.photoFile
-                    ? 'border-green-400 bg-green-50'
-                    : isPhotoRequired
-                      ? 'border-red-300 bg-white hover:bg-red-50'
-                      : 'border-blue-300 bg-white hover:bg-blue-50'
+                  ? 'border-green-400 bg-green-50'
+                  : isPhotoRequired
+                    ? 'border-red-300 bg-white hover:bg-red-50'
+                    : 'border-blue-300 bg-white hover:bg-blue-50'
                   }`}>
                   {collectionForm.photoFile ? (
                     <>
@@ -1611,10 +1611,10 @@ export default function CollectorDashboard() {
                 <Button
                   onClick={isRecording ? stopVoiceRecording : startVoiceRecording}
                   className={`w-full py-4 text-lg font-bold ${isRecording
-                      ? 'bg-red-500 hover:bg-red-600 animate-pulse'
-                      : collectionForm.voiceRecording
-                        ? 'bg-green-500 hover:bg-green-600'
-                        : 'bg-blue-500 hover:bg-blue-600'
+                    ? 'bg-red-500 hover:bg-red-600 animate-pulse'
+                    : collectionForm.voiceRecording
+                      ? 'bg-green-500 hover:bg-green-600'
+                      : 'bg-blue-500 hover:bg-blue-600'
                     }`}
                   disabled={createCollectionMutation.isPending}
                 >
@@ -2063,8 +2063,8 @@ export default function CollectorDashboard() {
         <div className="grid grid-cols-5 gap-1 p-2">
           <button
             className={`collector-home-tab flex flex-col items-center py-2 px-1 rounded-lg transition-colors ${activeTab === 'home'
-                ? 'bg-green-200 text-green-600'
-                : 'text-gray-500 hover:text-green-600 hover:bg-gray-50'
+              ? 'bg-green-200 text-green-600'
+              : 'text-gray-500 hover:text-green-600 hover:bg-gray-50'
               }`}
             onClick={() => setActiveTab('home')}
           >
@@ -2072,8 +2072,8 @@ export default function CollectorDashboard() {
           </button>
           <button
             className={`collector-scan-tab flex flex-col items-center py-2 px-1 rounded-lg transition-colors ${activeTab === 'scan'
-                ? 'bg-blue-100 text-blue-600'
-                : 'text-gray-500 hover:text-blue-600 hover:bg-gray-50'
+              ? 'bg-blue-100 text-blue-600'
+              : 'text-gray-500 hover:text-blue-600 hover:bg-gray-50'
               }`}
             onClick={() => {
               setActiveTab('scan');
@@ -2084,8 +2084,8 @@ export default function CollectorDashboard() {
           </button>
           <button
             className={`collector-announcements-tab flex flex-col items-center py-2 px-1 rounded-lg transition-colors ${activeTab === 'announcements'
-                ? 'bg-blue-100 text-blue-600'
-                : 'text-gray-500 hover:text-blue-600 hover:bg-gray-50'
+              ? 'bg-blue-100 text-blue-600'
+              : 'text-gray-500 hover:text-blue-600 hover:bg-gray-50'
               }`}
             onClick={() => setActiveTab('announcements')}
           >
@@ -2093,8 +2093,8 @@ export default function CollectorDashboard() {
           </button>
           <button
             className={`collector-issues-tab flex flex-col items-center py-2 px-1 rounded-lg transition-colors ${activeTab === 'issues'
-                ? 'bg-red-100 text-red-600'
-                : 'text-gray-500 hover:text-red-600 hover:bg-gray-50'
+              ? 'bg-red-100 text-red-600'
+              : 'text-gray-500 hover:text-red-600 hover:bg-gray-50'
               }`}
             onClick={() => setActiveTab('issues')}
           >
@@ -2102,8 +2102,8 @@ export default function CollectorDashboard() {
           </button>
           <button
             className={`collector-profile-tab flex flex-col items-center py-2 px-1 rounded-lg transition-colors ${activeTab === 'profile'
-                ? 'bg-gray-100 text-gray-600'
-                : 'text-gray-500 hover:text-gray-600 hover:bg-gray-50'
+              ? 'bg-gray-100 text-gray-600'
+              : 'text-gray-500 hover:text-gray-600 hover:bg-gray-50'
               }`}
             onClick={() => setActiveTab('profile')}
           >

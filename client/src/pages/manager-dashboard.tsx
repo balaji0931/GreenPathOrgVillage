@@ -2796,8 +2796,8 @@ export default function ManagerDashboard() {
                               const collectionsForDay = allCollections.filter(c =>
                                 new Date(c.collectionDate).toDateString() === dateStr
                               ).length;
-                              const percentage = stats?.totalHouseholds > 0
-                                ? (collectionsForDay / stats.totalHouseholds) * 100
+                              const percentage = (stats?.totalHouseholds ?? 0) > 0
+                                ? (collectionsForDay / (stats?.totalHouseholds ?? 1)) * 100
                                 : 0;
 
                               return (
