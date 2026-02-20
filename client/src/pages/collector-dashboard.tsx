@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import * as React from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
@@ -7,7 +7,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
@@ -19,20 +18,20 @@ import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import { useOfflineStorage, offlineStorage } from "@/lib/offline-storage";
 import { DashboardTour } from "@/components/tours/DashboardTour";
 import { TourButton } from "@/components/tours/TourButton";
-import { 
+import {
   Home,
-  QrCode, 
-  User, 
-  Star, 
-  Camera, 
-  Check, 
+  QrCode,
+  User,
+  Star,
+  Camera,
+  Check,
   ScanLine,
   AlertTriangle,
-  X, 
-  LogOut, 
-  Package, 
-  Clock, 
-  CheckCircle, 
+  X,
+  LogOut,
+  Package,
+  Clock,
+  CheckCircle,
   XCircle,
   Eye,
   Lock,
@@ -63,7 +62,7 @@ interface CollectionForm {
 const OBSERVATION_OPTIONS = [
   "Good segregation",
   "Mixed waste",
-  "Excessive plastic", 
+  "Excessive plastic",
   "Clean and organized",
   "Poor hygiene",
   "No waste present"
@@ -81,7 +80,7 @@ const NOT_COLLECTED_REASONS = [
 
 const ISSUE_CATEGORIES = [
   "Illegal Dumping",
-  "Collection Delay", 
+  "Collection Delay",
   "Missed Pickup",
   "Road Cleanliness",
   "Plastic Usage",
@@ -97,7 +96,7 @@ export default function CollectorDashboard() {
   const { toast } = useToast();
   const { t } = useTranslation();
   const { isOnline, pendingCount, isSyncing, storeCollectionOffline, storeFileOffline, syncPendingData } = useOfflineStorage();
-  
+
   const [showScanner, setShowScanner] = useState(false);
   const [showCollectionModal, setShowCollectionModal] = useState(false);
   const [scannedHousehold, setScannedHousehold] = useState<any>(null);
@@ -105,7 +104,7 @@ export default function CollectorDashboard() {
   const [showPasswordModal, setShowPasswordModal] = useState(false);
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  
+
   const [collectionForm, setCollectionForm] = useState<CollectionForm>({
     wasteSegregated: null,
     wasteAccepted: null,
@@ -127,10 +126,9 @@ export default function CollectorDashboard() {
   const [showCollectionDetails, setShowCollectionDetails] = useState(false);
   const [selectedCollection, setSelectedCollection] = useState<any>(null);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
-  const [currentAnnouncementIndex, setCurrentAnnouncementIndex] = useState(0);
   const [showIssueModal, setShowIssueModal] = useState(false);
   const [issueFilter, setIssueFilter] = useState('All');
-  
+
   const [newIssue, setNewIssue] = useState({
     title: "",
     category: "",
@@ -203,13 +201,13 @@ export default function CollectorDashboard() {
     if (!collections) return [];
     const today = new Date();
     const todayStr = today.toDateString();
-    
+
     const filtered = collections.filter((collection: any) => {
       // Use collectionDate instead of createdAt for proper filtering
       const collectionDate = new Date(collection.collectionDate || collection.createdAt);
       return collectionDate.toDateString() === todayStr;
     });
-    
+
     return filtered;
   }, [collections, refreshTrigger]);
 
@@ -218,7 +216,7 @@ export default function CollectorDashboard() {
     const completedToday = collectionsToday.length;
     const totalHouseholds = households?.length || 0;
     const pendingToday = totalHouseholds - completedToday;
-    
+
     return {
       completed: completedToday,
       pending: pendingToday,
@@ -239,17 +237,17 @@ export default function CollectorDashboard() {
       });
       setShowCollectionModal(false);
       resetForm();
-      
+
       // Invalidate all related queries
       await queryClient.invalidateQueries({ queryKey: ["/api/waste-collections"] });
       await queryClient.invalidateQueries({ queryKey: ["/api/households"] });
-      
+
       // Refetch data to ensure UI updates immediately
       await Promise.all([
         collectionsQuery.refetch(),
         householdsQuery.refetch()
       ]);
-      
+
       // Force component re-render with updated data
       setRefreshTrigger(prev => prev + 1);
     },
@@ -263,7 +261,7 @@ export default function CollectorDashboard() {
         });
       } else {
         toast({
-          title: "Error", 
+          title: "Error",
           description: error.message || "Failed to record collection",
           variant: "destructive",
         });
@@ -397,11 +395,11 @@ export default function CollectorDashboard() {
 
   const handleQRScan = async (qrData: string) => {
     setShowScanner(false);
-    
+
     try {
       let householdData;
       let uidToSearch: string | null = null;
-      
+
       // Try to parse as JSON first (for QR codes with household data)
       try {
         const parsedData = JSON.parse(qrData);
@@ -419,7 +417,7 @@ export default function CollectorDashboard() {
         // If not JSON, treat as household UID directly
         uidToSearch = qrData;
       }
-      
+
       if (uidToSearch) {
         // Find the full household data from our local households
         const household = households?.find((h: any) => h.uid === uidToSearch);
@@ -429,7 +427,7 @@ export default function CollectorDashboard() {
           throw new Error("Household not found in your route");
         }
       }
-      
+
       if (householdData) {
         setScannedHousehold(householdData);
         checkDailySubmission(householdData);
@@ -447,8 +445,8 @@ export default function CollectorDashboard() {
 
   const checkDailySubmission = (household: any) => {
     const today = new Date().toDateString();
-    const todaysCollection = collections?.find((collection: any) => 
-      collection.householdId === household.id && 
+    const todaysCollection = collections?.find((collection: any) =>
+      collection.householdId === household.id &&
       new Date(collection.collectionDate || collection.createdAt).toDateString() === today
     );
 
@@ -485,7 +483,7 @@ export default function CollectorDashboard() {
     const updatedObservations = checked
       ? [...collectionForm.observations, observation]
       : collectionForm.observations.filter(obs => obs !== observation);
-    
+
     setCollectionForm({ ...collectionForm, observations: updatedObservations });
   };
 
@@ -532,41 +530,41 @@ export default function CollectorDashboard() {
     today.setHours(0, 0, 0, 0);
     const tomorrow = new Date(today);
     tomorrow.setDate(tomorrow.getDate() + 1);
-    
+
     // Check online collections
     if (collections) {
       const hasOnlineDuplicate = collections.some((collection: any) => {
         if (!collection.household || collection.household.uid !== householdUid) return false;
-        
+
         const collectionDate = new Date(collection.collectionDate);
         return collectionDate >= today && collectionDate < tomorrow;
       });
-      
+
       if (hasOnlineDuplicate) return true;
     }
-    
+
     // Check pending offline collections
     try {
       const pendingResult = await offlineStorage.getPendingCollections();
       if (pendingResult.success && pendingResult.data) {
         const hasOfflineDuplicate = pendingResult.data.some((collection: any) => {
           if (collection.householdUid !== householdUid) return false;
-          
+
           const collectionDate = new Date(collection.collectionDate);
           return collectionDate >= today && collectionDate < tomorrow;
         });
-        
+
         if (hasOfflineDuplicate) return true;
       }
     } catch (error) {
     }
-    
+
     return false;
   };
 
   const handleSubmitCollection = async () => {
     if (!scannedHousehold) return;
-    
+
     // Prevent double submissions
     if (isSubmitLocked || createCollectionMutation.isPending) {
       return;
@@ -582,7 +580,7 @@ export default function CollectorDashboard() {
       setIsSubmitLocked(false); // Unlock since we're not proceeding
       return;
     }
-    
+
     // Lock submissions
     setIsSubmitLocked(true);
 
@@ -590,7 +588,7 @@ export default function CollectorDashboard() {
       // Get current location
       let latitude = null;
       let longitude = null;
-      
+
       try {
         const position = await new Promise<GeolocationPosition>((resolve, reject) => {
           navigator.geolocation.getCurrentPosition(resolve, reject, {
@@ -628,17 +626,17 @@ export default function CollectorDashboard() {
           if (collectionForm.photoFile) {
             const photoFormData = new FormData();
             photoFormData.append('file', collectionForm.photoFile);
-            
+
             const photoResponse = await fetchWithCsrf('/api/upload/photo', {
               method: 'POST',
               body: photoFormData,
               credentials: 'include'
             });
-            
+
             if (!photoResponse.ok) {
               throw new Error('Photo upload failed');
             }
-            
+
             const photoResult = await photoResponse.json();
             photoUrl = photoResult.url;
           }
@@ -647,17 +645,17 @@ export default function CollectorDashboard() {
           if (collectionForm.voiceRecording) {
             const voiceFormData = new FormData();
             voiceFormData.append('file', collectionForm.voiceRecording);
-            
+
             const voiceResponse = await fetchWithCsrf('/api/upload/voice', {
               method: 'POST',
               body: voiceFormData,
               credentials: 'include'
             });
-            
+
             if (!voiceResponse.ok) {
               throw new Error('Voice upload failed');
             }
-            
+
             const voiceResult = await voiceResponse.json();
             voiceUrl = voiceResult.url;
           }
@@ -753,10 +751,10 @@ export default function CollectorDashboard() {
       });
       return;
     }
-    
+
     if (newPassword.length < 6) {
       toast({
-        title: "Error", 
+        title: "Error",
         description: "Password must be at least 6 characters",
         variant: "destructive",
       });
@@ -852,7 +850,7 @@ export default function CollectorDashboard() {
         userRole="collector" 
         shouldShowWelcome={user?.isFirstLogin}
       /> */}
-      
+
       {/* Mobile Header */}
       <div className="bg-green-600 text-white p-3 sticky top-0 z-10 ">
         <div className="flex items-center justify-between">
@@ -868,7 +866,7 @@ export default function CollectorDashboard() {
 
       {/* Tab Content */}
       <div className="pb-20"> {/* Bottom padding for nav */}
-        
+
         {/* HOME TAB */}
         {activeTab === 'home' && (
           <div className="space-y-3 p-4">
@@ -940,7 +938,7 @@ export default function CollectorDashboard() {
                   </Button>
                 </div>
               </div>
-            )}           
+            )}
 
             {/* Search Bar */}
             <div className="relative">
@@ -963,10 +961,10 @@ export default function CollectorDashboard() {
                   {(searchQuery ? filteredHouseholds : households || []).map((household: any) => {
                     const status = getHouseholdStatus(household);
                     const todaysCollection = collectionsToday.find((c: any) => c.householdId === household.id);
-                    
+
                     return (
-                      <div 
-                        key={`household-${household.id}-${status}-${collectionsToday.length}-${refreshTrigger}`} 
+                      <div
+                        key={`household-${household.id}-${status}-${collectionsToday.length}-${refreshTrigger}`}
                         className="bg-white p-3 rounded-lg border border-gray-200 cursor-pointer hover:bg-gray-50 transition-colors"
                         onClick={() => handleHouseholdSelect(household)}
                       >
@@ -981,11 +979,10 @@ export default function CollectorDashboard() {
                             )}
                           </div>
                           <div className="flex items-center space-x-2">
-                            <div className={`px-2 py-1 rounded-full text-xs ${
-                              status === 'completed' 
-                                ? 'bg-green-100 text-green-800' 
+                            <div className={`px-2 py-1 rounded-full text-xs ${status === 'completed'
+                                ? 'bg-green-100 text-green-800'
                                 : 'bg-orange-100 text-orange-800'
-                            }`}>
+                              }`}>
                               {status === 'completed' ? '✅ Done' : '⏳ Pending'}
                             </div>
                             {status === 'completed' ? (
@@ -1075,7 +1072,7 @@ export default function CollectorDashboard() {
                           {t('app.new')}
                         </Badge>
                       </div>
-                      
+
                       <div className="flex items-center justify-between text-xs text-gray-500">
                         <div className="flex items-center space-x-2">
                           <Bell className="w-3 h-3" />
@@ -1123,9 +1120,9 @@ export default function CollectorDashboard() {
                 { key: 'In Progress', label: t('issues.inProgress') },
                 { key: 'Resolved', label: t('issues.resolved') }
               ].map((filter) => (
-                <Button 
+                <Button
                   key={filter.key}
-                  variant={issueFilter === filter.key ? "default" : "outline"} 
+                  variant={issueFilter === filter.key ? "default" : "outline"}
                   size="sm"
                   className="whitespace-nowrap text-xs"
                   onClick={() => setIssueFilter(filter.key)}
@@ -1151,81 +1148,81 @@ export default function CollectorDashboard() {
                     if (issueFilter === 'Open') statusMatch = issue.status === 'open';
                     else if (issueFilter === 'In Progress') statusMatch = issue.status === 'in_progress';
                     else if (issueFilter === 'Resolved') statusMatch = issue.status === 'resolved';
-                    
-                    
+
+
                     return statusMatch;
                   })
                   .map((issue: any) => (
-                  <Card key={issue.id} className="p-4 shadow-sm border-l-4 border-l-red-400">
-                    <div className="space-y-3">
-                      <div className="flex items-start justify-between">
-                        <div className="flex-1 pr-2">
-                          <h3 className="font-semibold text-sm text-gray-900 line-clamp-2">{issue.title}</h3>
-                          <p className="text-xs text-gray-600 mt-1 line-clamp-3">{issue.description}</p>
-                        </div>
-                        <Badge 
-                          variant={
-                            issue.status === 'open' ? 'destructive' : 
-                            issue.status === 'in_progress' ? 'secondary' : 'default'
-                          }
-                          className="text-xs whitespace-nowrap"
-                        >
-                          {issue.status === 'open' ? 'Open' : 
-                           issue.status === 'in_progress' ? 'In Progress' : 'Resolved'}
-                        </Badge>
-                      </div>
-                      
-                      <div className="flex items-center justify-between text-xs text-gray-500">
-                        <div className="flex items-center space-x-2">
-                          <MapPin className="w-3 h-3" />
-                          <span className="font-medium">{issue.category}</span>
-                        </div>
-                        <div className="flex items-center space-x-2">
-                          <Clock className="w-3 h-3" />
-                          <span>{new Date(issue.createdAt).toLocaleDateString()}</span>
-                        </div>
-                      </div>
-
-                      {issue.photoUrl && (
-                        <div className="mt-2">
-                          <img 
-                            src={issue.photoUrl} 
-                            alt="Issue photo" 
-                            className="w-full h-32 object-cover rounded-lg cursor-pointer"
-                            onClick={() => window.open(issue.photoUrl, '_blank')}
-                          />
-                        </div>
-                      )}
-
-                      {issue.managerReply && (
-                        <div className="mt-3 p-3 bg-green-50 rounded-lg border-l-4 border-green-400">
-                          <div className="flex items-center space-x-2 mb-1">
-                            <CheckCircle className="w-4 h-4 text-green-600" />
-                            <p className="text-xs font-semibold text-green-800">Manager Response:</p>
+                    <Card key={issue.id} className="p-4 shadow-sm border-l-4 border-l-red-400">
+                      <div className="space-y-3">
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1 pr-2">
+                            <h3 className="font-semibold text-sm text-gray-900 line-clamp-2">{issue.title}</h3>
+                            <p className="text-xs text-gray-600 mt-1 line-clamp-3">{issue.description}</p>
                           </div>
-                          <p className="text-xs text-green-700 leading-relaxed">{issue.managerReply}</p>
-                          {/* Show manager's proof photo if available */}
-                          {issue.managerProofPhotoUrl && (
-                            <div className="mt-2">
-                              <p className="text-xs font-medium text-green-800 mb-1">Manager proof photo:</p>
-                              <img 
-                                src={issue.managerProofPhotoUrl} 
-                                alt="Manager proof photo" 
-                                className="w-16 h-16 object-cover rounded cursor-pointer"
-                                onClick={() => window.open(issue.managerProofPhotoUrl, "_blank")}
-                              />
-                            </div>
-                          )}
-                          {issue.updatedAt && (
-                            <p className="text-xs text-green-600 mt-1">
-                              Updated: {new Date(issue.updatedAt).toLocaleDateString()}
-                            </p>
-                          )}
+                          <Badge
+                            variant={
+                              issue.status === 'open' ? 'destructive' :
+                                issue.status === 'in_progress' ? 'secondary' : 'default'
+                            }
+                            className="text-xs whitespace-nowrap"
+                          >
+                            {issue.status === 'open' ? 'Open' :
+                              issue.status === 'in_progress' ? 'In Progress' : 'Resolved'}
+                          </Badge>
                         </div>
-                      )}
-                    </div>
-                  </Card>
-                ))}
+
+                        <div className="flex items-center justify-between text-xs text-gray-500">
+                          <div className="flex items-center space-x-2">
+                            <MapPin className="w-3 h-3" />
+                            <span className="font-medium">{issue.category}</span>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <Clock className="w-3 h-3" />
+                            <span>{new Date(issue.createdAt).toLocaleDateString()}</span>
+                          </div>
+                        </div>
+
+                        {issue.photoUrl && (
+                          <div className="mt-2">
+                            <img
+                              src={issue.photoUrl}
+                              alt="Issue photo"
+                              className="w-full h-32 object-cover rounded-lg cursor-pointer"
+                              onClick={() => window.open(issue.photoUrl, '_blank')}
+                            />
+                          </div>
+                        )}
+
+                        {issue.managerReply && (
+                          <div className="mt-3 p-3 bg-green-50 rounded-lg border-l-4 border-green-400">
+                            <div className="flex items-center space-x-2 mb-1">
+                              <CheckCircle className="w-4 h-4 text-green-600" />
+                              <p className="text-xs font-semibold text-green-800">Manager Response:</p>
+                            </div>
+                            <p className="text-xs text-green-700 leading-relaxed">{issue.managerReply}</p>
+                            {/* Show manager's proof photo if available */}
+                            {issue.managerProofPhotoUrl && (
+                              <div className="mt-2">
+                                <p className="text-xs font-medium text-green-800 mb-1">Manager proof photo:</p>
+                                <img
+                                  src={issue.managerProofPhotoUrl}
+                                  alt="Manager proof photo"
+                                  className="w-16 h-16 object-cover rounded cursor-pointer"
+                                  onClick={() => window.open(issue.managerProofPhotoUrl, "_blank")}
+                                />
+                              </div>
+                            )}
+                            {issue.updatedAt && (
+                              <p className="text-xs text-green-600 mt-1">
+                                Updated: {new Date(issue.updatedAt).toLocaleDateString()}
+                              </p>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    </Card>
+                  ))}
               </div>
             ) : (
               <div className="text-center py-12">
@@ -1234,7 +1231,7 @@ export default function CollectorDashboard() {
                   <>
                     <h3 className="text-lg font-medium text-gray-900 mb-2">No Issues Reported</h3>
                     <p className="text-gray-500 mb-4">Help improve your village by reporting issues</p>
-                    <Button 
+                    <Button
                       onClick={() => setShowIssueModal(true)}
                       className="bg-red-600 hover:bg-red-700"
                     >
@@ -1246,7 +1243,7 @@ export default function CollectorDashboard() {
                   <>
                     <h3 className="text-lg font-medium text-gray-900 mb-2">No {issueFilter} Issues</h3>
                     <p className="text-gray-500 mb-4">No issues found with {issueFilter.toLowerCase()} status</p>
-                    <Button 
+                    <Button
                       onClick={() => setIssueFilter('All')}
                       variant="outline"
                     >
@@ -1289,16 +1286,16 @@ export default function CollectorDashboard() {
                   onClick={() => setShowPasswordModal(true)}
                 >
                   <Settings className="mr-3" size={20} />
-{t('auth.changePassword')}
+                  {t('auth.changePassword')}
                 </Button>
-                
+
                 <Button
                   variant="outline"
                   className="w-full justify-start text-red-600 border-red-200 hover:bg-red-50"
                   onClick={logout}
                 >
                   <LogOut className="mr-3" size={20} />
-{t('auth.logout')}
+                  {t('auth.logout')}
                 </Button>
               </CardContent>
             </Card>
@@ -1340,23 +1337,21 @@ export default function CollectorDashboard() {
               <div className="flex space-x-3">
                 <Button
                   variant={collectionForm.wasteSegregated === true ? "default" : "outline"}
-                  onClick={() => setCollectionForm({...collectionForm, wasteSegregated: true})}
-                  className={`flex-1 py-4 text-lg font-bold ${
-                    collectionForm.wasteSegregated === true 
-                      ? 'bg-green-600 hover:bg-green-700 text-white' 
+                  onClick={() => setCollectionForm({ ...collectionForm, wasteSegregated: true })}
+                  className={`flex-1 py-4 text-lg font-bold ${collectionForm.wasteSegregated === true
+                      ? 'bg-green-600 hover:bg-green-700 text-white'
                       : 'bg-white border-2 border-green-300 text-green-700 hover:bg-green-50'
-                  }`}
+                    }`}
                 >
                   ✅ {t('app.yes')}
                 </Button>
                 <Button
                   variant={collectionForm.wasteSegregated === false ? "destructive" : "outline"}
-                  onClick={() => setCollectionForm({...collectionForm, wasteSegregated: false})}
-                  className={`flex-1 py-4 text-lg font-bold ${
-                    collectionForm.wasteSegregated === false 
-                      ? 'bg-red-600 hover:bg-red-700 text-white' 
+                  onClick={() => setCollectionForm({ ...collectionForm, wasteSegregated: false })}
+                  className={`flex-1 py-4 text-lg font-bold ${collectionForm.wasteSegregated === false
+                      ? 'bg-red-600 hover:bg-red-700 text-white'
                       : 'bg-white border-2 border-red-300 text-red-700 hover:bg-red-50'
-                  }`}
+                    }`}
                 >
                   ❌ {t('app.no')}
                 </Button>
@@ -1373,11 +1368,10 @@ export default function CollectorDashboard() {
                   <button
                     key={rating}
                     type="button"
-                    className={`w-12 h-12 rounded-full border-2 transition-all hover:scale-110 ${
-                      rating <= collectionForm.segregationRating 
-                        ? 'bg-yellow-400 border-yellow-500 shadow-lg' 
+                    className={`w-12 h-12 rounded-full border-2 transition-all hover:scale-110 ${rating <= collectionForm.segregationRating
+                        ? 'bg-yellow-400 border-yellow-500 shadow-lg'
                         : 'bg-white border-gray-300'
-                    }`}
+                      }`}
                     onClick={() => handleStarClick('segregation', rating)}
                   >
                     <div className="text-2xl">
@@ -1533,7 +1527,7 @@ export default function CollectorDashboard() {
               <div className="flex space-x-4 mt-2">
                 <Button
                   variant={collectionForm.wasteAccepted === true ? "default" : "outline"}
-                  onClick={() => setCollectionForm({...collectionForm, wasteAccepted: true})}
+                  onClick={() => setCollectionForm({ ...collectionForm, wasteAccepted: true })}
                   className="flex-1"
                 >
                   <CheckCircle className="mr-2" size={16} />
@@ -1541,11 +1535,11 @@ export default function CollectorDashboard() {
                 </Button>
                 <Button
                   variant={collectionForm.wasteAccepted === false ? "destructive" : "outline"}
-                  onClick={() => setCollectionForm({...collectionForm, wasteAccepted: false})}
+                  onClick={() => setCollectionForm({ ...collectionForm, wasteAccepted: false })}
                   className="flex-1"
                 >
                   <XCircle className="mr-2" size={16} />
-{t('collections.notCollected')}
+                  {t('collections.notCollected')}
                 </Button>
               </div>
             </div>
@@ -1556,7 +1550,7 @@ export default function CollectorDashboard() {
                 <Label className="text-sm font-medium">{t('collections.reasonNotCollecting')}</Label>
                 <Select
                   value={collectionForm.notCollectedReason}
-                  onValueChange={(value) => setCollectionForm({...collectionForm, notCollectedReason: value})}
+                  onValueChange={(value) => setCollectionForm({ ...collectionForm, notCollectedReason: value })}
                 >
                   <SelectTrigger className="mt-2">
                     <SelectValue placeholder={t('collections.selectReason')} />
@@ -1571,11 +1565,10 @@ export default function CollectorDashboard() {
             )}
 
             {/* Photo Upload - Conditional Requirement */}
-            <div className={`p-4 border-2 rounded-xl ${
-              isPhotoRequired 
-                ? 'border-red-200 bg-red-50' 
+            <div className={`p-4 border-2 rounded-xl ${isPhotoRequired
+                ? 'border-red-200 bg-red-50'
                 : 'border-blue-200 bg-blue-50'
-            }`}>
+              }`}>
               <Label className="text-lg font-bold text-center block mb-3">
                 📸 Take Photo of Waste {isPhotoRequired ? '*' : '(Optional)'}
               </Label>
@@ -1595,13 +1588,12 @@ export default function CollectorDashboard() {
                     setCollectionForm({ ...collectionForm, photoFile: file });
                   }}
                 />
-                <div className={`border-4 border-dashed rounded-xl p-6 text-center transition-all ${
-                  collectionForm.photoFile 
-                    ? 'border-green-400 bg-green-50' 
+                <div className={`border-4 border-dashed rounded-xl p-6 text-center transition-all ${collectionForm.photoFile
+                    ? 'border-green-400 bg-green-50'
                     : isPhotoRequired
-                    ? 'border-red-300 bg-white hover:bg-red-50'
-                    : 'border-blue-300 bg-white hover:bg-blue-50'
-                }`}>
+                      ? 'border-red-300 bg-white hover:bg-red-50'
+                      : 'border-blue-300 bg-white hover:bg-blue-50'
+                  }`}>
                   {collectionForm.photoFile ? (
                     <>
                       <div className="text-4xl mb-2">✅</div>
@@ -1611,9 +1603,8 @@ export default function CollectorDashboard() {
                   ) : (
                     <>
                       <div className="text-4xl mb-2">📸</div>
-                      <p className={`text-lg font-bold ${
-                        isPhotoRequired ? 'text-red-700' : 'text-blue-700'
-                      }`}>Tap to Take Photo</p>
+                      <p className={`text-lg font-bold ${isPhotoRequired ? 'text-red-700' : 'text-blue-700'
+                        }`}>Tap to Take Photo</p>
                       <p className="text-sm text-gray-600">
                         {isPhotoRequired ? 'Required for collection' : 'Optional - tap if needed'}
                       </p>
@@ -1629,18 +1620,17 @@ export default function CollectorDashboard() {
               <Label className="text-base font-bold text-center block mb-3">
                 💬 {t('collections.remarks')} ({t('app.optional')})
               </Label>
-              
+
               {/* Voice Recording */}
               <div className="mb-3">
                 <Button
                   onClick={isRecording ? stopVoiceRecording : startVoiceRecording}
-                  className={`w-full py-4 text-lg font-bold ${
-                    isRecording 
+                  className={`w-full py-4 text-lg font-bold ${isRecording
                       ? 'bg-red-500 hover:bg-red-600 animate-pulse'
                       : collectionForm.voiceRecording
-                      ? 'bg-green-500 hover:bg-green-600'
-                      : 'bg-blue-500 hover:bg-blue-600'
-                  }`}
+                        ? 'bg-green-500 hover:bg-green-600'
+                        : 'bg-blue-500 hover:bg-blue-600'
+                    }`}
                   disabled={createCollectionMutation.isPending}
                 >
                   {isRecording ? (
@@ -1668,19 +1658,19 @@ export default function CollectorDashboard() {
             <Button
               className={`w-full py-6 text-xl font-bold ${
                 // Check if required fields are filled (including conditional photo requirement)
-                collectionForm.wasteSegregated !== null && 
-                collectionForm.segregationRating > 0 && 
-                (isPhotoRequired ? collectionForm.photoFile : true) && 
-                collectionForm.wasteAccepted !== null &&
-                (collectionForm.wasteAccepted || collectionForm.notCollectedReason)
-                  ? isOnline 
+                collectionForm.wasteSegregated !== null &&
+                  collectionForm.segregationRating > 0 &&
+                  (isPhotoRequired ? collectionForm.photoFile : true) &&
+                  collectionForm.wasteAccepted !== null &&
+                  (collectionForm.wasteAccepted || collectionForm.notCollectedReason)
+                  ? isOnline
                     ? 'bg-green-600 hover:bg-green-700 text-white'
                     : 'bg-blue-600 hover:bg-blue-700 text-white'
                   : 'bg-gray-400 text-gray-600 cursor-not-allowed'
-              }`}
+                }`}
               onClick={() => setShowConfirmSubmit(true)}
               disabled={
-                createCollectionMutation.isPending || 
+                createCollectionMutation.isPending ||
                 collectionForm.wasteSegregated === null ||
                 collectionForm.segregationRating === 0 ||
                 (isPhotoRequired && !collectionForm.photoFile) ||
@@ -2087,57 +2077,52 @@ export default function CollectorDashboard() {
       <div className="fixed bottom-0 left-1/2 transform -translate-x-1/2 w-full max-w-md bg-green-100 border-t border-gray-200 z-20 rounded-lg">
         <div className="grid grid-cols-5 gap-1 p-2">
           <button
-            className={`collector-home-tab flex flex-col items-center py-2 px-1 rounded-lg transition-colors ${
-              activeTab === 'home' 
-                ? 'bg-green-200 text-green-600' 
+            className={`collector-home-tab flex flex-col items-center py-2 px-1 rounded-lg transition-colors ${activeTab === 'home'
+                ? 'bg-green-200 text-green-600'
                 : 'text-gray-500 hover:text-green-600 hover:bg-gray-50'
-            }`}
+              }`}
             onClick={() => setActiveTab('home')}
           >
-            <Home size={24} strokeWidth={2.5}/>
+            <Home size={24} strokeWidth={2.5} />
           </button>
           <button
-            className={`collector-scan-tab flex flex-col items-center py-2 px-1 rounded-lg transition-colors ${
-              activeTab === 'scan' 
-                ? 'bg-blue-100 text-blue-600' 
+            className={`collector-scan-tab flex flex-col items-center py-2 px-1 rounded-lg transition-colors ${activeTab === 'scan'
+                ? 'bg-blue-100 text-blue-600'
                 : 'text-gray-500 hover:text-blue-600 hover:bg-gray-50'
-            }`}
+              }`}
             onClick={() => {
               setActiveTab('scan');
               setShowScanner(true);
             }}
           >
-            <ScanLine size={24} strokeWidth={2.5}/>
+            <ScanLine size={24} strokeWidth={2.5} />
           </button>
           <button
-            className={`collector-announcements-tab flex flex-col items-center py-2 px-1 rounded-lg transition-colors ${
-              activeTab === 'announcements' 
-                ? 'bg-blue-100 text-blue-600' 
+            className={`collector-announcements-tab flex flex-col items-center py-2 px-1 rounded-lg transition-colors ${activeTab === 'announcements'
+                ? 'bg-blue-100 text-blue-600'
                 : 'text-gray-500 hover:text-blue-600 hover:bg-gray-50'
-            }`}
+              }`}
             onClick={() => setActiveTab('announcements')}
           >
-            <Bell size={24} strokeWidth={2.5}/>
+            <Bell size={24} strokeWidth={2.5} />
           </button>
           <button
-            className={`collector-issues-tab flex flex-col items-center py-2 px-1 rounded-lg transition-colors ${
-              activeTab === 'issues' 
-                ? 'bg-red-100 text-red-600' 
+            className={`collector-issues-tab flex flex-col items-center py-2 px-1 rounded-lg transition-colors ${activeTab === 'issues'
+                ? 'bg-red-100 text-red-600'
                 : 'text-gray-500 hover:text-red-600 hover:bg-gray-50'
-            }`}
+              }`}
             onClick={() => setActiveTab('issues')}
           >
-            <AlertCircle size={24} strokeWidth={2.5}/>
+            <AlertCircle size={24} strokeWidth={2.5} />
           </button>
           <button
-            className={`collector-profile-tab flex flex-col items-center py-2 px-1 rounded-lg transition-colors ${
-              activeTab === 'profile' 
-                ? 'bg-gray-100 text-gray-600' 
+            className={`collector-profile-tab flex flex-col items-center py-2 px-1 rounded-lg transition-colors ${activeTab === 'profile'
+                ? 'bg-gray-100 text-gray-600'
                 : 'text-gray-500 hover:text-gray-600 hover:bg-gray-50'
-            }`}
+              }`}
             onClick={() => setActiveTab('profile')}
           >
-            <User size={24} strokeWidth={2.5}/>
+            <User size={24} strokeWidth={2.5} />
           </button>
         </div>
       </div>

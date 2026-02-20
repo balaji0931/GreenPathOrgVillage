@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -13,14 +13,14 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { apiRequest, queryClient, fetchWithCsrf } from "@/lib/queryClient";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { 
-  Users, AlertTriangle, TrendingUp, Plus, Megaphone, BarChart3, 
-  LogOut, Settings, Copy, Download, Eye, Trash2, RotateCcw, Filter, 
+import {
+  Users, AlertTriangle, TrendingUp, Plus, Megaphone, BarChart3,
+  LogOut, Settings, Copy, Download, Eye, Trash2, RotateCcw, Filter,
   PieChart, LineChart, Building2, UserPlus, X, Home, MessageSquare,
   User, MapPin, Calendar, Activity, FileText, Bell, Star, Award, Package,
   Leaf
 } from "lucide-react";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart as RechartsLineChart, Line, PieChart as RechartsPieChart, Cell, Pie } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart as RechartsPieChart, Cell, Pie } from 'recharts';
 import { cn } from "@/lib/utils";
 
 export default function AdminDashboard() {
@@ -224,17 +224,17 @@ export default function AdminDashboard() {
         try {
           const formData = new FormData();
           formData.append('file', data.photoFile);
-          
+
           const uploadResponse = await fetchWithCsrf('/api/upload/photo', {
             method: 'POST',
             body: formData,
             credentials: 'include'
           });
-          
+
           if (!uploadResponse.ok) {
             throw new Error('Photo upload failed');
           }
-          
+
           const uploadResult = await uploadResponse.json();
           photoUrl = uploadResult.url;
         } catch (uploadError) {
@@ -277,17 +277,17 @@ export default function AdminDashboard() {
         try {
           const formData = new FormData();
           formData.append('file', data.photoFile);
-          
+
           const uploadResponse = await fetchWithCsrf('/api/upload/photo', {
             method: 'POST',
             body: formData,
             credentials: 'include'
           });
-          
+
           if (!uploadResponse.ok) {
             throw new Error('Photo upload failed');
           }
-          
+
           const uploadResult = await uploadResponse.json();
           photoUrl = uploadResult.url;
         } catch (uploadError) {
@@ -857,7 +857,7 @@ export default function AdminDashboard() {
                     placeholder="Enter phone number"
                   />
                 </div>
-                <Button 
+                <Button
                   onClick={() => createVillageMutation.mutate(newVillage)}
                   disabled={createVillageMutation.isPending}
                   className="w-full"
@@ -921,7 +921,7 @@ export default function AdminDashboard() {
                     <Plus className="h-4 w-4 mr-2" />
                     Add Another Village
                   </Button>
-                  <Button 
+                  <Button
                     onClick={() => createMultipleVillagesMutation.mutate(villageList)}
                     disabled={createMultipleVillagesMutation.isPending}
                     className="flex-1"
@@ -993,7 +993,7 @@ export default function AdminDashboard() {
                           size="md"
                           variant="outline"
                           onClick={() => setSelectedVillage(village.villageId)}
-className="p-1 sm:p-2"
+                          className="p-1 sm:p-2"
                         >
                           <Eye className="h-3 w-3 sm:h-4 sm:w-4" />
                         </Button>
@@ -1063,13 +1063,13 @@ className="p-1 sm:p-2"
                       <ResponsiveContainer width="100%" height={200}>
                         <BarChart data={villageDetails.recentCollections.slice(0, 7)}>
                           <CartesianGrid strokeDasharray="3 3" />
-                          <XAxis 
-                            dataKey="collectionDate" 
+                          <XAxis
+                            dataKey="collectionDate"
                             tickFormatter={(date) => new Date(date).toLocaleDateString()}
                             fontSize={12}
                           />
                           <YAxis domain={[0, 5]} fontSize={12} />
-                          <Tooltip 
+                          <Tooltip
                             labelFormatter={(date) => new Date(date).toLocaleDateString()}
                           />
                           <Bar dataKey="segregationRating" fill="#00C49F" name="Segregation Rating" />
@@ -1130,19 +1130,19 @@ className="p-1 sm:p-2"
                       <div className="space-y-4">
                         <div>
                           <Label>Manager Name</Label>
-                          <Input 
+                          <Input
                             id="newManagerName"
                             placeholder="Enter manager name"
                           />
                         </div>
                         <div>
                           <Label>Manager Phone</Label>
-                          <Input 
+                          <Input
                             id="newManagerPhone"
                             placeholder="Enter phone number"
                           />
                         </div>
-                        <Button 
+                        <Button
                           onClick={() => {
                             const nameInput = document.getElementById('newManagerName') as HTMLInputElement;
                             const phoneInput = document.getElementById('newManagerPhone') as HTMLInputElement;
@@ -1444,7 +1444,7 @@ className="p-1 sm:p-2"
                   ))}
                 </div>
               </div>
-              <Button 
+              <Button
                 onClick={() => createModeratorMutation.mutate(newModerator)}
                 disabled={createModeratorMutation.isPending}
                 className="w-full"
@@ -1530,7 +1530,7 @@ className="p-1 sm:p-2"
                                 <Label>Assign New Villages</Label>
                                 <div className="space-y-3">
                                   <div className="space-y-2 max-h-32 overflow-y-auto border rounded p-2">
-                                    {villages?.filter((village: any) => 
+                                    {villages?.filter((village: any) =>
                                       !moderator.villages?.some((mv: any) => mv.villageId === village.villageId)
                                     ).map((village: any) => (
                                       <div key={village.villageId} className="flex items-center space-x-2">
@@ -1552,13 +1552,13 @@ className="p-1 sm:p-2"
                                         </label>
                                       </div>
                                     ))}
-                                    {villages?.filter((village: any) => 
+                                    {villages?.filter((village: any) =>
                                       !moderator.villages?.some((mv: any) => mv.villageId === village.villageId)
                                     ).length === 0 && (
-                                      <p className="text-muted-foreground text-sm">All villages are already assigned</p>
-                                    )}
+                                        <p className="text-muted-foreground text-sm">All villages are already assigned</p>
+                                      )}
                                   </div>
-                                  
+
                                   {bulkAssignVillages.length > 0 && (
                                     <div className="flex items-center justify-between p-2 bg-blue-50 rounded">
                                       <span className="text-sm text-blue-700">
@@ -1593,7 +1593,7 @@ className="p-1 sm:p-2"
                                       size="sm"
                                       variant="outline"
                                       onClick={() => {
-                                        const availableVillages = villages?.filter((village: any) => 
+                                        const availableVillages = villages?.filter((village: any) =>
                                           !moderator.villages?.some((mv: any) => mv.villageId === village.villageId)
                                         ) || [];
                                         setBulkAssignVillages(availableVillages.map(v => v.villageId));
@@ -1729,15 +1729,15 @@ className="p-1 sm:p-2"
               <CardContent>
                 <div className="text-3xl font-bold text-yellow-900">
                   {(() => {
-                      if (reportFilters.village === "all") {
-                        return systemAnalytics?.averageSegregationRating?.toFixed(1) || "0.0";
-                      } else {
-                        // Show rating for selected village
-                        const villageData = reportData?.collections?.find((c: any) => c.villageId === reportFilters.village);
-                        const rating = villageData?.avgSegregationRating;
-                        return rating ? (typeof rating === 'number' ? rating : parseFloat(rating)).toFixed(1) : "0.0";
-                      }
-                    })()}
+                    if (reportFilters.village === "all") {
+                      return systemAnalytics?.averageSegregationRating?.toFixed(1) || "0.0";
+                    } else {
+                      // Show rating for selected village
+                      const villageData = reportData?.collections?.find((c: any) => c.villageId === reportFilters.village);
+                      const rating = villageData?.avgSegregationRating;
+                      return rating ? (typeof rating === 'number' ? rating : parseFloat(rating)).toFixed(1) : "0.0";
+                    }
+                  })()}
                 </div>
                 <p className="text-xs text-yellow-700 mt-1">
                   {reportFilters.village === "all" ? "Overall rating" : `Rating for ${villages?.find(v => v.villageId === reportFilters.village)?.name || "selected village"}`}
@@ -1764,14 +1764,14 @@ className="p-1 sm:p-2"
                     const dateStr = date.toISOString().split('T')[0];
 
                     // Find real data for this date
-                    const dayData = systemAnalytics?.collectionTrends?.find((trend: any) => 
+                    const dayData = systemAnalytics?.collectionTrends?.find((trend: any) =>
                       trend.date === dateStr || trend.collectionDate === dateStr
                     );
                     const collectionsForDay = Number(dayData?.collections) || 0;
 
                     // Calculate total households and collection percentage
-                    const totalHouseholds = reportFilters.village === "all" 
-                      ? systemAnalytics?.totalHouseholds || 0 
+                    const totalHouseholds = reportFilters.village === "all"
+                      ? systemAnalytics?.totalHouseholds || 0
                       : villages?.find(v => v.villageId === reportFilters.village)?.totalHouseholds || 0;
 
                     const dailyTotalHouseholds = Math.max(totalHouseholds, 1);
@@ -1789,13 +1789,13 @@ className="p-1 sm:p-2"
                           </span>
                         </div>
                         <div className="flex h-4 bg-gray-200 rounded overflow-hidden">
-                          <div 
-                            className="bg-green-500 transition-all" 
+                          <div
+                            className="bg-green-500 transition-all"
                             style={{ width: `${Math.min(collectionPercentage, 100)}%` }}
                             title={`Collected: ${collectionsForDay}`}
                           />
-                          <div 
-                            className="bg-red-500 transition-all" 
+                          <div
+                            className="bg-red-500 transition-all"
                             style={{ width: `${Math.min(100 - collectionPercentage, 100)}%` }}
                             title={`Not collected: ${uncollected}`}
                           />
@@ -1830,10 +1830,10 @@ className="p-1 sm:p-2"
                     const dateStr = date.toISOString().split('T')[0];
 
                     // Find real data for this date
-                              const dayData = systemAnalytics?.collectionTrends?.find((trend: any) => 
-                                trend.date === dateStr || trend.collectionDate === dateStr
-                              );
-                              const avgRating = dayData?.avgRating || 0;
+                    const dayData = systemAnalytics?.collectionTrends?.find((trend: any) =>
+                      trend.date === dateStr || trend.collectionDate === dateStr
+                    );
+                    const avgRating = dayData?.avgRating || 0;
 
                     return (
                       <div key={i} className="flex items-center gap-3">
@@ -1841,12 +1841,11 @@ className="p-1 sm:p-2"
                           {date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                         </div>
                         <div className="flex-1 bg-gray-200 rounded-full h-4 relative">
-                          <div 
-                            className={`h-4 rounded-full transition-all ${
-                              avgRating >= 4 ? 'bg-green-500' : 
-                              avgRating >= 3 ? 'bg-yellow-500' : 
-                              avgRating > 0 ? 'bg-red-500' : 'bg-gray-300'
-                            }`}
+                          <div
+                            className={`h-4 rounded-full transition-all ${avgRating >= 4 ? 'bg-green-500' :
+                                avgRating >= 3 ? 'bg-yellow-500' :
+                                  avgRating > 0 ? 'bg-red-500' : 'bg-gray-300'
+                              }`}
                             style={{ width: `${avgRating > 0 ? (avgRating / 5) * 100 : 0}%` }}
                           />
                         </div>
@@ -1888,24 +1887,24 @@ className="p-1 sm:p-2"
                     return (
                       <div className="w-48 h-48 relative">
                         <svg viewBox="0 0 100 100" className="w-full h-full transform -rotate-90">
-                          <circle cx="50" cy="50" r="40" fill="none" stroke="#f3f4f6" strokeWidth="20"/>
-                          <circle 
-                            cx="50" cy="50" r="40" fill="none" 
+                          <circle cx="50" cy="50" r="40" fill="none" stroke="#f3f4f6" strokeWidth="20" />
+                          <circle
+                            cx="50" cy="50" r="40" fill="none"
                             stroke="#ef4444" strokeWidth="20"
-                            strokeDasharray={`${(poor/total) * 251.3} 251.3`}
+                            strokeDasharray={`${(poor / total) * 251.3} 251.3`}
                             strokeDashoffset="0"
                           />
-                          <circle 
-                            cx="50" cy="50" r="40" fill="none" 
+                          <circle
+                            cx="50" cy="50" r="40" fill="none"
                             stroke="#eab308" strokeWidth="20"
-                            strokeDasharray={`${(good/total) * 251.3} 251.3`}
-                            strokeDashoffset={`-${(poor/total) * 251.3}`}
+                            strokeDasharray={`${(good / total) * 251.3} 251.3`}
+                            strokeDashoffset={`-${(poor / total) * 251.3}`}
                           />
-                          <circle 
-                            cx="50" cy="50" r="40" fill="none" 
+                          <circle
+                            cx="50" cy="50" r="40" fill="none"
                             stroke="#22c55e" strokeWidth="20"
-                            strokeDasharray={`${(excellent/total) * 251.3} 251.3`}
-                            strokeDashoffset={`-${((poor + good)/total) * 251.3}`}
+                            strokeDasharray={`${(excellent / total) * 251.3} 251.3`}
+                            strokeDashoffset={`-${((poor + good) / total) * 251.3}`}
                           />
                         </svg>
                         <div className="absolute inset-0 flex items-center justify-center">
@@ -1975,12 +1974,11 @@ className="p-1 sm:p-2"
                             <span>{collections} collections</span>
                           </div>
                           <div className="flex h-6 bg-gray-200 rounded overflow-hidden">
-                            <div 
-                              className={`transition-all ${
-                                avgRating >= 4 ? 'bg-green-500' : 
-                                avgRating >= 3 ? 'bg-yellow-500' : 
-                                avgRating > 0 ? 'bg-red-500' : 'bg-gray-300'
-                              }`}
+                            <div
+                              className={`transition-all ${avgRating >= 4 ? 'bg-green-500' :
+                                  avgRating >= 3 ? 'bg-yellow-500' :
+                                    avgRating > 0 ? 'bg-red-500' : 'bg-gray-300'
+                                }`}
                               style={{ width: `${avgRating > 0 ? (avgRating / 5) * 100 : 0}%` }}
                               title={`Rating: ${avgRating.toFixed(1)}`}
                             />
@@ -2011,7 +2009,7 @@ className="p-1 sm:p-2"
                 <div className="flex items-center justify-center">
                   {(() => {
                     // Calculate real household collection status
-                    const totalHouseholds = reportFilters.village === "all" 
+                    const totalHouseholds = reportFilters.village === "all"
                       ? systemAnalytics?.totalHouseholds || 0
                       : villages?.find(v => v.villageId === reportFilters.village)?.totalHouseholds || 0;
 
@@ -2025,11 +2023,11 @@ className="p-1 sm:p-2"
                     return (
                       <div className="w-40 h-40 relative">
                         <svg viewBox="0 0 100 100" className="w-full h-full transform -rotate-90">
-                          <circle cx="50" cy="50" r="35" fill="none" stroke="#f3f4f6" strokeWidth="25"/>
-                          <circle 
-                            cx="50" cy="50" r="35" fill="none" 
+                          <circle cx="50" cy="50" r="35" fill="none" stroke="#f3f4f6" strokeWidth="25" />
+                          <circle
+                            cx="50" cy="50" r="35" fill="none"
                             stroke="#22c55e" strokeWidth="25"
-                            strokeDasharray={`${(collectionRate/100) * 219.9} 219.9`}
+                            strokeDasharray={`${(collectionRate / 100) * 219.9} 219.9`}
                             strokeDashoffset="0"
                           />
                         </svg>
@@ -2057,7 +2055,7 @@ className="p-1 sm:p-2"
                     <div className="w-4 h-4 bg-gray-300 rounded mx-auto mb-1"></div>
                     <div className="text-xs">Remaining</div>
                     <div className="text-xs font-medium">
-                      {reportFilters.village === "all" 
+                      {reportFilters.village === "all"
                         ? (systemAnalytics?.totalHouseholds || 0) - (systemAnalytics?.totalCollectionsToday || 0)
                         : dailyAnalytics?.remaining || 0}
                     </div>
@@ -2236,18 +2234,18 @@ className="p-1 sm:p-2"
                     return (
                       <div className="w-48 h-48 relative">
                         <svg viewBox="0 0 100 100" className="w-full h-full transform -rotate-90">
-                          <circle cx="50" cy="50" r="40" fill="none" stroke="#f3f4f6" strokeWidth="20"/>
-                          <circle 
-                            cx="50" cy="50" r="40" fill="none" 
+                          <circle cx="50" cy="50" r="40" fill="none" stroke="#f3f4f6" strokeWidth="20" />
+                          <circle
+                            cx="50" cy="50" r="40" fill="none"
                             stroke="#22c55e" strokeWidth="20"
-                            strokeDasharray={`${(collected/total) * 251.3} 251.3`}
+                            strokeDasharray={`${(collected / total) * 251.3} 251.3`}
                             strokeDashoffset="0"
                           />
-                          <circle 
-                            cx="50" cy="50" r="40" fill="none" 
+                          <circle
+                            cx="50" cy="50" r="40" fill="none"
                             stroke="#ef4444" strokeWidth="20"
-                            strokeDasharray={`${(notCollected/total) * 251.3} 251.3`}
-                            strokeDashoffset={`-${(collected/total) * 251.3}`}
+                            strokeDasharray={`${(notCollected / total) * 251.3} 251.3`}
+                            strokeDashoffset={`-${(collected / total) * 251.3}`}
                           />
                         </svg>
                         <div className="absolute inset-0 flex items-center justify-center">
@@ -2299,8 +2297,8 @@ className="p-1 sm:p-2"
                           <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
                         </div>
                         <div className="flex-1 bg-gray-200 rounded-full h-4 relative">
-                          <div 
-                            className="bg-yellow-500 h-4 rounded-full transition-all" 
+                          <div
+                            className="bg-yellow-500 h-4 rounded-full transition-all"
                             style={{ width: `${percentage}%` }}
                           />
                           <span className="absolute inset-0 flex items-center justify-center text-xs font-medium text-white">
@@ -2340,12 +2338,11 @@ className="p-1 sm:p-2"
                           </div>
                           <div className="flex items-center gap-2">
                             <div className="flex-1 bg-gray-200 rounded-full h-2">
-                              <div 
-                                className={`h-2 rounded-full ${
-                                  avgRating >= 4 ? 'bg-green-500' : 
-                                  avgRating >= 3 ? 'bg-yellow-500' : 
-                                  avgRating > 0 ? 'bg-red-500' : 'bg-gray-300'
-                                }`}
+                              <div
+                                className={`h-2 rounded-full ${avgRating >= 4 ? 'bg-green-500' :
+                                    avgRating >= 3 ? 'bg-yellow-500' :
+                                      avgRating > 0 ? 'bg-red-500' : 'bg-gray-300'
+                                  }`}
                                 style={{ width: `${avgRating > 0 ? (avgRating / 5) * 100 : 0}%` }}
                               />
                             </div>
@@ -2379,7 +2376,7 @@ className="p-1 sm:p-2"
                     const hourData = timelineData.find((t: any) => Number(t.hour) === hour);
                     const hourCollections = hourData?.collections || 0;
                     const maxCollections = Math.max(
-                      ...timelineData.map((t: any) => Number(t.collections) || 0), 
+                      ...timelineData.map((t: any) => Number(t.collections) || 0),
                       1
                     );
                     const percentage = maxCollections > 0 ? (hourCollections / maxCollections) * 100 : 0;
@@ -2390,8 +2387,8 @@ className="p-1 sm:p-2"
                           {hour}:00
                         </div>
                         <div className="flex-1 bg-gray-200 rounded-full h-3 relative">
-                          <div 
-                            className="bg-indigo-500 h-3 rounded-full transition-all" 
+                          <div
+                            className="bg-indigo-500 h-3 rounded-full transition-all"
                             style={{ width: `${percentage}%` }}
                           />
                           {hourCollections > 0 && (
@@ -2433,18 +2430,18 @@ className="p-1 sm:p-2"
                     return (
                       <div className="w-48 h-48 relative">
                         <svg viewBox="0 0 100 100" className="w-full h-full transform -rotate-90">
-                          <circle cx="50" cy="50" r="40" fill="none" stroke="#f3f4f6" strokeWidth="20"/>
-                          <circle 
-                            cx="50" cy="50" r="40" fill="none" 
+                          <circle cx="50" cy="50" r="40" fill="none" stroke="#f3f4f6" strokeWidth="20" />
+                          <circle
+                            cx="50" cy="50" r="40" fill="none"
                             stroke="#22c55e" strokeWidth="20"
-                            strokeDasharray={`${(composting/total) * 251.3} 251.3`}
+                            strokeDasharray={`${(composting / total) * 251.3} 251.3`}
                             strokeDashoffset="0"
                           />
-                          <circle 
-                            cx="50" cy="50" r="40" fill="none" 
+                          <circle
+                            cx="50" cy="50" r="40" fill="none"
                             stroke="#ef4444" strokeWidth="20"
-                            strokeDasharray={`${(notComposting/total) * 251.3} 251.3`}
-                            strokeDashoffset={`-${(composting/total) * 251.3}`}
+                            strokeDasharray={`${(notComposting / total) * 251.3} 251.3`}
+                            strokeDashoffset={`-${(composting / total) * 251.3}`}
                           />
                         </svg>
                         <div className="absolute inset-0 flex items-center justify-center">
@@ -2527,15 +2524,15 @@ className="p-1 sm:p-2"
               </div>
               <div>
                 <Label htmlFor="announcement-audience">Target Audience</Label>
-                <Select 
-                  value={announcement.targetAudience} 
+                <Select
+                  value={announcement.targetAudience}
                   onValueChange={(value) => setAnnouncement({ ...announcement, targetAudience: value })}
                 >
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">All Users</SelectItem>                
+                    <SelectItem value="all">All Users</SelectItem>
                     <SelectItem value="managers">Managers Only</SelectItem>
                     <SelectItem value="generators">Generators Only</SelectItem>
                   </SelectContent>
@@ -2559,7 +2556,7 @@ className="p-1 sm:p-2"
                   </p>
                 )}
               </div>
-              <Button 
+              <Button
                 onClick={() => createAnnouncementMutation.mutate(announcement)}
                 disabled={createAnnouncementMutation.isPending}
                 className="w-full"
@@ -2817,7 +2814,7 @@ className="p-1 sm:p-2"
               </div>
             </div>
           </div>
-          <Button 
+          <Button
             onClick={() => {
               if (profileData.newPassword && profileData.newPassword !== profileData.confirmPassword) {
                 toast({
@@ -2983,13 +2980,13 @@ className="p-1 sm:p-2"
             <img src="/logos/logo-dark.svg" alt="GreenPath" className="h-9 w-auto" />
           </div>
           <div className="flex items-center space-x-2">
-            <Button 
-              onClick={logout} 
-              variant="ghost" 
+            <Button
+              onClick={logout}
+              variant="ghost"
               size="md"
               className="p-2"
             >
-              <LogOut className="h-6 w-6 text-white" strokeWidth={3}/>
+              <LogOut className="h-6 w-6 text-white" strokeWidth={3} />
             </Button>
           </div>
         </div>
@@ -3020,18 +3017,18 @@ className="p-1 sm:p-2"
 
               {/* Quick Actions */}
               <div className="flex space-x-2">
-                <Button 
-                  onClick={() => setActiveTab("profile")} 
-                  variant="ghost" 
+                <Button
+                  onClick={() => setActiveTab("profile")}
+                  variant="ghost"
                   size="sm"
                   className="flex-1 h-8 text-xs"
                 >
                   <Settings className="h-3 w-3 mr-1" />
                   Profile
                 </Button>
-                <Button 
-                  onClick={logout} 
-                  variant="ghost" 
+                <Button
+                  onClick={logout}
+                  variant="ghost"
                   size="sm"
                   className="flex-1 h-8 text-xs"
                 >
@@ -3051,11 +3048,10 @@ className="p-1 sm:p-2"
                   <button
                     key={item.id}
                     onClick={() => setActiveTab(item.id)}
-                    className={`w-full flex items-center space-x-3 px-3 py-2 rounded-lg text-left transition-colors ${
-                      activeTab === item.id
+                    className={`w-full flex items-center space-x-3 px-3 py-2 rounded-lg text-left transition-colors ${activeTab === item.id
                         ? 'bg-primary text-primary-foreground'
                         : 'hover:bg-muted'
-                    }`}
+                      }`}
                   >
                     <Icon className="h-5 w-5" />
                     <span>{item.label}</span>

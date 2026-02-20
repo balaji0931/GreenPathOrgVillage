@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useDeferredValue } from "react";
+import { useState, useMemo, useDeferredValue } from "react";
 import React from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { useQuery, useMutation, useQueryClient, useInfiniteQuery } from "@tanstack/react-query";
@@ -70,7 +70,6 @@ import {
   MapPin,
   Phone,
 } from "lucide-react";
-import { SiGooglemaps } from "react-icons/si";
 import html2canvas from "html2canvas";
 import { jsPDF } from "jspdf";
 import { MaterialLog } from "@/components/manager/MaterialLog";
@@ -509,16 +508,6 @@ export default function ManagerDashboard() {
   const [showIssueDialog, setShowIssueDialog] = useState(false);
   const [announcementMessage, setAnnouncementMessage] = useState("");
   const [announcementTarget, setAnnouncementTarget] = useState("generators");
-  const [announcementPhotoFile, setAnnouncementPhotoFile] = useState<File | null>(null);
-  const [selectedMedia, setSelectedMedia] = useState<{
-    type: 'image' | 'audio';
-    url: string;
-    title: string;
-  } | null>(null);
-
-  // Image modal state
-  const [showImageModal, setShowImageModal] = useState(false);
-  const [selectedImageUrl, setSelectedImageUrl] = useState<string>('');
 
   // Consolidated filters
   const [filters, setFilters] = useState<FilterState>({
@@ -545,9 +534,7 @@ export default function ManagerDashboard() {
   const [showCreateFieldWorkerDialog, setShowCreateFieldWorkerDialog] = useState(false);
   const [newFieldWorkerName, setNewFieldWorkerName] = useState("");
   const [newFieldWorkerPhone, setNewFieldWorkerPhone] = useState("");
-  const [selectedHousehold, setSelectedHousehold] = useState<Household | null>(null);
   const [householdSearch, setHouseholdSearch] = useState("");
-  const [wardFilter, setWardFilter] = useState("all");
 
   // Fetch ALL waste collections at once (no pagination) for accurate aggregates and reports
   const { data: allCollections = [] } = useQuery<WasteCollection[]>({
@@ -1002,7 +989,7 @@ export default function ManagerDashboard() {
       toast({ title: "Announcement sent successfully!" });
       queryClient.invalidateQueries({ queryKey: ["/api/announcements"] });
       setAnnouncementMessage("");
-      setAnnouncementPhotoFile(null);
+
     },
     onError: () => {
       toast({ title: "Failed to send announcement", variant: "destructive" });
@@ -2870,7 +2857,7 @@ export default function ManagerDashboard() {
                                   <div className="flex-1 bg-gray-200 rounded-full h-4 relative">
                                     <div
                                       className={`h-4 rounded-full transition-all ${avgRating >= 4 ? 'bg-green-500' :
-                                          avgRating >= 3 ? 'bg-yellow-500' : 'bg-red-500'
+                                        avgRating >= 3 ? 'bg-yellow-500' : 'bg-red-500'
                                         }`}
                                       style={{ width: `${(avgRating / 5) * 100}%` }}
                                     />
@@ -3116,7 +3103,7 @@ export default function ManagerDashboard() {
                                   <div className="flex-1 bg-gray-200 rounded-full h-3">
                                     <div
                                       className={`h-3 rounded-full transition-all ${avgRating >= 4 ? 'bg-green-500' :
-                                          avgRating >= 3 ? 'bg-yellow-500' : 'bg-red-500'
+                                        avgRating >= 3 ? 'bg-yellow-500' : 'bg-red-500'
                                         }`}
                                       style={{ width: `${(avgRating / 5) * 100}%` }}
                                     />

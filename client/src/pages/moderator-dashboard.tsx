@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -88,9 +88,6 @@ export default function ModeratorDashboard() {
   const [activeTab, setActiveTab] = useState("overview");
   const [selectedVillage, setSelectedVillage] = useState("");
   const [createdCredentials, setCreatedCredentials] = useState<any>(null);
-  const [villageList, setVillageList] = useState([
-    { villageName: "", managerName: "", managerPhone: "" },
-  ]);
 
 
   const [announcement, setAnnouncement] = useState({
@@ -179,7 +176,7 @@ export default function ModeratorDashboard() {
       }
 
       const response = await apiRequest(
-        "GET", 
+        "GET",
         `/api/moderator/analytics/system${params.toString() ? `?${params.toString()}` : ''}`
       );
       return response.json();
@@ -230,17 +227,17 @@ export default function ModeratorDashboard() {
         try {
           const formData = new FormData();
           formData.append('file', data.photoFile);
-          
+
           const uploadResponse = await fetchWithCsrf('/api/upload/photo', {
             method: 'POST',
             body: formData,
             credentials: 'include'
           });
-          
+
           if (!uploadResponse.ok) {
             throw new Error('Photo upload failed');
           }
-          
+
           const uploadResult = await uploadResponse.json();
           photoUrl = uploadResult.url;
         } catch (uploadError) {
@@ -1255,9 +1252,9 @@ export default function ModeratorDashboard() {
                       const rating = villageData?.avgSegregationRating;
                       return rating
                         ? (typeof rating === "number"
-                            ? rating
-                            : parseFloat(rating)
-                          ).toFixed(1)
+                          ? rating
+                          : parseFloat(rating)
+                        ).toFixed(1)
                         : "0.0";
                     }
                   })()}
@@ -1332,8 +1329,8 @@ export default function ModeratorDashboard() {
                       const avgRating = Number(dayData.avgRating) || 0;
 
                       // Calculate collection percentage out of total households
-                      const collectionPercentage = householdsForDay > 0 
-                        ? (collectionsForDay / householdsForDay) * 100 
+                      const collectionPercentage = householdsForDay > 0
+                        ? (collectionsForDay / householdsForDay) * 100
                         : 0;
                       const remaining = Math.max(0, householdsForDay - collectionsForDay);
 
@@ -1447,15 +1444,14 @@ export default function ModeratorDashboard() {
                           </div>
                           <div className="flex-1 bg-gray-200 rounded-full h-4 relative">
                             <div
-                              className={`h-4 rounded-full transition-all ${
-                                avgRating >= 4
+                              className={`h-4 rounded-full transition-all ${avgRating >= 4
                                   ? "bg-green-500"
                                   : avgRating >= 3
                                     ? "bg-yellow-500"
                                     : avgRating > 0
                                       ? "bg-red-500"
                                       : "bg-gray-300"
-                              }`}
+                                }`}
                               style={{
                                 width: `${avgRating > 0 ? Math.max((avgRating / 5) * 100, 5) : 5}%`,
                               }}
@@ -1714,15 +1710,14 @@ export default function ModeratorDashboard() {
                             </div>
                             <div className="flex h-6 bg-gray-200 rounded overflow-hidden">
                               <div
-                                className={`transition-all ${
-                                  avgRating >= 4
+                                className={`transition-all ${avgRating >= 4
                                     ? "bg-green-500"
                                     : avgRating >= 3
                                       ? "bg-yellow-500"
                                       : avgRating > 0
                                         ? "bg-red-500"
                                         : "bg-gray-300"
-                                }`}
+                                  }`}
                                 style={{
                                   width: `${avgRating > 0 ? (avgRating / 5) * 100 : 0}%`,
                                 }}
@@ -1763,8 +1758,8 @@ export default function ModeratorDashboard() {
                       reportFilters.village === "all"
                         ? systemAnalytics?.totalHouseholds || 0
                         : villages?.find(
-                            (v) => v.villageId === reportFilters.village,
-                          )?.totalHouseholds || 0;
+                          (v) => v.villageId === reportFilters.village,
+                        )?.totalHouseholds || 0;
 
                     const collectedToday =
                       reportFilters.village === "all"
@@ -1832,7 +1827,7 @@ export default function ModeratorDashboard() {
                     <div className="text-xs font-medium">
                       {reportFilters.village === "all"
                         ? (systemAnalytics?.totalHouseholds || 0) -
-                          (systemAnalytics?.totalCollectionsToday || 0)
+                        (systemAnalytics?.totalCollectionsToday || 0)
                         : dailyAnalytics?.remaining || 0}
                     </div>
                   </div>
@@ -1968,7 +1963,7 @@ export default function ModeratorDashboard() {
                 {reportFilters.village === "all"
                   ? "all villages"
                   : villages?.find((v) => v.villageId === reportFilters.village)
-                      ?.name || "selected village"}{" "}
+                    ?.name || "selected village"}{" "}
                 on{" "}
                 {new Date(
                   reportFilters.startDate || new Date(),
@@ -2205,15 +2200,14 @@ export default function ModeratorDashboard() {
                             <div className="flex items-center gap-2">
                               <div className="flex-1 bg-gray-200 rounded-full h-2">
                                 <div
-                                  className={`h-2 rounded-full ${
-                                    avgRating >= 4
+                                  className={`h-2 rounded-full ${avgRating >= 4
                                       ? "bg-green-500"
                                       : avgRating >= 3
                                         ? "bg-yellow-500"
                                         : avgRating > 0
                                           ? "bg-red-500"
                                           : "bg-gray-300"
-                                  }`}
+                                    }`}
                                   style={{
                                     width: `${avgRating > 0 ? (avgRating / 5) * 100 : 0}%`,
                                   }}
@@ -2289,10 +2283,10 @@ export default function ModeratorDashboard() {
                 </div>
                 {(!dailyAnalytics?.collectionTimeline ||
                   dailyAnalytics.collectionTimeline.length === 0) && (
-                  <p className="text-center text-muted-foreground py-4">
-                    No collection data available for selected date
-                  </p>
-                )}
+                    <p className="text-center text-muted-foreground py-4">
+                      No collection data available for selected date
+                    </p>
+                  )}
               </CardContent>
             </Card>
 
@@ -2402,7 +2396,7 @@ export default function ModeratorDashboard() {
     </div>
   );
 
-const renderAnnouncements = () => (
+  const renderAnnouncements = () => (
     <div className="space-y-4 sm:space-y-6">
       <div>
         <h2 className="text-2xl sm:text-3xl font-bold">Announcements</h2>
@@ -2624,7 +2618,7 @@ const renderAnnouncements = () => (
           </div>
           <div className="">
             <Button onClick={logout} variant="ghost" size="md" className="p-2">
-              <LogOut className="h-7 w-7 text-white" strokeWidth={3}/>
+              <LogOut className="h-7 w-7 text-white" strokeWidth={3} />
             </Button>
           </div>
         </div>
@@ -2691,11 +2685,10 @@ const renderAnnouncements = () => (
                     <button
                       key={item.id}
                       onClick={() => setActiveTab(item.id)}
-                      className={`w-full flex items-center space-x-3 px-3 py-2 rounded-lg text-left transition-colors ${
-                        activeTab === item.id
+                      className={`w-full flex items-center space-x-3 px-3 py-2 rounded-lg text-left transition-colors ${activeTab === item.id
                           ? "bg-primary text-primary-foreground"
                           : "hover:bg-muted"
-                      }`}
+                        }`}
                     >
                       <Icon className="h-5 w-5" />
                       <span>{item.label}</span>

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -7,9 +7,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { useMutation } from "@tanstack/react-query";
-import { apiRequest } from "@/lib/queryClient";
 import Pricing from "@/pages/pricing";
-import { useLocation, Link } from "wouter";
+import { useLocation } from "wouter";
 import {
   Recycle,
   Users,
@@ -1859,8 +1858,8 @@ export default function PublicHome({ initialSection = "home" }: PublicHomeProps 
                   key={section.id}
                   onClick={() => navigateToSection(section.id)}
                   className={`relative flex items-center gap-2 px-6 py-3 rounded-full text-sm font-semibold transition-all duration-300 transform hover:scale-105 ${activeSection === section.id
-                      ? "bg-gradient-to-r from-green-500 to-emerald-600 text-white shadow-lg"
-                      : "text-gray-600 hover:text-green-600 hover:bg-green-50"
+                    ? "bg-gradient-to-r from-green-500 to-emerald-600 text-white shadow-lg"
+                    : "text-gray-600 hover:text-green-600 hover:bg-green-50"
                     }`}
                 >
                   {section.icon}
