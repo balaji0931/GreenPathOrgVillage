@@ -16,11 +16,9 @@ import {
   Info,
   Sparkles,
   Crown,
-  Zap,
   ArrowRight,
   LogIn,
   Home,
-  Menu,
 } from "lucide-react";
 import { Link } from "wouter";
 

@@ -16,27 +16,20 @@ import { apiRequest, queryClient, fetchWithCsrf } from "@/lib/queryClient";
 import { QRScanner } from "@/components/qr-scanner";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import { useOfflineStorage, offlineStorage } from "@/lib/offline-storage";
-import { DashboardTour } from "@/components/tours/DashboardTour";
 import { TourButton } from "@/components/tours/TourButton";
 import {
   Home,
   QrCode,
   User,
-  Star,
   Camera,
-  Check,
   ScanLine,
   AlertTriangle,
-  X,
   LogOut,
-  Package,
   Clock,
   CheckCircle,
   XCircle,
   Eye,
-  Lock,
   AlertCircle,
-  Trash2,
   Search,
   Plus,
   Settings,
@@ -59,14 +52,6 @@ interface CollectionForm {
   notCollectedReason: string;
 }
 
-const OBSERVATION_OPTIONS = [
-  "Good segregation",
-  "Mixed waste",
-  "Excessive plastic",
-  "Clean and organized",
-  "Poor hygiene",
-  "No waste present"
-];
 
 const NOT_COLLECTED_REASONS = [
   "Waste Not segregated",

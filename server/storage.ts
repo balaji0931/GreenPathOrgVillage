@@ -56,7 +56,7 @@ import {
   type InsertDryWasteSaleMaterial,
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, desc, count, avg, sum, gte, lte, isNotNull, and, or, like, asc, sql, lt, inArray, isNull } from "drizzle-orm";
+import { eq, desc, count, gte, lte, and, or, like, sql, inArray, isNull } from "drizzle-orm";
 import { getCache, cacheKeys } from "./cache";
 
 export interface IStorage {

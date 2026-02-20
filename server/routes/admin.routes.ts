@@ -1,6 +1,5 @@
 import type { Express } from "express";
 import { storage } from "../storage";
-import { getCache } from "../cache";
 
 export function registerAdminRoutes(app: Express, requireAuth: any, requireRole: any) {
   // Feedback routes

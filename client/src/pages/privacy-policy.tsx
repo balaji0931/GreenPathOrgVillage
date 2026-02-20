@@ -1,7 +1,6 @@
-import { useTranslation } from "react-i18next";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Shield, Mail, Globe } from "lucide-react";
+import { ArrowLeft, Mail, Globe } from "lucide-react";
 import { useLocation } from "wouter";
 
 export default function PrivacyPolicy() {

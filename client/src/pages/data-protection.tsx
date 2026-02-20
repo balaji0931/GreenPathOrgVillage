@@ -3,17 +3,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
   ArrowLeft,
-  Shield,
   Mail,
   Globe,
-  Lock,
-  Info,
-  Server,
-  Image,
-  MapPin,
-  AlertCircle,
-  RefreshCcw,
-  Landmark,
 } from "lucide-react";
 import { useLocation } from "wouter";
 

@@ -391,11 +391,6 @@ export type WebsiteFeedback = typeof websiteFeedback.$inferSelect;
 export type ContactSubmission = typeof contactSubmissions.$inferSelect;
 export type QRCode = typeof qrCodes.$inferSelect;
 
-// =====================================================
-// MATERIAL & OUTPUT LOG TABLES (Manager-only, Aggregated)
-// These tables are completely separate from household collection data
-// =====================================================
-
 // Daily Waste Quantity Log - One entry per date per village
 export const dailyWasteLog = pgTable("daily_waste_log", {
   id: serial("id").primaryKey(),

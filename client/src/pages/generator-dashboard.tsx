@@ -26,16 +26,12 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { apiRequest, queryClient, fetchWithCsrf } from "@/lib/queryClient";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
-import { DashboardTour } from "@/components/tours/DashboardTour";
 import { TourButton } from "@/components/tours/TourButton";
 import {
   Home,
-  Languages,
   FileText,
-  MessageSquare,
   AlertTriangle,
   Star,
-  Calendar,
   Camera,
   Upload,
   LogOut,
@@ -45,20 +41,15 @@ import {
   CheckCircle,
   XCircle,
   TrendingUp,
-  Award,
   Bell,
   Eye,
-  ThumbsUp,
-  ThumbsDown,
   Trash2,
   MapPin,
   BarChart3,
   PieChart,
   Settings,
-  Lock,
   History,
   Search,
-  CreditCard,
   QrCode,
 } from "lucide-react";
 

@@ -1,21 +1,13 @@
-import type { Express, Request, Response, NextFunction } from "express";
+import type { Express} from "express";
 import { createServer, type Server } from "http";
 import express from "express";
-import { storage } from "./storage";
-import bcrypt from "bcrypt";
 import multer from "multer";
 import session from "express-session";
 import { createClient } from "redis";
 import { RedisStore } from "connect-redis";
-import { insertUserSchema, insertVillageSchema, insertHouseholdSchema, insertCollectorSchema, insertWasteCollectionSchema, insertIssueSchema, insertAnnouncementSchema, insertFeedbackSchema, insertDailyWasteLogSchema, insertCompostProductionLogSchema, insertDryWasteSaleSchema, insertDryWasteSaleMaterialSchema } from "@shared/schema";
-import { z } from "zod";
-import path from "path";
-import { readFileSync } from "fs";
 import { randomBytes } from "crypto";
 
-import { getCache, cacheKeys } from "./cache";
 import { registerPublicRoutes } from "./routes/public.routes";
-import { registerHealthRoutes } from "./routes/health.routes";
 import { registerAuthRoutes } from "./routes/auth.routes";
 import { registerLegalRoutes } from "./routes/legal.routes";
 import { registerVehicleRoutes } from "./routes/vehicle.routes";
@@ -33,7 +25,6 @@ import { registerStatsRoutes } from "./routes/stats.routes";
 import { registerModeratorRoutes } from "./routes/moderator.routes";
 import { registerAdminUsersRoutes } from "./routes/admin-users.routes";
 import { registerProfileRoutes } from "./routes/profile.routes";
-import { registerMaterialLogRoutes } from "./routes/material-log.routes";
 
 // Configure multer for file uploads with enhanced security
 const upload = multer({
@@ -272,9 +263,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Public API routes (no authentication required)
   registerPublicRoutes(app);
-
-  // Health check and monitoring routes
-  registerHealthRoutes(app, requireAuth);
 
 
   // Auth & session routes

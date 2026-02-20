@@ -15,9 +15,8 @@ import { apiRequest, queryClient, fetchWithCsrf } from "@/lib/queryClient";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Users, AlertTriangle, TrendingUp, Plus, Megaphone, BarChart3,
-  LogOut, Settings, Copy, Download, Eye, Trash2, RotateCcw, Filter,
-  PieChart, LineChart, Building2, UserPlus, X, Home, MessageSquare,
-  User, MapPin, Calendar, Activity, FileText, Bell, Star, Award, Package,
+  LogOut, Settings, Copy, Download, Eye, Trash2, RotateCcw, Building2, UserPlus, X, Home, MessageSquare,
+  User, FileText, Bell, Star, Award, Package,
   Leaf
 } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart as RechartsPieChart, Cell, Pie } from 'recharts';

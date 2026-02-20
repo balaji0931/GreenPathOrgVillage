@@ -9,7 +9,6 @@ import { useTranslation } from 'react-i18next';
 import { LanguageSwitcher} from "@/components/LanguageSwitcher";
 import { InstallPWA } from "@/components/InstallPWA";
 import { Eye, EyeOff, Home } from "lucide-react";
-import Footer from "@/components/Footer";
 import { useLocation } from 'wouter';
 
 export default function Login() {
