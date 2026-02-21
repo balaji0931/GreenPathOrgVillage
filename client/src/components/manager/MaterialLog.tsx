@@ -98,10 +98,10 @@ const materialTypes = [
   "Other",
 ];
 
-export function MaterialLog() {
+export function MaterialLog({ defaultTab = "daily" }: { defaultTab?: LogType } = {}) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const [activeLogType, setActiveLogType] = useState<LogType>("daily");
+  const [activeLogType, setActiveLogType] = useState<LogType>(defaultTab);
   const [showForm, setShowForm] = useState(false);
   const [editingItem, setEditingItem] = useState<any>(null);
   const [uploading, setUploading] = useState<string | null>(null);
@@ -241,33 +241,9 @@ export function MaterialLog() {
     });
   };
 
-  const LogTypeSelector = () => (
-    <div className="flex gap-2 bg-gray-100 rounded-2xl mb-4">
-      {[
-        { id: "daily" as LogType, icon: Package, label: "Daily Waste" },
-        { id: "compost" as LogType, icon: Leaf, label: "Compost" },
-        { id: "sales" as LogType, icon: IndianRupee, label: "Sales" },
-      ].map(({ id, icon: Icon, label }) => (
-        <button
-          key={id}
-          onClick={() => setActiveLogType(id)}
-          className={cn(
-            "flex-1 flex flex-col items-center gap-1 py-3 px-2 rounded-xl transition-all duration-200",
-            activeLogType === id
-              ? "bg-white shadow-md text-green-700"
-              : "text-gray-500 hover:bg-white/50"
-          )}
-        >
-          <span className="text-xs font-medium">{label}</span>
-        </button>
-      ))}
-    </div>
-  );
-
   return (
     <div className="space-y-1">
       <div className="flex items-center justify-between">
-        <h2 className="text-xl font-bold text-gray-900">Material Log</h2>
         <Button
           onClick={() => {
             setEditingItem(null);
@@ -280,8 +256,6 @@ export function MaterialLog() {
           Add Entry
         </Button>
       </div>
-
-      <LogTypeSelector />
 
       {activeLogType === "daily" && (
         <DailyWasteList
