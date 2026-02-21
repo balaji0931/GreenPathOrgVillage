@@ -56,7 +56,7 @@ import {
   type InsertDryWasteSaleMaterial,
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, desc, count, gte, lte, and, or, like, sql, inArray, isNull } from "drizzle-orm";
+import { eq, desc, asc, count, gte, lte, and, or, like, sql, inArray, isNull } from "drizzle-orm";
 import { getCache, cacheKeys } from "./cache";
 
 export interface IStorage {
@@ -86,7 +86,10 @@ export interface IStorage {
 
   // Waste collection operations
   createWasteCollection(collection: InsertWasteCollection): Promise<WasteCollection>;
-  getCollectionsByHousehold(householdId: number): Promise<WasteCollection[]>;
+  getCollectionsByHousehold(householdId: number, options?: { limit?: number; offset?: number }): Promise<{
+    data: any[];
+    stats: { avgRating: number; totalCollections: number }
+  }>;
   getCollectionsByCollector(collectorId: number): Promise<WasteCollection[]>;
   checkExistingCollection(householdId: number, collectorId: number, date: string): Promise<WasteCollection | undefined>;
 
@@ -97,6 +100,11 @@ export interface IStorage {
 
   // Enhanced collection operations for manager
   getCollectionsByVillageWithDetails(villageId: string, date?: string, householdId?: number): Promise<any[]>;
+  getDailyCollectionSummary(villageId: string, date: string): Promise<{
+    date: string;
+    needsAttention: Array<{ householdId: number; uid: string; headName: string; houseNumber: string | null; ward: string | null; phone: string | null; latitude: string | null; longitude: string | null; segregationRating: number; photoUrl: string | null; voiceUrl: string | null; collectorName: string }>;
+    households: Array<{ id: number; uid: string; headName: string; houseNumber: string | null; ward: string | null; phone: string | null; latitude: string | null; longitude: string | null; collected: boolean; segregationRating: number | null; collectorName: string | null; collectionPhotoUrl: string | null; collectionVoiceUrl: string | null; collectionTime: string | null }>;
+  }>;
 
   // Enhanced feedback operations for manager
   getFeedbackByVillageWithFilters(villageId: string, date?: string): Promise<any[]>;
@@ -642,13 +650,51 @@ export class DatabaseStorage implements IStorage {
     return collection;
   }
 
-  async getCollectionsByHousehold(householdId: number, limit: number = 500): Promise<WasteCollection[]> {
-    return await db
-      .select()
+  async getCollectionsByHousehold(householdId: number, options?: { limit?: number; offset?: number }): Promise<{
+    data: any[];
+    stats: { avgRating: number; totalCollections: number }
+  }> {
+    const limit = options?.limit || 10;
+    const offset = options?.offset || 0;
+
+    const data = await db
+      .select({
+        id: wasteCollections.id,
+        collectionDate: wasteCollections.collectionDate,
+        segregationRating: wasteCollections.segregationRating,
+        plasticRating: wasteCollections.plasticRating,
+        observations: wasteCollections.observations,
+        remarks: wasteCollections.remarks,
+        photoUrl: wasteCollections.photoUrl,
+        voiceUrl: wasteCollections.voiceUrl,
+        status: wasteCollections.status,
+        missedReason: wasteCollections.missedReason,
+        householdId: wasteCollections.householdId,
+        collectorId: wasteCollections.collectorId,
+        collectorName: collectors.name,
+      })
       .from(wasteCollections)
+      .leftJoin(collectors, eq(wasteCollections.collectorId, collectors.id))
       .where(eq(wasteCollections.householdId, householdId))
       .orderBy(desc(wasteCollections.collectionDate))
-      .limit(limit);
+      .limit(limit)
+      .offset(offset);
+
+    const statsResult = await db
+      .select({
+        total: count(),
+        avgRating: sql<number>`COALESCE(AVG(${wasteCollections.segregationRating}), 0)`,
+      })
+      .from(wasteCollections)
+      .where(eq(wasteCollections.householdId, householdId));
+
+    return {
+      data,
+      stats: {
+        avgRating: Number(statsResult[0]?.avgRating || 0),
+        totalCollections: statsResult[0]?.total || 0
+      }
+    };
   }
 
   async getCollectionsByCollector(collectorId: number, limit: number = 500): Promise<WasteCollection[]> {
@@ -1076,6 +1122,86 @@ export class DatabaseStorage implements IStorage {
       page,
       limit,
       totalPages: Math.ceil(countResult.count / limit)
+    };
+  }
+
+  async getDailyCollectionSummary(villageId: string, date: string) {
+    const startDate = new Date(date);
+    startDate.setHours(0, 0, 0, 0);
+    const endDate = new Date(date);
+    endDate.setHours(23, 59, 59, 999);
+
+    // Single query: all households LEFT JOIN collections for the given date
+    const rows = await db
+      .select({
+        householdId: households.id,
+        uid: households.uid,
+        headName: households.headName,
+        houseNumber: households.houseNumber,
+        ward: households.ward,
+        phone: households.phone,
+        latitude: households.latitude,
+        longitude: households.longitude,
+        collectionId: wasteCollections.id,
+        segregationRating: wasteCollections.segregationRating,
+        photoUrl: wasteCollections.photoUrl,
+        voiceUrl: wasteCollections.voiceUrl,
+        collectionDate: wasteCollections.collectionDate,
+        collectorName: collectors.name,
+      })
+      .from(households)
+      .leftJoin(
+        wasteCollections,
+        and(
+          eq(wasteCollections.householdId, households.id),
+          sql`${wasteCollections.collectionDate} >= ${startDate}`,
+          sql`${wasteCollections.collectionDate} <= ${endDate}`
+        )
+      )
+      .leftJoin(collectors, eq(wasteCollections.collectorId, collectors.id))
+      .where(eq(households.villageId, villageId))
+      .orderBy(asc(households.headName));
+
+    const collectedRows = rows.filter(r => r.collectionId !== null);
+
+    const needsAttention = collectedRows
+      .filter(r => (r.segregationRating || 0) <= 3)
+      .map(r => ({
+        householdId: r.householdId,
+        uid: r.uid,
+        headName: r.headName,
+        houseNumber: r.houseNumber,
+        ward: r.ward,
+        phone: r.phone,
+        latitude: r.latitude,
+        longitude: r.longitude,
+        segregationRating: r.segregationRating || 0,
+        photoUrl: r.photoUrl || null,
+        voiceUrl: r.voiceUrl || null,
+        collectorName: r.collectorName || '',
+      }));
+
+    const householdList = rows.map(r => ({
+      id: r.householdId,
+      uid: r.uid,
+      headName: r.headName,
+      houseNumber: r.houseNumber,
+      ward: r.ward,
+      phone: r.phone,
+      latitude: r.latitude,
+      longitude: r.longitude,
+      collected: r.collectionId !== null,
+      segregationRating: r.segregationRating || null,
+      collectorName: r.collectorName || null,
+      collectionPhotoUrl: r.photoUrl || null,
+      collectionVoiceUrl: r.voiceUrl || null,
+      collectionTime: r.collectionDate ? new Date(r.collectionDate).toLocaleTimeString() : null,
+    }));
+
+    return {
+      date,
+      needsAttention,
+      households: householdList,
     };
   }
 

@@ -77,8 +77,11 @@ export function registerWasteCollectionRoutes(app: Express, requireAuth: any, re
         return res.status(404).json({ message: "Household not found" });
       }
 
-      const collections = await storage.getCollectionsByHousehold(household.id);
-      res.json(collections);
+      const limit = parseInt(req.query.limit as string) || 10;
+      const offset = parseInt(req.query.offset as string) || 0;
+
+      const result = await storage.getCollectionsByHousehold(household.id, { limit, offset });
+      res.json(result);
     } catch (error) {
       console.error("Get household collections error:", error);
       res.status(500).json({ message: "Failed to get collections" });
@@ -95,8 +98,8 @@ export function registerWasteCollectionRoutes(app: Express, requireAuth: any, re
         return res.status(404).json({ message: "Household not found" });
       }
 
-      const collections = await storage.getCollectionsByHousehold(household.id);
-      res.json(collections);
+      const result = await storage.getCollectionsByHousehold(household.id, { limit: 50 });
+      res.json(result);
     } catch (error) {
       console.error("Get generator household collections error:", error);
       res.status(500).json({ message: "Failed to get collections" });
@@ -191,6 +194,19 @@ export function registerWasteCollectionRoutes(app: Express, requireAuth: any, re
     } catch (error) {
       console.error("Get paginated village collections error:", error);
       res.status(500).json({ message: "Failed to get village collections" });
+    }
+  });
+
+  app.get('/api/collections/daily-summary', requireAuth, requireRole(['manager']), requireVillageAccess, async (req, res) => {
+    try {
+      const villageId = req.session.villageId!;
+      const date = req.query.date as string || new Date().toISOString().split('T0')[0];
+
+      const summary = await storage.getDailyCollectionSummary(villageId, date);
+      res.json(summary);
+    } catch (error) {
+      console.error("Get daily collection summary error:", error);
+      res.status(500).json({ message: "Failed to get daily collection summary" });
     }
   });
 }

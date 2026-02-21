@@ -65,6 +65,19 @@ import {
   ClipboardList,
   MapPin,
   Phone,
+  ChevronLeft,
+  ChevronRight,
+  Calendar,
+  X,
+  Search,
+  Map as MapIcon,
+  Clock,
+  ThumbsDown,
+  ThumbsUp,
+  Play,
+  Pause,
+  Volume2,
+  ChevronDown
 } from "lucide-react";
 import html2canvas from "html2canvas";
 import { jsPDF } from "jspdf";
@@ -167,239 +180,572 @@ interface FilterState {
   collector: string;
 }
 
-// Lazy-loading household collection card - fetches collections only when clicked
-const HouseholdCollectionCard = ({
+// REDESIGNED: Premium Household Status Row
+const HouseholdStatusRow = React.memo(({
   household,
   onSelect
 }: {
-  household: Household;
-  onSelect: (h: Household) => void;
+  household: {
+    id: number;
+    headName: string;
+    houseNumber: string;
+    ward: string;
+    collected: boolean;
+    segregationRating: number | null;
+    collectorName: string | null;
+    collectionTime: string | null;
+  };
+  onSelect: (h: any) => void;
 }) => {
   return (
-    <Card
-      className="hover:shadow-md transition-shadow cursor-pointer border-l-4 border-l-primary/20 hover:border-l-primary"
+    <div
+      className={cn(
+        "group flex items-center gap-4 p-4 transition-all hover:bg-gray-50/80 active:scale-[0.98] cursor-pointer",
+        "border-b border-gray-100 last:border-0"
+      )}
       onClick={() => onSelect(household)}
     >
-      <CardContent className="p-3 sm:p-4">
-        <div className="flex items-center justify-between gap-2">
-          <div className="flex-1 min-w-0">
-            <h3 className="font-semibold text-sm sm:text-base truncate">
-              {household.headName}
-            </h3>
-            <p className="text-xs sm:text-sm text-muted-foreground truncate">
-              {household.uid} • House: {household.houseNumber}
-            </p>
-          </div>
-          <div className="flex items-center gap-2">
-            <Badge variant="outline" className="text-xs whitespace-nowrap bg-primary/5">
-              Insights <ArrowRight className="h-3 w-3 ml-1" />
-            </Badge>
-          </div>
+      {/* Dynamic Status Indicator */}
+      <div className="relative group-active:scale-90 transition-transform">
+        <div className={cn(
+          "w-12 h-12 rounded-full flex items-center justify-center font-bold text-white shadow-sm font-outfit",
+          household.collected ? "bg-green-500 shadow-green-100" : "bg-red-500 shadow-red-100"
+        )}>
+          {household.headName.charAt(0)}
         </div>
-      </CardContent>
-    </Card>
+        <div className={cn(
+          "absolute -bottom-0.5 -right-0.5 w-4 h-4 rounded-full border-2 border-white",
+          household.collected ? "bg-green-500" : "bg-red-500"
+        )} />
+      </div>
+
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center justify-between gap-2">
+          <h3 className="font-bold text-gray-900 truncate font-outfit">{household.headName}</h3>
+          {household.collected ? (
+            <span className="text-[11px] font-medium text-gray-400">
+              {household.collectionTime ? new Date(household.collectionTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ""}
+            </span>
+          ) : (
+            <span className="text-[11px] font-semibold text-red-500 uppercase tracking-wider">Pending</span>
+          )}
+        </div>
+        <div className="flex items-center gap-2 mt-0.5">
+          <p className="text-sm text-gray-500 truncate flex items-center gap-1">
+            <MapPin className="h-3 w-3" />
+            {household.houseNumber} • {household.ward}
+          </p>
+          {household.collected && (
+            <Badge variant="outline" className="h-4 px-1.5 text-[9px] border-green-200 text-green-600 bg-green-50/50">
+              By {household.collectorName}
+            </Badge>
+          )}
+        </div>
+      </div>
+      <ChevronRight className="h-4 w-4 text-gray-300 group-hover:text-gray-400" />
+    </div>
+  );
+});
+
+// Horizontal "Needs Attention" Strip (WhatsApp Style)
+const NeedsAttentionStrip = ({ items, onSelect }: { items: any[], onSelect: (h: any) => void }) => {
+  if (!items || items.length === 0) return null;
+
+  return (
+    <div className="bg-white py-4 border-b border-gray-100 overflow-hidden">
+      <div className="px-4 mb-3 flex items-center justify-between">
+        <h3 className="text-xs font-bold uppercase tracking-widest text-gray-400 font-outfit">Needs Attention</h3>
+        <Badge variant="secondary" className="bg-red-50 text-red-600 border-red-100 rounded-full text-[10px]">
+          {items.length} critical
+        </Badge>
+      </div>
+      <div className="flex gap-4 px-4 overflow-x-auto pb-2 scrollbar-hide snap-x">
+        {items.map((item) => (
+          <button
+            key={item.householdId}
+            onClick={() => onSelect(item)}
+            className="flex-shrink-0 w-20 flex flex-col items-center gap-1.5 snap-start creative-bounce"
+          >
+            <div className="relative p-[2px] rounded-full border-2 border-red-500 animate-in zoom-in-50 duration-500">
+              <div className="w-[66px] h-[66px] rounded-full overflow-hidden bg-gray-100 border-2 border-white">
+                {item.photoUrl ? (
+                  <img src={item.photoUrl} alt="" className="w-full h-full object-cover" />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-red-50 to-red-100 text-red-600 font-bold text-xl uppercase">
+                    {item.headName.charAt(0)}
+                  </div>
+                )}
+              </div>
+              <div className="absolute -bottom-1 -right-1 bg-red-500 text-white rounded-full p-1 border-2 border-white shadow-sm">
+                <AlertTriangle className="h-3 w-3" />
+              </div>
+            </div>
+            <div className="text-center overflow-hidden w-full">
+              <p className="text-[10px] font-bold text-gray-900 leading-tight truncate px-1">{item.headName}</p>
+              <p className="text-[9px] text-gray-400 font-medium">{item.houseNumber}</p>
+            </div>
+          </button>
+        ))}
+      </div>
+    </div>
   );
 };
 
-const CollectionDetailView = ({
-  household,
-  dateFilter,
-  onBack
-}: {
-  household: Household;
-  dateFilter: string;
-  onBack: () => void;
-}) => {
-  const { t } = useTranslation();
+// Detail sheet for Needs Attention households - Redesigned for full screen Action
+const AttentionDetailSheet = ({ household, onClose }: { household: any, onClose: () => void }) => {
+  if (!household) return null;
+  const [isPlaying, setIsPlaying] = React.useState(false);
+  const audioRef = React.useRef<HTMLAudioElement>(null);
 
-  const { data: householdCollections = [], isLoading: collectionsLoading } = useQuery<WasteCollection[]>({
-    queryKey: ["/api/waste-collections/household", household.uid],
-    queryFn: async () => {
-      const response = await fetch(`/api/waste-collections/household/${household.uid}`, { credentials: "include" });
-      if (!response.ok) throw new Error("Failed to fetch collections");
-      return response.json();
-    },
-  });
+  const togglePlay = () => {
+    if (!audioRef.current) return;
+    if (isPlaying) {
+      audioRef.current.pause();
+    } else {
+      audioRef.current.play();
+    }
+    setIsPlaying(!isPlaying);
+  };
 
-  const filteredCollections = dateFilter
-    ? householdCollections.filter(c => {
-      const collectionDate = new Date(c.collectionDate);
-      return collectionDate.toDateString() === new Date(dateFilter).toDateString();
-    })
-    : householdCollections;
+  const handleCall = () => {
+    if (household.phone) {
+      window.open(`tel:${household.phone}`);
+    }
+  };
 
-  const sortedCollections = [...filteredCollections].sort((a, b) =>
-    new Date(b.collectionDate).getTime() - new Date(a.collectionDate).getTime()
-  );
-
-  const stats = useMemo(() => {
-    if (!householdCollections.length) return null;
-    const total = householdCollections.length;
-    const collected = householdCollections.filter(c => c.status === 'collected' || !c.status).length;
-    const avgSegregation = householdCollections.reduce((acc, c) => acc + (c.segregationRating || 0), 0) / total;
-    return { total, collected, avgSegregation };
-  }, [householdCollections]);
+  const handleNavigate = () => {
+    if (household.latitude && household.longitude) {
+      window.open(`https://www.google.com/maps/search/?api=1&query=${household.latitude},${household.longitude}`);
+    } else {
+      alert("Coordinates not available for this household.");
+    }
+  };
 
   return (
-    <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-300">
-      <div className="flex items-center gap-4 mb-2">
-        <Button variant="ghost" size="icon" onClick={onBack} className="rounded-full">
-          <ArrowLeft className="h-5 w-5" />
+    <div className="fixed top-[64px] inset-x-0 bottom-0 z-[110] bg-white flex flex-col animate-in slide-in-from-bottom-full duration-500 ease-out overflow-hidden shadow-2xl">
+      {/* Detail Header */}
+      <div className="bg-white border-b border-gray-100 px-4 h-16 flex items-center gap-4 shrink-0">
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={onClose}
+          className="rounded-2xl hover:bg-gray-100 text-gray-500"
+        >
+          <X className="h-6 w-6" />
         </Button>
-        <div>
-          <h2 className="text-2xl font-bold">{household.headName}</h2>
-          <p className="text-muted-foreground">{household.uid} • House: {household.houseNumber}</p>
+        <div className="flex-1 min-w-0">
+          <h2 className="text-lg font-black tracking-tight text-gray-900 truncate uppercase font-outfit">
+            {household.headName}
+          </h2>
+          <div className="flex items-center gap-1.5 -mt-0.5">
+            <span className="text-[10px] font-bold text-gray-400 tracking-widest uppercase">{household.uid}</span>
+            <span className="w-1 h-1 rounded-full bg-gray-200" />
+            <span className="text-[10px] font-bold text-gray-400 tracking-widest uppercase">{household.ward}</span>
+          </div>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card className="bg-green-50/50 border-green-100">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-green-800">Total Collections</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-green-900">{stats?.total || 0}</div>
-          </CardContent>
-        </Card>
-        <Card className="bg-blue-50/50 border-blue-100">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-blue-800">Avg Segregation</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-blue-900">
-              {stats?.avgSegregation.toFixed(1) || "0.0"} / 5.0
-            </div>
-          </CardContent>
-        </Card>
-        <Card className="bg-purple-50/50 border-purple-100">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-purple-800">Ward / Area</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-purple-900">{household.ward || "N/A"}</div>
-          </CardContent>
-        </Card>
-      </div>
-
-      <div className="space-y-4">
-        <h3 className="text-lg font-semibold flex items-center gap-2">
-          <ClipboardList className="h-5 w-5" />
-          Collection History
-          {dateFilter && <Badge variant="secondary">Filtered by {new Date(dateFilter).toLocaleDateString()}</Badge>}
-        </h3>
-
-        {collectionsLoading ? (
-          <div className="text-center py-12 bg-gray-50 rounded-xl border-2 border-dashed">
-            <div className="animate-spin w-10 h-10 border-4 border-primary border-t-transparent rounded-full mx-auto mb-3"></div>
-            <p className="text-muted-foreground font-medium">Analyzing collection data...</p>
-          </div>
-        ) : sortedCollections.length > 0 ? (
-          <div className="grid grid-cols-1 gap-4">
-            {sortedCollections.map((collection) => (
-              <Card key={collection.id} className="overflow-hidden border-l-4 border-l-primary">
-                <CardContent className="p-0">
-                  <div className="p-4 sm:p-6 space-y-4">
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                      <div className="flex items-center gap-3">
-                        <div className="bg-primary/10 p-2 rounded-lg">
-                          <TrendingUp className="h-5 w-5 text-primary" />
-                        </div>
-                        <div>
-                          <p className="font-bold text-lg">
-                            {new Date(collection.collectionDate).toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
-                          </p>
-                          <p className="text-sm text-muted-foreground flex items-center gap-1">
-                            <Phone className="h-3 w-3" /> Collected at {new Date(collection.collectionDate).toLocaleTimeString()} by <span className="font-medium text-foreground">{collection.collectorName || "Unknown"}</span>
-                          </p>
-                        </div>
-                      </div>
-                      <Badge className="w-fit text-sm py-1 px-3" variant={collection.status === "collected" || !collection.status ? "default" : "destructive"}>
-                        {collection.status || "collected"}
-                      </Badge>
-                    </div>
-
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      <div className="space-y-3">
-                        <div className="p-4 bg-muted/30 rounded-xl space-y-2">
-                          <Label className="text-xs uppercase tracking-wider text-muted-foreground">Segregation Insight</Label>
-                          <div className="flex items-center gap-2">
-                            <div className="flex gap-0.5">
-                              {Array.from({ length: 5 }).map((_, i) => (
-                                <Star
-                                  key={i}
-                                  className={`h-5 w-5 ${i < (collection.segregationRating || 0) ? "fill-yellow-400 text-yellow-400" : "text-gray-300"}`}
-                                />
-                              ))}
-                            </div>
-                            <span className="font-bold text-lg ml-1">{collection.segregationRating || 0}/5</span>
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className="space-y-3">
-
-                        {collection.remarks && (
-                          <div className="p-4 bg-green-50/50 border border-green-100 rounded-xl">
-                            <Label className="text-xs uppercase tracking-wider text-green-700 font-semibold mb-2 block">Manager Remarks</Label>
-                            <p className="text-sm italic text-green-900 font-medium">"{collection.remarks}"</p>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-
-                    {(collection.photoUrl || collection.voiceUrl) && (
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-4 border-t border-dashed">
-                        {collection.photoUrl && (
-                          <div className="space-y-2">
-                            <Label className="text-xs uppercase tracking-wider text-muted-foreground flex items-center gap-2">
-                              <Camera className="h-3 w-3" /> Visual Evidence
-                            </Label>
-                            <div className="aspect-video relative rounded-xl overflow-hidden bg-muted group">
-                              <img
-                                src={collection.photoUrl}
-                                alt="Collection evidence"
-                                className="w-full h-full object-cover transition-transform group-hover:scale-105"
-                              />
-                              <Button
-                                variant="secondary"
-                                size="sm"
-                                className="absolute bottom-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity"
-                                onClick={() => window.open(collection.photoUrl, '_blank')}
-                              >
-                                <Eye className="h-4 w-4 mr-1" /> View Full
-                              </Button>
-                            </div>
-                          </div>
-                        )}
-                        {collection.voiceUrl && (
-                          <div className="space-y-2">
-                            <Label className="text-xs uppercase tracking-wider text-muted-foreground flex items-center gap-2">
-                              <Mic className="h-3 w-3" /> Voice Note
-                            </Label>
-                            <div className="flex items-center justify-center h-full max-h-[100px] bg-muted/30 rounded-xl p-4">
-                              <audio controls className="w-full" preload="metadata">
-                                <source src={collection.voiceUrl} type="audio/mpeg" />
-                                Your browser does not support the audio element.
-                              </audio>
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
+      {/* Main Image View - Fills remaining space */}
+      <div className="flex-1 bg-gray-900 relative flex items-center justify-center overflow-hidden">
+        {household.photoUrl ? (
+          <img src={household.photoUrl} alt="Collection Proof" className="max-w-full max-h-full object-contain" />
         ) : (
-          <div className="text-center py-20 bg-muted/20 rounded-2xl border-2 border-dashed">
-            <Package className="w-16 h-16 text-muted-foreground/30 mx-auto mb-4" />
-            <h4 className="text-xl font-semibold text-muted-foreground">No records found</h4>
-            <p className="text-muted-foreground max-w-xs mx-auto mt-2">
-              {dateFilter ? `We couldn't find any collection entries for ${new Date(dateFilter).toLocaleDateString()}.` : "No collection activities have been recorded for this household yet."}
-            </p>
+          <div className="flex flex-col items-center justify-center text-white/20">
+            <Camera className="h-16 w-16 mb-4 opacity-10" />
+            <p className="text-sm font-black uppercase tracking-widest opacity-40">No collection proof</p>
           </div>
         )}
+        <div className="absolute top-6 left-6">
+          <Badge className="bg-red-500 text-white border-none text-[10px] font-black tracking-widest uppercase py-1.5 px-4 shadow-xl">
+            Needs Attention
+          </Badge>
+        </div>
+      </div>
+
+      {/* Stacked Bottom Detail Area */}
+      <div className="shrink-0 shadow-[0_-8px_32px_rgba(0,0,0,0.05)] bg-white">
+        {/* Layer 1: Voice Note (Highest in stack) */}
+        {household.voiceUrl && (
+          <div className="p-3 border-t border-gray-100">
+            <div className="bg-gray-50 rounded-[1.5rem] p-3 flex items-center gap-4">
+              <audio
+                ref={audioRef}
+                src={household.voiceUrl}
+                onEnded={() => setIsPlaying(false)}
+                className="hidden"
+              />
+              <Button
+                onClick={togglePlay}
+                variant="secondary"
+                size="icon"
+                className="h-10 w-10 rounded-xl bg-gray-900 text-white shrink-0"
+              >
+                {isPlaying ? <Pause className="h-5 w-5 fill-current" /> : <Play className="h-5 w-5 fill-current ml-0.5" />}
+              </Button>
+              <div className="flex-1">
+                <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Voice Note</p>
+                <div className="flex items-center gap-2">
+                  <div className="flex-1 h-1 bg-gray-200 rounded-full overflow-hidden">
+                    <div className={cn("h-full bg-gray-900 transition-all duration-300", isPlaying ? "w-full" : "w-0")} />
+                  </div>
+                  <Volume2 className="h-3 w-3 text-gray-400" />
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Layer 2: Rating & Collector info */}
+        <div className="p-4 border-t border-gray-100 flex items-center justify-between">
+          <div className="flex flex-col gap-0.5">
+            <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Rating</p>
+            <div className="flex items-center gap-2">
+              <span className="text-xl font-black text-red-600 font-outfit">{household.segregationRating}</span>
+              <div className="flex gap-0.5">
+                {[1, 2, 3, 4, 5].map((s) => (
+                  <Star key={s} className={cn("h-3 w-3", s <= (household.segregationRating || 0) ? "fill-red-500 text-red-500" : "text-gray-200")} />
+                ))}
+              </div>
+            </div>
+          </div>
+
+          <div className="text-right flex flex-col gap-0.5">
+            <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Collector</p>
+            <p className="font-bold text-gray-900 text-xs truncate max-w-[150px]">{household.collectorName}</p>
+          </div>
+        </div>
+
+        {/* Layer 3: Call & Visit Actions (Lowest in stack) */}
+        <div className="p-4 border-t border-gray-100 flex gap-3 pb-safe">
+          <Button
+            onClick={handleCall}
+            className="flex-1 h-14 rounded-[1.25rem] bg-green-500 text-white font-bold hover:bg-green-600 transition-all flex items-center justify-center gap-2"
+          >
+            <Phone className="h-4 w-4" />
+            Call
+          </Button>
+
+          <Button
+            onClick={handleNavigate}
+            variant="outline"
+            className="flex-1 h-14 rounded-[1.25rem] border-2 border-gray-900 bg-white text-gray-900 font-bold hover:bg-gray-50 transition-all flex items-center justify-center gap-2"
+          >
+            <MapPin className="h-4 w-4" />
+            Visit
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// Redesigned Household Collection Details View (Timeline History)
+// Media Popup for Timeline details
+const MediaPopup = ({ type, url, remarks, onClose }: { type: 'photo' | 'voice', url: string | null, remarks?: string | null, onClose: () => void }) => {
+  return (
+    <div className="fixed inset-0 z-[120] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-200" onClick={onClose}>
+      <div className="bg-white rounded-[2.5rem] w-full max-w-xl overflow-hidden shadow-2xl relative" onClick={e => e.stopPropagation()}>
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={onClose}
+          className="absolute top-4 right-4 z-10 rounded-2xl bg-white/80 backdrop-blur-md h-10 w-10 shadow-sm"
+        >
+          <X className="h-5 w-5" />
+        </Button>
+
+        {type === 'photo' ? (
+          <div className="flex flex-col">
+            {url ? (
+              <img src={url} alt="Collection Proof" className="w-full h-auto max-h-[70vh] object-contain" />
+            ) : (
+              <div className="p-20 flex flex-col items-center justify-center text-gray-200">
+                <Camera className="h-20 w-20 mb-4 opacity-10" />
+                <p className="text-sm font-black uppercase tracking-widest opacity-30">No Image Available</p>
+              </div>
+            )}
+            <div className="p-6 bg-white border-t border-gray-100">
+              <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Observation</h4>
+              <p className="text-gray-900 font-medium leading-relaxed">{remarks || "No additional remarks provided."}</p>
+            </div>
+          </div>
+        ) : (
+          <div className="p-8">
+            <h3 className="text-xl font-black text-gray-900 font-outfit uppercase tracking-tight mb-6">Voice Remark</h3>
+            {url ? (
+              <div className="bg-gray-50 rounded-[2rem] p-6 border border-gray-100 mb-6">
+                <audio src={url} controls className="w-full" autoPlay />
+              </div>
+            ) : (
+              <div className="py-10 text-center opacity-30">
+                <Volume2 className="h-10 w-10 mx-auto mb-2" />
+                <p className="text-xs font-bold uppercase tracking-widest">No voice recording</p>
+              </div>
+            )}
+            <div className="border-t border-gray-100 pt-6">
+              <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Remarks</h4>
+              <p className="text-gray-900 font-medium leading-relaxed italic">"{remarks || "No written remarks."}"</p>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+// Redesigned Household Collection Details View (Timeline History)
+const CollectionDetailView = ({
+  household,
+  onBack
+}: {
+  household: any;
+  onBack: () => void;
+}) => {
+  const [offset, setOffset] = React.useState(0);
+  const [limit] = React.useState(10);
+  const [allCollections, setAllCollections] = React.useState<any[]>([]);
+  const [mediaPopup, setMediaPopup] = React.useState<{ type: 'photo' | 'voice', url: string | null, remarks?: string | null } | null>(null);
+
+  const { data, isLoading: collectionsLoading } = useQuery<{ data: any[], stats: { avgRating: number, totalCollections: number } }>({
+    queryKey: ["/api/waste-collections/household", household.uid, limit, offset],
+    queryFn: async () => {
+      const response = await fetch(`/api/waste-collections/household/${household.uid}?limit=${limit}&offset=${offset}`, { credentials: "include" });
+      if (!response.ok) throw new Error("Failed to fetch collections");
+      return response.json();
+    },
+    // Keep data fresh but don't reset on every fetch
+    staleTime: 60000,
+  });
+
+  // Append data when page changes
+  React.useEffect(() => {
+    if (data?.data) {
+      if (offset === 0) {
+        setAllCollections(data.data);
+      } else {
+        setAllCollections(prev => [...prev, ...data.data]);
+      }
+    }
+  }, [data, offset]);
+
+  const hasMore = (allCollections.length < (data?.stats?.totalCollections || 0));
+
+  return (
+    <div className="bg-white fixed top-[64px] inset-x-0 bottom-0 z-[100] animate-in slide-in-from-right-full duration-500 ease-out overflow-hidden flex flex-col">
+      {/* Sticky Header */}
+      <div className="bg-white border-b border-gray-100 shrink-0">
+        <div className="px-4 h-16 flex items-center gap-4">
+          <Button variant="ghost" size="icon" onClick={onBack} className="rounded-2xl hover:bg-gray-100 text-gray-600">
+            <ArrowLeft className="h-6 w-6" />
+          </Button>
+          <div className="flex-1 min-w-0">
+            <h2 className="text-lg font-black tracking-tight text-gray-900 truncate uppercase font-outfit">{household.headName}</h2>
+            <div className="flex items-center gap-1.5 -mt-0.5">
+              <span className="text-[10px] font-bold text-gray-400 tracking-widest uppercase">{household.uid}</span>
+              <span className="w-1 h-1 rounded-full bg-gray-200" />
+              <span className="text-[10px] font-bold text-gray-400 tracking-widest uppercase">{household.ward}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="flex-1 overflow-y-auto bg-gray-50/30 scrollbar-hide">
+        <div className="max-w-2xl mx-auto p-4 space-y-6">
+          {/* Real Aggregates Header */}
+          <div className="grid grid-cols-2 gap-3">
+            <div className="bg-white p-5 rounded-[2rem] shadow-sm border border-gray-100">
+              <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">Total visits</p>
+              <p className="text-2xl font-black text-gray-900 font-outfit">{data?.stats?.totalCollections || 0}</p>
+            </div>
+            <div className="bg-white p-5 rounded-[2rem] shadow-sm border border-gray-100">
+              <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">Avg Rating</p>
+              <div className="flex items-center gap-2">
+                <p className="text-2xl font-black text-gray-900 font-outfit">
+                  {data?.stats?.avgRating ? data.stats.avgRating.toFixed(1) : "0.0"}
+                </p>
+                <Star className="h-4 w-4 fill-yellow-400 text-yellow-400 -mt-1" />
+              </div>
+            </div>
+          </div>
+
+          {/* Timeline listing */}
+          <div className="space-y-4 pb-20">
+            <h3 className="text-[10px] font-black uppercase tracking-widest text-gray-400 px-1">Recent Collections</h3>
+
+            {collectionsLoading && allCollections.length === 0 ? (
+              <div className="py-20 flex flex-col items-center justify-center opacity-40">
+                <div className="animate-spin h-10 w-10 border-[5px] border-gray-900 border-t-transparent rounded-full mb-4" />
+                <p className="text-[10px] font-black uppercase tracking-widest">Loading history</p>
+              </div>
+            ) : allCollections.length > 0 ? (
+              <div className="space-y-3">
+                {allCollections.map((collection) => (
+                  <div key={collection.id} className="bg-white rounded-[2rem] p-5 shadow-sm border border-gray-100">
+                    <div className="flex justify-between items-start mb-4">
+                      {/* Left Top: Date & Time */}
+                      <div className="flex flex-col">
+                        <p className="font-black text-gray-900 text-sm font-outfit uppercase">
+                          {new Date(collection.collectionDate).toLocaleDateString([], { day: '2-digit', month: 'short', year: 'numeric' })}
+                        </p>
+                        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-tighter">
+                          {new Date(collection.collectionDate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true })}
+                        </p>
+                      </div>
+
+                      {/* Right Top: Rating & Collector */}
+                      <div className="flex flex-col items-end">
+                        <div className="flex gap-0.5 mb-0.5">
+                          {[1, 2, 3, 4, 5].map((s) => (
+                            <Star key={s} className={cn("h-3 w-3", s <= (collection.segregationRating || 0) ? "fill-yellow-400 text-yellow-400" : "text-gray-100")} />
+                          ))}
+                        </div>
+                        <p className="text-[10px] font-bold text-gray-800 uppercase tracking-tight truncate max-w-[120px]">
+                          {collection.collectorName || "Staff"}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center justify-between">
+                      {/* Status */}
+                      <div className="flex items-center gap-2">
+                        <div className={cn("w-1.5 h-1.5 rounded-full", collection.status === 'missed' ? "bg-red-500" : "bg-green-500")} />
+                        <span className={cn("text-[10px] font-black uppercase tracking-[0.15em] shrink-0",
+                          collection.status === 'missed' ? "text-red-500" : "text-green-500"
+                        )}>
+                          {collection.status === 'missed' ? "Missed" : "Collected"}
+                        </span>
+                      </div>
+
+                      {/* Action Buttons (Small) */}
+                      <div className="flex gap-2">
+                        {collection.photoUrl && (
+                          <Button
+                            onClick={() => setMediaPopup({ type: 'photo', url: collection.photoUrl, remarks: collection.remarks || collection.observations })}
+                            variant="secondary"
+                            className="h-8 px-3 rounded-full bg-blue-50 text-blue-600 hover:bg-blue-100 border-none text-[9px] font-black uppercase tracking-widest gap-1.5"
+                          >
+                            <Camera className="h-3 w-3" />
+                            Photo
+                          </Button>
+                        )}
+                        {(collection.voiceUrl || collection.remarks || collection.observations) && (
+                          <Button
+                            onClick={() => setMediaPopup({ type: 'voice', url: collection.voiceUrl || null, remarks: collection.remarks || collection.observations })}
+                            variant="secondary"
+                            className="h-8 px-3 rounded-full bg-purple-50 text-purple-600 hover:bg-purple-100 border-none text-[9px] font-black uppercase tracking-widest gap-1.5"
+                          >
+                            <Volume2 className="h-3 w-3" />
+                            Remark
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+
+                {/* Load More */}
+                {hasMore && (
+                  <div className="pt-4 flex justify-center">
+                    <Button
+                      onClick={() => setOffset(prev => prev + limit)}
+                      disabled={collectionsLoading}
+                      variant="outline"
+                      className="h-10 px-8 rounded-2xl border-2 border-gray-900 text-gray-900 font-black text-xs uppercase tracking-widest hover:bg-gray-50 transition-all flex items-center gap-2"
+                    >
+                      {collectionsLoading ? <div className="animate-spin h-3 w-3 border-2 border-gray-900 border-t-transparent rounded-full" /> : <ChevronDown className="h-4 w-4" />}
+                      Load More
+                    </Button>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="bg-white rounded-[3rem] p-16 text-center shadow-sm border border-gray-100">
+                <div className="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-6">
+                  <ClipboardList className="h-10 w-10 text-gray-300" />
+                </div>
+                <h4 className="text-xl font-black text-gray-900 font-outfit mb-1 uppercase tracking-tight">Empty timeline</h4>
+                <p className="text-sm text-gray-400 font-medium max-w-[200px] mx-auto leading-relaxed">No visits recorded for this household yet.</p>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Media Popup Modal */}
+      {mediaPopup && (
+        <MediaPopup
+          type={mediaPopup.type}
+          url={mediaPopup.url}
+          remarks={mediaPopup.remarks}
+          onClose={() => setMediaPopup(null)}
+        />
+      )}
+    </div>
+  );
+};
+
+const DateNavBar = ({
+  date,
+  onChange
+}: {
+  date: string,
+  onChange: (d: string) => void
+}) => {
+  const isToday = date === new Date().toISOString().split('T')[0];
+  const dateInputRef = React.useRef<HTMLInputElement>(null);
+
+  const adjustDate = (days: number) => {
+    const d = new Date(date);
+    d.setDate(d.getDate() + days);
+    onChange(d.toISOString().split('T')[0]);
+  };
+
+  return (
+    <div className="flex items-center justify-between bg-white px-4 py-3 border-b border-gray-100">
+      <div className="relative">
+        <input
+          type="date"
+          ref={dateInputRef}
+          className="absolute opacity-0 pointer-events-none"
+          value={date}
+          onChange={(e) => onChange(e.target.value)}
+        />
+        <Button
+          variant="ghost"
+          size="sm"
+          className="h-10 px-3 rounded-2xl bg-gray-50 text-gray-600 hover:bg-gray-100 flex items-center gap-2"
+          onClick={() => dateInputRef.current?.showPicker()}
+        >
+          <Calendar className="h-4 w-4" />
+          <span className="text-[10px] font-black uppercase tracking-widest text-gray-400">Select</span>
+        </Button>
+      </div>
+
+      <div className="flex items-center gap-1">
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-8 w-8 rounded-full"
+          onClick={() => adjustDate(-1)}
+        >
+          <ChevronLeft className="h-4 w-4" />
+        </Button>
+        <div className="flex flex-col items-center px-2 min-w-[120px]">
+          <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none mb-1">
+            {isToday ? "Today" : new Date(date).toLocaleDateString(undefined, { weekday: 'short' })}
+          </span>
+          <span className="text-sm font-black text-gray-900 leading-none font-outfit">
+            {new Date(date).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
+          </span>
+        </div>
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-8 w-8 rounded-full"
+          onClick={() => adjustDate(1)}
+        >
+          <ChevronRight className="h-4 w-4" />
+        </Button>
       </div>
     </div>
   );
@@ -514,12 +860,13 @@ export default function ManagerDashboard() {
     collector: "all"
   });
 
-  // Search input for collections tab
-  const [collectionsSearchInput, setCollectionsSearchInput] = useState("");
-  const deferredCollectionsSearch = useDeferredValue(collectionsSearchInput);
-
-  // UI-only pagination for households in collections tab (limit 50 at a time)
-  const [collectionsHouseholdsLimit, setCollectionsHouseholdsLimit] = useState(50);
+  // REDESIGNED: Collections tab state
+  const [collectionsDate, setCollectionsDate] = useState(new Date().toISOString().split('T')[0]);
+  const [collectionsSearch, setCollectionsSearch] = useState("");
+  const deferredCollectionsSearch = useDeferredValue(collectionsSearch);
+  const [isCollectionsSearching, setIsCollectionsSearching] = useState(false);
+  const [householdsLimit, setHouseholdsLimit] = useState(25);
+  const [selectedAttentionHousehold, setSelectedAttentionHousehold] = useState<any>(null);
 
   // Excel upload state
   const [showWardForm, setShowWardForm] = useState(false);
@@ -533,70 +880,31 @@ export default function ManagerDashboard() {
   const [newFieldWorkerPhone, setNewFieldWorkerPhone] = useState("");
   const [householdSearch, setHouseholdSearch] = useState("");
 
-  // Fetch ALL waste collections at once (no pagination) for accurate aggregates and reports
-  const { data: allCollections = [] } = useQuery<WasteCollection[]>({
-    queryKey: ["/api/waste-collections/village", user?.villageId],
-    enabled: !!user?.villageId,
-  });
-
-  // Fetch ALL households at once (no pagination) for accurate totals
+  // Fetch ALL households at once (no pagination) for accurate totals across all tabs
+  // Used by Field Staff and Management tabs
   const { data: households = [] } = useQuery<Household[]>({
     queryKey: ["/api/households", user?.villageId],
     enabled: !!user?.villageId,
   });
 
-  // Move calculations to top level to avoid hook errors
-  const collectionsResult = useMemo(() => {
-    // Get target date (selected date or today)
-    const targetDate = filters.date || new Date().toISOString().split('T')[0];
-    const targetDateObj = new Date(targetDate);
+  // NEW: Daily Summary query for Collections tab
+  const { data: dailySummary, isLoading: isSummaryLoading } = useQuery({
+    queryKey: ["/api/collections/daily-summary", user?.villageId, collectionsDate],
+    queryFn: async () => {
+      const response = await fetch(`/api/collections/daily-summary?date=${collectionsDate}`, { credentials: "include" });
+      if (!response.ok) throw new Error("Failed to fetch daily summary");
+      return response.json();
+    },
+    enabled: !!user?.villageId && activeTab === "collections",
+    staleTime: 30000, // 30 seconds
+  });
 
-    // Create a map of household ID to their collection for the target date
-    const householdCollectionMap = new Map<number, { hasCollection: boolean; collectionTime: number }>();
-    allCollections.forEach(c => {
-      const collectionDate = new Date(c.collectionDate);
-      if (collectionDate.toDateString() === targetDateObj.toDateString()) {
-        householdCollectionMap.set(c.householdId, {
-          hasCollection: true,
-          collectionTime: collectionDate.getTime()
-        });
-      }
-    });
-
-    // Filter by search
-    const searchLower = deferredCollectionsSearch.toLowerCase();
-    const filteredHouseholds = households.filter(household => {
-      if (!deferredCollectionsSearch) return true;
-      return (
-        household.headName?.toLowerCase().includes(searchLower) ||
-        household.uid?.toLowerCase().includes(searchLower) ||
-        household.houseNumber?.toLowerCase().includes(searchLower)
-      );
-    });
-
-    // Sort by segregation rating (ascending) for today/selected date
-    // Then by collection time (descending)
-    const sortedHouseholds = [...filteredHouseholds].sort((a, b) => {
-      const aData = householdCollectionMap.get(a.id);
-      const bData = householdCollectionMap.get(b.id);
-
-      const aRating = aData?.hasCollection ? (allCollections.find(c => c.householdId === a.id && new Date(c.collectionDate).toDateString() === targetDateObj.toDateString())?.segregationRating || 5) : 6;
-      const bRating = bData?.hasCollection ? (allCollections.find(c => c.householdId === b.id && new Date(c.collectionDate).toDateString() === targetDateObj.toDateString())?.segregationRating || 5) : 6;
-
-      if (aRating !== bRating) {
-        return aRating - bRating;
-      }
-
-      if (aData?.hasCollection && bData?.hasCollection) {
-        return bData.collectionTime - aData.collectionTime;
-      }
-      if (aData?.hasCollection) return -1;
-      if (bData?.hasCollection) return 1;
-      return 0;
-    });
-
-    return { sortedHouseholds, targetDate };
-  }, [households, allCollections, deferredCollectionsSearch, filters.date]);
+  // Lazy-loaded historical collections for other tabs (Reports, Management, etc.)
+  const { data: allCollections = [] } = useQuery<WasteCollection[]>({
+    queryKey: ["/api/waste-collections/village", user?.villageId],
+    enabled: !!user?.villageId && activeTab !== "collections",
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  });
 
   // Vehicle Management State
   const [showVehicleForm, setShowVehicleForm] = useState(false);
@@ -1093,7 +1401,7 @@ export default function ManagerDashboard() {
 
   const clearFilters = () => {
     setFilters({ search: "", date: "", status: "all", collector: "all" });
-    setCollectionsSearchInput("");
+    setCollectionsSearch("");
   };
 
   const StatCard = ({ title, value, icon: Icon, description }: any) => (
@@ -1541,129 +1849,155 @@ export default function ManagerDashboard() {
 
             {/* Collections Tab */}
             {activeTab === "collections" && (
-              <div className="space-y-4">
+              <div className="flex flex-col h-full bg-white rounded-3xl overflow-hidden shadow-sm border border-gray-100 relative">
                 {selectedCollectionHousehold ? (
                   <CollectionDetailView
                     household={selectedCollectionHousehold}
-                    dateFilter={filters.date}
                     onBack={() => setSelectedCollectionHousehold(null)}
                   />
+                ) : isCollectionsSearching ? (
+                  /* Focused Search View */
+                  <div className="flex flex-col h-full bg-white z-20">
+                    <div className="px-4 py-3 bg-white border-b border-gray-100 flex items-center gap-3">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-10 w-10 rounded-full"
+                        onClick={() => setIsCollectionsSearching(false)}
+                      >
+                        <ArrowLeft className="h-5 w-5" />
+                      </Button>
+                      <div className="relative flex-1">
+                        <Input
+                          autoFocus
+                          className="w-full h-11 bg-gray-50 border-none rounded-2xl pl-10 pr-4 focus-visible:ring-1 focus-visible:ring-gray-200 transition-all text-sm font-medium"
+                          placeholder="Search name, house # or UID..."
+                          value={collectionsSearch}
+                          onChange={(e) => setCollectionsSearch(e.target.value)}
+                        />
+                        <Search className="absolute left-3.5 top-3.5 h-4 w-4 text-gray-400" />
+                      </div>
+                      {collectionsSearch && (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-10 w-10 rounded-full bg-gray-50 text-gray-400"
+                          onClick={() => setCollectionsSearch("")}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      )}
+                    </div>
+
+                    <div className="flex-1 overflow-y-auto scrollbar-hide p-1">
+                      {dailySummary?.households
+                        .filter((h: any) => {
+                          if (!deferredCollectionsSearch) return true;
+                          const s = deferredCollectionsSearch.toLowerCase();
+                          return h.headName.toLowerCase().includes(s) ||
+                            h.houseNumber.toLowerCase().includes(s) ||
+                            h.uid.toLowerCase().includes(s);
+                        })
+                        .map((household: any) => (
+                          <HouseholdStatusRow
+                            key={household.id}
+                            household={household}
+                            onSelect={(h) => setSelectedCollectionHousehold(h)}
+                          />
+                        ))
+                      }
+
+                      {dailySummary?.households?.length === 0 && (
+                        <div className="py-20 text-center px-10">
+                          <p className="text-sm font-bold text-gray-400 uppercase tracking-widest leading-loose">
+                            No matching members found.
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
                 ) : (
                   <>
-                    <div className="flex flex-col sm:flex-row gap-3 pt-1">
-                      {/* Search Input */}
-                      <div className="flex-1">
-                        <Input
-                          className="w-full"
-                          placeholder={t("manager.searchPlaceholder")}
-                          value={collectionsSearchInput}
-                          onChange={(e) => setCollectionsSearchInput(e.target.value)}
+                    <DateNavBar
+                      date={collectionsDate}
+                      onChange={(d) => {
+                        setCollectionsDate(d);
+                        setHouseholdsLimit(25); // Reset scroll on date change
+                      }}
+                    />
+
+                    {isSummaryLoading && householdsLimit === 25 ? (
+                      <div className="flex-1 flex flex-col items-center justify-center p-12 space-y-4">
+                        <div className="animate-spin h-10 w-10 border-[5px] border-gray-900 border-t-transparent rounded-full"></div>
+                        <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">Synchronizing Data</p>
+                      </div>
+                    ) : (
+                      <div className="flex-1 overflow-y-auto scrollbar-hide">
+                        {/* Story-style Needs Attention Strip */}
+                        <NeedsAttentionStrip
+                          items={dailySummary?.needsAttention || []}
+                          onSelect={(h) => setSelectedAttentionHousehold(h)}
                         />
-                      </div>
 
-                      {/* Date Picker */}
-                      <div className="w-full sm:w-auto">
-                        <Input
-                          className="w-full"
-                          type="date"
-                          value={filters.date}
-                          onChange={(e) => updateFilter("date", e.target.value)}
-                        />
-                      </div>
+                        {/* Main Household List */}
+                        <div className="bg-white">
+                          <div className="px-5 py-4 border-b border-gray-50 flex items-center justify-between">
+                            <h4 className="text-[11px] font-black text-gray-400 uppercase tracking-widest">Village Members</h4>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-9 px-3 rounded-xl bg-gray-50 text-gray-400 hover:text-green-600 transition-colors flex items-center gap-2"
+                              onClick={() => setIsCollectionsSearching(true)}
+                            >
+                              <span className="text-[10px] font-black uppercase tracking-widest text-gray-400">Search</span>
+                              <Search className="h-4 w-4" />
+                            </Button>
+                          </div>
 
-                      {/* Clear Button */}
-                      <div className="w-full sm:w-auto">
-                        <Button
-                          variant="outline"
-                          onClick={clearFilters}
-                          className="w-full sm:w-auto"
-                        >
-                          {t("manager.clear")}
-                        </Button>
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-                      <StatCard
-                        title="Total Households"
-                        value={stats?.totalHouseholds || 0}
-                        icon={Home}
-                        description="Registered"
-                      />
-                      <StatCard
-                        title="Collections Today"
-                        value={stats?.collectionsToday || 0}
-                        icon={CheckCircle}
-                        description={filters.date ? "Selected date" : "Completed today"}
-                      />
-                      <StatCard
-                        title="Total Collections"
-                        value={allCollections.length}
-                        icon={Package}
-                        description="All time"
-                      />
-                      <StatCard
-                        title="Avg Segregation"
-                        value={(() => {
-                          let filteredCollections = allCollections;
-                          if (filters.date) {
-                            filteredCollections = allCollections.filter(c => {
-                              const collectionDate = new Date(c.collectionDate);
-                              return collectionDate.toDateString() === new Date(filters.date).toDateString();
-                            });
+                          {(dailySummary?.households || [])
+                            .slice(0, householdsLimit)
+                            .map((household: any) => (
+                              <HouseholdStatusRow
+                                key={household.id}
+                                household={household}
+                                onSelect={(h) => setSelectedCollectionHousehold(h)}
+                              />
+                            ))
                           }
-                          return filteredCollections.length > 0
-                            ? (filteredCollections.reduce((sum, c) => sum + (c.segregationRating || 0), 0) / filteredCollections.length).toFixed(1)
-                            : "0.0";
-                        })()}
-                        icon={Star}
-                        description="Rating"
-                      />
-                    </div>
 
-                    <Card>
-                      <CardHeader>
-                        <CardTitle>Household Collection Status</CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        {(() => {
-                          const { sortedHouseholds } = collectionsResult;
-                          const displayedHouseholds = sortedHouseholds.slice(0, collectionsHouseholdsLimit);
-                          const hasMoreHouseholds = sortedHouseholds.length > collectionsHouseholdsLimit;
-                          const remainingHouseholds = sortedHouseholds.length - collectionsHouseholdsLimit;
+                          {/* Pagination / Load More */}
+                          {(dailySummary?.households?.length || 0) > householdsLimit && (
+                            <div className="p-6 text-center">
+                              <Button
+                                variant="ghost"
+                                className="w-full h-14 rounded-[2rem] bg-gray-50 text-gray-500 font-bold text-xs uppercase tracking-widest hover:bg-gray-100 active:scale-[0.98] transition-all"
+                                onClick={() => setHouseholdsLimit(prev => prev + 25)}
+                              >
+                                View More Members
+                                <ChevronRight className="h-4 w-4 ml-2" />
+                              </Button>
+                            </div>
+                          )}
 
-                          return (
-                            <>
-                              <div className="space-y-3">
-                                {displayedHouseholds.map((household) => (
-                                  <HouseholdCollectionCard
-                                    key={household.id}
-                                    household={household}
-                                    onSelect={setSelectedCollectionHousehold}
-                                  />
-                                ))}
+                          {dailySummary?.households?.length === 0 && (
+                            <div className="py-20 text-center px-10">
+                              <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-4">
+                                <Users className="h-8 w-8 text-gray-200" />
                               </div>
-
-                              <div className="mt-4 flex justify-center gap-2">
-                                {hasMoreHouseholds && (
-                                  <Button
-                                    variant="outline"
-                                    onClick={() => setCollectionsHouseholdsLimit(prev => prev + 50)}
-                                    data-testid="button-load-more-households"
-                                  >
-                                    Load More ({remainingHouseholds > 0 ? remainingHouseholds : 0} remaining)
-                                  </Button>
-                                )}
-                              </div>
-
-                              <p className="text-sm text-muted-foreground text-center mt-2">
-                                Showing {displayedHouseholds.length} of {sortedHouseholds.length} households
+                              <p className="text-sm font-bold text-gray-400 uppercase tracking-widest leading-loose">
+                                No members found for this village or date.
                               </p>
-                            </>
-                          );
-                        })()}
-                      </CardContent>
-                    </Card>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Floating Detail Sheet for Attention */}
+                    <AttentionDetailSheet
+                      household={selectedAttentionHousehold}
+                      onClose={() => setSelectedAttentionHousehold(null)}
+                    />
                   </>
                 )}
               </div>
