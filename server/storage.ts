@@ -2208,11 +2208,16 @@ export class DatabaseStorage implements IStorage {
         .groupBy(sql`EXTRACT(HOUR FROM ${wasteCollections.collectionDate} + INTERVAL '5 hours 30 minutes')`, wasteCollections.collectorId)
         .orderBy(sql`EXTRACT(HOUR FROM ${wasteCollections.collectionDate} + INTERVAL '5 hours 30 minutes')`);
 
-      // Map collector IDs to vehicle names
+      // Map collector IDs to vehicle registration numbers, and build reg→name lookup
       const allCollectors = await db.select().from(collectors).where(eq(collectors.villageId, villageId));
+      const regToName: Record<string, string> = {};
+      for (const v of villageVehicles) {
+        regToName[v.registrationNumber] = v.name || v.registrationNumber;
+      }
       const collectorVehicleMap: Record<number, string> = {};
       for (const c of allCollectors) {
-        collectorVehicleMap[c.id] = c.assignedVehicle || 'Unassigned';
+        const regNum = c.assignedVehicle || 'Unassigned';
+        collectorVehicleMap[c.id] = regToName[regNum] || regNum;
       }
 
       // Build hourly buckets (5 AM to 6 PM = hours 5–18)
@@ -2220,7 +2225,7 @@ export class DatabaseStorage implements IStorage {
       const vehicleSet = new Set<string>();
       // Pre-seed with ALL village vehicles so they all appear even with 0 collections
       for (const v of villageVehicles) {
-        vehicleSet.add(v.registrationNumber);
+        vehicleSet.add(v.name || v.registrationNumber);
       }
       const hourlyMap: Record<number, Record<string, number>> = {};
 

@@ -20,7 +20,6 @@ import { format, subDays, addDays, isSameDay, formatDistanceToNow } from "date-f
 import {
   Card,
   CardContent,
-  CardDescription,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
@@ -60,14 +59,12 @@ import {
   MessageSquare,
   QrCode,
   Download,
-  Eye,
   AlertCircle,
   TrendingUp,
   Award,
   Package,
   AlertTriangle,
   Camera,
-  Mic,
   CheckCircle,
   Bell,
   LayoutDashboard,
@@ -83,8 +80,6 @@ import {
   Search,
   Map as MapIcon,
   Clock,
-  ThumbsDown,
-  ThumbsUp,
   Play,
   Pause,
   Volume2,
@@ -333,7 +328,7 @@ const AttentionDetailSheet = ({ household, onClose }: { household: any, onClose:
   };
 
   return (
-    <div className="fixed top-[64px] inset-x-0 bottom-0 z-[110] bg-white flex flex-col animate-in slide-in-from-bottom-full duration-500 ease-out overflow-hidden shadow-2xl">
+    <div className="fixed top-[58px] inset-x-0 bottom-0 z-[110] bg-white flex flex-col animate-in slide-in-from-bottom-full duration-500 ease-out overflow-hidden shadow-2xl">
       {/* Detail Header */}
       <div className="bg-white border-b border-gray-100 px-4 h-16 flex items-center gap-4 shrink-0">
         <Button
@@ -366,11 +361,6 @@ const AttentionDetailSheet = ({ household, onClose }: { household: any, onClose:
             <p className="text-sm font-black uppercase tracking-widest opacity-40">No collection proof</p>
           </div>
         )}
-        <div className="absolute top-6 left-6">
-          <Badge className="bg-red-500 text-white border-none text-[10px] font-black tracking-widest uppercase py-1.5 px-4 shadow-xl">
-            Needs Attention
-          </Badge>
-        </div>
       </div>
 
       {/* Stacked Bottom Detail Area */}
@@ -407,7 +397,7 @@ const AttentionDetailSheet = ({ household, onClose }: { household: any, onClose:
         )}
 
         {/* Layer 2: Rating & Collector info */}
-        <div className="p-4 border-t border-gray-100 flex items-center justify-between">
+        <div className="py-1 px-4 border-t border-gray-100 flex items-center justify-between">
           <div className="flex flex-col gap-0.5">
             <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Rating</p>
             <div className="flex items-center gap-2">
@@ -427,10 +417,10 @@ const AttentionDetailSheet = ({ household, onClose }: { household: any, onClose:
         </div>
 
         {/* Layer 3: Call & Visit Actions (Lowest in stack) */}
-        <div className="p-4 border-t border-gray-100 flex gap-3 pb-safe">
+        <div className="mb-2 py-1 px-2 border-t border-gray-100 flex gap-3 pb-safe">
           <Button
             onClick={handleCall}
-            className="flex-1 h-14 rounded-[1.25rem] bg-green-500 text-white font-bold hover:bg-green-600 transition-all flex items-center justify-center gap-2"
+            className="flex-1 h-10 rounded-[1.25rem] bg-green-500 text-white font-bold hover:bg-green-600 transition-all flex items-center justify-center gap-2"
           >
             <Phone className="h-4 w-4" />
             Call
@@ -439,7 +429,7 @@ const AttentionDetailSheet = ({ household, onClose }: { household: any, onClose:
           <Button
             onClick={handleNavigate}
             variant="outline"
-            className="flex-1 h-14 rounded-[1.25rem] border-2 border-gray-900 bg-white text-gray-900 font-bold hover:bg-gray-50 transition-all flex items-center justify-center gap-2"
+            className="flex-1 h-10 rounded-[1.25rem] bg-blue-500 text-white font-bold hover:bg-gray-50 transition-all flex items-center justify-center gap-2"
           >
             <MapPin className="h-4 w-4" />
             Visit
@@ -1570,7 +1560,7 @@ const ReportsTabContent = ({
             <>
               <div className="w-full h-64 md:h-80">
                 <RechartsContainer width="100%" height="100%">
-                  <BarChart data={collectionTimeline.hourly} margin={{ top: 20, right: 10, left: -40, bottom: 5 }}>
+                  <BarChart data={collectionTimeline.hourly} margin={{ top: 20, right: 10, left: -30, bottom: 5 }}>
                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f3f4f6" />
                     <XAxis
                       dataKey="hour"
@@ -1662,7 +1652,7 @@ export default function ManagerDashboard() {
   const [newFieldWorkerPhone, setNewFieldWorkerPhone] = useState("");
   const [householdSearch, setHouseholdSearch] = useState("");
 
-  const [isHouseholdSearching, setIsHouseholdSearching] = useState(false);
+
 
   // Used by Field Staff and Management tabs
   const { data: households = [] } = useQuery<Household[]>({
@@ -4087,285 +4077,7 @@ export default function ManagerDashboard() {
               </div>
             )}
 
-            {activeTab === "settings" && (
-              <div className="space-y-4 p-4">
-                {/* Management Tabs */}
-                <Tabs defaultValue="settings" className="w-full">
-                  <TabsList className="grid w-full grid-cols-3">
-                    <TabsTrigger value="settings">Profile</TabsTrigger>
-                    <TabsTrigger value="wards">Wards</TabsTrigger>
-                    <TabsTrigger value="vehicles">Vehicles</TabsTrigger>
-                  </TabsList>
 
-                  <TabsContent value="settings" className="space-y-4 mt-4">
-                    {/* User Info */}
-                    <Card>
-                      <CardHeader className="pb-3 items-center">
-
-                        <CardTitle className="flex items-center text-2xl font-bold">
-                          <User className="w-6 h-6 mr-2" strokeWidth={3} />
-                          User Info
-                        </CardTitle>
-                      </CardHeader>
-                      <CardContent className="space-y-3 text-center">
-                        <div>
-                          <Label className="text-xs text-gray-600">Manager Name</Label>
-                          <p className="font-medium">{user?.name}</p>
-                        </div>
-                        <div>
-                          <Label className="text-xs text-gray-600">{t("auth.userId")}</Label>
-                          <p className="font-medium">{user?.userId}</p>
-                        </div>
-                        <div>
-                          <Label className="text-xs text-gray-600">Village</Label>
-                          <p className="font-medium">{user?.villageId}</p>
-                        </div>
-                        <div>
-                          <Label className="text-xs text-gray-600 pr-3">{t("roles.manager")}</Label>
-                          <Badge variant="secondary">{user?.role}</Badge>
-                        </div>
-                      </CardContent>
-                    </Card>
-                    <Card>
-                      <CardHeader className="pb-3">
-                        <CardTitle className="flex items-center text-lg">
-                          <User className="w-5 h-5 mr-2" />
-                          {t("navigation.settings")}
-                        </CardTitle>
-                      </CardHeader>
-                      <CardContent className="space-y-3">
-                        <div className="flex justify-center items-center space-x-3">
-                          <h2 className="font-bold">Select Language: </h2>
-                          <LanguageSwitcher />
-                        </div>
-
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => setShowPasswordDialog(true)}
-                          className="flex items-center justify-center gap-1 sm:gap-2 text-xs sm:text-sm w-full"
-                        >
-                          <Settings className="h-3 w-3 sm:h-4 sm:w-4" />
-                          <span>{t("app.changePassword")}</span>
-                        </Button>
-
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => logoutMutation.mutate()}
-                          className="flex items-center justify-center gap-1 sm:gap-2 text-xs sm:text-sm w-full"
-                        >
-                          <LogOut className="h-3 w-3 sm:h-4 sm:w-4" />
-                          <span>{t("auth.logout")}</span>
-                        </Button>
-                      </CardContent>
-                    </Card>
-                  </TabsContent>
-
-                  <TabsContent value="wards" className="space-y-4 mt-4">
-                    <div className="flex items-center justify-center gap-2 font-bold text-xl">
-                      Ward Management
-                    </div>
-                    <Card>
-                      <CardHeader>
-                        <CardTitle className="flex items-center justify-between">
-                          <Button
-                            size="sm"
-                            onClick={() => setShowWardForm(true)}
-                            className="flex items-center gap-2"
-                          >
-                            <Plus className="w-4 h-4" />
-                            Add Ward
-                          </Button>
-                        </CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        {wards.length > 0 ? (
-                          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
-                            {wards.map((ward: string, index: number) => (
-                              <Badge key={index} variant="outline" className="justify-center py-2 px-3">
-                                {ward}
-                              </Badge>
-                            ))}
-                          </div>
-                        ) : (
-                          <p className="text-muted-foreground text-sm">
-                            No wards configured yet. Add your first ward to organize households.
-                          </p>
-                        )}
-                      </CardContent>
-                    </Card>
-                  </TabsContent>
-
-                  <TabsContent value="vehicles" className="space-y-4 mt-4">
-                    <div className="flex items-center justify-center gap-2 font-bold text-xl">
-                      <Package className="w-5 h-5 text-blue-600" />
-                      Vehicle Management
-                    </div>
-                    <Card>
-                      <CardHeader>
-                        <CardTitle className="flex items-center justify-between">
-                          <Button size="sm" className="flex items-center gap-2" onClick={() => {
-                            setEditingVehicle(null);
-                            setNewVehicleReg("");
-                            setNewVehicleName("");
-                            setSelectedVehicleCollectors([]);
-                            setShowVehicleForm(true);
-                          }}>
-                            <Plus className="w-4 h-4" />
-                            Add Vehicle
-                          </Button>
-                        </CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        {showVehicleForm && (
-                          <Card className="mb-4">
-                            <CardHeader>
-                              <CardTitle>{editingVehicle ? "Edit Vehicle" : "Add New Vehicle"}</CardTitle>
-                            </CardHeader>
-                            <CardContent className="space-y-4">
-                              <div className="space-y-2">
-                                <Label>Registration Number *</Label>
-                                <Input
-                                  value={newVehicleReg}
-                                  onChange={(e) => setNewVehicleReg(e.target.value)}
-                                  disabled={!!editingVehicle}
-                                  placeholder="e.g. MH-12-AB-1234"
-                                />
-                              </div>
-                              <div className="space-y-2">
-                                <Label>Vehicle Name *</Label>
-                                <Input
-                                  value={newVehicleName}
-                                  onChange={(e) => setNewVehicleName(e.target.value)}
-                                  placeholder="e.g. Garbage Truck 1"
-                                />
-                              </div>
-                              <div className="space-y-2">
-                                <Label>Assign Collectors</Label>
-                                <div className="grid grid-cols-1 gap-2 max-h-40 overflow-y-auto p-2 border rounded-md">
-                                  {collectors
-                                    .filter(c => {
-                                      const vehicleWithCollector = (villageData?.vehicles || []).find((v: any) =>
-                                        (v.collectorIds || []).includes(c.id)
-                                      );
-                                      return !vehicleWithCollector || (editingVehicle && vehicleWithCollector.registrationNumber === editingVehicle.registrationNumber);
-                                    })
-                                    .map(c => (
-                                      <div key={c.id} className="flex items-center gap-2">
-                                        <input
-                                          type="checkbox"
-                                          id={`v-collector-${c.id}`}
-                                          checked={selectedVehicleCollectors.includes(c.id)}
-                                          onChange={(e) => {
-                                            if (e.target.checked) {
-                                              setSelectedVehicleCollectors([...selectedVehicleCollectors, c.id]);
-                                            } else {
-                                              setSelectedVehicleCollectors(selectedVehicleCollectors.filter(id => id !== c.id));
-                                            }
-                                          }}
-                                        />
-                                        <label htmlFor={`v-collector-${c.id}`} className="text-sm cursor-pointer">{c.name} ({c.uid})</label>
-                                      </div>
-                                    ))}
-                                </div>
-                                {collectors.filter(c => {
-                                  const vehicleWithCollector = (villageData?.vehicles || []).find((v: any) =>
-                                    (v.collectorIds || []).includes(c.id)
-                                  );
-                                  return !vehicleWithCollector || (editingVehicle && vehicleWithCollector.registrationNumber === editingVehicle.registrationNumber);
-                                }).length === 0 && (
-                                    <p className="text-sm text-muted-foreground italic">No unassigned collectors available</p>
-                                  )}
-                              </div>
-                              <div className="flex gap-2">
-                                <Button
-                                  className="flex-1"
-                                  disabled={!newVehicleReg || !newVehicleName || addVehicleMutation.isPending || updateVehicleMutation.isPending}
-                                  onClick={() => {
-                                    if (editingVehicle) {
-                                      updateVehicleMutation.mutate({
-                                        registrationNumber: newVehicleReg,
-                                        name: newVehicleName,
-                                        collectorIds: selectedVehicleCollectors
-                                      });
-                                    } else {
-                                      addVehicleMutation.mutate({
-                                        registrationNumber: newVehicleReg,
-                                        name: newVehicleName,
-                                        collectorIds: selectedVehicleCollectors
-                                      });
-                                    }
-                                  }}
-                                >
-                                  {(addVehicleMutation.isPending || updateVehicleMutation.isPending) ? "Saving..." : (editingVehicle ? "Update Vehicle" : "Add Vehicle")}
-                                </Button>
-                                <Button variant="outline" className="flex-1" onClick={() => setShowVehicleForm(false)}>
-                                  Cancel
-                                </Button>
-                              </div>
-                            </CardContent>
-                          </Card>
-                        )}
-
-                        {villageData?.vehicles && villageData.vehicles.length > 0 ? (
-                          <div className="space-y-3">
-                            {villageData.vehicles.map((v: any) => (
-                              <div key={v.registrationNumber} className="flex items-center justify-between p-3 border rounded-lg">
-                                <div>
-                                  <p className="font-medium">{v.name}</p>
-                                  <p className="text-sm text-muted-foreground">{v.registrationNumber}</p>
-                                  <div className="flex flex-wrap gap-1 mt-1">
-                                    {v.collectorIds?.map((cid: number) => {
-                                      const collector = collectors.find(c => c.id === cid);
-                                      return collector ? (
-                                        <Badge key={cid} variant="secondary" className="text-[10px] px-1 py-0">
-                                          {collector.name}
-                                        </Badge>
-                                      ) : null;
-                                    })}
-                                  </div>
-                                </div>
-                                <div className="flex gap-1">
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    onClick={() => {
-                                      setEditingVehicle(v);
-                                      setNewVehicleReg(v.registrationNumber);
-                                      setNewVehicleName(v.name);
-                                      setSelectedVehicleCollectors(v.collectorIds || []);
-                                      setShowVehicleForm(true);
-                                    }}
-                                  >
-                                    <Edit className="h-4 w-4" />
-                                  </Button>
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    className="text-destructive"
-                                    onClick={() => {
-                                      if (confirm("Are you sure you want to remove this vehicle?")) {
-                                        removeVehicleMutation.mutate(v.registrationNumber);
-                                      }
-                                    }}
-                                  >
-                                    <Trash2 className="h-4 w-4" />
-                                  </Button>
-                                </div>
-                              </div>
-                            ))}
-                          </div>
-                        ) : (
-                          <p className="text-muted-foreground text-sm">No vehicles added yet.</p>
-                        )}
-                      </CardContent>
-                    </Card>
-                  </TabsContent>
-                </Tabs>
-              </div>
-            )
-            }
 
 
             {/* Issues Tab — Premium Mobile-First */}
