@@ -5,6 +5,17 @@ import { useQuery, useMutation, useQueryClient, useInfiniteQuery } from "@tansta
 import { apiRequest, fetchWithCsrf } from "@/lib/queryClient";
 import { useTranslation } from "react-i18next";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
+import { motion, AnimatePresence } from "framer-motion";
+import {
+  ResponsiveContainer,
+  AreaChart, Area,
+  BarChart, Bar,
+  PieChart, Pie, Cell,
+  XAxis, YAxis, CartesianGrid,
+  Tooltip, Legend, LabelList,
+  ResponsiveContainer as RechartsContainer
+} from "recharts";
+import { format, subDays, addDays, isSameDay } from "date-fns";
 
 import {
   Card,
@@ -77,7 +88,8 @@ import {
   Play,
   Pause,
   Volume2,
-  ChevronDown
+  ChevronDown,
+  Car
 } from "lucide-react";
 import html2canvas from "html2canvas";
 import { jsPDF } from "jspdf";
@@ -200,7 +212,7 @@ const HouseholdStatusRow = React.memo(({
   return (
     <div
       className={cn(
-        "group flex items-center gap-4 p-4 transition-all hover:bg-gray-50/80 active:scale-[0.98] cursor-pointer",
+        "group flex items-center gap-4 p-2 transition-all hover:bg-gray-50/80 active:scale-[0.98] cursor-pointer",
         "border-b border-gray-100 last:border-0"
       )}
       onClick={() => onSelect(household)}
@@ -208,8 +220,8 @@ const HouseholdStatusRow = React.memo(({
       {/* Dynamic Status Indicator */}
       <div className="relative group-active:scale-90 transition-transform">
         <div className={cn(
-          "w-12 h-12 rounded-full flex items-center justify-center font-bold text-white shadow-sm font-outfit",
-          household.collected ? "bg-green-500 shadow-green-100" : "bg-red-500 shadow-red-100"
+          "w-10 h-10 rounded-full flex items-center justify-center font-bold text-white shadow-sm font-outfit",
+          household.collected ? "bg-green-400 shadow-green-100" : "bg-red-400 shadow-red-100"
         )}>
           {household.headName.charAt(0)}
         </div>
@@ -221,22 +233,20 @@ const HouseholdStatusRow = React.memo(({
 
       <div className="flex-1 min-w-0">
         <div className="flex items-center justify-between gap-2">
-          <h3 className="font-bold text-gray-900 truncate font-outfit">{household.headName}</h3>
+          <h3 className="font-bold text-sm text-gray-900 truncate font-outfit">{household.headName}</h3>
           {household.collected ? (
-            <span className="text-[11px] font-medium text-gray-400">
-              {household.collectionTime ? new Date(household.collectionTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ""}
-            </span>
+            <span className="text-[10px] font-semibold text-green-500 uppercase tracking-wider">Collected</span>
           ) : (
-            <span className="text-[11px] font-semibold text-red-500 uppercase tracking-wider">Pending</span>
+            <span className="text-[10px] font-semibold text-red-500 uppercase tracking-wider">Pending</span>
           )}
         </div>
-        <div className="flex items-center gap-2 mt-0.5">
-          <p className="text-sm text-gray-500 truncate flex items-center gap-1">
-            <MapPin className="h-3 w-3" />
+        <div className="flex items-center justify-between gap-2 mt-0.5">
+          <p className="text-xs text-gray-500 truncate flex items-center gap-1">
+            <MapPin className="h-2 w-2" />
             {household.houseNumber} • {household.ward}
           </p>
           {household.collected && (
-            <Badge variant="outline" className="h-4 px-1.5 text-[9px] border-green-200 text-green-600 bg-green-50/50">
+            <Badge variant="outline" className="truncate h-4 px-1.5 text-[9px] border-green-200 text-green-600 bg-green-50/50">
               By {household.collectorName}
             </Badge>
           )}
@@ -252,22 +262,22 @@ const NeedsAttentionStrip = ({ items, onSelect }: { items: any[], onSelect: (h: 
   if (!items || items.length === 0) return null;
 
   return (
-    <div className="bg-white py-4 border-b border-gray-100 overflow-hidden">
-      <div className="px-4 mb-3 flex items-center justify-between">
+    <div className="bg-white py-1 border-b border-gray-100 overflow-hidden">
+      <div className="px-4 mb-2 flex items-center justify-between">
         <h3 className="text-xs font-bold uppercase tracking-widest text-gray-400 font-outfit">Needs Attention</h3>
         <Badge variant="secondary" className="bg-red-50 text-red-600 border-red-100 rounded-full text-[10px]">
           {items.length} critical
         </Badge>
       </div>
-      <div className="flex gap-4 px-4 overflow-x-auto pb-2 scrollbar-hide snap-x">
+      <div className="flex px-6 overflow-x-auto pb-2 scrollbar-hide snap-x">
         {items.map((item) => (
           <button
             key={item.householdId}
             onClick={() => onSelect(item)}
             className="flex-shrink-0 w-20 flex flex-col items-center gap-1.5 snap-start creative-bounce"
           >
-            <div className="relative p-[2px] rounded-full border-2 border-red-500 animate-in zoom-in-50 duration-500">
-              <div className="w-[66px] h-[66px] rounded-full overflow-hidden bg-gray-100 border-2 border-white">
+            <div className="relative rounded-full border-2 border-red-500 animate-in zoom-in-50 duration-500">
+              <div className="w-[50px] h-[50px] rounded-full overflow-hidden bg-gray-100 border-2 border-white">
                 {item.photoUrl ? (
                   <img src={item.photoUrl} alt="" className="w-full h-full object-cover" />
                 ) : (
@@ -701,7 +711,7 @@ const DateNavBar = ({
   };
 
   return (
-    <div className="flex items-center justify-between bg-white px-4 py-3 border-b border-gray-100">
+    <div className="flex items-center justify-between bg-white px-4 py-1 border-b border-gray-100">
       <div className="relative">
         <input
           type="date"
@@ -748,6 +758,527 @@ const DateNavBar = ({
         </Button>
       </div>
     </div>
+  );
+};
+
+const StickyDateSwitcher = ({
+  date,
+  onChange
+}: {
+  date: string,
+  onChange: (d: string) => void
+}) => {
+  const isToday = isSameDay(new Date(date), new Date());
+  const dateInputRef = React.useRef<HTMLInputElement>(null);
+
+  const adjustDate = (days: number) => {
+    const d = addDays(new Date(date), days);
+    onChange(format(d, 'yyyy-MM-dd'));
+  };
+
+  return (
+    <>
+      {/* Fixed bar pinned below the nav header */}
+      <div className="fixed left-0 md:left-56 right-0 z-40 bg-white/90 backdrop-blur-md border-b border-gray-100/50 px-4 sm:py-2" style={{ top: 60 }}>
+        <div className="pt-1 max-w-4xl mx-auto flex items-center justify-between">
+          <div className="flex items-center gap-1">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-9 w-9 rounded-full hover:bg-gray-100 active:scale-90 transition-all"
+              onClick={() => adjustDate(-1)}
+            >
+              <ChevronLeft className="h-5 w-5" />
+            </Button>
+
+            <div className="relative">
+              <input
+                type="date"
+                ref={dateInputRef}
+                className="absolute opacity-0 pointer-events-none"
+                value={date}
+                onChange={(e) => onChange(e.target.value)}
+              />
+              <Button
+                variant="ghost"
+                className="h-10 px-4 rounded-2xl hover:bg-gray-100 active:scale-95 transition-all flex flex-col items-center justify-center min-w-[140px]"
+                onClick={() => dateInputRef.current?.showPicker()}
+              >
+                <span className="text-[9px] font-black uppercase tracking-[0.2em] text-gray-400 leading-none mb-0.5">
+                  {isToday ? "TODAY" : format(new Date(date), 'EEEE').toUpperCase()}
+                </span>
+                <span className="text-sm font-black text-gray-900 leading-none font-outfit uppercase">
+                  {format(new Date(date), 'dd MMM yyyy')}
+                </span>
+              </Button>
+            </div>
+
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-9 w-9 rounded-full hover:bg-gray-100 active:scale-90 transition-all disabled:opacity-30"
+              onClick={() => adjustDate(1)}
+            >
+              <ChevronRight className="h-5 w-5" />
+            </Button>
+          </div>
+
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-9 w-9 rounded-full bg-gray-50 text-gray-600 hover:bg-gray-100"
+            onClick={() => dateInputRef.current?.showPicker()}
+          >
+            <Calendar className="h-4 w-4" />
+          </Button>
+        </div>
+      </div>
+      {/* Spacer to push content below the fixed bar */}
+      <div className="h-10 mb-2" />
+    </>
+  );
+};
+
+const PremiumReportCard = ({ title, children, icon: Icon, className, description }: any) => (
+  <motion.div
+    initial={{ opacity: 0, y: 20 }}
+    animate={{ opacity: 1, y: 0 }}
+    className={cn(
+      "bg-white/70 backdrop-blur-md border border-white/20 shadow-sm rounded-xl p-1 lg:p-8 overflow-hidden relative",
+      className
+    )}
+  >
+    <div className=" mb-1">
+      <div>
+        <h4 className="flex justify-center item-center text-[12px] font-black uppercase tracking-[0.25em] text-gray-600 mb-1 p-2">{title}</h4>
+        {description && <p className="text-[11px] text-gray-500 font-medium ">{description}</p>}
+      </div>
+      {Icon && (
+        <div className="w-10 h-10 rounded-2xl bg-gray-50 flex items-center justify-center text-gray-400">
+          <Icon className="h-5 w-5" />
+        </div>
+      )}
+    </div>
+    {children}
+  </motion.div>
+);
+
+const EfficiencyDonut = ({ current, total }: { current: number; total: number }) => {
+  const [showAbsolute, setShowAbsolute] = React.useState(false);
+  const currentPercentage = total > 0 ? (current / total) * 100 : 0;
+  const remaining = total - current;
+  const remainingPercentage = 100 - currentPercentage;
+
+  const data = [
+    { name: 'Collected', value: current, color: '#22c55e' },
+    { name: 'Missed', value: remaining, color: '#ef4444' },
+  ];
+
+  return (
+    <PremiumReportCard title="Collection Efficiency">
+      <div className="flex flex-col items-center justify-center">
+        <div
+          className="w-full h-36 relative cursor-pointer"
+          onClick={() => setShowAbsolute(!showAbsolute)}
+        >
+          <RechartsContainer width="100%" height="100%">
+            <PieChart>
+              <Pie
+                data={data}
+                cx="50%"
+                cy="50%"
+                innerRadius={50}
+                outerRadius={70}
+                paddingAngle={2}
+                dataKey="value"
+                stroke="none"
+              >
+                {data.map((entry, index) => (
+                  <Cell key={`cell-${index}`} fill={entry.color} />
+                ))}
+              </Pie>
+              <Tooltip
+                content={({ active, payload }: any) => {
+                  if (active && payload && payload.length) {
+                    return (
+                      <div className="bg-white p-2 rounded-xl shadow-lg border border-gray-100 text-[10px] font-bold uppercase tracking-widest">
+                        {payload[0].name}: {payload[0].value}
+                      </div>
+                    );
+                  }
+                  return null;
+                }}
+              />
+            </PieChart>
+          </RechartsContainer>
+          <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+            {showAbsolute ? (
+              <div className="text-center">
+                <div className="text-2xl font-black text-gray-900 leading-none font-outfit">{current}</div>
+                <div className="text-[8px] text-gray-400 font-black uppercase">Collected</div>
+              </div>
+            ) : (
+              <span className="text-3xl font-black text-gray-900 leading-none font-outfit">
+                {Math.round(currentPercentage)}<span className="text-sm border-gray-400">%</span>
+              </span>
+            )}
+          </div>
+        </div>
+
+        <div className="mt-4 grid grid-cols-2 gap-4 w-full">
+          <div className="flex justify-center items-center gap-2">
+            <div className="w-2 h-2 rounded-sm bg-[#22c55e]" />
+            <div className="flex flex-col">
+              <span className="text-[10px] font-black text-gray-900 leading-none">{current}</span>
+              <span className="text-[8px] text-gray-400 font-bold uppercase tracking-tighter">Collected</span>
+            </div>
+          </div>
+          <div className="flex justify-center items-center gap-2">
+            <div className="w-2 h-2 rounded-sm bg-[#ef4444]" />
+            <div className="flex flex-col">
+              <span className="text-[10px] font-black text-gray-900 leading-none">{remaining}</span>
+              <span className="text-[8px] text-gray-400 font-bold uppercase tracking-tighter">Missed</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </PremiumReportCard>
+  );
+};
+
+const PulseCard = ({ title, value, unit, history, color, icon: Icon }: { title: string; value: string | number; unit?: string; history: any[]; color: string; icon: any }) => (
+  <PremiumReportCard title={title} icon={Icon}>
+    <div className="flex items-center justify-between gap-4">
+      <div className="flex flex-col">
+        <div className="text-3xl font-black text-gray-900 font-outfit uppercase tracking-tighter">
+          {value}
+          {unit && <span className="text-sm text-gray-300 ml-1">{unit}</span>}
+        </div>
+        <div className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Current</div>
+      </div>
+
+      <div className="flex-1 h-16">
+        <RechartsContainer width="100%" height="100%">
+          <AreaChart data={history}>
+            <defs>
+              <linearGradient id={`gradient-${title}`} x1="0" y1="0" x2="0" y2="1">
+                <stop offset="5%" stopColor={color} stopOpacity={0.3} />
+                <stop offset="95%" stopColor={color} stopOpacity={0} />
+              </linearGradient>
+            </defs>
+            <Area
+              type="monotone"
+              dataKey="value"
+              stroke={color}
+              strokeWidth={2}
+              fillOpacity={1}
+              fill={`url(#gradient-${title})`}
+            />
+          </AreaChart>
+        </RechartsContainer>
+      </div>
+    </div>
+  </PremiumReportCard>
+);
+
+const PeakHoursChart = ({ data }: { data: any[] }) => {
+  const peakHour = data.reduce((prev, current) => (prev.count > current.count) ? prev : current, data[0]);
+
+  return (
+    <PremiumReportCard
+      title="Peak Collection Hours"
+      icon={Clock}
+      description="Hourly collection distribution"
+    >
+      <div className="space-y-4">
+        <div className="flex items-center gap-2 mb-2">
+          <Badge className="bg-indigo-100 text-indigo-700 hover:bg-indigo-100 border-none px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest">
+            Peak Window: {peakHour?.hour}
+          </Badge>
+        </div>
+        <div className="w-full h-64">
+          <RechartsContainer width="100%" height="100%">
+            <BarChart data={data}>
+              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f3f4f6" />
+              <XAxis
+                dataKey="hour"
+                axisLine={false}
+                tickLine={false}
+                tick={{ fill: '#9ca3af', fontSize: 10, fontWeight: 700 }}
+              />
+              <YAxis hide />
+              <Tooltip
+                cursor={{ fill: '#f9fafb' }}
+                contentStyle={{ borderRadius: '1rem', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }}
+              />
+              <Bar dataKey="count" radius={[10, 10, 10, 10]}>
+                {data.map((entry, index) => (
+                  <Cell
+                    key={`cell-${index}`}
+                    fill={entry.hour === peakHour?.hour ? '#6366f1' : '#e0e7ff'}
+                  />
+                ))}
+              </Bar>
+            </BarChart>
+          </RechartsContainer>
+        </div>
+      </div>
+    </PremiumReportCard>
+  );
+};
+
+const WardPerformanceTripleChart = ({ data }: { data: any[] }) => {
+  return (
+    <PremiumReportCard title="Ward-wise Breakdown">
+      {/* Mobile: Horizontal stacked bars — one row per ward */}
+      <div className="md:hidden space-y-4">
+        {data.map((ward, idx) => {
+          const collectedPct = ward.total > 0 ? Math.round((ward.collected / ward.total) * 100) : 0;
+          const nonCollectedPct = ward.total > 0 ? Math.round((ward.nonCollected / ward.total) * 100) : 0;
+          return (
+            <div key={idx}>
+              {/* Ward name */}
+              <div className="text-[10px] font-black text-gray-800 uppercase tracking-wider">{ward.name}</div>
+              {/* Stats line */}
+              <div className="flex items-center justify-between px-2">
+                <span className="text-[9px] font-bold text-gray-400">Total: {ward.total}</span>
+                <span className="text-[9px] font-bold text-green-600">Collected: {ward.collected}</span>
+                <span className="text-[9px] font-bold text-red-500">Not Collected: {ward.nonCollected}</span>
+              </div>
+              {/* Stacked bar */}
+              <div className="relative w-full h-5 rounded-lg overflow-hidden bg-gray-100 flex">
+                {collectedPct > 0 && (
+                  <div
+                    className="h-full bg-green-500 flex items-center px-1.5 min-w-0"
+                    style={{ width: `${collectedPct}%` }}
+                  >
+                  </div>
+                )}
+                {nonCollectedPct > 0 && (
+                  <div
+                    className="h-full bg-red-400 flex items-center justify-end px-1.5 min-w-0"
+                    style={{ width: `${nonCollectedPct}%` }}
+                  >
+                  </div>
+                )}
+              </div>
+            </div>
+          );
+        })}
+        {/* <div className="flex items-center gap-3 mt-1 justify-center">
+          <div className="flex items-center gap-1"><div className="w-2.5 h-2.5 rounded-sm bg-green-500" /><span className="text-[8px] font-bold text-gray-400 uppercase">Collected</span></div>
+          <div className="flex items-center gap-1"><div className="w-2.5 h-2.5 rounded-sm bg-red-400" /><span className="text-[8px] font-bold text-gray-400 uppercase">Non-Collected</span></div>
+        </div> */}
+      </div>
+
+      {/* Desktop: Grouped bar chart */}
+      <div className="hidden md:block w-full h-80">
+        <RechartsContainer width="100%" height="100%">
+          <BarChart data={data} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f3f4f6" />
+            <XAxis
+              dataKey="name"
+              axisLine={false}
+              tickLine={false}
+              tick={{ fill: '#9ca3af', fontSize: 10, fontWeight: 700 }}
+            />
+            <YAxis
+              axisLine={false}
+              tickLine={false}
+              tick={{ fill: '#9ca3af', fontSize: 10, fontWeight: 700 }}
+            />
+            <Tooltip
+              cursor={{ fill: '#f9fafb' }}
+              contentStyle={{ borderRadius: '1rem', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }}
+            />
+            <Legend
+              verticalAlign="top"
+              align="right"
+              iconType="circle"
+              wrapperStyle={{ fontSize: '10px', fontWeight: 900, textTransform: 'uppercase', paddingBottom: '20px' }}
+            />
+            <Bar dataKey="total" fill="#e5e7eb" name="Total" radius={[4, 4, 0, 0]}>
+              <LabelList dataKey="total" position="top" fill="#9ca3af" fontSize={9} fontWeight={700} />
+            </Bar>
+            <Bar dataKey="collected" fill="#22c55e" name="Collected" radius={[4, 4, 0, 0]}>
+              <LabelList dataKey="collected" position="top" fill="#22c55e" fontSize={9} fontWeight={700} />
+            </Bar>
+            <Bar dataKey="nonCollected" fill="#ef4444" name="Non-Collected" radius={[4, 4, 0, 0]}>
+              <LabelList dataKey="nonCollected" position="top" fill="#ef4444" fontSize={9} fontWeight={700} />
+            </Bar>
+          </BarChart>
+        </RechartsContainer>
+      </div>
+    </PremiumReportCard>
+  );
+};
+
+const WasteMaterialChart = ({ data }: { data: any[] }) => {
+  return (
+    <PremiumReportCard title="Waste Material Logs">
+      <div className="w-full h-72">
+        <RechartsContainer width="100%" height="100%">
+          <BarChart data={data} margin={{ top: 30, right: 30, left: 20, bottom: 5 }}>
+            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f3f4f6" />
+            <XAxis
+              dataKey="name"
+              axisLine={false}
+              tickLine={false}
+              tick={{ fill: '#9ca3af', fontSize: 10, fontWeight: 700 }}
+            />
+            <Tooltip
+              cursor={{ fill: '#f9fafb' }}
+              contentStyle={{ borderRadius: '1rem', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }}
+            />
+            <Bar dataKey="value" radius={[10, 10, 0, 0]}>
+              {data.map((entry, index) => (
+                <Cell key={`cell-${index}`} fill={entry.color} />
+              ))}
+              <LabelList dataKey="value" position="top" style={{ fontSize: '10px', fontWeight: 900, fill: '#374151' }} formatter={(v: any) => `${v}kg`} />
+            </Bar>
+          </BarChart>
+        </RechartsContainer>
+      </div>
+    </PremiumReportCard>
+  );
+};
+
+const CollectionPerformanceCard = ({ data, dateLabel }: { data: any[]; dateLabel: string }) => {
+  const fmtMs = (ms: number) => {
+    const h = Math.floor(ms / (1000 * 60 * 60));
+    const m = Math.floor((ms % (1000 * 60 * 60)) / (1000 * 60));
+    return `${h}h ${m}m`;
+  };
+
+  return (
+    <Card className="bg-white/70 backdrop-blur-md border border-white/20 shadow-sm rounded-xl overflow-hidden">
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+        <CardTitle className="flex items-center gap-2 text-sm font-black uppercase tracking-tight">
+          Collection Performance
+        </CardTitle>
+        <Dialog>
+          <DialogTrigger asChild>
+            <Button variant="outline" size="sm" className="bg-green-200 font-bold text-xs rounded-xl">Details</Button>
+          </DialogTrigger>
+          <DialogContent
+            className="max-w-[100vw] w-full md:max-w-4xl md:h-[90vh] md:rounded-xl overflow-hidden p-0 flex flex-col border-none md:border"
+            style={{ top: 60, left: 0, transform: 'none', height: 'calc(100dvh - 60px)' }}
+          >
+            <div className="px-3 border-b flex items-center gap-3 bg-green-50 sticky top-0 z-10 min-h-[56px]">
+              <DialogTrigger asChild>
+                <Button variant="ghost" size="icon" className="h-9 w-9 rounded-full bg-white shadow-sm">
+                  <ArrowRight className="h-5 w-5 rotate-180" strokeWidth={3} />
+                </Button>
+              </DialogTrigger>
+              <DialogTitle className="text-base font-black uppercase tracking-tight text-gray-900">Session Report · {dateLabel}</DialogTitle>
+            </div>
+
+            <div className="flex-1 overflow-y-auto p-2 space-y-3 pb-20 md:pb-6">
+              {data.map((vehicle) => {
+                if (vehicle.count === 0) return null;
+                return (
+                  <div key={vehicle.registrationNumber} className="bg-white rounded-xl border shadow-sm overflow-hidden">
+                    <div className="bg-green-100 px-4 py-1 border-b flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <div className="w-1.5 h-1.5 rounded-full bg-purple-600 animate-pulse" />
+                        <h3 className="font-bold text-purple-900 text-sm">{vehicle.vehicleName}</h3>
+                      </div>
+                      <span className="text-[10px] font-mono bg-purple-200 text-black px-2 py-0.5 rounded-full">{vehicle.registrationNumber}</span>
+                    </div>
+
+                    <div className="px-3 py-1 space-y-2">
+                      <div className="grid grid-cols-1 gap-2">
+                        {(vehicle.sessions || []).map((session: any) => {
+                          const start = new Date(session.startTime);
+                          const end = new Date(session.endTime);
+                          const dH = Math.floor(session.durationMs / (1000 * 60 * 60));
+                          const dM = Math.floor((session.durationMs % (1000 * 60 * 60)) / (1000 * 60));
+                          const bH = Math.floor(session.breakBeforeMs / (1000 * 60 * 60));
+                          const bM = Math.floor((session.breakBeforeMs % (1000 * 60 * 60)) / (1000 * 60));
+
+                          return (
+                            <div key={session.index} className="relative pl-2 border-l-2 border-blue-200 py-1">
+                              {session.breakBeforeMs > 0 && (
+                                <div className="absolute -top-3 left-[-9px] flex items-center gap-1.5 bg-orange-50 px-2 py-0.5 rounded-md border border-orange-100">
+                                  <span className="text-[9px] font-bold text-orange-600 uppercase tracking-tighter">Break: {bH}h {bM}m</span>
+                                </div>
+                              )}
+                              <div className="flex items-center justify-between gap-4">
+                                <div className="flex-1">
+                                  <div className="flex items-center gap-2">
+                                    <span className="text-[11px] font-black text-blue-600">S{session.index}</span>
+                                    <span className="text-[11px] font-medium text-gray-700">
+                                      {start.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} - {end.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                    </span>
+                                  </div>
+                                </div>
+                                <div className="flex items-center gap-3">
+                                  <div className="text-center">
+                                    <div className="text-[10px] text-muted-foreground leading-none">Collections</div>
+                                    <div className="text-[11px] font-bold">{session.count}</div>
+                                  </div>
+                                  <div className="text-center">
+                                    <div className="text-[10px] text-muted-foreground leading-none">Work time</div>
+                                    <div className="text-[11px] font-bold text-green-700">{dH}h {dM}m</div>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+
+                      <div className="flex justify-between space-x-2 pt-1 border-t bg-gray-50/50 rounded-lg p-1">
+                        <div className="text-center">
+                          <div className="text-[9px] text-muted-foreground uppercase font-bold tracking-tighter">Total Collections</div>
+                          <div className="text-sm font-black text-blue-900">{vehicle.count}</div>
+                        </div>
+                        <div className="text-center border-x border-gray-100">
+                          <div className="text-[9px] text-muted-foreground uppercase font-bold tracking-tighter">Total Work</div>
+                          <div className="text-sm font-black text-green-700">{fmtMs(vehicle.totalWorkMs)}</div>
+                        </div>
+                        <div className="text-center">
+                          <div className="text-[9px] text-muted-foreground uppercase font-bold tracking-tighter">Total Break</div>
+                          <div className="text-sm font-black text-orange-600">{fmtMs(vehicle.totalBreakMs)}</div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </DialogContent>
+        </Dialog>
+      </CardHeader>
+      <CardContent>
+        <div className="space-y-3">
+          {data.map((vehicle) => {
+            const startTime = vehicle.startTime
+              ? new Date(vehicle.startTime).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true })
+              : "N/A";
+            const endTime = vehicle.endTime
+              ? new Date(vehicle.endTime).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true })
+              : "N/A";
+
+            return (
+              <div key={vehicle.registrationNumber} className="p-2 bg-gray-50 rounded-lg">
+                <div className="flex items-center justify-between mb-2">
+                  <h4 className="text-sm font-bold">{vehicle.vehicleName}</h4>
+                  <Badge variant="outline">{vehicle.count} collections</Badge>
+                </div>
+                <div className="text-xs text-muted-foreground mb-2">
+                  <span className="font-bold">Collectors:</span> {vehicle.collectorNames || "None assigned"}
+                </div>
+                <div className="font-bold text-md flex justify-between text-[10px] border-t pt-1">
+                  <span>Start: {startTime}</span>
+                  <span>End: {endTime}</span>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </CardContent>
+    </Card>
   );
 };
 
@@ -835,6 +1366,255 @@ const CreateCollectorDialog = ({ villageId }: { villageId: string }) => {
   );
 };
 
+const DailyInsightsGrid = ({ kpis, pulses }: { kpis: any; pulses: any[] }) => {
+  const collectionHistory = pulses.map(p => ({ day: p.day, value: p.collections }));
+  const ratingHistory = pulses.map(p => ({ day: p.day, value: p.rating }));
+
+  const collDiff = kpis.collectedToday - kpis.collectedYesterday;
+  const collUp = collDiff >= 0;
+
+  return (
+    <div className="space-y-1 w-full mt-2">
+      {/* Row 1: Total Households + Not Collected side by side */}
+      <div className="grid grid-cols-2 gap-3">
+        <div className="text-center bg-white/70 backdrop-blur-md border border-white/20 shadow-sm rounded-3xl p-2">
+          <div className="text-[9px] font-black text-gray-500 uppercase tracking-widest mb-1">Total Households</div>
+          <div className="text-2xl font-black text-gray-900 font-outfit">{kpis.totalHouseholds}</div>
+        </div>
+        <div className="text-center bg-red-50/50 backdrop-blur-md border border-red-100/20 shadow-sm rounded-3xl p-2">
+          <div className="text-[9px] font-black text-red-600/60 uppercase tracking-widest mb-1">Not Collected</div>
+          <div className="text-2xl font-black text-red-700 font-outfit">{kpis.nonCollectedToday}</div>
+        </div>
+      </div>
+
+      {/* Row 2: Collection Pulse — full width */}
+      <div className="bg-green-100/50 backdrop-blur-md border border-green-100/20 shadow-sm rounded-3xl py-2 px-4">
+        <div className="flex items-center justify-between">
+          <div>
+            <div className="text-[9px] font-black text-green-600/60 uppercase tracking-widest mb-1">Collection Pulse</div>
+            <div className="flex items-baseline gap-2">
+              <span className="text-2xl font-black text-green-700 font-outfit leading-none">{kpis.collectedToday}</span>
+              <span className={`text-[9px] font-black uppercase ${collUp ? 'text-green-600' : 'text-red-500'}`}>
+                {collUp ? '▲' : '▼'} {Math.abs(collDiff)} vs yesterday
+              </span>
+            </div>
+          </div>
+          <div className="w-24 h-10">
+            <RechartsContainer width="100%" height="100%">
+              <AreaChart data={collectionHistory}>
+                <defs>
+                  <linearGradient id="pulse-coll" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#22c55e" stopOpacity={0.3} />
+                    <stop offset="95%" stopColor="#22c55e" stopOpacity={0} />
+                  </linearGradient>
+                </defs>
+                <Area type="monotone" dataKey="value" stroke="#22c55e" strokeWidth={1.5} fillOpacity={1} fill="url(#pulse-coll)" />
+              </AreaChart>
+            </RechartsContainer>
+          </div>
+        </div>
+      </div>
+
+      {/* Row 3: Segregation Pulse — full width */}
+      <div className="bg-yellow-50/50 backdrop-blur-md border border-yellow-100/20 shadow-sm rounded-3xl py-2 px-4">
+        <div className="flex items-center justify-between">
+          <div>
+            <div className="text-[9px] font-black text-yellow-600/60 uppercase tracking-widest mb-1">Segregation Pulse</div>
+            <div className="flex items-baseline gap-1">
+              <span className="text-2xl font-black text-yellow-700 font-outfit leading-none">{kpis.avgSegregationRating}</span>
+              <span className="text-xs font-bold text-yellow-500">/5</span>
+            </div>
+          </div>
+          <div className="w-24 h-10">
+            <RechartsContainer width="100%" height="100%">
+              <AreaChart data={ratingHistory}>
+                <defs>
+                  <linearGradient id="pulse-seg" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#facc15" stopOpacity={0.3} />
+                    <stop offset="95%" stopColor="#facc15" stopOpacity={0} />
+                  </linearGradient>
+                </defs>
+                <Area type="monotone" dataKey="value" stroke="#facc15" strokeWidth={1.5} fillOpacity={1} fill="url(#pulse-seg)" />
+              </AreaChart>
+            </RechartsContainer>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const SectionSummary = ({ text }: { text: string }) => (
+  <motion.div
+    initial={{ opacity: 0, y: 10 }}
+    animate={{ opacity: 1, y: 0 }}
+    className="flex items-start gap-3 bg-blue-50/30 p-4 rounded-2xl mb-4 border border-blue-50/50"
+  >
+    <div className="mt-1 w-2 h-2 rounded-full bg-blue-500 shrink-0 shadow-[0_0_8px_rgba(59,130,246,0.5)]" />
+    <p className="text-[10px] font-black text-blue-900 leading-tight font-outfit uppercase tracking-tight opacity-80">{text}</p>
+  </motion.div>
+);
+
+const ReportsTabContent = ({
+  filters,
+  updateFilter,
+  reportData,
+  isLoading
+}: {
+  filters: any;
+  updateFilter: (k: any, v: any) => void;
+  reportData: any;
+  isLoading: boolean;
+}) => {
+  const targetDate = filters.date || format(new Date(), 'yyyy-MM-dd');
+
+  if (isLoading) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[80vh] gap-4">
+        <div className="w-12 h-12 border-4 border-green-500/20 border-t-green-500 rounded-full animate-spin" />
+        <span className="text-[10px] font-black text-gray-600 uppercase tracking-widest animate-pulse">Please Wait Generating Reports...</span>
+      </div>
+    );
+  }
+
+  if (!reportData) return null;
+
+  const { kpis, pulses, wardPerformance, materialData, vehicleStats, collectionTimeline } = reportData;
+
+  const materialDataArray = [
+    { name: 'Wet', value: materialData.wet, color: '#22c55e' },
+    { name: 'Dry', value: materialData.dry, color: '#3b82f6' },
+    { name: 'Sanitary', value: materialData.sanitary, color: '#ec4899' },
+    { name: 'SpecialCare', value: materialData.rejected, color: '#ef4444' },
+  ];
+
+  return (
+    <div className="bg-green-50 flex flex-col min-h-screen pb-5">
+      <StickyDateSwitcher
+        date={targetDate}
+        onChange={(d) => updateFilter("date", d)}
+      />
+
+      <motion.div
+        className="px-2 sm:px-6 space-y-3 max-w-5xl mx-auto w-full"
+        initial="hidden"
+        animate="show"
+        variants={{
+          show: { transition: { staggerChildren: 0.1 } }
+        }}
+      >
+        {/* Section 1: Insights & Stats */}
+        <section>
+          <DailyInsightsGrid kpis={kpis} pulses={pulses} />
+        </section>
+
+        {/* Section 2: Efficiency */}
+        <section>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <EfficiencyDonut current={kpis.collectedToday} total={kpis.totalHouseholds} />
+            <div className="flex flex-col hidden sm:block justify-center bg-gray-50/50 rounded-[2.5rem] p-8 border border-gray-100/50">
+              <div className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-4">Quick Insight</div>
+              <div className="text-xl font-black text-gray-900 font-outfit uppercase leading-tight mb-2">
+                {kpis.collectedToday >= kpis.totalHouseholds * 0.9 ? 'Outstanding coverage detected.' : 'Opportunity to increase coverage in outer wards.'}
+              </div>
+              <p className="text-[11px] font-bold text-gray-500 leading-relaxed uppercase tracking-tight">
+                {kpis.collectedToday >= kpis.totalHouseholds * 0.9
+                  ? 'The village is operating at peak efficiency. Minor missed households are likely seasonal or temporary vacancies.'
+                  : 'Targeting missed households in early morning slots could improve the daily collection percentage by up to 15%.'}
+              </p>
+            </div>
+          </div>
+        </section>
+
+        {/* Section 3: Materials */}
+        <section>
+          {materialData.isLogged ? (
+            <WasteMaterialChart data={materialDataArray} />
+          ) : (
+            <div className="bg-gray-50/50 border-2 border-dashed border-gray-200 rounded-xl px-5 py-10 text-center">
+              <div className="flex justify-center items-center gap-3 mb-4">
+                <Trash2 className="h-8 w-8 text-green-500" />
+                <Trash2 className="h-8 w-8 text-blue-500" />
+                <Trash2 className="h-8 w-8 text-red-500" />
+                <Trash2 className="h-8 w-8 text-black" />
+              </div>
+              <div className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Daily Collected Waste Material Type Entries not logged/Entered for this date</div>
+            </div>
+          )}
+        </section>
+
+        {/* Section 4: Wards */}
+        <section>
+          <WardPerformanceTripleChart data={wardPerformance} />
+        </section>
+
+        {/* Section 5: Vehicles */}
+        <section>
+          <CollectionPerformanceCard
+            data={vehicleStats}
+            dateLabel={new Date(targetDate).toLocaleDateString()}
+          />
+        </section>
+
+        {/* Section 6: Hourly Collection Timeline */}
+        <section className="bg-white/70 backdrop-blur-md border border-white/20 shadow-sm rounded-xl p-3 md:p-8">
+          <div className="flex items-center justify-between mb-4">
+            <h4 className="text-[12px] font-black uppercase tracking-[0.25em] text-gray-600">Collection Timeline</h4>
+            <Clock className="h-4 w-4 text-gray-600" />
+          </div>
+
+          {(!collectionTimeline || !collectionTimeline.hourly || collectionTimeline.hourly.length === 0) ? (
+            <p className="text-[11px] font-bold text-gray-400 uppercase text-center py-12 italic">No collections recorded for this date.</p>
+          ) : (
+            <>
+              <div className="w-full h-64 md:h-80">
+                <RechartsContainer width="100%" height="100%">
+                  <BarChart data={collectionTimeline.hourly} margin={{ top: 20, right: 10, left: -40, bottom: 5 }}>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f3f4f6" />
+                    <XAxis
+                      dataKey="hour"
+                      axisLine={false}
+                      tickLine={false}
+                      tick={{ fill: '#9ca3af', fontSize: 9, fontWeight: 700 }}
+                    />
+                    <YAxis
+                      axisLine={false}
+                      tickLine={false}
+                      tick={{ fill: '#9ca3af', fontSize: 9, fontWeight: 700 }}
+                    />
+                    <Tooltip
+                      cursor={{ fill: '#f9fafb' }}
+                      contentStyle={{ borderRadius: '1rem', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)', fontSize: 11 }}
+                    />
+                    {(collectionTimeline.vehicles || []).map((v: any, i: number) => (
+                      <Bar
+                        key={v.name}
+                        dataKey={v.name}
+                        fill={v.color}
+                        stackId="timeline"
+                        radius={i === collectionTimeline.vehicles.length - 1 ? [4, 4, 0, 0] : [0, 0, 0, 0]}
+                      />
+                    ))}
+                  </BarChart>
+                </RechartsContainer>
+              </div>
+              {/* Vehicle legend */}
+              <div className="flex flex-wrap items-center gap-3 mt-3 justify-center">
+                {(collectionTimeline.vehicles || []).map((v: any) => (
+                  <div key={v.name} className="flex items-center gap-1.5">
+                    <div className="w-2.5 h-2.5 rounded-sm" style={{ backgroundColor: v.color }} />
+                    <span className="text-[8px] font-bold text-gray-500 uppercase">{v.name}</span>
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
+        </section>
+      </motion.div>
+    </div>
+  );
+};
+
 export default function ManagerDashboard() {
   const { user } = useAuth();
   const { toast } = useToast();
@@ -899,11 +1679,23 @@ export default function ManagerDashboard() {
     staleTime: 30000, // 30 seconds
   });
 
-  // Lazy-loaded historical collections for other tabs (Reports, Management, etc.)
+  // Lazy-loaded historical collections for other tabs (Management, etc.)
   const { data: allCollections = [] } = useQuery<WasteCollection[]>({
     queryKey: ["/api/waste-collections/village", user?.villageId],
-    enabled: !!user?.villageId && activeTab !== "collections",
+    enabled: !!user?.villageId && activeTab !== "reports",
     staleTime: 5 * 60 * 1000, // 5 minutes
+  });
+
+  // NEW: Premium Report Data
+  const { data: reportData, isLoading: isReportLoading } = useQuery({
+    queryKey: ["/api/analytics/premium", user?.villageId, filters.date],
+    queryFn: async () => {
+      const date = filters.date || new Date().toISOString().split('T')[0];
+      const response = await fetch(`/api/analytics/premium?village=${user?.villageId}&date=${date}`, { credentials: "include" });
+      if (!response.ok) throw new Error("Failed to fetch premium report data");
+      return response.json();
+    },
+    enabled: !!user?.villageId && activeTab === "reports",
   });
 
   // Vehicle Management State
@@ -1635,7 +2427,7 @@ export default function ManagerDashboard() {
 
       <div className="min-h-screen flex flex-col bg-gray-50">
         {/* Top App Bar – Premium Native */}
-        <div className="bg-white border-b border-gray-100 px-4 py-2 sticky top-0 z-10"
+        <div className="bg-white border-b border-gray-100 px-4 py-2 sticky top-0 z-[60]"
           style={{ boxShadow: "0 1px 3px rgba(0,0,0,0.06)" }}>
           <div className="flex items-center justify-between h-11">
             {/* Left: Logo + village + screen title */}
@@ -1841,15 +2633,11 @@ export default function ManagerDashboard() {
           </div>
 
           {/* Main Content Area */}
-          <div className="flex-1 p-2 sm:p-6 overflow-auto pb-24 md:pb-6">
-
-            {/* Collectors Tab */}
-
-            {/* Households Tab */}
+          <div className="flex-1 sm:p-6 overflow-auto pb-24 md:pb-6">
 
             {/* Collections Tab */}
             {activeTab === "collections" && (
-              <div className="flex flex-col h-full bg-white rounded-3xl overflow-hidden shadow-sm border border-gray-100 relative">
+              <div className="flex flex-col h-full bg-white overflow-hidden shadow-sm border border-gray-100 relative">
                 {selectedCollectionHousehold ? (
                   <CollectionDetailView
                     household={selectedCollectionHousehold}
@@ -1941,7 +2729,7 @@ export default function ManagerDashboard() {
 
                         {/* Main Household List */}
                         <div className="bg-white">
-                          <div className="px-5 py-4 border-b border-gray-50 flex items-center justify-between">
+                          <div className="px-5 py-1 border-b border-gray-50 flex items-center justify-between">
                             <h4 className="text-[11px] font-black text-gray-400 uppercase tracking-widest">Village Members</h4>
                             <Button
                               variant="ghost"
@@ -3595,458 +4383,14 @@ export default function ManagerDashboard() {
             }
 
             {/* Reports Tab */}
-            {
-              activeTab === "reports" && (
-                <div className="space-y-6">
-                  {/* Date Filter for Daily Reports */}
-                  <Card>
-                    <div className="flex items-center justify-between p-2">
-                      <CardTitle>Date: </CardTitle>
-                      <div className="flex">
-                        <Input
-                          id="daily-date"
-                          type="date"
-                          value={filters.date || new Date().toISOString().split("T")[0]}
-                          onChange={(e) => updateFilter("date", e.target.value)}
-                        />
-                      </div>
-                    </div>
-                  </Card>
-
-
-
-                  {/* Daily KPI Cards */}
-                  <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                    {(() => {
-                      const targetDate = filters.date || new Date().toISOString().split('T')[0];
-                      const dayCollections = allCollections.filter(c =>
-                        new Date(c.collectionDate).toDateString() === new Date(targetDate).toDateString()
-                      );
-                      const avgSegregationRating = dayCollections.length > 0
-                        ? (dayCollections.reduce((sum, c) => sum + (c.segregationRating || 0), 0) / dayCollections.length)
-                        : 0;
-                      const totalHouses = stats?.totalHouseholds || 0;
-                      const collected = dayCollections.length;
-                      const remaining = totalHouses - collected;
-
-                      return (
-                        <>
-                          <Card className="bg-gradient-to-r from-yellow-50 to-yellow-100 border-yellow-200">
-                            <CardHeader className="pb-2">
-                              <CardTitle className="text-sm font-medium text-yellow-800">Avg Segregation Rating</CardTitle>
-                            </CardHeader>
-                            <CardContent>
-                              <div className="text-2xl font-bold text-yellow-900">
-                                {avgSegregationRating.toFixed(1)}
-                              </div>
-                              <p className="text-xs text-yellow-700">Out of 5.0 stars</p>
-                            </CardContent>
-                          </Card>
-
-                          <Card className="bg-gradient-to-r from-blue-50 to-blue-100 border-blue-200">
-                            <CardHeader className="pb-2">
-                              <CardTitle className="text-sm font-medium text-blue-800">Total Houses</CardTitle>
-                            </CardHeader>
-                            <CardContent>
-                              <div className="text-2xl font-bold text-blue-900">
-                                {totalHouses}
-                              </div>
-                              <p className="text-xs text-blue-700">Registered households</p>
-                            </CardContent>
-                          </Card>
-
-                          <Card className="bg-gradient-to-r from-green-50 to-green-100 border-green-200">
-                            <CardHeader className="pb-2">
-                              <CardTitle className="text-sm font-medium text-green-800">Collected</CardTitle>
-                            </CardHeader>
-                            <CardContent>
-                              <div className="text-2xl font-bold text-green-900">
-                                {collected}
-                              </div>
-                              <p className="text-xs text-green-700">Collections completed</p>
-                            </CardContent>
-                          </Card>
-
-                          <Card className="bg-gradient-to-r from-red-50 to-red-100 border-red-200">
-                            <CardHeader className="pb-2">
-                              <CardTitle className="text-sm font-medium text-red-800">Remaining</CardTitle>
-                            </CardHeader>
-                            <CardContent>
-                              <div className="text-2xl font-bold text-red-900">
-                                {remaining}
-                              </div>
-                              <p className="text-xs text-red-700">Yet to collect</p>
-                            </CardContent>
-                          </Card>
-                        </>
-                      );
-                    })()}
-                  </div>
-
-                  {/* 4 Analytics Cards for Daily Reports */}
-                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    {/* 1. Collection Status Pie Chart */}
-                    <Card>
-                      <CardHeader>
-                        <CardTitle className="flex items-center justify-center gap-2">
-                          Collection Status
-                        </CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        <div className="flex items-center justify-center">
-                          {(() => {
-                            const targetDate = filters.date || new Date().toISOString().split('T')[0];
-                            const collected = allCollections.filter(c =>
-                              new Date(c.collectionDate).toDateString() === new Date(targetDate).toDateString()
-                            ).length;
-                            const total = stats?.totalHouseholds || 0;
-                            const notCollected = total - collected;
-
-                            return (
-                              <div className="w-48 h-48 relative">
-                                <svg viewBox="0 0 100 100" className="w-full h-full transform -rotate-90">
-                                  <circle cx="50" cy="50" r="40" fill="none" stroke="#f3f4f6" strokeWidth="20" />
-                                  {total > 0 && (
-                                    <>
-                                      <circle
-                                        cx="50" cy="50" r="40" fill="none"
-                                        stroke="#22c55e" strokeWidth="20"
-                                        strokeDasharray={`${(collected / total) * 251.3} 251.3`}
-                                        strokeDashoffset="0"
-                                      />
-                                      <circle
-                                        cx="50" cy="50" r="40" fill="none"
-                                        stroke="#ef4444" strokeWidth="20"
-                                        strokeDasharray={`${(notCollected / total) * 251.3} 251.3`}
-                                        strokeDashoffset={`-${(collected / total) * 251.3}`}
-                                      />
-                                    </>
-                                  )}
-                                </svg>
-                                <div className="absolute inset-0 flex items-center justify-center">
-                                  <div className="text-center">
-                                    <div className="text-2xl font-bold">
-                                      {total > 0 ? Math.round((collected / total) * 100) : 0}%
-                                    </div>
-                                    <div className="text-xs text-muted-foreground">Collected</div>
-                                  </div>
-                                </div>
-                              </div>
-                            );
-                          })()}
-                        </div>
-                        <div className="grid grid-cols-2 gap-2 mt-4">
-                          <div className="text-center">
-                            <div className="w-4 h-4 bg-green-500 rounded mx-auto mb-1"></div>
-                            <div className="text-xs">Collected</div>
-                          </div>
-                          <div className="text-center">
-                            <div className="w-4 h-4 bg-red-500 rounded mx-auto mb-1"></div>
-                            <div className="text-xs">Not Collected</div>
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-
-                    {/* 2. Star Rating Distribution */}
-                    <Card>
-                      <CardHeader>
-                        <CardTitle className="flex items-center justify-center gap-2">
-                          Segregation Rating
-                        </CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        <div className="space-y-3">
-                          {[5, 4, 3, 2, 1].map(stars => {
-                            const targetDate = filters.date || new Date().toISOString().split('T')[0];
-                            const dayCollections = allCollections.filter(c =>
-                              new Date(c.collectionDate).toDateString() === new Date(targetDate).toDateString()
-                            );
-                            const starCount = dayCollections.filter(c => (c.segregationRating || 0) === stars).length;
-                            const total = dayCollections.length;
-                            const percentage = total > 0 ? (starCount / total) * 100 : 0;
-
-                            return (
-                              <div key={stars} className="flex items-center gap-3">
-                                <div className="flex items-center gap-1 w-16">
-                                  <span className="text-sm font-medium">{stars}</span>
-                                  <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
-                                </div>
-                                <div className="flex-1 bg-gray-200 rounded-full h-4 relative">
-                                  <div
-                                    className="bg-yellow-500 h-4 rounded-full transition-all"
-                                    style={{ width: `${percentage}%` }}
-                                  />
-                                  <span className="absolute inset-0 flex items-center justify-center text-xs font-medium text-white">
-                                    {starCount}
-                                  </span>
-                                </div>
-                                <div className="w-12 text-xs text-right">
-                                  {Math.round(percentage)}%
-                                </div>
-                              </div>
-                            );
-                          })}
-                        </div>
-                      </CardContent>
-                    </Card>
-
-                    {/* 3. Vehicle Collection Performance */}
-                    <Card>
-                      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="flex items-center gap-2">
-                          Collection Performance
-                        </CardTitle>
-                        <Dialog>
-                          <DialogTrigger asChild>
-                            <Button variant="outline" size="sm" className="bg-green-200">Details</Button>
-                          </DialogTrigger>
-                          <DialogContent className="max-w-[100vw] w-full h-[100dvh] md:max-w-4xl md:h-[90vh] md:rounded-xl overflow-hidden p-0 flex flex-col border-none md:border">
-                            <DialogHeader className="px-1 py-2 border-b flex flex-row items-center justify-between space-y-0 bg-white sticky top-0 z-10">
-                              <DialogTrigger asChild>
-                                <Button variant="ghost" size="sm" className="h-8 px-2 md:hidden bg-green-200 ">
-                                  <ArrowRight className="h-4 w-4 mr-1 rotate-180" strokeWidth={3} />
-                                </Button>
-                              </DialogTrigger>
-                              <div className="flex items-center gap-2">
-                                <DialogTitle className="text-lg font-bold mr-8">Vehicle Session Report {new Date(filters.date || new Date()).toLocaleDateString()}</DialogTitle>
-                              </div>
-
-                            </DialogHeader>
-
-                            <div className="flex-1 overflow-y-auto p-2 space-y-3 pb-20 md:pb-6">
-                              {(() => {
-                                const targetDate = filters.date || new Date().toISOString().split('T')[0];
-                                const villageVehicles = villageData?.vehicles || [];
-
-                                return villageVehicles.map((vehicle: any) => {
-                                  const vehicleCollections = allCollections
-                                    .filter(c =>
-                                      vehicle.collectorIds.includes(c.collectorId) &&
-                                      new Date(c.collectionDate).toDateString() === new Date(targetDate).toDateString()
-                                    )
-                                    .sort((a, b) => new Date(a.collectionDate).getTime() - new Date(b.collectionDate).getTime());
-
-                                  if (vehicleCollections.length === 0) return null;
-
-                                  const sessions: any[] = [];
-                                  let currentSession: any[] = [vehicleCollections[0]];
-
-                                  for (let i = 1; i < vehicleCollections.length; i++) {
-                                    const prevTime = new Date(vehicleCollections[i - 1].collectionDate).getTime();
-                                    const currTime = new Date(vehicleCollections[i].collectionDate).getTime();
-                                    const diffMinutes = (currTime - prevTime) / (1000 * 60);
-
-                                    if (diffMinutes > 20) {
-                                      sessions.push(currentSession);
-                                      currentSession = [vehicleCollections[i]];
-                                    } else {
-                                      currentSession.push(vehicleCollections[i]);
-                                    }
-                                  }
-                                  sessions.push(currentSession);
-
-                                  let totalWorkMs = 0;
-                                  let totalBreakMs = 0;
-
-                                  return (
-                                    <div key={vehicle.registrationNumber} className="bg-white rounded-xl border shadow-sm overflow-hidden">
-                                      <div className="bg-green-100 px-4 py-1 border-b flex items-center justify-between">
-                                        <div className="flex items-center gap-2">
-                                          <div className="w-1.5 h-1.5 rounded-full bg-purple-600 animate-pulse" />
-                                          <h3 className="font-bold text-purple-900 text-sm">{vehicle.name}</h3>
-                                        </div>
-                                        <span className="text-[10px] font-mono bg-purple-200 text-black px-2 py-0.5 rounded-full">{vehicle.registrationNumber}</span>
-                                      </div>
-
-                                      <div className="px-3 py-1 space-y-2">
-                                        <div className="grid grid-cols-1 gap-2">
-                                          {sessions.map((session, sIdx) => {
-                                            const start = new Date(session[0].collectionDate);
-                                            const end = new Date(session[session.length - 1].collectionDate);
-                                            const durationMs = end.getTime() - start.getTime();
-                                            totalWorkMs += durationMs;
-
-                                            let breakMs = 0;
-                                            if (sIdx > 0) {
-                                              const prevSessionEnd = new Date(sessions[sIdx - 1][sessions[sIdx - 1].length - 1].collectionDate);
-                                              breakMs = start.getTime() - prevSessionEnd.getTime();
-                                              totalBreakMs += breakMs;
-                                            }
-
-                                            const dH = Math.floor(durationMs / (1000 * 60 * 60));
-                                            const dM = Math.floor((durationMs % (1000 * 60 * 60)) / (1000 * 60));
-                                            const bH = Math.floor(breakMs / (1000 * 60 * 60));
-                                            const bM = Math.floor((breakMs % (1000 * 60 * 60)) / (1000 * 60));
-
-                                            return (
-                                              <div key={sIdx} className="relative pl-2 border-l-2 border-blue-200 py-1">
-                                                {sIdx > 0 && (
-                                                  <div className="absolute -top-3 left-[-9px] flex items-center gap-1.5 bg-orange-50 px-2 py-0.5 rounded-md border border-orange-100">
-                                                    <span className="text-[9px] font-bold text-orange-600 uppercase tracking-tighter">Break: {bH}h {bM}m</span>
-                                                  </div>
-                                                )}
-                                                <div className="flex items-center justify-between gap-4">
-                                                  <div className="flex-1">
-                                                    <div className="flex items-center gap-2">
-                                                      <span className="text-[11px] font-black text-blue-600">S{sIdx + 1}</span>
-                                                      <span className="text-[11px] font-medium text-gray-700">
-                                                        {start.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} - {end.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                                                      </span>
-                                                    </div>
-                                                  </div>
-                                                  <div className="flex items-center gap-3">
-                                                    <div className="text-center">
-                                                      <div className="text-[10px] text-muted-foreground leading-none">Collections</div>
-                                                      <div className="text-[11px] font-bold">{session.length}</div>
-                                                    </div>
-                                                    <div className="text-center">
-                                                      <div className="text-[10px] text-muted-foreground leading-none">Work time</div>
-                                                      <div className="text-[11px] font-bold text-green-700">{dH}h {dM}m</div>
-                                                    </div>
-                                                  </div>
-                                                </div>
-                                              </div>
-                                            );
-                                          })}
-                                        </div>
-
-                                        <div className="pt-1 border-t grid grid-cols-3 bg-gray-50/50 rounded-lg p-1">
-                                          <div className="text-center">
-                                            <div className="text-[9px] text-muted-foreground uppercase font-bold tracking-tighter">Total collections</div>
-                                            <div className="text-sm font-black text-blue-900">{vehicleCollections.length}</div>
-                                          </div>
-                                          <div className="text-center border-x border-gray-100">
-                                            <div className="text-[9px] text-muted-foreground uppercase font-bold tracking-tighter">Total Work</div>
-                                            <div className="text-sm font-black text-green-700">
-                                              {Math.floor(totalWorkMs / (1000 * 60 * 60))}h {Math.floor((totalWorkMs % (1000 * 60 * 60)) / (1000 * 60))}m
-                                            </div>
-                                          </div>
-                                          <div className="text-center">
-                                            <div className="text-[9px] text-muted-foreground uppercase font-bold tracking-tighter">Total Break</div>
-                                            <div className="text-sm font-black text-orange-600">
-                                              {Math.floor(totalBreakMs / (1000 * 60 * 60))}h {Math.floor((totalBreakMs % (1000 * 60 * 60)) / (1000 * 60))}m
-                                            </div>
-                                          </div>
-                                        </div>
-                                      </div>
-                                    </div>
-                                  );
-                                });
-                              })()}
-                            </div>
-                          </DialogContent>
-                        </Dialog>
-                      </CardHeader>
-                      <CardContent>
-                        <div className="space-y-3">
-                          {(() => {
-                            const targetDate = filters.date || new Date().toISOString().split('T')[0];
-                            const villageVehicles = villageData?.vehicles || [];
-
-                            return villageVehicles.map((vehicle: any) => {
-                              // Find collections for this vehicle by looking at collectors assigned to it
-                              const vehicleCollections = allCollections.filter(c =>
-                                vehicle.collectorIds.includes(c.collectorId) &&
-                                new Date(c.collectionDate).toDateString() === new Date(targetDate).toDateString()
-                              );
-
-                              const collectorNames = collectors
-                                .filter(c => vehicle.collectorIds.includes(c.id))
-                                .map(c => c.name)
-                                .join(", ");
-
-                              const sortedCollections = [...vehicleCollections].sort((a, b) =>
-                                new Date(a.collectionDate).getTime() - new Date(b.collectionDate).getTime()
-                              );
-
-                              const startTime = sortedCollections.length > 0
-                                ? new Date(sortedCollections[0].collectionDate).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true })
-                                : "N/A";
-                              const endTime = sortedCollections.length > 0
-                                ? new Date(sortedCollections[sortedCollections.length - 1].collectionDate).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true })
-                                : "N/A";
-
-                              return (
-                                <div key={vehicle.registrationNumber} className="p-1 bg-gray-50 rounded-lg">
-                                  <div className="flex items-center justify-between mb-2">
-                                    <h4 className="text-sm font-bold">{vehicle.name}</h4>
-                                    <Badge variant="outline">{vehicleCollections.length} collections</Badge>
-                                  </div>
-                                  <div className="text-xs text-muted-foreground mb-2">
-                                    <span className="font-bold">Collectors:</span> {collectorNames || "None assigned"}
-                                  </div>
-                                  <div className="font-bold text-md flex justify-between text-[10px] border-t pt-1">
-                                    <span>Start: {startTime}</span>
-                                    <span>End: {endTime}</span>
-                                  </div>
-                                </div>
-                              );
-                            });
-                          })()}
-                        </div>
-                      </CardContent>
-                    </Card>
-
-                    {/* 4. Collection Timeline */}
-                    <Card>
-                      <CardHeader>
-                        <CardTitle className="flex items-center justify-center gap-2">
-                          <BarChart3 className="h-5 w-5 text-indigo-600" />
-                          Collection Timeline
-                        </CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        <div className="space-y-2">
-                          {(() => {
-                            const targetDate = filters.date || new Date().toISOString().split("T")[0];
-                            const dateObj = new Date(targetDate);
-
-                            const counts = Array.from({ length: 14 }, (_, i) => {
-                              const hour = i + 5;
-                              return allCollections.filter(c => {
-                                const d = new Date(c.collectionDate);
-                                return d.toDateString() === dateObj.toDateString() && d.getHours() === hour;
-                              }).length;
-                            });
-
-                            const maxCollections = Math.max(...counts, 0);
-
-                            return counts.map((count, i) => {
-                              const hour = i + 5;
-                              const percentage = maxCollections > 0 ? (count / maxCollections) * 100 : 0;
-
-                              return (
-                                <div key={i} className="flex items-center gap-2">
-                                  <div className="w-8 text-xs text-muted-foreground">
-                                    {hour}:00
-                                  </div>
-                                  <div className="flex-1 bg-gray-200 rounded-full h-3 relative">
-                                    <div
-                                      className="bg-indigo-500 h-3 rounded-full transition-all"
-                                      style={{ width: `${percentage}%` }}
-                                    />
-                                    {count > 0 && (
-                                      <span className="absolute inset-0 flex items-center justify-center text-xs font-medium text-white">
-                                        {count}
-                                      </span>
-                                    )}
-                                  </div>
-                                  <div className="w-8 text-xs text-right">
-                                    {count}
-                                  </div>
-                                </div>
-                              );
-                            });
-                          })()}
-                        </div>
-                      </CardContent>
-
-                    </Card>
-                  </div>
-                </div>
-              )
-            }
+            {activeTab === "reports" && (
+              <ReportsTabContent
+                filters={filters}
+                updateFilter={updateFilter}
+                reportData={reportData}
+                isLoading={isReportLoading}
+              />
+            )}
 
           </div >
         </div >
