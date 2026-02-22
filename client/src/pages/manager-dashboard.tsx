@@ -15,7 +15,7 @@ import {
   Tooltip, Legend, LabelList,
   ResponsiveContainer as RechartsContainer
 } from "recharts";
-import { format, subDays, addDays, isSameDay } from "date-fns";
+import { format, subDays, addDays, isSameDay, formatDistanceToNow } from "date-fns";
 
 import {
   Card,
@@ -89,7 +89,8 @@ import {
   Pause,
   Volume2,
   ChevronDown,
-  Car
+  Car,
+  Shield
 } from "lucide-react";
 import html2canvas from "html2canvas";
 import { jsPDF } from "jspdf";
@@ -1627,6 +1628,7 @@ export default function ManagerDashboard() {
   const [householdApproachTab, setHouseholdApproachTab] = useState("details");
   const [qrFirstSubTab, setQrFirstSubTab] = useState("generate-batch");
   const [showPasswordDialog, setShowPasswordDialog] = useState(false);
+  const [moreDeleteConfirm, setMoreDeleteConfirm] = useState<{ label: string; onConfirm: () => void } | null>(null);
   const [selectedIssue, setSelectedIssue] = useState<Issue | null>(null);
   const [showIssueDialog, setShowIssueDialog] = useState(false);
   const [announcementMessage, setAnnouncementMessage] = useState("");
@@ -1660,7 +1662,8 @@ export default function ManagerDashboard() {
   const [newFieldWorkerPhone, setNewFieldWorkerPhone] = useState("");
   const [householdSearch, setHouseholdSearch] = useState("");
 
-  // Fetch ALL households at once (no pagination) for accurate totals across all tabs
+  const [isHouseholdSearching, setIsHouseholdSearching] = useState(false);
+
   // Used by Field Staff and Management tabs
   const { data: households = [] } = useQuery<Household[]>({
     queryKey: ["/api/households", user?.villageId],
@@ -1940,7 +1943,8 @@ export default function ManagerDashboard() {
     queryKey: ["/api/qr-codes", user?.villageId],
     enabled: !!user?.villageId && activeTab === "more" && (
       activeMoreScreen === "fieldworkers" ||
-      activeMoreScreen === "households"
+      activeMoreScreen === "download-qr" ||
+      activeMoreScreen === "generate-qr"
     ),
   });
 
@@ -2646,24 +2650,24 @@ export default function ManagerDashboard() {
                 ) : isCollectionsSearching ? (
                   /* Focused Search View */
                   <div className="flex flex-col h-full bg-white z-20">
-                    <div className="px-4 py-3 bg-white border-b border-gray-100 flex items-center gap-3">
+                    <div className="px-2 py-2 bg-white border-b border-gray-100 flex items-center gap-2">
                       <Button
                         variant="ghost"
                         size="icon"
-                        className="h-10 w-10 rounded-full"
+                        className="h-9 w-8 rounded-full bg-gray-200"
                         onClick={() => setIsCollectionsSearching(false)}
                       >
-                        <ArrowLeft className="h-5 w-5" />
+                        <ArrowLeft className="h-6 w-6" strokeWidth={3} />
                       </Button>
                       <div className="relative flex-1">
                         <Input
                           autoFocus
-                          className="w-full h-11 bg-gray-50 border-none rounded-2xl pl-10 pr-4 focus-visible:ring-1 focus-visible:ring-gray-200 transition-all text-sm font-medium"
+                          className="w-full h-10 bg-gray-50 border-none rounded-2xl pl-10 pr-4 focus-visible:ring-1 focus-visible:ring-gray-200 transition-all text-sm font-medium"
                           placeholder="Search name, house # or UID..."
                           value={collectionsSearch}
                           onChange={(e) => setCollectionsSearch(e.target.value)}
                         />
-                        <Search className="absolute left-3.5 top-3.5 h-4 w-4 text-gray-400" />
+                        <Search className="absolute left-3.5 top-2.5 h-5 w-5 text-gray-400" />
                       </div>
                       {collectionsSearch && (
                         <Button
@@ -2796,30 +2800,51 @@ export default function ManagerDashboard() {
 
             {activeTab === "more" && (
               <div className="space-y-2">
-                {activeMoreScreen ? (
-                  // Sub-screen back button
-                  <button
-                    onClick={() => setActiveMoreScreen(null)}
-                    className="flex items-center gap-2 text-green-700 font-semibold py-2 mb-2 active:scale-95 transition-transform"
-                  >
-                    <ArrowLeft className="h-5 w-5" />
-                    <span>Back</span>
-                  </button>
-                ) : null}
+                {/* Back button is now inside each sub-screen component */}
 
                 {/* More Screen: flat menu */}
                 {!activeMoreScreen && (
-                  <div className="space-y-1">
+                  <div className="p-2">
                     {/* Profile header */}
-                    <div className="flex items-center gap-3 p-4 mb-2 bg-white rounded-2xl ring-1 ring-black/5 shadow-sm">
+                    <div className="flex items-center gap-3 px-4 py-2 bg-white rounded-2xl ring-1 ring-black/5 shadow-sm">
                       <div className="w-12 h-12 rounded-full bg-green-600 flex items-center justify-center text-white text-lg font-bold flex-shrink-0">
                         {(user?.name || "M").charAt(0).toUpperCase()}
                       </div>
                       <div className="min-w-0">
                         <p className="font-bold text-gray-900 truncate">{user?.name || "Manager"}</p>
-                        <p className="text-xs text-gray-500 truncate">{user?.userId}</p>
-                        <Badge variant="secondary" className="text-xs mt-0.5">{user?.role}</Badge>
+                        <div className="flex px-3 space-x-5 justify-center items-center">
+                          <p className="text-xs text-gray-500 truncate">{user?.userId}</p>
+                          <Badge variant="secondary" className="text-xs mt-0.5">{user?.role}</Badge>
+                        </div>
                       </div>
+                    </div>
+
+                    {/* Material Logs group */}
+                    <p className="text-[11px] uppercase tracking-widest text-gray-400 font-bold px-1 pt-4 pb-1">Material Logs</p>
+                    <div className="bg-white rounded-2xl ring-1 ring-black/5 shadow-sm overflow-hidden mb-2">
+                      {[
+                        { id: "daily-waste-logs", icon: ClipboardList, label: "Daily Waste Logs", description: "Log & view daily waste records" },
+                        { id: "compost-logs", icon: Package, label: "Compost Logs", description: "Track compost production" },
+                        { id: "sales-logs", icon: BarChart3, label: "Sales Logs", description: "Record material sales" },
+                      ].map(({ id, icon: Icon, label, description }, idx, arr) => (
+                        <button
+                          key={id}
+                          onClick={() => setActiveMoreScreen(id)}
+                          className={cn(
+                            "w-full flex items-center gap-4 px-4 py-3 text-left transition-colors active:bg-gray-50 active:scale-[0.99]",
+                            idx < arr.length - 1 ? "border-b border-gray-100" : ""
+                          )}
+                        >
+                          <div className="w-9 h-9 rounded-xl bg-orange-50 flex items-center justify-center flex-shrink-0">
+                            <Icon className="h-4 w-4 text-orange-500" />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="font-semibold text-gray-900 text-sm">{label}</p>
+                            <p className="text-xs text-gray-400 truncate">{description}</p>
+                          </div>
+                          <ArrowRight className="h-4 w-4 text-gray-300 flex-shrink-0" />
+                        </button>
+                      ))}
                     </div>
 
                     {/* Daily Ops group */}
@@ -2868,34 +2893,6 @@ export default function ManagerDashboard() {
                         >
                           <div className="w-9 h-9 rounded-xl bg-green-50 flex items-center justify-center flex-shrink-0">
                             <Icon className="h-4 w-4 text-green-600" />
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <p className="font-semibold text-gray-900 text-sm">{label}</p>
-                            <p className="text-xs text-gray-400 truncate">{description}</p>
-                          </div>
-                          <ArrowRight className="h-4 w-4 text-gray-300 flex-shrink-0" />
-                        </button>
-                      ))}
-                    </div>
-
-                    {/* Material Logs group */}
-                    <p className="text-[11px] uppercase tracking-widest text-gray-400 font-bold px-1 pt-4 pb-1">Material Logs</p>
-                    <div className="bg-white rounded-2xl ring-1 ring-black/5 shadow-sm overflow-hidden">
-                      {[
-                        { id: "daily-waste-logs", icon: ClipboardList, label: "Daily Waste Logs", description: "Log & view daily waste records" },
-                        { id: "compost-logs", icon: Package, label: "Compost Logs", description: "Track compost production" },
-                        { id: "sales-logs", icon: BarChart3, label: "Sales Logs", description: "Record material sales" },
-                      ].map(({ id, icon: Icon, label, description }, idx, arr) => (
-                        <button
-                          key={id}
-                          onClick={() => setActiveMoreScreen(id)}
-                          className={cn(
-                            "w-full flex items-center gap-4 px-4 py-3 text-left transition-colors active:bg-gray-50 active:scale-[0.99]",
-                            idx < arr.length - 1 ? "border-b border-gray-100" : ""
-                          )}
-                        >
-                          <div className="w-9 h-9 rounded-xl bg-orange-50 flex items-center justify-center flex-shrink-0">
-                            <Icon className="h-4 w-4 text-orange-500" />
                           </div>
                           <div className="flex-1 min-w-0">
                             <p className="font-semibold text-gray-900 text-sm">{label}</p>
@@ -2986,150 +2983,192 @@ export default function ManagerDashboard() {
                   </div>
                 )}
 
-                {/* Households sub-screen */}
+                {/* Households sub-screen — Premium */}
                 {activeMoreScreen === "household-details" && (
-                  <div className="space-y-4">
-                    <Card>
-                      <CardHeader>
-                        <CardTitle>Household Details</CardTitle>
-                        <CardDescription>Listing of all registered households</CardDescription>
-                      </CardHeader>
-                      <CardContent>
-                        <div className="space-y-3">
-                          <Input
-                            placeholder="Search by head name, UID, house number, or mobile..."
-                            value={householdSearch}
-                            onChange={(e) => setHouseholdSearch(e.target.value)}
-                          />
-                          <div className="space-y-2 max-h-[600px] overflow-y-auto pr-2">
-                            {households
-                              .filter(h => {
-                                const search = householdSearch.toLowerCase();
-                                return (
-                                  h.headName.toLowerCase().includes(search) ||
-                                  h.uid.toLowerCase().includes(search) ||
-                                  (h.houseNumber && h.houseNumber.toLowerCase().includes(search)) ||
-                                  (h.phone && h.phone.toLowerCase().includes(search))
-                                );
-                              })
-                              .map((h) => (
-                                <div
-                                  key={h.id}
-                                  className="p-3 border rounded-lg hover:bg-muted/50 cursor-pointer transition-colors"
-                                  onClick={() => { setViewingHousehold(h); setShowHouseholdDetails(true); }}
-                                >
-                                  <div className="flex justify-between items-start">
-                                    <div>
-                                      <p className="font-medium">{h.headName}</p>
-                                      <p className="text-sm text-muted-foreground">UID: {h.uid}</p>
-                                    </div>
-                                    <Badge variant="outline">{h.ward || "N/A"}</Badge>
-                                  </div>
-                                </div>
-                              ))}
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  </div>
-                )}
-
-                {activeMoreScreen === "generate-qr" && (
-                  <div className="space-y-4">
-                    <Card>
-                      <CardHeader><CardTitle>Generate QR Codes</CardTitle></CardHeader>
-                      <CardContent className="space-y-4">
-                        <div className="flex items-end gap-4">
-                          <div className="flex-1">
-                            <Label htmlFor="batch-quantity-hh">Number of QR Codes</Label>
-                            <Input
-                              id="batch-quantity-hh"
-                              type="number"
-                              min={1}
-                              max={100}
-                              value={batchQuantity}
-                              onChange={(e) => setBatchQuantity(parseInt(e.target.value) || 10)}
-                              data-testid="input-batch-quantity-households"
-                            />
-                          </div>
-                          <Button
-                            onClick={() => generateBatchQRMutation.mutate(batchQuantity)}
-                            disabled={generateBatchQRMutation.isPending || batchQuantity < 1}
-                            data-testid="button-generate-batch-households"
+                  <div className="space-y-3 p-3">
+                    {/* Search */}
+                    <div className="px-2 py-2 bg-white border-b border-gray-100 flex items-center gap-2">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-9 w-8 rounded-full bg-gray-200"
+                        onClick={() => setActiveMoreScreen(null)}
+                      >
+                        <ArrowLeft className="h-6 w-6" strokeWidth={3} />
+                      </Button>
+                      <div className="relative flex-1">
+                        <Input
+                          autoFocus
+                          className="w-full h-10 bg-gray-50 border-none rounded-2xl pl-10 pr-4 focus-visible:ring-1 focus-visible:ring-gray-200 transition-all text-sm font-medium"
+                          placeholder="Search name, house # or UID or mobile"
+                          value={householdSearch}
+                          onChange={(e) => setHouseholdSearch(e.target.value)}
+                        />
+                        <Search className="absolute left-3.5 top-2.5 h-5 w-5 text-gray-400" />
+                      </div>
+                      {householdSearch && (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-10 w-10 rounded-full bg-gray-50 text-gray-400"
+                          onClick={() => setHouseholdSearch("")}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      )}
+                    </div>
+                    {/* Household list */}
+                    <div className="space-y-2 max-h-[600px] overflow-y-auto">
+                      {households
+                        .filter(h => {
+                          const search = householdSearch.toLowerCase();
+                          return (
+                            h.headName.toLowerCase().includes(search) ||
+                            h.uid.toLowerCase().includes(search) ||
+                            (h.houseNumber && h.houseNumber.toLowerCase().includes(search)) ||
+                            (h.phone && h.phone.toLowerCase().includes(search))
+                          );
+                        })
+                        .map((h) => (
+                          <div
+                            key={h.id}
+                            className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden flex active:scale-[0.98] transition-transform cursor-pointer"
+                            onClick={() => { setViewingHousehold(h); setShowHouseholdDetails(true); }}
                           >
-                            <QrCode className="h-4 w-4 mr-2" />
-                            {generateBatchQRMutation.isPending ? "Generating..." : "Generate Batch"}
-                          </Button>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  </div>
-                )}
-
-                {activeMoreScreen === "download-qr" && (
-                  <div className="space-y-4">
-                    <Card>
-                      <CardHeader><CardTitle>QR Code Batches</CardTitle></CardHeader>
-                      <CardContent>
-                        {batchQRCodes.length === 0 ? (
-                          <p className="text-center text-muted-foreground py-4">No QR codes generated yet.</p>
-                        ) : (
-                          <div className="space-y-3">
-                            {Object.entries(
-                              batchQRCodes.reduce((acc: any, qr: any) => {
-                                if (!acc[qr.batchId]) acc[qr.batchId] = { total: 0, mapped: 0, notMapped: 0 };
-                                acc[qr.batchId].total++;
-                                if (qr.status === 'mapped') acc[qr.batchId].mapped++;
-                                else acc[qr.batchId].notMapped++;
-                                return acc;
-                              }, {})
-                            ).map(([batchId, stats]: [string, any]) => (
-                              <div key={batchId} className="flex items-center justify-between p-3 border rounded-lg" data-testid={`row-batch-households-${batchId}`}>
-                                <div>
-                                  <p className="font-medium">{batchId}</p>
-                                  <p className="text-sm text-muted-foreground">
-                                    Total: {stats.total} | Mapped: {stats.mapped} | Unmapped: {stats.notMapped}
-                                  </p>
+                            <div className="w-1 flex-shrink-0 bg-green-500" />
+                            <div className="flex-1 flex items-center justify-between p-3 min-w-0">
+                              <div className="min-w-0">
+                                <h4 className="text-[12px] font-black text-gray-900 truncate">{h.headName}</h4>
+                                <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
+                                  <span className="text-[8px] font-bold text-gray-400 bg-gray-50 px-1.5 py-0.5 rounded-md">{h.uid}</span>
+                                  {h.houseNumber && <span className="text-[8px] font-bold text-blue-500 bg-blue-50 px-1.5 py-0.5 rounded-md">#{h.houseNumber}</span>}
+                                  {h.ward && <span className="text-[8px] font-bold text-green-600 bg-green-50 px-1.5 py-0.5 rounded-md uppercase">{h.ward}</span>}
                                 </div>
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => window.open(`/api/qr-codes/batch/${batchId}/pdf`, '_blank')}
-                                  data-testid={`button-download-batch-households-${batchId}`}
-                                >
-                                  <Download className="h-4 w-4 mr-2" /> Download PDF
-                                </Button>
                               </div>
-                            ))}
+                              <ChevronRight className="h-4 w-4 text-gray-300 flex-shrink-0 ml-2" />
+                            </div>
+                          </div>
+                        ))}
+                      {households.filter(h => {
+                        const search = householdSearch.toLowerCase();
+                        return h.headName.toLowerCase().includes(search) || h.uid.toLowerCase().includes(search) || (h.houseNumber && h.houseNumber.toLowerCase().includes(search)) || (h.phone && h.phone.toLowerCase().includes(search));
+                      }).length === 0 && (
+                          <div className="text-center py-12">
+                            <Package className="h-10 w-10 text-gray-200 mx-auto mb-3" />
+                            <p className="text-[11px] font-bold text-gray-400 uppercase tracking-widest">No households found</p>
                           </div>
                         )}
-                      </CardContent>
-                    </Card>
+                    </div>
+                    <p className="text-[9px] font-bold text-gray-300 uppercase tracking-widest text-center">
+                      {households.length} households
+                    </p>
+                  </div>
+                )}
+
+                {/* Generate QR — Premium */}
+                {activeMoreScreen === "generate-qr" && (
+                  <div className="space-y-4 p-3">
+                    <div className="flex items-center gap-2">
+                      <button onClick={() => setActiveMoreScreen(null)} className="p-1.5 rounded-full hover:bg-gray-100 active:scale-90 transition-all">
+                        <ArrowLeft className="h-5 w-5 text-gray-600" />
+                      </button>
+                      <h2 className="text-sm font-black uppercase tracking-tight text-gray-900">Generate QR Codes</h2>
+                    </div>
+                    <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 space-y-4">
+                      <div>
+                        <label className="text-[10px] font-black text-gray-500 uppercase tracking-wider mb-1.5 block">Number of QR Codes</label>
+                        <Input
+                          id="batch-quantity-hh"
+                          type="number"
+                          min={1}
+                          max={100}
+                          value={batchQuantity}
+                          onChange={(e) => setBatchQuantity(parseInt(e.target.value) || 10)}
+                          data-testid="input-batch-quantity-households"
+                          className="rounded-xl border-gray-200 h-10 text-sm"
+                        />
+                      </div>
+                      <button
+                        onClick={() => generateBatchQRMutation.mutate(batchQuantity)}
+                        disabled={generateBatchQRMutation.isPending || batchQuantity < 1}
+                        data-testid="button-generate-batch-households"
+                        className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-green-600 hover:bg-green-700 disabled:opacity-50 text-white text-[11px] font-bold uppercase tracking-wider shadow-md active:scale-95 transition-all"
+                      >
+                        <QrCode className="h-4 w-4" />
+                        {generateBatchQRMutation.isPending ? "Generating..." : "Generate Batch"}
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {/* Download QR — Premium */}
+                {activeMoreScreen === "download-qr" && (
+                  <div className="space-y-3 p-3">
+                    <div className="flex items-center gap-2">
+                      <button onClick={() => setActiveMoreScreen(null)} className="p-1.5 rounded-full hover:bg-gray-100 active:scale-90 transition-all">
+                        <ArrowLeft className="h-5 w-5 text-gray-600" />
+                      </button>
+                      <h2 className="text-sm font-black uppercase tracking-tight text-gray-900">QR Code Batches</h2>
+                    </div>
+                    {batchQRCodes.length === 0 ? (
+                      <div className="text-center py-16">
+                        <QrCode className="h-10 w-10 text-gray-200 mx-auto mb-3" />
+                        <p className="text-[11px] font-bold text-gray-400 uppercase tracking-widest">No QR codes generated yet</p>
+                      </div>
+                    ) : (
+                      Object.entries(
+                        batchQRCodes.reduce((acc: any, qr: any) => {
+                          if (!acc[qr.batchId]) acc[qr.batchId] = { total: 0, mapped: 0, notMapped: 0 };
+                          acc[qr.batchId].total++;
+                          if (qr.status === 'mapped') acc[qr.batchId].mapped++;
+                          else acc[qr.batchId].notMapped++;
+                          return acc;
+                        }, {})
+                      ).map(([batchId, stats]: [string, any]) => (
+                        <div key={batchId} className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden flex" data-testid={`row-batch-households-${batchId}`}>
+                          <div className="w-1 flex-shrink-0 bg-blue-500" />
+                          <div className="flex-1 flex items-center justify-between p-3 min-w-0">
+                            <div className="min-w-0">
+                              <h4 className="text-[11px] font-black text-gray-900 truncate">{batchId}</h4>
+                              <div className="flex items-center gap-1.5 mt-0.5">
+                                <span className="text-[8px] font-bold text-gray-500 bg-gray-50 px-1.5 py-0.5 rounded-md">{stats.total} total</span>
+                                <span className="text-[8px] font-bold text-green-600 bg-green-50 px-1.5 py-0.5 rounded-md">{stats.mapped} mapped</span>
+                                <span className="text-[8px] font-bold text-amber-600 bg-amber-50 px-1.5 py-0.5 rounded-md">{stats.notMapped} unmapped</span>
+                              </div>
+                            </div>
+                            <button
+                              onClick={() => window.open(`/api/qr-codes/batch/${batchId}/pdf`, '_blank')}
+                              data-testid={`button-download-batch-households-${batchId}`}
+                              className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-green-600 hover:bg-green-700 text-white text-[9px] font-bold uppercase tracking-wider shadow-sm active:scale-95 transition-all flex-shrink-0 ml-2"
+                            >
+                              <Download className="h-3 w-3" />
+                              PDF
+                            </button>
+                          </div>
+                        </div>
+                      ))
+                    )}
                   </div>
                 )}
 
 
 
-                {/* Collectors sub-screen */}
+                {/* Collectors sub-screen — Premium */}
                 {activeMoreScreen === "collectors" && (
-                  <div className="space-y-4">
-                    <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
-                      <div className="flex-1 w-full">
-                        <Input
-                          id="analytics-date-col"
-                          type="date"
-                          value={filters.date}
-                          onChange={(e) => updateFilter("date", e.target.value)}
-                          className="w-full"
-                        />
-                      </div>
-                      <div className="w-full sm:w-auto">
-                        <Button variant="outline" onClick={clearFilters} className="w-full sm:w-auto">{t("app.clear")}</Button>
+                  <div className="space-y-3 p-3">
+                    {/* Top bar */}
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <button onClick={() => setActiveMoreScreen(null)} className="p-1.5 rounded-full hover:bg-gray-100 active:scale-90 transition-all">
+                          <ArrowLeft className="h-5 w-5 text-gray-600" />
+                        </button>
+                        <h2 className="text-sm font-black uppercase tracking-tight text-gray-900">Collectors</h2>
                       </div>
                       <CreateCollectorDialog villageId={user?.villageId || ""} />
                     </div>
 
-                    <div className="space-y-4">
+                    {/* Collector cards */}
+                    <div className="space-y-2">
                       {collectors.map((collector) => {
                         const filteredCollections = allCollections.filter(c => {
                           const collectionMatches = c.collectorId === collector.id;
@@ -3146,180 +3185,228 @@ export default function ManagerDashboard() {
                         return (
                           <Dialog key={collector.id}>
                             <DialogTrigger asChild>
-                              <Card className="cursor-pointer hover:shadow-md transition-shadow">
-                                <CardContent className="p-4">
-                                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                                    <div className="flex-1">
-                                      <h3 className="font-semibold break-words">{collector.name}</h3>
-                                      <p className="text-sm text-muted-foreground break-words">
-                                        ID: {collector.uid} | Phone: {collector.phone}
-                                      </p>
-                                      {(collector as any).assignedVehicle && (
-                                        <p className="text-xs text-blue-600 mt-1 flex items-center gap-1">
-                                          <Package className="h-3 w-3" /> Vehicle: {(collector as any).assignedVehicle}
-                                        </p>
-                                      )}
-                                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 text-center mt-3">
-                                        <div>
-                                          <div className="text-lg font-bold">{totalCollections}</div>
-                                          <div className="text-xs text-muted-foreground">Collections</div>
-                                        </div>
-                                        <div>
-                                          <div className="text-lg font-bold">{averageRating}</div>
-                                          <div className="text-xs text-muted-foreground">Avg Rating</div>
-                                        </div>
+                              <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden flex cursor-pointer active:scale-[0.98] transition-transform">
+                                <div className="w-1 flex-shrink-0 bg-green-500" />
+                                <div className="flex-1 p-3 min-w-0">
+                                  <div className="flex items-center justify-between">
+                                    <div className="min-w-0">
+                                      <h4 className="text-[12px] font-black text-gray-900 truncate">{collector.name}</h4>
+                                      <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
+                                        <span className="text-[8px] font-bold text-gray-400 bg-gray-50 px-1.5 py-0.5 rounded-md">{collector.uid}</span>
+                                        {collector.phone && <span className="text-[8px] font-bold text-blue-500 bg-blue-50 px-1.5 py-0.5 rounded-md">{collector.phone}</span>}
+                                        {(collector as any).assignedVehicle && (
+                                          <span className="text-[8px] font-bold text-purple-600 bg-purple-50 px-1.5 py-0.5 rounded-md">🚛 {(collector as any).assignedVehicle}</span>
+                                        )}
                                       </div>
                                     </div>
-                                    <div className="sm:self-start">
-                                      <Badge className="text-xs whitespace-nowrap">Click to view feedbacks</Badge>
+                                    <ChevronRight className="h-4 w-4 text-gray-300 flex-shrink-0 ml-2" />
+                                  </div>
+                                  <div className="flex items-center gap-4 mt-2">
+                                    <div className="flex items-center gap-1">
+                                      <span className="text-sm font-black text-green-600">{totalCollections}</span>
+                                      <span className="text-[8px] font-bold text-gray-400 uppercase">collections</span>
+                                    </div>
+                                    <div className="flex items-center gap-1">
+                                      <span className="text-sm font-black text-amber-500">{averageRating}</span>
+                                      <span className="text-[8px] font-bold text-gray-400 uppercase">avg rating</span>
                                     </div>
                                   </div>
-                                </CardContent>
-                              </Card>
+                                </div>
+                              </div>
                             </DialogTrigger>
-                            <DialogContent className="max-w-6xl max-h-[80vh] overflow-y-auto">
-                              <DialogHeader>
-                                <DialogTitle>Collector Feedbacks - {collector.name}</DialogTitle>
-                              </DialogHeader>
-                              <CollectorFeedbackModal
-                                collector={collector}
-                                allCollections={allCollections}
-                                feedbacks={feedbacks}
-                              />
+                            <DialogContent
+                              className="max-w-[100vw] w-full md:max-w-4xl md:rounded-xl overflow-hidden p-0 flex flex-col border-none md:border"
+                              style={{ top: 60, left: 0, transform: 'none', height: 'calc(100dvh - 60px)' }}
+                            >
+                              <div className="px-4 border-b flex items-center justify-between bg-green-50 min-h-[50px] flex-shrink-0">
+                                <DialogTitle className="text-sm font-black uppercase tracking-tight text-gray-900 truncate">Feedbacks — {collector.name}</DialogTitle>
+                              </div>
+                              <div className="flex-1 overflow-y-auto p-3">
+                                <CollectorFeedbackModal
+                                  collector={collector}
+                                  allCollections={allCollections}
+                                  feedbacks={feedbacks}
+                                />
+                              </div>
                             </DialogContent>
                           </Dialog>
                         );
                       })}
+                      {collectors.length === 0 && (
+                        <div className="text-center py-16">
+                          <Users className="h-10 w-10 text-gray-200 mx-auto mb-3" />
+                          <p className="text-[11px] font-bold text-gray-400 uppercase tracking-widest">No collectors yet</p>
+                        </div>
+                      )}
+                      {collectors.length > 0 && (
+                        <p className="text-[9px] font-bold text-gray-300 uppercase tracking-widest text-center pt-1">
+                          {collectors.length} collector{collectors.length !== 1 ? 's' : ''}
+                        </p>
+                      )}
                     </div>
                   </div>
                 )}
 
                 {/* Field Workers sub-screen */}
                 {activeMoreScreen === "fieldworkers" && (
-                  <div className="space-y-4">
-                    <div className="flex justify-between items-center">
-                      <h3 className="text-lg font-semibold">Field Workers</h3>
+                  <div className="space-y-3 p-3">
+                    {/* Top bar */}
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <button onClick={() => setActiveMoreScreen(null)} className="p-1.5 rounded-full hover:bg-gray-100 active:scale-90 transition-all">
+                          <ArrowLeft className="h-5 w-5 text-gray-600" />
+                        </button>
+                        <h2 className="text-sm font-black uppercase tracking-tight text-gray-900">Field Staff</h2>
+                      </div>
                       <Dialog open={showCreateFieldWorkerDialog} onOpenChange={setShowCreateFieldWorkerDialog}>
                         <DialogTrigger asChild>
-                          <Button data-testid="button-add-fieldworker">
-                            <Plus className="h-4 w-4 mr-2" /> Add Field Worker
-                          </Button>
+                          <button
+                            data-testid="button-add-fieldworker"
+                            className="flex items-center gap-1.5 px-3 py-2 rounded-full bg-green-600 hover:bg-green-700 text-white text-[10px] font-bold uppercase tracking-wider shadow-md active:scale-95 transition-all"
+                          >
+                            <Plus className="h-3.5 w-3.5" />
+                            Add
+                          </button>
                         </DialogTrigger>
-                        <DialogContent>
-                          <DialogHeader><DialogTitle>Create Field Worker</DialogTitle></DialogHeader>
-                          <div className="space-y-4">
+                        <DialogContent
+                          className="max-w-[100vw] w-full md:max-w-lg md:rounded-xl overflow-hidden p-0 flex flex-col border-none md:border"
+                          style={{ top: 60, left: 0, transform: 'none', height: 'calc(100dvh - 60px)' }}
+                        >
+                          <div className="px-4 border-b flex items-center justify-between bg-green-50 min-h-[50px] flex-shrink-0">
+                            <DialogTitle className="text-sm font-black uppercase tracking-tight text-gray-900">Add Field Worker</DialogTitle>
+                            <button onClick={() => setShowCreateFieldWorkerDialog(false)} className="p-2 rounded-full hover:bg-white/50 transition-colors">
+                            </button>
+                          </div>
+                          <div className="flex-1 overflow-y-auto p-4 space-y-4">
                             <div>
-                              <Label htmlFor="fw-name">Name *</Label>
+                              <label className="text-[10px] font-black text-gray-500 uppercase tracking-wider mb-1.5 block">Name *</label>
                               <Input
                                 id="fw-name"
                                 value={newFieldWorkerName}
                                 onChange={(e) => setNewFieldWorkerName(e.target.value)}
                                 placeholder="Enter field worker name"
                                 data-testid="input-fieldworker-name"
+                                className="rounded-xl border-gray-200 h-10 text-sm"
                               />
                             </div>
                             <div>
-                              <Label htmlFor="fw-phone">Phone</Label>
+                              <label className="text-[10px] font-black text-gray-500 uppercase tracking-wider mb-1.5 block">Phone</label>
                               <Input
                                 id="fw-phone"
                                 value={newFieldWorkerPhone}
                                 onChange={(e) => setNewFieldWorkerPhone(e.target.value)}
                                 placeholder="Enter phone number"
                                 data-testid="input-fieldworker-phone"
+                                className="rounded-xl border-gray-200 h-10 text-sm"
                               />
                             </div>
-                            <Button
+                            <button
                               onClick={() => createFieldWorkerMutation.mutate({ name: newFieldWorkerName, phone: newFieldWorkerPhone })}
                               disabled={!newFieldWorkerName.trim() || createFieldWorkerMutation.isPending}
-                              className="w-full"
+                              className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-green-600 hover:bg-green-700 disabled:opacity-50 text-white text-[11px] font-bold uppercase tracking-wider shadow-md active:scale-95 transition-all"
                               data-testid="button-submit-fieldworker"
                             >
                               {createFieldWorkerMutation.isPending ? "Creating..." : "Create Field Worker"}
-                            </Button>
+                            </button>
                           </div>
                         </DialogContent>
                       </Dialog>
                     </div>
-                    <Card>
-                      <CardHeader>
-                        <CardTitle>Field Workers ({fieldWorkers.length})</CardTitle>
-                        <CardDescription>Manage field workers who can map QR codes to households</CardDescription>
-                      </CardHeader>
-                      <CardContent>
-                        {fieldWorkers.length === 0 ? (
-                          <p className="text-center text-muted-foreground py-4">No field workers yet. Create one to get started.</p>
-                        ) : (
-                          <div className="space-y-2">
-                            {fieldWorkers.map((fw: any) => (
-                              <div key={fw.userId} className="flex items-center justify-between p-3 border rounded-lg" data-testid={`row-fieldworker-${fw.userId}`}>
-                                <div>
-                                  <p className="font-medium">{fw.name}</p>
-                                  <p className="text-sm text-muted-foreground">ID: {fw.userId} | Phone: {fw.phone || 'N/A'}</p>
+
+                    {/* Worker list */}
+                    {fieldWorkers.length === 0 ? (
+                      <div className="text-center py-16">
+                        <Users className="h-10 w-10 text-gray-200 mx-auto mb-3" />
+                        <p className="text-[11px] font-bold text-gray-400 uppercase tracking-widest">No field workers yet</p>
+                        <p className="text-[9px] text-gray-300 mt-1">Tap "Add" to create one</p>
+                      </div>
+                    ) : (
+                      <div className="space-y-2">
+                        {fieldWorkers.map((fw: any) => (
+                          <div key={fw.userId} className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden flex" data-testid={`row-fieldworker-${fw.userId}`}>
+                            <div className="w-1 flex-shrink-0 bg-green-500" />
+                            <div className="flex-1 flex items-center justify-between p-3 min-w-0">
+                              <div className="min-w-0">
+                                <h4 className="text-[12px] font-black text-gray-900 truncate">{fw.name}</h4>
+                                <div className="flex items-center gap-1.5 mt-0.5">
+                                  <span className="text-[8px] font-bold text-gray-400 bg-gray-50 px-1.5 py-0.5 rounded-md">{fw.userId}</span>
+                                  {fw.phone && <span className="text-[8px] font-bold text-blue-500 bg-blue-50 px-1.5 py-0.5 rounded-md">{fw.phone}</span>}
                                 </div>
-                                <Button
-                                  variant="destructive"
-                                  size="sm"
-                                  onClick={() => deleteFieldWorkerMutation.mutate(fw.userId)}
-                                  disabled={deleteFieldWorkerMutation.isPending}
-                                  data-testid={`button-delete-fieldworker-${fw.userId}`}
-                                >
-                                  <Trash2 className="h-4 w-4" />
-                                </Button>
                               </div>
-                            ))}
+                              <button
+                                onClick={() => setMoreDeleteConfirm({ label: 'field worker', onConfirm: () => deleteFieldWorkerMutation.mutate(fw.userId) })}
+                                disabled={deleteFieldWorkerMutation.isPending}
+                                data-testid={`button-delete-fieldworker-${fw.userId}`}
+                                className="p-2 rounded-xl bg-red-50 hover:bg-red-100 active:scale-90 transition-all flex-shrink-0 ml-2"
+                              >
+                                <Trash2 className="h-3.5 w-3.5 text-red-500" />
+                              </button>
+                            </div>
                           </div>
-                        )}
-                      </CardContent>
-                    </Card>
+                        ))}
+                        <p className="text-[9px] font-bold text-gray-300 uppercase tracking-widest text-center pt-1">
+                          {fieldWorkers.length} field worker{fieldWorkers.length !== 1 ? 's' : ''}
+                        </p>
+                      </div>
+                    )}
                   </div>
                 )}
 
-                {/* Announcements sub-screen */}
+                {/* Announcements sub-screen — Premium */}
                 {activeMoreScreen === "announcements" && (
-                  <div className="space-y-4">
-                    {/* (existing announcements JSX will render here) */}
+                  <div className="space-y-4 p-3">
+                    {/* Top bar */}
+                    <div className="flex items-center gap-2">
+                      <button onClick={() => setActiveMoreScreen(null)} className="p-1.5 rounded-full hover:bg-gray-100 active:scale-90 transition-all">
+                        <ArrowLeft className="h-5 w-5 text-gray-600" />
+                      </button>
+                      <h2 className="text-sm font-black uppercase tracking-tight text-gray-900">Announcements</h2>
+                    </div>
+
                     {activeTab === "more" && activeMoreScreen === "announcements" && (
                       <div className="space-y-4">
-                        <Card>
-                          <CardHeader><CardTitle>Send Announcement</CardTitle></CardHeader>
-                          <CardContent className="space-y-4">
-                            <Textarea
-                              placeholder="Type your announcement..."
-                              className="min-h-[100px]"
-                              id="announcement-message"
-                            />
-                            <Select defaultValue="all">
-                              <SelectTrigger>
-                                <SelectValue placeholder="Select audience" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="all">All</SelectItem>
-                                <SelectItem value="collectors">Collectors</SelectItem>
-                                <SelectItem value="households">Households</SelectItem>
-                              </SelectContent>
-                            </Select>
-                          </CardContent>
-                        </Card>
-                        <Card>
-                          <CardHeader><CardTitle>Recent Announcements</CardTitle></CardHeader>
-                          <CardContent>
-                            {announcements.length > 0 ? (
-                              <div className="space-y-3">
-                                {announcements.map((announcement: any) => (
-                                  <div key={announcement.id} className="p-3 bg-blue-50 rounded-lg border-l-4 border-blue-400">
-                                    <p className="text-sm text-gray-800 font-medium">{announcement.message}</p>
-                                    <div className="flex justify-between items-center mt-2">
-                                      <Badge variant="secondary" className="text-xs">{announcement.targetAudience}</Badge>
-                                      <p className="text-xs text-gray-500">{new Date(announcement.createdAt).toLocaleDateString()}</p>
-                                    </div>
+                        {/* Compose */}
+                        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 space-y-3">
+                          <label className="text-[10px] font-black text-gray-500 uppercase tracking-wider block">New Announcement</label>
+                          <Textarea
+                            placeholder="Type your announcement..."
+                            className="min-h-[80px] rounded-xl border-gray-200 text-sm"
+                            id="announcement-message"
+                          />
+                          <Select defaultValue="all">
+                            <SelectTrigger className="rounded-xl border-gray-200 h-10 text-sm">
+                              <SelectValue placeholder="Select audience" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="all">All</SelectItem>
+                              <SelectItem value="collectors">Collectors</SelectItem>
+                              <SelectItem value="households">Households</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+
+                        {/* Recent Announcements */}
+                        <div className="space-y-2">
+                          <label className="text-[10px] font-black text-gray-400 uppercase tracking-wider px-1">Recent</label>
+                          {announcements.length > 0 ? (
+                            announcements.map((announcement: any) => (
+                              <div key={announcement.id} className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden flex">
+                                <div className="w-1 flex-shrink-0 bg-blue-500" />
+                                <div className="flex-1 p-3 min-w-0">
+                                  <p className="text-[11px] font-bold text-gray-800 leading-relaxed">{announcement.message}</p>
+                                  <div className="flex items-center gap-2 mt-1.5">
+                                    <span className="text-[8px] font-bold text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded-md uppercase">{announcement.targetAudience}</span>
+                                    <span className="text-[8px] font-bold text-gray-300">{new Date(announcement.createdAt).toLocaleDateString()}</span>
                                   </div>
-                                ))}
+                                </div>
                               </div>
-                            ) : (
-                              <p className="text-center text-muted-foreground py-4">{t("announcements.checkLater")}</p>
-                            )}
-                          </CardContent>
-                        </Card>
+                            ))
+                          ) : (
+                            <div className="text-center py-12">
+                              <p className="text-[11px] font-bold text-gray-400 uppercase tracking-widest">{t("announcements.checkLater")}</p>
+                            </div>
+                          )}
+                        </div>
                       </div>
                     )}
                   </div>
@@ -3327,28 +3414,22 @@ export default function ManagerDashboard() {
 
                 {/* Daily Waste Logs sub-screen */}
                 {activeMoreScreen === "daily-waste-logs" && (
-                  <div className="space-y-4">
-                    <MaterialLog defaultTab="daily" />
-                  </div>
+                  <MaterialLog defaultTab="daily" onBack={() => setActiveMoreScreen(null)} />
                 )}
 
                 {/* Compost Logs sub-screen */}
                 {activeMoreScreen === "compost-logs" && (
-                  <div className="space-y-4">
-                    <MaterialLog defaultTab="compost" />
-                  </div>
+                  <MaterialLog defaultTab="compost" onBack={() => setActiveMoreScreen(null)} />
                 )}
 
                 {/* Sales Logs sub-screen */}
                 {activeMoreScreen === "sales-logs" && (
-                  <div className="space-y-4">
-                    <MaterialLog defaultTab="sales" />
-                  </div>
+                  <MaterialLog defaultTab="sales" onBack={() => setActiveMoreScreen(null)} />
                 )}
 
                 {/* Overall Reports sub-screen */}
                 {activeMoreScreen === "overall-reports" && (
-                  <div className="space-y-6">
+                  <div className="space-y-6 p-3">
                     {/* Top KPI Cards */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <Card className="bg-gradient-to-r from-blue-50 to-blue-100 border-blue-200">
@@ -3759,187 +3840,249 @@ export default function ManagerDashboard() {
                 )}
 
 
-                {/* Vehicles sub-screen */}
+                {/* Vehicles sub-screen — Premium */}
                 {activeMoreScreen === "vehicles" && (
-                  <div className="space-y-4">
-                    <div className="flex items-center gap-2 font-bold text-xl">
-                      <Package className="w-5 h-5 text-purple-600" />
-                      Vehicle Management
+                  <div className="space-y-3 p-3">
+                    {/* Top bar */}
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <button onClick={() => setActiveMoreScreen(null)} className="p-1.5 rounded-full hover:bg-gray-100 active:scale-90 transition-all">
+                          <ArrowLeft className="h-5 w-5 text-gray-600" />
+                        </button>
+                        <h2 className="text-sm font-black uppercase tracking-tight text-gray-900">Vehicles</h2>
+                      </div>
+                      <button
+                        onClick={() => {
+                          setEditingVehicle(null);
+                          setNewVehicleReg("");
+                          setNewVehicleName("");
+                          setSelectedVehicleCollectors([]);
+                          setShowVehicleForm(true);
+                        }}
+                        className="flex items-center gap-1.5 px-3 py-2 rounded-full bg-green-600 hover:bg-green-700 text-white text-[10px] font-bold uppercase tracking-wider shadow-md active:scale-95 transition-all"
+                      >
+                        <Plus className="h-3.5 w-3.5" />
+                        Add
+                      </button>
                     </div>
-                    <Card>
-                      <CardHeader>
-                        <CardTitle className="flex items-center justify-between">
-                          <Button size="sm" className="flex items-center gap-2" onClick={() => {
-                            setEditingVehicle(null);
-                            setNewVehicleReg("");
-                            setNewVehicleName("");
-                            setSelectedVehicleCollectors([]);
-                            setShowVehicleForm(true);
-                          }}>
-                            <Plus className="w-4 h-4" />
-                            Add Vehicle
-                          </Button>
-                        </CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        {showVehicleForm && (
-                          <Card className="mb-4">
-                            <CardHeader>
-                              <CardTitle>{editingVehicle ? "Edit Vehicle" : "Add New Vehicle"}</CardTitle>
-                            </CardHeader>
-                            <CardContent className="space-y-4">
-                              <div className="space-y-2">
-                                <Label>Registration Number *</Label>
-                                <Input
-                                  value={newVehicleReg}
-                                  onChange={(e) => setNewVehicleReg(e.target.value)}
-                                  disabled={!!editingVehicle}
-                                  placeholder="e.g. MH-12-AB-1234"
-                                />
-                              </div>
-                              <div className="space-y-2">
-                                <Label>Vehicle Name *</Label>
-                                <Input
-                                  value={newVehicleName}
-                                  onChange={(e) => setNewVehicleName(e.target.value)}
-                                  placeholder="e.g. Garbage Truck 1"
-                                />
-                              </div>
-                              <div className="space-y-2">
-                                <Label>Assign Collectors</Label>
-                                <div className="grid grid-cols-1 gap-2 max-h-40 overflow-y-auto p-2 border rounded-md">
-                                  {collectors
-                                    .filter(c => {
-                                      const vehicleWithCollector = (villageData?.vehicles || []).find((v: any) =>
-                                        (v.collectorIds || []).includes(c.id)
-                                      );
-                                      return !vehicleWithCollector || (editingVehicle && vehicleWithCollector.registrationNumber === editingVehicle.registrationNumber);
-                                    })
-                                    .map(c => (
-                                      <div key={c.id} className="flex items-center gap-2">
-                                        <input
-                                          type="checkbox"
-                                          id={`mv-collector-${c.id}`}
-                                          checked={selectedVehicleCollectors.includes(c.id)}
-                                          onChange={(e) => {
-                                            if (e.target.checked) {
-                                              setSelectedVehicleCollectors([...selectedVehicleCollectors, c.id]);
-                                            } else {
-                                              setSelectedVehicleCollectors(selectedVehicleCollectors.filter(id => id !== c.id));
-                                            }
-                                          }}
-                                        />
-                                        <label htmlFor={`mv-collector-${c.id}`} className="text-sm cursor-pointer">{c.name} ({c.uid})</label>
-                                      </div>
-                                    ))}
+
+                    {/* Inline form */}
+                    {showVehicleForm && (
+                      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 space-y-3">
+                        <label className="text-[10px] font-black text-gray-500 uppercase tracking-wider block">
+                          {editingVehicle ? "Edit Vehicle" : "Add New Vehicle"}
+                        </label>
+                        <div>
+                          <label className="text-[10px] font-black text-gray-400 uppercase tracking-wider mb-1 block">Registration Number *</label>
+                          <Input
+                            value={newVehicleReg}
+                            onChange={(e) => setNewVehicleReg(e.target.value)}
+                            disabled={!!editingVehicle}
+                            placeholder="e.g. MH-12-AB-1234"
+                            className="rounded-xl border-gray-200 h-10 text-sm"
+                          />
+                        </div>
+                        <div>
+                          <label className="text-[10px] font-black text-gray-400 uppercase tracking-wider mb-1 block">Vehicle Name *</label>
+                          <Input
+                            value={newVehicleName}
+                            onChange={(e) => setNewVehicleName(e.target.value)}
+                            placeholder="e.g. Garbage Truck 1"
+                            className="rounded-xl border-gray-200 h-10 text-sm"
+                          />
+                        </div>
+                        <div>
+                          <label className="text-[10px] font-black text-gray-400 uppercase tracking-wider mb-1 block">Assign Collectors</label>
+                          <div className="max-h-36 overflow-y-auto p-2 border border-gray-200 rounded-xl space-y-2">
+                            {collectors
+                              .filter(c => {
+                                const vehicleWithCollector = (villageData?.vehicles || []).find((v: any) =>
+                                  (v.collectorIds || []).includes(c.id)
+                                );
+                                return !vehicleWithCollector || (editingVehicle && vehicleWithCollector.registrationNumber === editingVehicle.registrationNumber);
+                              })
+                              .map(c => (
+                                <div key={c.id} className="flex items-center gap-2">
+                                  <input
+                                    type="checkbox"
+                                    id={`mv-collector-${c.id}`}
+                                    checked={selectedVehicleCollectors.includes(c.id)}
+                                    onChange={(e) => {
+                                      if (e.target.checked) {
+                                        setSelectedVehicleCollectors([...selectedVehicleCollectors, c.id]);
+                                      } else {
+                                        setSelectedVehicleCollectors(selectedVehicleCollectors.filter(id => id !== c.id));
+                                      }
+                                    }}
+                                    className="rounded"
+                                  />
+                                  <label htmlFor={`mv-collector-${c.id}`} className="text-[11px] font-bold text-gray-700 cursor-pointer">{c.name} <span className="text-gray-400">({c.uid})</span></label>
+                                </div>
+                              ))}
+                          </div>
+                        </div>
+                        <div className="flex gap-2 pt-1">
+                          <button
+                            onClick={() => setShowVehicleForm(false)}
+                            className="flex-1 px-4 py-2.5 rounded-xl border border-gray-200 text-[11px] font-bold text-gray-600 uppercase tracking-wider hover:bg-gray-50 active:scale-95 transition-all"
+                          >
+                            Cancel
+                          </button>
+                          <button
+                            disabled={!newVehicleReg || !newVehicleName || addVehicleMutation.isPending || updateVehicleMutation.isPending}
+                            onClick={() => {
+                              if (editingVehicle) {
+                                updateVehicleMutation.mutate({ registrationNumber: newVehicleReg, name: newVehicleName, collectorIds: selectedVehicleCollectors });
+                              } else {
+                                addVehicleMutation.mutate({ registrationNumber: newVehicleReg, name: newVehicleName, collectorIds: selectedVehicleCollectors });
+                              }
+                            }}
+                            className="flex-1 px-4 py-2.5 rounded-xl bg-green-600 hover:bg-green-700 disabled:opacity-50 text-white text-[11px] font-bold uppercase tracking-wider shadow-sm active:scale-95 transition-all"
+                          >
+                            {(addVehicleMutation.isPending || updateVehicleMutation.isPending) ? "Saving..." : (editingVehicle ? "Update" : "Add Vehicle")}
+                          </button>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Vehicle list */}
+                    {(villageData?.vehicles || []).length > 0 ? (
+                      <div className="space-y-2">
+                        {(villageData?.vehicles || []).map((vehicle: any) => (
+                          <div key={vehicle.registrationNumber} className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden flex">
+                            <div className="w-1 flex-shrink-0 bg-purple-500" />
+                            <div className="flex-1 flex items-center justify-between p-3 min-w-0">
+                              <div className="min-w-0">
+                                <h4 className="text-[12px] font-black text-gray-900 truncate">{vehicle.name}</h4>
+                                <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
+                                  <span className="text-[8px] font-bold text-purple-600 bg-purple-50 px-1.5 py-0.5 rounded-md">{vehicle.registrationNumber}</span>
+                                  {vehicle.collectorIds?.length > 0 && (
+                                    <span className="text-[8px] font-bold text-green-600 bg-green-50 px-1.5 py-0.5 rounded-md">{vehicle.collectorIds.length} collector{vehicle.collectorIds.length !== 1 ? 's' : ''}</span>
+                                  )}
                                 </div>
                               </div>
-                              <div className="flex gap-2">
-                                <Button
-                                  className="flex-1"
-                                  disabled={!newVehicleReg || !newVehicleName || addVehicleMutation.isPending || updateVehicleMutation.isPending}
+                              <div className="flex gap-1 flex-shrink-0 ml-2">
+                                <button
                                   onClick={() => {
-                                    if (editingVehicle) {
-                                      updateVehicleMutation.mutate({ registrationNumber: newVehicleReg, name: newVehicleName, collectorIds: selectedVehicleCollectors });
-                                    } else {
-                                      addVehicleMutation.mutate({ registrationNumber: newVehicleReg, name: newVehicleName, collectorIds: selectedVehicleCollectors });
-                                    }
-                                  }}
-                                >
-                                  {(addVehicleMutation.isPending || updateVehicleMutation.isPending) ? "Saving..." : (editingVehicle ? "Update Vehicle" : "Add Vehicle")}
-                                </Button>
-                                <Button variant="outline" className="flex-1" onClick={() => setShowVehicleForm(false)}>Cancel</Button>
-                              </div>
-                            </CardContent>
-                          </Card>
-                        )}
-                        {(villageData?.vehicles || []).length > 0 ? (
-                          <div className="space-y-2">
-                            {(villageData?.vehicles || []).map((vehicle: any) => (
-                              <div key={vehicle.registrationNumber} className="flex items-center justify-between p-3 border rounded-lg">
-                                <div>
-                                  <p className="font-medium">{vehicle.name}</p>
-                                  <p className="text-xs text-muted-foreground">{vehicle.registrationNumber}</p>
-                                </div>
-                                <div className="flex gap-2">
-                                  <Button size="sm" variant="outline" onClick={() => {
                                     setEditingVehicle(vehicle);
                                     setNewVehicleReg(vehicle.registrationNumber);
                                     setNewVehicleName(vehicle.name);
                                     setSelectedVehicleCollectors(vehicle.collectorIds || []);
                                     setShowVehicleForm(true);
-                                  }}>Edit</Button>
-                                  <Button size="sm" variant="destructive" onClick={() => removeVehicleMutation.mutate(vehicle.registrationNumber)}>Remove</Button>
-                                </div>
+                                  }}
+                                  className="p-2 rounded-xl bg-gray-50 hover:bg-gray-100 active:scale-90 transition-all"
+                                >
+                                  <Edit className="h-3.5 w-3.5 text-gray-500" />
+                                </button>
+                                <button
+                                  onClick={() => setMoreDeleteConfirm({ label: 'vehicle', onConfirm: () => removeVehicleMutation.mutate(vehicle.registrationNumber) })}
+                                  className="p-2 rounded-xl bg-red-50 hover:bg-red-100 active:scale-90 transition-all"
+                                >
+                                  <Trash2 className="h-3.5 w-3.5 text-red-500" />
+                                </button>
                               </div>
-                            ))}
+                            </div>
                           </div>
-                        ) : (
-                          <p className="text-muted-foreground text-sm">No vehicles added yet.</p>
-                        )}
-                      </CardContent>
-                    </Card>
-                  </div>
-                )}
-
-                {/* Wards sub-screen */}
-                {activeMoreScreen === "wards" && (
-                  <div className="space-y-4">
-                    <div className="flex items-center gap-2 font-bold text-xl">
-                      <MapPin className="w-5 h-5 text-purple-600" />
-                      Wards Management
-                    </div>
-                    <Card>
-                      <CardHeader>
-                        <CardTitle className="flex items-center justify-between">
-                          <Button size="sm" className="flex items-center gap-2" onClick={() => setShowWardForm(true)}>
-                            <Plus className="w-4 h-4" />
-                            Add Ward
-                          </Button>
-                        </CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        {wards.length > 0 ? (
-                          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
-                            {wards.map((ward: string, index: number) => (
-                              <Badge key={index} variant="outline" className="justify-center py-2 px-3">
-                                {ward}
-                              </Badge>
-                            ))}
-                          </div>
-                        ) : (
-                          <p className="text-muted-foreground text-sm">
-                            No wards configured yet. Add your first ward to organize households.
-                          </p>
-                        )}
-                      </CardContent>
-                    </Card>
-                  </div>
-                )}
-
-                {/* Change Password sub-screen */}
-                {activeMoreScreen === "change-password" && (
-                  <Card>
-                    <CardHeader><CardTitle>Change Password</CardTitle></CardHeader>
-                    <CardContent>
-                      <Button onClick={() => setShowPasswordDialog(true)} className="w-full">
-                        Open Change Password Form
-                      </Button>
-                    </CardContent>
-                  </Card>
-                )}
-
-                {/* Language sub-screen */}
-                {activeMoreScreen === "language" && (
-                  <Card>
-                    <CardHeader><CardTitle>Language</CardTitle></CardHeader>
-                    <CardContent>
-                      <div className="flex items-center gap-3">
-                        <h2 className="font-bold">Select Language:</h2>
-                        <LanguageSwitcher />
+                        ))}
+                        <p className="text-[9px] font-bold text-gray-300 uppercase tracking-widest text-center pt-1">
+                          {(villageData?.vehicles || []).length} vehicle{(villageData?.vehicles || []).length !== 1 ? 's' : ''}
+                        </p>
                       </div>
-                    </CardContent>
-                  </Card>
+                    ) : (
+                      <div className="text-center py-16">
+                        <Package className="h-10 w-10 text-gray-200 mx-auto mb-3" />
+                        <p className="text-[11px] font-bold text-gray-400 uppercase tracking-widest">No vehicles added yet</p>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Wards sub-screen — Premium */}
+                {activeMoreScreen === "wards" && (
+                  <div className="space-y-3 p-3">
+                    {/* Top bar */}
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <button onClick={() => setActiveMoreScreen(null)} className="p-1.5 rounded-full hover:bg-gray-100 active:scale-90 transition-all">
+                          <ArrowLeft className="h-5 w-5 text-gray-600" />
+                        </button>
+                        <h2 className="text-sm font-black uppercase tracking-tight text-gray-900">Wards</h2>
+                      </div>
+                      <button
+                        onClick={() => setShowWardForm(true)}
+                        className="flex items-center gap-1.5 px-3 py-2 rounded-full bg-green-600 hover:bg-green-700 text-white text-[10px] font-bold uppercase tracking-wider shadow-md active:scale-95 transition-all"
+                      >
+                        <Plus className="h-3.5 w-3.5" />
+                        Add
+                      </button>
+                    </div>
+
+                    {/* Ward list */}
+                    {wards.length > 0 ? (
+                      <div className="space-y-2">
+                        {wards.map((ward: string, index: number) => (
+                          <div key={index} className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden flex">
+                            <div className="w-1 flex-shrink-0 bg-amber-500" />
+                            <div className="flex-1 flex items-center p-3 min-w-0">
+                              <MapPin className="h-4 w-4 text-amber-500 mr-2 flex-shrink-0" />
+                              <h4 className="text-[12px] font-black text-gray-900 truncate">{ward}</h4>
+                            </div>
+                          </div>
+                        ))}
+                        <p className="text-[9px] font-bold text-gray-300 uppercase tracking-widest text-center pt-1">
+                          {wards.length} ward{wards.length !== 1 ? 's' : ''}
+                        </p>
+                      </div>
+                    ) : (
+                      <div className="text-center py-16">
+                        <MapPin className="h-10 w-10 text-gray-200 mx-auto mb-3" />
+                        <p className="text-[11px] font-bold text-gray-400 uppercase tracking-widest">No wards configured yet</p>
+                        <p className="text-[9px] text-gray-300 mt-1">Tap "Add" to create your first ward</p>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Change Password sub-screen — Premium */}
+                {activeMoreScreen === "change-password" && (
+                  <div className="space-y-4 p-3">
+                    <div className="flex items-center gap-2">
+                      <button onClick={() => setActiveMoreScreen(null)} className="p-1.5 rounded-full hover:bg-gray-100 active:scale-90 transition-all">
+                        <ArrowLeft className="h-5 w-5 text-gray-600" />
+                      </button>
+                      <h2 className="text-sm font-black uppercase tracking-tight text-gray-900">Change Password</h2>
+                    </div>
+                    <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 space-y-4">
+                      <div className="text-center py-2">
+                        <div className="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center mx-auto mb-3">
+                          <Shield className="h-5 w-5 text-green-600" />
+                        </div>
+                        <p className="text-[11px] text-gray-500 leading-relaxed">Update your account password for security</p>
+                      </div>
+                      <button
+                        onClick={() => setShowPasswordDialog(true)}
+                        className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-green-600 hover:bg-green-700 text-white text-[11px] font-bold uppercase tracking-wider shadow-md active:scale-95 transition-all"
+                      >
+                        Change Password
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {/* Language sub-screen — Premium */}
+                {activeMoreScreen === "language" && (
+                  <div className="space-y-4 p-3">
+                    <div className="flex items-center gap-2">
+                      <button onClick={() => setActiveMoreScreen(null)} className="p-1.5 rounded-full hover:bg-gray-100 active:scale-90 transition-all">
+                        <ArrowLeft className="h-5 w-5 text-gray-600" />
+                      </button>
+                      <h2 className="text-sm font-black uppercase tracking-tight text-gray-900">Language</h2>
+                    </div>
+                    <div className="flex justify-center items-center justify-between bg-white rounded-2xl shadow-sm border border-gray-100 p-4 space-y-3">
+                      <label className="text-[10px] font-black text-gray-500 uppercase tracking-wider block">Select Language</label>
+                      <LanguageSwitcher />
+                    </div>
+                  </div>
                 )}
               </div>
             )}
@@ -4225,161 +4368,150 @@ export default function ManagerDashboard() {
             }
 
 
-            {/* Issues Tab */}
+            {/* Issues Tab — Premium Mobile-First */}
             {
-              activeTab === "issues" && (
-                <div className="space-y-6">
-                  <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-                    <StatCard
-                      title="Total Issues"
-                      value={allIssues.length}
-                      icon={AlertTriangle}
-                      description="All time"
-                    />
-                    <StatCard
-                      title="Open Issues"
-                      value={allIssues.filter(i => i.status === "open").length}
-                      icon={AlertCircle}
-                      description="Need attention"
-                    />
-                    <StatCard
-                      title="In Progress"
-                      value={allIssues.filter(i => i.status === "in_progress").length}
-                      icon={Package}
-                      description="Being worked on"
-                    />
-                    <StatCard
-                      title="Resolved"
-                      value={allIssues.filter(i => i.status === "resolved").length}
-                      icon={CheckCircle}
-                      description="Completed"
-                    />
-                  </div>
+              activeTab === "issues" && (() => {
+                const openCount = allIssues.filter(i => i.status === "open").length;
+                const progressCount = allIssues.filter(i => i.status === "in_progress").length;
+                const resolvedCount = allIssues.filter(i => i.status === "resolved").length;
+                const filteredIssues = allIssues.filter(issue => filters.status === "all" || issue.status === filters.status);
 
-                  <Card>
-                    <CardHeader>
-                      <div className="flex justify-between">
-                        <CardTitle>Issue Reports</CardTitle>
-                        <Select value={filters.status} onValueChange={(value) => updateFilter("status", value)}>
-                          <SelectTrigger className="w-40">
-                            <SelectValue placeholder="Filter by status" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="all">All Issues</SelectItem>
-                            <SelectItem value="open">Open</SelectItem>
-                            <SelectItem value="in_progress">In Progress</SelectItem>
-                            <SelectItem value="resolved">Resolved</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    </CardHeader>
-                    <CardContent>
-                      {(() => {
-                        const filteredIssues = allIssues.filter(issue => filters.status === "all" || issue.status === filters.status);
+                const statusConfig: Record<string, { dot: string; bg: string; text: string; border: string; label: string }> = {
+                  open: { dot: 'bg-red-500', bg: 'bg-red-50', text: 'text-red-700', border: 'border-red-200', label: 'Open' },
+                  in_progress: { dot: 'bg-amber-500', bg: 'bg-amber-50', text: 'text-amber-700', border: 'border-amber-200', label: 'In Progress' },
+                  resolved: { dot: 'bg-green-500', bg: 'bg-green-50', text: 'text-green-700', border: 'border-green-200', label: 'Resolved' },
+                };
 
-                        return (
-                          <>
-                            <div className="space-y-4">
-                              {filteredIssues.map((issue) => (
-                                <Card key={issue.id}>
-                                  <CardContent className="p-4">
-                                    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
-                                      {/* Left: Issue Info */}
-                                      <div className="flex-1 w-full">
-                                        <div className="flex flex-wrap items-center gap-2 mb-2">
-                                          <h4 className="font-semibold break-words">{issue.title}</h4>
-                                          <Badge
-                                            variant={
-                                              issue.status === "open" ? "destructive" :
-                                                issue.status === "in_progress" ? "secondary" : "default"
-                                            }
-                                          >
-                                            {issue.status.replace("_", " ").toUpperCase()}
-                                          </Badge>
-                                          <Badge variant="outline">{issue.category}</Badge>
-                                        </div>
-                                        <p className="text-sm text-muted-foreground mb-2 break-words">
-                                          Reported by: {issue.reportedBy} on {new Date(issue.createdAt).toLocaleDateString()}
-                                        </p>
-                                        <p className="text-sm break-words">{issue.description}</p>
+                const stripColor = (s: string) => s === 'open' ? 'bg-red-500' : s === 'in_progress' ? 'bg-amber-400' : 'bg-green-500';
 
-                                        {/* Show reporter's image if available */}
-                                        {issue.photoUrl && (
-                                          <div className="mt-2">
-                                            <p className="text-xs font-medium mb-1">Reported with image:</p>
-                                            <img
-                                              src={issue.photoUrl}
-                                              alt="Issue photo"
-                                              className="w-16 h-16 object-cover rounded cursor-pointer"
-                                              onClick={() => window.open(issue.photoUrl, "_blank")}
-                                            />
-                                          </div>
+                return (
+                  <div className="space-y-4 p-3">
+                    {/* Status Filter Pills */}
+                    <div className="flex items-center gap-2 overflow-x-auto pb-1 px-1 -mx-1">
+                      {[
+                        { key: 'all', label: 'All', count: allIssues.length, dot: 'bg-gray-400' },
+                        { key: 'open', label: 'Open', count: openCount, dot: 'bg-red-500' },
+                        { key: 'in_progress', label: 'Progress', count: progressCount, dot: 'bg-amber-500' },
+                        { key: 'resolved', label: 'Resolved', count: resolvedCount, dot: 'bg-green-500' },
+                      ].map(pill => (
+                        <button
+                          key={pill.key}
+                          onClick={() => updateFilter('status', pill.key)}
+                          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-wider transition-all flex-shrink-0 ${filters.status === pill.key
+                            ? 'bg-gray-900 text-white shadow-md scale-105'
+                            : 'bg-white text-gray-600 border border-gray-200 hover:border-gray-300 active:scale-95'
+                            }`}
+                        >
+                          <div className={`w-1.5 h-1.5 rounded-full ${filters.status === pill.key ? 'bg-white' : pill.dot}`} />
+                          {pill.label}
+                          <span className={`ml-0.5 ${filters.status === pill.key ? 'text-white/70' : 'text-gray-400'}`}>{pill.count}</span>
+                        </button>
+                      ))}
+                    </div>
+
+                    {/* Issue Cards */}
+                    <div className="space-y-3">
+                      {filteredIssues.length === 0 ? (
+                        <div className="text-center py-16">
+                          <AlertCircle className="h-10 w-10 text-gray-200 mx-auto mb-3" />
+                          <p className="text-[11px] font-bold text-gray-400 uppercase tracking-widest">No issues found</p>
+                        </div>
+                      ) : (
+                        filteredIssues.map((issue) => {
+                          const cfg = statusConfig[issue.status] || statusConfig.open;
+                          const timeAgo = issue.createdAt ? formatDistanceToNow(new Date(issue.createdAt), { addSuffix: true }) : '';
+
+                          return (
+                            <div
+                              key={issue.id}
+                              className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden flex active:scale-[0.98] transition-transform"
+                            >
+                              {/* Left color strip */}
+                              <div className={`w-1 flex-shrink-0 ${stripColor(issue.status)}`} />
+
+                              <div className="flex-1 p-3 min-w-0">
+                                {/* Header: title + category + time */}
+                                <div className="flex items-start justify-between gap-2 mb-1">
+                                  <div className="flex-1 min-w-0">
+                                    <h4 className="text-[13px] font-black text-gray-900 truncate leading-tight">{issue.title}</h4>
+                                    <div className="flex items-center gap-1.5 mt-0.5">
+                                      <span className={`text-[8px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-md ${cfg.bg} ${cfg.text}`}>{cfg.label}</span>
+                                      <span className="text-[8px] font-bold text-gray-400 bg-gray-50 px-1.5 py-0.5 rounded-md uppercase">{issue.category}</span>
+                                      <span className="text-[8px] text-gray-400">{timeAgo}</span>
+                                    </div>
+                                  </div>
+                                  {/* Edit button */}
+                                  <button
+                                    onClick={() => { setSelectedIssue(issue); setShowIssueDialog(true); }}
+                                    className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors flex-shrink-0"
+                                  >
+                                    <Edit className="h-3.5 w-3.5 text-gray-400" />
+                                  </button>
+                                </div>
+
+                                {/* Description — 2 lines max */}
+                                <p className="text-[11px] text-gray-600 leading-relaxed line-clamp-2 mb-1.5">{issue.description}</p>
+
+                                {/* Photo + Reporter row */}
+                                <div className="flex items-center gap-2">
+                                  {issue.photoUrl && (
+                                    <img
+                                      src={issue.photoUrl}
+                                      alt=""
+                                      className="w-9 h-9 rounded-lg object-cover border border-gray-100 cursor-pointer flex-shrink-0"
+                                      onClick={() => window.open(issue.photoUrl, "_blank")}
+                                    />
+                                  )}
+                                  <span className="text-[9px] font-medium text-gray-400 truncate">by {issue.reportedBy}</span>
+                                </div>
+
+                                {/* Manager reply — compact */}
+                                {issue.managerReply && (
+                                  <div className="mt-2 p-2 bg-green-50/80 rounded-lg border border-green-100">
+                                    <div className="flex items-start gap-2">
+                                      <div className="w-1 h-full bg-green-400 rounded-full flex-shrink-0 mt-0.5" style={{ minHeight: 16 }} />
+                                      <div className="flex-1 min-w-0">
+                                        <span className="text-[8px] font-black text-green-700 uppercase tracking-wider">Manager Reply</span>
+                                        <p className="text-[10px] text-green-800 leading-snug line-clamp-2 mt-0.5">{issue.managerReply}</p>
+                                        {issue.managerProofPhotoUrl && (
+                                          <img
+                                            src={issue.managerProofPhotoUrl}
+                                            alt=""
+                                            className="w-8 h-8 rounded-md object-cover mt-1 cursor-pointer border border-green-200"
+                                            onClick={() => window.open(issue.managerProofPhotoUrl, "_blank")}
+                                          />
                                         )}
-
-                                        {issue.managerReply && (
-                                          <div className="mt-3 p-3 bg-blue-50 rounded-lg">
-                                            <p className="text-sm break-words">
-                                              <strong>Manager Reply:</strong> {issue.managerReply}
-                                            </p>
-                                            {/* Show manager's proof photo if available */}
-                                            {issue.managerProofPhotoUrl && (
-                                              <div className="mt-2">
-                                                <p className="text-xs font-medium mb-1">Manager proof:</p>
-                                                <img
-                                                  src={issue.managerProofPhotoUrl}
-                                                  alt="Manager proof photo"
-                                                  className="w-16 h-16 object-cover rounded cursor-pointer"
-                                                  onClick={() => window.open(issue.managerProofPhotoUrl, "_blank")}
-                                                />
-                                              </div>
-                                            )}
-                                          </div>
-                                        )}
-                                      </div>
-
-                                      {/* Right: Action Buttons */}
-                                      <div className="flex gap-2 mt-3 sm:mt-0 self-end sm:self-auto">
-                                        <Button
-                                          size="sm"
-                                          onClick={() => {
-                                            setSelectedIssue(issue);
-                                            setShowIssueDialog(true);
-                                          }}
-                                        >
-                                          <Edit className="h-4 w-4" />
-                                        </Button>
                                       </div>
                                     </div>
-                                  </CardContent>
-                                </Card>
-                              ))}
+                                  </div>
+                                )}
+                              </div>
                             </div>
+                          );
+                        })
+                      )}
+                    </div>
 
-                            {/* Load More Controls for Issues - Server-side pagination */}
-                            <div className="mt-4 flex justify-center gap-2">
-                              {hasNextIssuesPage && (
-                                <Button
-                                  variant="outline"
-                                  onClick={() => fetchNextIssuesPage()}
-                                  disabled={isFetchingNextIssuesPage}
-                                  data-testid="button-load-more-issues"
-                                >
-                                  {isFetchingNextIssuesPage ? "Loading..." : `Load More (${totalIssuesCount - allIssues.length} remaining)`}
-                                </Button>
-                              )}
-                            </div>
+                    {/* Load More */}
+                    {hasNextIssuesPage && (
+                      <div className="flex justify-center pt-2">
+                        <button
+                          onClick={() => fetchNextIssuesPage()}
+                          disabled={isFetchingNextIssuesPage}
+                          className="text-[10px] font-black uppercase tracking-widest text-gray-400 hover:text-gray-600 transition-colors py-2 px-4"
+                          data-testid="button-load-more-issues"
+                        >
+                          {isFetchingNextIssuesPage ? 'Loading...' : `Show more · ${totalIssuesCount - allIssues.length} remaining`}
+                        </button>
+                      </div>
+                    )}
 
-                            {/* Summary */}
-                            <p className="text-sm text-muted-foreground text-center mt-2">
-                              Showing {filteredIssues.length} of {totalIssuesCount} issues
-                            </p>
-                          </>
-                        );
-                      })()}
-                    </CardContent>
-                  </Card>
-                </div>
-              )
+                    <p className="text-[9px] font-bold text-gray-300 uppercase tracking-widest text-center">
+                      {filteredIssues.length} of {totalIssuesCount} issues
+                    </p>
+                  </div>
+                );
+              })()
             }
 
             {/* Reports Tab */}
@@ -4395,6 +4527,38 @@ export default function ManagerDashboard() {
           </div >
         </div >
       </div >
+
+      {/* Delete Confirmation Dialog — More Tab */}
+      <Dialog open={!!moreDeleteConfirm} onOpenChange={() => setMoreDeleteConfirm(null)}>
+        <DialogContent className="max-w-xs rounded-2xl border-none shadow-xl p-6">
+          <div className="text-center space-y-3">
+            <div className="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center mx-auto">
+              <Trash2 className="h-5 w-5 text-red-600" />
+            </div>
+            <h3 className="text-sm font-black text-gray-900">Remove {moreDeleteConfirm?.label}?</h3>
+            <p className="text-[11px] text-gray-500 leading-relaxed">
+              This {moreDeleteConfirm?.label} will be permanently removed.
+            </p>
+            <div className="flex gap-2 pt-1">
+              <button
+                onClick={() => setMoreDeleteConfirm(null)}
+                className="flex-1 px-4 py-2.5 rounded-xl border border-gray-200 text-[11px] font-bold text-gray-600 uppercase tracking-wider hover:bg-gray-50 active:scale-95 transition-all"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => {
+                  moreDeleteConfirm?.onConfirm();
+                  setMoreDeleteConfirm(null);
+                }}
+                className="flex-1 px-4 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 text-white text-[11px] font-bold uppercase tracking-wider shadow-sm active:scale-95 transition-all"
+              >
+                Remove
+              </button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Password Change Dialog */}
       < Dialog open={showPasswordDialog} onOpenChange={setShowPasswordDialog} >
@@ -4438,12 +4602,19 @@ export default function ManagerDashboard() {
         </DialogContent>
       </Dialog >
 
-      {/* Issue Management Dialog */}
-      < Dialog open={showIssueDialog} onOpenChange={setShowIssueDialog} >
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Manage Issue</DialogTitle>
-          </DialogHeader>
+      {/* Issue Management Dialog — Fullscreen */}
+      <Dialog open={showIssueDialog} onOpenChange={setShowIssueDialog}>
+        <DialogContent
+          className="max-w-[100vw] w-full md:max-w-lg md:h-[90vh] md:rounded-xl overflow-hidden p-0 flex flex-col border-none md:border"
+          style={{ top: 60, left: 0, transform: 'none', height: 'calc(100dvh - 60px)' }}
+        >
+          {/* Fixed header */}
+          <div className="px-2 border-b flex items-center justify-between bg-green-50 min-h-[50px] flex-shrink-0">
+            <DialogTitle className="text-sm font-black uppercase tracking-tight text-gray-900">Manage Issue</DialogTitle>
+            {/* <button onClick={() => setShowIssueDialog(false)} className="p-2 rounded-full hover:bg-white/50 transition-colors">
+              <X className="h-5 w-5 text-gray-600" />
+            </button> */}
+          </div>
           {selectedIssue && (
             <form
               onSubmit={(e) => {
@@ -4454,7 +4625,6 @@ export default function ManagerDashboard() {
                 const fileInput = form.querySelector('input[type="file"]') as HTMLInputElement;
                 const proofPhotoFile = fileInput?.files?.[0] || null;
 
-                // Check if proof photo is required
                 if ((status === 'in_progress' || status === 'resolved') && !proofPhotoFile) {
                   toast({
                     title: "Proof photo required",
@@ -4471,87 +4641,89 @@ export default function ManagerDashboard() {
                   proofPhotoFile,
                 });
               }}
-              className="space-y-4"
+              className="flex-1 overflow-y-auto px-3 space-y-2 pb-5 md:pb-6"
             >
-              <div className="p-3 bg-gray-50 rounded-lg">
-                <h4 className="font-medium mb-2">{selectedIssue.title}</h4>
-                <p className="text-sm">{selectedIssue.description}</p>
-                <p className="text-xs text-muted-foreground mt-2">
-                  By: {selectedIssue.reportedBy} | {selectedIssue.category}
-                </p>
-                {/* Show original reporter's image if available */}
+              {/* Issue summary */}
+              <div className="p-3 bg-gray-50 rounded-2xl border border-gray-100">
+                <h4 className="text-[13px] font-black text-gray-900 leading-tight mb-1">{selectedIssue.title}</h4>
+                <p className="text-[11px] text-gray-600 leading-relaxed line-clamp-3">{selectedIssue.description}</p>
+                <div className="flex items-center gap-2 mt-2">
+                  <span className="text-[8px] font-bold text-gray-400 bg-white px-1.5 py-0.5 rounded-md uppercase border border-gray-100">{selectedIssue.category}</span>
+                  <span className="text-[8px] font-medium text-gray-400">by {selectedIssue.reportedBy}</span>
+                </div>
                 {selectedIssue.photoUrl && (
-                  <div className="mt-2">
-                    <p className="text-xs font-medium mb-1">Reported with image:</p>
-                    <img
-                      src={selectedIssue.photoUrl}
-                      alt="Issue photo"
-                      className="w-20 h-20 object-cover rounded cursor-pointer"
-                      onClick={() => window.open(selectedIssue.photoUrl, "_blank")}
-                    />
-                  </div>
+                  <img
+                    src={selectedIssue.photoUrl}
+                    alt=""
+                    className="w-14 h-14 rounded-xl object-cover border border-gray-100 cursor-pointer mt-2"
+                    onClick={() => window.open(selectedIssue.photoUrl, "_blank")}
+                  />
                 )}
               </div>
+
+              {/* Status */}
               <div>
-                <Label htmlFor="status">Status</Label>
+                <label className="text-[10px] font-black text-gray-500 uppercase tracking-wider mb-1.5 block">Status</label>
                 <Select name="status" defaultValue={selectedIssue.status}>
-                  <SelectTrigger>
+                  <SelectTrigger className="rounded-xl border-gray-200 h-8">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="open">Open</SelectItem>
-                    <SelectItem value="in_progress">In Progress</SelectItem>
-                    <SelectItem value="resolved">Resolved</SelectItem>
+                    <SelectItem value="open">🔴 Open</SelectItem>
+                    <SelectItem value="in_progress">🟡 In Progress</SelectItem>
+                    <SelectItem value="resolved">🟢 Resolved</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
+
+              {/* Reply */}
               <div>
-                <Label htmlFor="managerReply">Reply</Label>
+                <label className="text-[10px] font-black text-gray-500 uppercase tracking-wider mb-1.5 block">Your Reply</label>
                 <Textarea
                   name="managerReply"
                   defaultValue={selectedIssue.managerReply || ""}
                   placeholder="Add your response..."
-                  rows={3}
+                  rows={7}
+                  className="rounded-xl border-gray-200 resize-none text-sm"
                 />
               </div>
+
+              {/* Proof photo */}
               <div>
-                <Label htmlFor="proofPhoto">
-                  Proof Photo *
-                  <span className="text-xs text-muted-foreground ml-1">
-                    (Required when changing status to In Progress or Resolved)
-                  </span>
-                </Label>
+                <label className="text-[10px] font-black text-gray-500 uppercase tracking-wider mb-1.5 block">
+                  Proof Photo <span className="text-red-400">*</span>
+                  <span className="text-[8px] font-medium text-gray-400 ml-1 normal-case tracking-normal">(required for status change)</span>
+                </label>
                 <Input
                   type="file"
                   accept="image/*"
                   name="proofPhoto"
-                  className="cursor-pointer"
+                  className="cursor-pointer rounded-xl border-gray-200 text-sm"
                 />
               </div>
-              {/* Show existing manager proof photo if available */}
+
               {selectedIssue.managerProofPhotoUrl && (
-                <div>
-                  <Label className="text-xs font-medium">Current Proof Photo:</Label>
+                <div className="flex items-center gap-2">
+                  <span className="text-[9px] font-bold text-gray-400 uppercase">Current proof:</span>
                   <img
                     src={selectedIssue.managerProofPhotoUrl}
-                    alt="Manager proof photo"
-                    className="w-20 h-20 object-cover rounded cursor-pointer mt-1"
+                    alt=""
+                    className="w-12 h-12 rounded-xl object-cover cursor-pointer border border-gray-100"
                     onClick={() => window.open(selectedIssue.managerProofPhotoUrl, "_blank")}
                   />
                 </div>
               )}
-              <div className="flex gap-2">
-                <Button type="button" variant="outline" onClick={() => setShowIssueDialog(false)} className="flex-1">
-                  Cancel
-                </Button>
-                <Button type="submit" disabled={updateIssueMutation.isPending} className="flex-1">
-                  {updateIssueMutation.isPending ? "Updating..." : "Update"}
+
+              {/* Submit */}
+              <div className="pt-2">
+                <Button type="submit" disabled={updateIssueMutation.isPending} className="w-full rounded-xl h-11 text-xs font-bold bg-green-600 hover:bg-green-700 text-white">
+                  {updateIssueMutation.isPending ? "Updating..." : "Update Issue"}
                 </Button>
               </div>
             </form>
           )}
         </DialogContent>
-      </Dialog >
+      </Dialog>
 
       {/* Ward Form Dialog */}
       < Dialog open={showWardForm} onOpenChange={setShowWardForm} >
@@ -4609,16 +4781,19 @@ export default function ManagerDashboard() {
       </Dialog >
       {/* Household Details Fullscreen Popup */}
       < Dialog open={showHouseholdDetails} onOpenChange={setShowHouseholdDetails} >
-        <DialogContent className="max-w-[100vw] w-screen h-screen m-0 p-0 rounded-none overflow-y-auto border-none">
+        <DialogContent
+          className="max-w-[100vw] w-full md:max-w-4xl md:h-[90vh] md:rounded-xl overflow-hidden p-0 flex flex-col border-none md:border"
+          style={{ top: 60, left: 0, transform: 'none', height: 'calc(100dvh - 60px)' }}
+        >
           <div className="flex flex-col h-full bg-background">
-            <header className="flex items-center gap-10 ml-1 p-2 border-b sticky top-0 bg-background z-10">
-              <Button variant="ghost" size="sm" className="h-8 px-2 !bg-green-200" onClick={() => setShowHouseholdDetails(false)}>
-                <ArrowLeft className="h-4 w-4 mr-1" strokeWidth={3} />
-              </Button>
-              <h1 className="ml-3 text-xl font-bold">Household Details</h1>
+            <header className="px-4 border-b flex items-center justify-between bg-green-50 min-h-[50px] sticky top-0 z-10">
+              <h1 className="text-sm font-black uppercase tracking-tight text-gray-900">Household Details</h1>
+              <button onClick={() => setShowHouseholdDetails(false)} className="p-2 rounded-full hover:bg-white/50 transition-colors">
+                <X className="h-5 w-5 text-gray-600" />
+              </button>
             </header>
 
-            <main className="flex-1 p-3 space-y-3 max-w-4xl mx-auto w-full">
+            <main className="flex-1 overflow-y-auto p-3 space-y-3 max-w-4xl mx-auto w-full">
               {viewingHousehold && (
                 <div className="grid gap-2 md:grid-cols-2">
                   <div className="space-y-1">

@@ -9,7 +9,6 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import {
   Camera,
@@ -22,11 +21,13 @@ import {
   IndianRupee,
   ChevronLeft,
   ChevronRight,
+  ChevronDown,
   Package,
   Image as ImageIcon,
   X,
   Check,
   Loader2,
+  ArrowLeft,
 } from "lucide-react";
 
 interface DailyWasteLog {
@@ -98,7 +99,7 @@ const materialTypes = [
   "Other",
 ];
 
-export function MaterialLog({ defaultTab = "daily" }: { defaultTab?: LogType } = {}) {
+export function MaterialLog({ defaultTab = "daily", onBack }: { defaultTab?: LogType; onBack?: () => void } = {}) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [activeLogType, setActiveLogType] = useState<LogType>(defaultTab);
@@ -106,6 +107,7 @@ export function MaterialLog({ defaultTab = "daily" }: { defaultTab?: LogType } =
   const [editingItem, setEditingItem] = useState<any>(null);
   const [uploading, setUploading] = useState<string | null>(null);
   const [showImagePreview, setShowImagePreview] = useState<string | null>(null);
+  const [deleteConfirm, setDeleteConfirm] = useState<{ id: number; type: LogType } | null>(null);
 
   const { data: dailyLogs = [], isLoading: loadingDaily } = useQuery<DailyWasteLog[]>({
     queryKey: ["/api/material-log/daily-waste"],
@@ -241,20 +243,27 @@ export function MaterialLog({ defaultTab = "daily" }: { defaultTab?: LogType } =
     });
   };
 
+  const tabLabel = activeLogType === 'daily' ? 'Daily Waste Logs' : activeLogType === 'compost' ? 'Compost Logs' : 'Sales Logs';
+
   return (
-    <div className="space-y-1">
+    <div className="space-y-3 p-3">
+      {/* Header: back + title + add */}
       <div className="flex items-center justify-between">
-        <Button
-          onClick={() => {
-            setEditingItem(null);
-            setShowForm(true);
-          }}
-          className="rounded-full bg-green-600 hover:bg-green-700 shadow-lg"
-          size="sm"
+        <div className="flex items-center gap-2">
+          {onBack && (
+            <button onClick={onBack} className="p-1.5 rounded-full hover:bg-gray-100 active:scale-90 transition-all">
+              <ArrowLeft className="h-5 w-5 text-gray-600" />
+            </button>
+          )}
+          <h2 className="text-sm font-black uppercase tracking-tight text-gray-900">{tabLabel}</h2>
+        </div>
+        <button
+          onClick={() => { setEditingItem(null); setShowForm(true); }}
+          className="flex items-center gap-1.5 px-3 py-2 rounded-full bg-green-600 hover:bg-green-700 text-white text-[10px] font-bold uppercase tracking-wider shadow-md active:scale-95 transition-all"
         >
-          <Plus className="h-4 w-4 mr-1" />
+          <Plus className="h-3.5 w-3.5" />
           Add Entry
-        </Button>
+        </button>
       </div>
 
       {activeLogType === "daily" && (
@@ -265,7 +274,7 @@ export function MaterialLog({ defaultTab = "daily" }: { defaultTab?: LogType } =
             setEditingItem(item);
             setShowForm(true);
           }}
-          onDelete={(id) => deleteDailyLogMutation.mutate(id)}
+          onDelete={(id) => setDeleteConfirm({ id, type: 'daily' })}
           onImageClick={setShowImagePreview}
           formatDate={formatDate}
         />
@@ -279,7 +288,7 @@ export function MaterialLog({ defaultTab = "daily" }: { defaultTab?: LogType } =
             setEditingItem(item);
             setShowForm(true);
           }}
-          onDelete={(id) => deleteCompostLogMutation.mutate(id)}
+          onDelete={(id) => setDeleteConfirm({ id, type: 'compost' })}
           onImageClick={setShowImagePreview}
           formatDate={formatDate}
         />
@@ -293,70 +302,78 @@ export function MaterialLog({ defaultTab = "daily" }: { defaultTab?: LogType } =
             setEditingItem(item);
             setShowForm(true);
           }}
-          onDelete={(id) => deleteSaleMutation.mutate(id)}
+          onDelete={(id) => setDeleteConfirm({ id, type: 'sales' })}
           onImageClick={setShowImagePreview}
           formatDate={formatDate}
         />
       )}
 
+      {/* Form Dialog — Fullscreen on mobile */}
       <Dialog open={showForm} onOpenChange={(open) => {
         setShowForm(open);
         if (!open) setEditingItem(null);
       }}>
-        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>
-              {editingItem ? "Edit" : "Add"} {activeLogType === "daily" ? "Daily Waste Log" : activeLogType === "compost" ? "Compost Production" : "Dry Waste Sale"}
+        <DialogContent
+          className="max-w-[100vw] w-full md:max-w-lg md:h-[90vh] md:rounded-xl overflow-hidden p-0 flex flex-col border-none md:border"
+          style={{ top: 60, left: 0, transform: 'none', height: 'calc(100dvh - 60px)' }}
+        >
+          <div className="px-4 border-b flex items-center justify-between bg-green-50 min-h-[50px] flex-shrink-0">
+            <DialogTitle className="text-sm font-black uppercase tracking-tight text-gray-900">
+              {editingItem ? "Edit" : "Add"} {activeLogType === "daily" ? "Daily Waste Log" : activeLogType === "compost" ? "Compost Log" : "Sale Record"}
             </DialogTitle>
-          </DialogHeader>
-          {activeLogType === "daily" && (
-            <DailyWasteForm
-              editingItem={editingItem}
-              onSubmit={(data) => {
-                if (editingItem) {
-                  updateDailyLogMutation.mutate({ id: editingItem.id, data });
-                } else {
-                  createDailyLogMutation.mutate(data);
-                }
-              }}
-              isPending={createDailyLogMutation.isPending || updateDailyLogMutation.isPending}
-              uploadPhoto={uploadPhoto}
-              uploading={uploading}
-              setUploading={setUploading}
-            />
-          )}
-          {activeLogType === "compost" && (
-            <CompostForm
-              editingItem={editingItem}
-              onSubmit={(data) => {
-                if (editingItem) {
-                  updateCompostLogMutation.mutate({ id: editingItem.id, data });
-                } else {
-                  createCompostLogMutation.mutate(data);
-                }
-              }}
-              isPending={createCompostLogMutation.isPending || updateCompostLogMutation.isPending}
-              uploadPhoto={uploadPhoto}
-              uploading={uploading}
-              setUploading={setUploading}
-            />
-          )}
-          {activeLogType === "sales" && (
-            <SalesForm
-              editingItem={editingItem}
-              onSubmit={(data) => {
-                if (editingItem) {
-                  updateSaleMutation.mutate({ id: editingItem.id, data });
-                } else {
-                  createSaleMutation.mutate(data);
-                }
-              }}
-              isPending={createSaleMutation.isPending || updateSaleMutation.isPending}
-              uploadPhoto={uploadPhoto}
-              uploading={uploading}
-              setUploading={setUploading}
-            />
-          )}
+            <button onClick={() => { setShowForm(false); setEditingItem(null); }} className="p-2 rounded-full hover:bg-white/50 transition-colors">
+            </button>
+          </div>
+          <div className="flex-1 overflow-y-auto p-4 pb-20 md:pb-6">
+            {activeLogType === "daily" && (
+              <DailyWasteForm
+                editingItem={editingItem}
+                onSubmit={(data) => {
+                  if (editingItem) {
+                    updateDailyLogMutation.mutate({ id: editingItem.id, data });
+                  } else {
+                    createDailyLogMutation.mutate(data);
+                  }
+                }}
+                isPending={createDailyLogMutation.isPending || updateDailyLogMutation.isPending}
+                uploadPhoto={uploadPhoto}
+                uploading={uploading}
+                setUploading={setUploading}
+              />
+            )}
+            {activeLogType === "compost" && (
+              <CompostForm
+                editingItem={editingItem}
+                onSubmit={(data) => {
+                  if (editingItem) {
+                    updateCompostLogMutation.mutate({ id: editingItem.id, data });
+                  } else {
+                    createCompostLogMutation.mutate(data);
+                  }
+                }}
+                isPending={createCompostLogMutation.isPending || updateCompostLogMutation.isPending}
+                uploadPhoto={uploadPhoto}
+                uploading={uploading}
+                setUploading={setUploading}
+              />
+            )}
+            {activeLogType === "sales" && (
+              <SalesForm
+                editingItem={editingItem}
+                onSubmit={(data) => {
+                  if (editingItem) {
+                    updateSaleMutation.mutate({ id: editingItem.id, data });
+                  } else {
+                    createSaleMutation.mutate(data);
+                  }
+                }}
+                isPending={createSaleMutation.isPending || updateSaleMutation.isPending}
+                uploadPhoto={uploadPhoto}
+                uploading={uploading}
+                setUploading={setUploading}
+              />
+            )}
+          </div>
         </DialogContent>
       </Dialog>
 
@@ -365,6 +382,42 @@ export function MaterialLog({ defaultTab = "daily" }: { defaultTab?: LogType } =
           {showImagePreview && (
             <img src={showImagePreview} alt="Preview" className="w-full h-auto" />
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={!!deleteConfirm} onOpenChange={() => setDeleteConfirm(null)}>
+        <DialogContent className="max-w-xs rounded-2xl border-none shadow-xl p-6">
+          <div className="text-center space-y-3">
+            <div className="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center mx-auto">
+              <Trash2 className="h-5 w-5 text-red-600" />
+            </div>
+            <h3 className="text-sm font-black text-gray-900">Delete Entry?</h3>
+            <p className="text-[11px] text-gray-500 leading-relaxed">
+              This {deleteConfirm?.type === 'daily' ? 'daily waste log' : deleteConfirm?.type === 'compost' ? 'compost log' : 'sale record'} will be permanently removed.
+            </p>
+            <div className="flex gap-2 pt-1">
+              <button
+                onClick={() => setDeleteConfirm(null)}
+                className="flex-1 px-4 py-2.5 rounded-xl border border-gray-200 text-[11px] font-bold text-gray-600 uppercase tracking-wider hover:bg-gray-50 active:scale-95 transition-all"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => {
+                  if (deleteConfirm) {
+                    if (deleteConfirm.type === 'daily') deleteDailyLogMutation.mutate(deleteConfirm.id);
+                    else if (deleteConfirm.type === 'compost') deleteCompostLogMutation.mutate(deleteConfirm.id);
+                    else deleteSaleMutation.mutate(deleteConfirm.id);
+                    setDeleteConfirm(null);
+                  }
+                }}
+                className="flex-1 px-4 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 text-white text-[11px] font-bold uppercase tracking-wider shadow-sm active:scale-95 transition-all"
+              >
+                Delete
+              </button>
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
     </div>
@@ -481,8 +534,8 @@ function DailyWasteForm({
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
-      <div>
-        <Label>Date</Label>
+      <div className="flex justify-center items-center justify-between">
+        <Label className="font-bold">Select Date</Label>
         <Input
           type="date"
           value={formData.date}
@@ -938,81 +991,45 @@ function DailyWasteList({
   };
 
   return (
-    <div className="space-y-2">
+    <div className="space-y-1">
       {logs.map((log) => {
         const isExpanded = expandedId === log.id;
         const total = calculateTotal(log);
 
         return (
-          <Card key={log.id} className="overflow-hidden">
-            <div
-              className="flex items-center justify-between p-1 sm:p-3 cursor-pointer hover:bg-gray-50"
-              onClick={() => setExpandedId(isExpanded ? null : log.id)}
-            >
-              <div className="flex items-center gap-2 text-sm pl-1 text-gray-700">
-                <span className="font-medium">{formatDate(log.date)}</span>
+          <div key={log.id} className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden flex">
+            <div className="w-1 flex-shrink-0 bg-green-500" />
+            <div className="flex-1 min-w-0">
+              <div
+                className="flex items-center justify-between py-3 px-2 cursor-pointer active:bg-gray-50/50 transition-colors"
+                onClick={() => setExpandedId(isExpanded ? null : log.id)}
+              >
+                <div className="min-w-0">
+                  <span className="text-[14px] font-black text-gray-900">{formatDate(log.date)}</span>
+                </div>
+                <div className="flex items-center gap-4 flex-shrink-0">
+                  <span className="text-sm font-black text-green-600">{total}kg</span>
+                  <div className="flex gap-0.5" onClick={(e) => e.stopPropagation()}>
+                    <button onClick={() => onEdit(log)} className="p-1.5 rounded-lg hover:bg-gray-100"><Edit className="h-3.5 w-3.5 text-gray-400" /></button>
+                    <button onClick={() => onDelete(log.id)} className="p-1.5 rounded-lg hover:bg-red-50"><Trash2 className="h-3.5 w-3.5 text-red-400" /></button>
+                  </div>
+                  <ChevronDown className={cn("h-4 w-4 text-gray-300 transition-transform", isExpanded && "rotate-180")} />
+                </div>
               </div>
 
-              <div className="flex items-center gap-3">
-                <div className="text-center">
-                  <span className="text-sm sm:text-lg font-bold text-green-600">{total} kg</span>
+              {isExpanded && (
+                <div className="px-3 pb-3 border-t border-gray-50 pt-2">
+                  <div className="grid grid-cols-2 gap-2">
+                    <WasteTypeCard label="Wet" value={log.wetWasteKg} color="green" photoUrl={log.wetWastePhotoUrl} onImageClick={onImageClick} />
+                    <WasteTypeCard label="Dry" value={log.dryWasteKg} color="blue" photoUrl={log.dryWastePhotoUrl} onImageClick={onImageClick} />
+                    <WasteTypeCard label="Rejected" value={log.rejectedWasteKg} color="red" photoUrl={log.rejectedWastePhotoUrl} onImageClick={onImageClick} />
+                    <WasteTypeCard label="Sanitary" value={log.sanitaryWasteKg} color="purple" photoUrl={log.sanitaryWastePhotoUrl} onImageClick={onImageClick} />
+                  </div>
+                  {log.notes && <p className="mt-2 text-[10px] text-gray-500 italic">{log.notes}</p>}
                 </div>
-
-                <div className="flex gap-1" onClick={(e) => e.stopPropagation()}>
-                  <Button variant="ghost" size="sm" onClick={() => onEdit(log)} className="h-8 w-8 p-0">
-                    <Edit className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => onDelete(log.id)}
-                    className="h-8 w-8 p-0 text-red-500"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </div>
-
-                <ChevronRight className={cn("h-4 w-4 text-gray-400 transition-transform", isExpanded && "rotate-90")} />
-              </div>
+              )}
             </div>
-
-            {isExpanded && (
-              <CardContent className="pt-0 pb-4 px-4 border-t">
-                <div className="grid grid-cols-2 gap-3 mt-3">
-                  <WasteTypeCard
-                    label="Wet"
-                    value={log.wetWasteKg}
-                    color="green"
-                    photoUrl={log.wetWastePhotoUrl}
-                    onImageClick={onImageClick}
-                  />
-                  <WasteTypeCard
-                    label="Dry"
-                    value={log.dryWasteKg}
-                    color="blue"
-                    photoUrl={log.dryWastePhotoUrl}
-                    onImageClick={onImageClick}
-                  />
-                  <WasteTypeCard
-                    label="Rejected"
-                    value={log.rejectedWasteKg}
-                    color="red"
-                    photoUrl={log.rejectedWastePhotoUrl}
-                    onImageClick={onImageClick}
-                  />
-                  <WasteTypeCard
-                    label="Sanitary"
-                    value={log.sanitaryWasteKg}
-                    color="purple"
-                    photoUrl={log.sanitaryWastePhotoUrl}
-                    onImageClick={onImageClick}
-                  />
-                </div>
-
-                {log.notes && <p className="mt-3 text-sm text-gray-600 italic">{log.notes}</p>}
-              </CardContent>
-            )}
-          </Card>
+          </div>
         );
       })}
     </div>
@@ -1040,15 +1057,15 @@ function WasteTypeCard({
   };
 
   return (
-    <div className={cn("p-2 rounded-lg border", colorClasses[color])}>
+    <div className={cn("p-2 rounded-xl border", colorClasses[color])}>
       <div className="flex items-center justify-between">
         <div>
-          <span className="text-xs font-medium">{label}</span>
-          <div className="text-lg font-bold">{value || "0"} kg</div>
+          <span className="text-[9px] font-bold uppercase tracking-wider">{label}</span>
+          <div className="text-sm font-black">{value || "0"} kg</div>
         </div>
         {photoUrl && (
           <button onClick={() => onImageClick(photoUrl)} className="flex-shrink-0">
-            <img src={photoUrl} alt={label} className="h-10 w-10 object-cover rounded" />
+            <img src={photoUrl} alt={label} className="h-9 w-9 object-cover rounded-lg border border-white/50" />
           </button>
         )}
       </div>
@@ -1101,58 +1118,51 @@ function CompostList({
     <div className="space-y-2">
       {logs.map((log) => {
         const isExpanded = expandedId === log.id;
+        const stripColor = log.compostStatus === 'good' ? 'bg-green-500' : log.compostStatus === 'average' ? 'bg-amber-400' : 'bg-red-500';
 
         return (
-          <Card key={log.id} className="overflow-hidden">
-            <div
-              className="flex items-center justify-between p-1 sm:p-3 cursor-pointer hover:bg-gray-50"
-              onClick={() => setExpandedId(isExpanded ? null : log.id)}
-            >
-              <div className="flex items-center gap-2 pl-1 text-sm text-gray-700">
-                <span className="font-medium">{formatDate(log.date)}</span>
-              </div>
-
-              <div className="flex items-center gap-3">
-                <div className="text-center">
-                  <span className="text-sm sm:text-lg font-bold text-green-600">{log.quantityKg} kg</span>
-                </div>
-
-                <div className="flex gap-1" onClick={(e) => e.stopPropagation()}>
-                  <Button variant="ghost" size="sm" onClick={() => onEdit(log)} className="h-8 w-8 p-0">
-                    <Edit className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => onDelete(log.id)}
-                    className="h-8 w-8 p-0 text-red-500"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </div>
-
-                <ChevronRight className={cn("h-4 w-4 text-gray-400 transition-transform", isExpanded && "rotate-90")} />
-              </div>
-            </div>
-
-            {isExpanded && (
-              <CardContent className="pt-0 pb-4 px-4 border-t">
-                <div className="flex items-center gap-4 mt-3">
-                  {log.photoUrl && (
-                    <button onClick={() => onImageClick(log.photoUrl)} className="flex-shrink-0">
-                      <img src={log.photoUrl} alt="Compost" className="h-20 w-20 object-cover rounded-lg" />
-                    </button>
-                  )}
-                  <div>
-                    <Badge className={cn("mb-2", statusColors[log.compostStatus])}>
-                      {log.compostStatus.charAt(0).toUpperCase() + log.compostStatus.slice(1)} Quality
-                    </Badge>
-                    {log.notes && <p className="text-sm text-gray-600 italic">{log.notes}</p>}
+          <div key={log.id} className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden flex">
+            <div className={`w-1 flex-shrink-0 ${stripColor}`} />
+            <div className="flex-1 min-w-0">
+              <div
+                className="flex items-center justify-between p-3 cursor-pointer active:bg-gray-50/50 transition-colors"
+                onClick={() => setExpandedId(isExpanded ? null : log.id)}
+              >
+                <div className="min-w-0">
+                  <span className="text-[11px] font-black text-gray-900">{formatDate(log.date)}</span>
+                  <div className="flex items-center gap-1.5 mt-0.5">
+                    <span className={cn("text-[8px] font-bold uppercase px-1.5 py-0.5 rounded-md", statusColors[log.compostStatus])}>{log.compostStatus}</span>
                   </div>
                 </div>
-              </CardContent>
-            )}
-          </Card>
+                <div className="flex items-center gap-2 flex-shrink-0">
+                  <span className="text-sm font-black text-green-600">{log.quantityKg}kg</span>
+                  <div className="flex gap-0.5" onClick={(e) => e.stopPropagation()}>
+                    <button onClick={() => onEdit(log)} className="p-1.5 rounded-lg hover:bg-gray-100"><Edit className="h-3.5 w-3.5 text-gray-400" /></button>
+                    <button onClick={() => onDelete(log.id)} className="p-1.5 rounded-lg hover:bg-red-50"><Trash2 className="h-3.5 w-3.5 text-red-400" /></button>
+                  </div>
+                  <ChevronDown className={cn("h-4 w-4 text-gray-300 transition-transform", isExpanded && "rotate-180")} />
+                </div>
+              </div>
+
+              {isExpanded && (
+                <div className="px-3 pb-3 border-t border-gray-50 pt-2">
+                  <div className="flex items-center gap-3">
+                    {log.photoUrl && (
+                      <button onClick={() => onImageClick(log.photoUrl)} className="flex-shrink-0">
+                        <img src={log.photoUrl} alt="Compost" className="h-16 w-16 object-cover rounded-xl border border-gray-100" />
+                      </button>
+                    )}
+                    <div className="min-w-0">
+                      <span className={cn("text-[8px] font-bold uppercase px-1.5 py-0.5 rounded-md inline-block", statusColors[log.compostStatus])}>
+                        {log.compostStatus.charAt(0).toUpperCase() + log.compostStatus.slice(1)} Quality
+                      </span>
+                      {log.notes && <p className="text-[10px] text-gray-500 italic mt-1">{log.notes}</p>}
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
         );
       })}
     </div>
@@ -1214,71 +1224,59 @@ function SalesList({
         const totalAmount = calculateTotalAmount(sale);
 
         return (
-          <Card key={sale.id} className="overflow-hidden">
-            <div
-              className="flex items-center justify-between p-1 sm:p-2 cursor-pointer hover:bg-gray-50"
-              onClick={() => setExpandedId(isExpanded ? null : sale.id)}
-            >
-              <div className="flex items-center gap-2 pl-1 text-sm text-gray-700">
-                <span className="font-medium">{formatDate(sale.saleDate)}</span>
+          <div key={sale.id} className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden flex">
+            <div className="w-1 flex-shrink-0 bg-blue-500" />
+            <div className="flex-1 min-w-0">
+              <div
+                className="flex items-center justify-between p-3 cursor-pointer active:bg-gray-50/50 transition-colors"
+                onClick={() => setExpandedId(isExpanded ? null : sale.id)}
+              >
+                <div className="min-w-0">
+                  <span className="text-[11px] font-black text-gray-900">{formatDate(sale.saleDate)}</span>
+                  <div className="flex items-center gap-1.5 mt-0.5">
+                    <span className="text-[8px] font-bold px-1.5 py-0.5 rounded-md bg-gray-50 text-gray-500">{totalKg}kg</span>
+                    <span className="text-[8px] font-bold px-1.5 py-0.5 rounded-md bg-blue-50 text-blue-600">{sale.materials?.length || 0} items</span>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2 flex-shrink-0">
+                  <span className="text-sm font-black text-green-600">₹{totalAmount}</span>
+                  <div className="flex gap-0.5" onClick={(e) => e.stopPropagation()}>
+                    <button onClick={() => onEdit(sale)} className="p-1.5 rounded-lg hover:bg-gray-100"><Edit className="h-3.5 w-3.5 text-gray-400" /></button>
+                    <button onClick={() => onDelete(sale.id)} className="p-1.5 rounded-lg hover:bg-red-50"><Trash2 className="h-3.5 w-3.5 text-red-400" /></button>
+                  </div>
+                  <ChevronDown className={cn("h-4 w-4 text-gray-300 transition-transform", isExpanded && "rotate-180")} />
+                </div>
               </div>
 
-              <div className="flex items-center gap-3">
-                <div className="text-right">
-                  <div className="text-sm text-gray-600">{totalKg} kg</div>
-                  <div className="text-sm sm:text-lg font-bold text-green-600">₹{totalAmount}</div>
-                </div>
-
-                <div className="flex gap-1" onClick={(e) => e.stopPropagation()}>
-                  <Button variant="ghost" size="sm" onClick={() => onEdit(sale)} className="h-8 w-8 p-0">
-                    <Edit className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => onDelete(sale.id)}
-                    className="h-8 w-8 p-0 text-red-500"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </div>
-
-                <ChevronRight className={cn("h-4 w-4 text-gray-400 transition-transform", isExpanded && "rotate-90")} />
-              </div>
-            </div>
-
-            {isExpanded && (
-              <CardContent className="pt-0 pb-4 px-4 border-t">
-                <div className="mt-3 space-y-3">
+              {isExpanded && (
+                <div className="px-3 pb-3 border-t border-gray-50 pt-2 space-y-2">
                   {sale.materials && sale.materials.length > 0 && (
-                    <div className="space-y-2">
-                      <div className="text-sm font-medium text-gray-700">Materials Sold:</div>
+                    <div className="space-y-1">
+                      <span className="text-[8px] font-black text-gray-400 uppercase tracking-wider">Materials</span>
                       {sale.materials.map((m, i) => (
-                        <div key={i} className="flex justify-between text-sm p-2 bg-gray-50 rounded-lg">
-                          <div>
-                            <span className="font-medium">{m.materialType}</span>
-                            <span className="text-gray-500 ml-2">({m.quantityKg} kg @ ₹{m.ratePerKg}/kg)</span>
+                        <div key={i} className="flex justify-between items-center p-2 bg-gray-50 rounded-xl">
+                          <div className="min-w-0">
+                            <span className="text-[10px] font-bold text-gray-800">{m.materialType}</span>
+                            <span className="text-[9px] text-gray-400 ml-1">{m.quantityKg}kg × ₹{m.ratePerKg}</span>
                           </div>
-                          <span className="font-medium text-green-600">₹{m.amount}</span>
+                          <span className="text-[11px] font-black text-green-600 flex-shrink-0">₹{m.amount}</span>
                         </div>
                       ))}
                     </div>
                   )}
-
                   {sale.receiptPhotoUrl && (
                     <div className="flex items-center gap-2">
-                      <span className="text-sm text-gray-600">Receipt:</span>
+                      <span className="text-[9px] font-bold text-gray-400 uppercase">Receipt:</span>
                       <button onClick={() => onImageClick(sale.receiptPhotoUrl!)}>
-                        <img src={sale.receiptPhotoUrl} alt="Receipt" className="h-16 w-16 object-cover rounded-lg" />
+                        <img src={sale.receiptPhotoUrl} alt="" className="h-12 w-12 object-cover rounded-xl border border-gray-100" />
                       </button>
                     </div>
                   )}
-
-                  {sale.notes && <p className="text-sm text-gray-600 italic">{sale.notes}</p>}
+                  {sale.notes && <p className="text-[10px] text-gray-500 italic">{sale.notes}</p>}
                 </div>
-              </CardContent>
-            )}
-          </Card>
+              )}
+            </div>
+          </div>
         );
       })}
     </div>
