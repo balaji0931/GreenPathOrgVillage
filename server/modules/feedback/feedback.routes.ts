@@ -1,5 +1,6 @@
 import type { Express } from "express";
 import { storage } from "../../storage";
+import { submitFeedback } from "./feedback.service";
 
 export function registerFeedbackRoutes(app: Express, requireAuth: any, requireRole: any) {
     // Feedback routes
@@ -8,40 +9,25 @@ export function registerFeedbackRoutes(app: Express, requireAuth: any, requireRo
             const { collectionId, rating, remarks } = req.body;
             const generatedBy = req.session.userId!;
 
-            // Validate the collection belongs to this generator's household
-            const collection = await storage.getCollectionById(collectionId);
-            if (!collection) {
-                return res.status(404).json({ message: "Collection not found" });
-            }
-
-            const household = await storage.getHouseholdByGeneratorUserId(generatedBy);
-            if (!household || collection.householdId !== household.id) {
-                return res.status(403).json({ message: "Unauthorized to provide feedback for this collection" });
-            }
-
-            // Get collector from the collection (collectorId is the actual ID, not UID)
-            const collector = await storage.getCollectorsByVillage(household.villageId);
-            const targetCollector = collector.find(c => c.id === collection.collectorId);
-            if (!targetCollector) {
-                return res.status(404).json({ message: "Collector not found" });
-            }
-
-            // Check if feedback already exists for this household-collector pair
-            const existingFeedback = await storage.getFeedbackByHouseholdAndCollector(household.id, targetCollector.id);
-            if (existingFeedback) {
-                return res.status(400).json({ message: "Feedback already submitted for this collector" });
-            }
-
-            const feedbackData = await storage.createFeedback({
-                fromHouseholdId: household.id,
-                toCollectorId: targetCollector.id,
+            const feedbackData = await submitFeedback({
+                generatorUserId: generatedBy,
+                collectionId,
                 rating,
-                remarks: remarks || null,
+                remarks,
             });
 
             res.json(feedbackData);
-        } catch (error) {
+        } catch (error: any) {
             console.error("Create feedback error:", error);
+            if (error.message === "Collection not found" || error.message === "Collector not found") {
+                return res.status(404).json({ message: error.message });
+            }
+            if (error.message === "Unauthorized to provide feedback for this collection") {
+                return res.status(403).json({ message: error.message });
+            }
+            if (error.message === "Feedback already submitted for this collector") {
+                return res.status(400).json({ message: error.message });
+            }
             res.status(500).json({ message: "Failed to submit feedback" });
         }
     });

@@ -1,5 +1,11 @@
 import type { Express } from "express";
 import { storage } from "../../storage";
+import {
+  createHouseholdWithQR,
+  createBulkHouseholds,
+  generateQRCodesForExisting,
+  generateQRCodesPDF,
+} from "./household.service";
 
 export function registerHouseholdRoutes(app: Express, requireAuth: any, requireRole: any, requireVillageAccess: any) {
   // Household routes
@@ -8,78 +14,22 @@ export function registerHouseholdRoutes(app: Express, requireAuth: any, requireR
       const { headName, phone, houseNumber, familySize, address, ward } = req.body;
       const villageId = req.session.villageId!;
 
-      // Generate unique UID by checking max from both households and qr_codes tables
-      let maxNum = await storage.getMaxHouseNumber(villageId);
-      let counter = maxNum + 1;
-      let uid = `${villageId}-H${String(counter).padStart(4, '0')}`;
-
-      // Retry loop to handle race conditions
-      while (counter <= 9999) {
-        const existingHousehold = await storage.getHouseholdByUid(uid);
-        const existingQR = await storage.getQRCodeByUid(uid);
-        if (!existingHousehold && !existingQR) break;
-        counter++;
-        uid = `${villageId}-H${String(counter).padStart(4, '0')}`;
-      }
-
-      if (counter > 9999) {
-        return res.status(400).json({ message: "Maximum households reached for this village" });
-      }
-
-      // Generate generator credentials
-      const { generateGeneratorCredentials, generateHouseholdQR } = await import('../fieldwork/qr-service');
-      const { userId: generatorUserId, password: generatorPassword, hashedPassword } =
-        generateGeneratorCredentials(uid);
-
-      // Create household first
-      const household = await storage.createHousehold({
-        uid,
+      const result = await createHouseholdWithQR({
         villageId,
         headName,
         phone,
         houseNumber,
-        ward: ward || 'Ward-1',
         familySize,
         address,
-        generatorUserId,
-        generatorPassword: hashedPassword,
+        ward,
       });
 
-      // Generate QR code
-      const { qrCodeUrl, qrCodePublicId } = await generateHouseholdQR({
-        uid,
-        headName,
-        houseNumber,
-        villageId,
-        generatorUserId,
-      });
-
-      // Update household with QR code info
-      await storage.updateHousehold(household.id, {
-        qrCodeUrl,
-        qrCodePublicId,
-      });
-
-      // Create generator user account
-      await storage.createUser({
-        userId: generatorUserId,
-        password: hashedPassword,
-        role: 'generator',
-        villageId,
-        name: `Generator - ${headName}`,
-        phone,
-        isFirstLogin: true,
-      });
-
-      res.json({
-        household: { ...household, qrCodeUrl, qrCodePublicId },
-        generatorCredentials: {
-          userId: generatorUserId,
-          password: generatorPassword,
-        },
-      });
-    } catch (error) {
+      res.json(result);
+    } catch (error: any) {
       console.error("Create household error:", error);
+      if (error.message === "Maximum households reached for this village") {
+        return res.status(400).json({ message: error.message });
+      }
       res.status(500).json({ message: "Failed to create household" });
     }
   });
@@ -139,98 +89,14 @@ export function registerHouseholdRoutes(app: Express, requireAuth: any, requireR
       const { households: householdsData } = req.body;
       const villageId = req.session.villageId!;
 
-      if (!Array.isArray(householdsData) || householdsData.length === 0) {
-        return res.status(400).json({ message: 'Invalid households data' });
-      }
-
-      const createdHouseholds = [];
-      const { generateGeneratorCredentials, generateHouseholdQR } = await import('../fieldwork/qr-service');
-
-      // Get max house number at the start (from both tables)
-      let currentMaxNum = await storage.getMaxHouseNumber(villageId);
-
-      for (const householdData of householdsData) {
-        try {
-          // Generate unique UID by incrementing from max with uniqueness check
-          currentMaxNum++;
-          let counter = currentMaxNum;
-          let uid = `${villageId}-H${String(counter).padStart(4, '0')}`;
-
-          // Ensure UID is actually unique (handles race conditions)
-          while (counter <= 9999) {
-            const existingHousehold = await storage.getHouseholdByUid(uid);
-            const existingQR = await storage.getQRCodeByUid(uid);
-            if (!existingHousehold && !existingQR) break;
-            counter++;
-            uid = `${villageId}-H${String(counter).padStart(4, '0')}`;
-          }
-          currentMaxNum = counter; // Update for next iteration
-
-          if (counter > 9999) {
-            console.error(`Maximum households reached for village ${villageId}`);
-            continue; // Skip this household
-          }
-
-          // Generate generator credentials
-          const { userId: generatorUserId, password: generatorPassword, hashedPassword } =
-            generateGeneratorCredentials(uid);
-
-          // Create household
-          const household = await storage.createHousehold({
-            uid,
-            villageId,
-            headName: householdData.headName,
-            houseNumber: householdData.houseNumber,
-            phone: householdData.phone,
-            ward: householdData.ward || 'Ward-1',
-            familySize: householdData.familySize || 1,
-            address: householdData.address || '',
-            generatorUserId,
-            generatorPassword: hashedPassword,
-          });
-
-          // Generate QR code
-          const { qrCodeUrl, qrCodePublicId } = await generateHouseholdQR({
-            uid,
-            headName: household.headName,
-            houseNumber: household.houseNumber || '',
-            villageId,
-            generatorUserId,
-          });
-
-          // Update household with QR code URL
-          const updatedHousehold = await storage.updateHousehold(household.id, {
-            qrCodeUrl,
-            qrCodePublicId,
-          });
-
-          // Create generator user account
-          await storage.createUser({
-            userId: generatorUserId,
-            password: hashedPassword,
-            role: 'generator',
-            villageId,
-            name: `Generator - ${household.headName}`,
-            phone: household.phone,
-            isFirstLogin: true,
-          });
-
-          createdHouseholds.push({
-            ...updatedHousehold,
-            generatorCredentials: {
-              userId: generatorUserId,
-              password: generatorPassword,
-            }
-          });
-        } catch (error: any) {
-          console.error(`Error creating household ${householdData.headName}:`, error);
-          // Continue with next household instead of failing entire batch
-        }
-      }
+      const createdHouseholds = await createBulkHouseholds(villageId, householdsData);
 
       res.status(201).json(createdHouseholds);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error creating bulk households:', error);
+      if (error.message === 'Invalid households data') {
+        return res.status(400).json({ message: error.message });
+      }
       res.status(500).json({ message: 'Internal server error' });
     }
   });
@@ -241,50 +107,17 @@ export function registerHouseholdRoutes(app: Express, requireAuth: any, requireR
       const { householdIds } = req.body;
       const villageId = req.session.villageId!;
 
-      if (!Array.isArray(householdIds) || householdIds.length === 0) {
-        return res.status(400).json({ message: 'Invalid household IDs' });
-      }
-
-      const { generateHouseholdQR } = await import('../fieldwork/qr-service');
-      const updatedHouseholds = [];
-
-      for (const householdId of householdIds) {
-        const household = await storage.getHouseholdsByVillage(villageId);
-        const targetHousehold = household.find(h => h.id === householdId);
-
-        if (!targetHousehold) {
-          continue;
-        }
-
-        // Skip if QR code already exists
-        if (targetHousehold.qrCodeUrl) {
-          continue;
-        }
-
-        // Generate QR code
-        const { qrCodeUrl, qrCodePublicId } = await generateHouseholdQR({
-          uid: targetHousehold.uid,
-          headName: targetHousehold.headName,
-          houseNumber: targetHousehold.houseNumber || '',
-          villageId: targetHousehold.villageId,
-          generatorUserId: targetHousehold.generatorUserId || '',
-        });
-
-        // Update household with QR code
-        const updated = await storage.updateHousehold(householdId, {
-          qrCodeUrl,
-          qrCodePublicId,
-        });
-
-        updatedHouseholds.push(updated);
-      }
+      const updatedHouseholds = await generateQRCodesForExisting(villageId, householdIds);
 
       res.json({
         message: 'QR codes generated successfully',
         households: updatedHouseholds
       });
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error generating QR codes:', error);
+      if (error.message === 'Invalid household IDs') {
+        return res.status(400).json({ message: error.message });
+      }
       res.status(500).json({ message: 'Internal server error' });
     }
   });
@@ -295,34 +128,17 @@ export function registerHouseholdRoutes(app: Express, requireAuth: any, requireR
       const { householdIds } = req.body;
       const villageId = req.session.villageId!;
 
-      if (!Array.isArray(householdIds) || householdIds.length === 0) {
-        return res.status(400).json({ message: 'Invalid household IDs' });
-      }
-
-      const households = await storage.getHouseholdsByVillage(villageId);
-      const selectedHouseholds = households.filter(h =>
-        householdIds.includes(h.id) && h.qrCodeUrl
-      ).map(h => ({
-        uid: h.uid,
-        headName: h.headName,
-        houseNumber: h.houseNumber || '',
-        villageId: h.villageId,
-        qrCodeUrl: h.qrCodeUrl || ''
-      }));
-
-      if (selectedHouseholds.length === 0) {
-        return res.status(400).json({ message: 'No households with QR codes found' });
-      }
-
-      const { generateBulkQRCodesPDF } = await import('../fieldwork/qr-service');
-      const pdfBuffer = await generateBulkQRCodesPDF(selectedHouseholds);
+      const pdfBuffer = await generateQRCodesPDF(villageId, householdIds);
 
       res.setHeader('Content-Type', 'application/pdf');
       res.setHeader('Content-Disposition', `attachment; filename="household-qr-codes-${new Date().toISOString().split('T')[0]}.pdf"`);
       res.setHeader('Content-Length', pdfBuffer.length.toString());
       res.end(pdfBuffer, 'binary');
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error downloading QR codes PDF:', error);
+      if (error.message === 'Invalid household IDs' || error.message === 'No households with QR codes found') {
+        return res.status(400).json({ message: error.message });
+      }
       res.status(500).json({ message: 'Internal server error' });
     }
   });

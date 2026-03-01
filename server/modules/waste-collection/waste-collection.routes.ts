@@ -1,6 +1,6 @@
 import type { Express } from "express";
 import { storage } from "../../storage";
-import { getCache, cacheKeys } from "../../cache";
+import { submitCollection } from "./waste-collection.service";
 
 export function registerWasteCollectionRoutes(app: Express, requireAuth: any, requireRole: any, requireVillageAccess: any) {
   // Waste collection routes
@@ -16,35 +16,12 @@ export function registerWasteCollectionRoutes(app: Express, requireAuth: any, re
         voiceUrl,
         status,
         missedReason,
-        collectionDate: clientCollectionDate
+        collectionDate
       } = req.body;
 
-      const household = await storage.getHouseholdByUid(householdUid);
-      if (!household) {
-        return res.status(404).json({ message: "Household not found" });
-      }
-
-      const collector = await storage.getCollectorByUid(req.session.userId!);
-      if (!collector) {
-        return res.status(404).json({ message: "Collector not found" });
-      }
-
-      // Check for existing collection today
-      const collectionDate = clientCollectionDate ? new Date(clientCollectionDate) : new Date();
-      const dateStr = collectionDate.toISOString().split('T')[0];
-      const existingCollection = await storage.checkExistingCollection(household.id, collector.id, dateStr);
-
-      if (existingCollection) {
-        return res.status(409).json({
-          message: "Collection already recorded for this household today",
-          existingCollection
-        });
-      }
-
-      const collection = await storage.createWasteCollection({
-        householdId: household.id,
-        collectorId: collector.id,
-        collectionDate,
+      const result = await submitCollection({
+        householdUid,
+        collectorUserId: req.session.userId!,
         segregationRating,
         plasticRating,
         observations,
@@ -53,18 +30,22 @@ export function registerWasteCollectionRoutes(app: Express, requireAuth: any, re
         voiceUrl,
         status,
         missedReason,
+        collectionDate,
       });
 
-      // Phase 4: Invalidate relevant caches
-      const cache = getCache();
-      await cache.delete(cacheKeys.adminStats());
-      await cache.delete(cacheKeys.villageStats(household.villageId));
-      await cache.delete(cacheKeys.dailyReport(household.villageId, new Date().toISOString().split('T')[0]));
-      await cache.clear('report:*'); // Clear all report caches
+      if (result.conflict) {
+        return res.status(409).json({
+          message: result.message,
+          existingCollection: result.existingCollection
+        });
+      }
 
-      res.json(collection);
-    } catch (error) {
+      res.json(result.collection);
+    } catch (error: any) {
       console.error("Create waste collection error:", error);
+      if (error.message === "Household not found" || error.message === "Collector not found") {
+        return res.status(404).json({ message: error.message });
+      }
       res.status(500).json({ message: "Failed to create waste collection" });
     }
   });

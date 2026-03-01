@@ -1,6 +1,9 @@
 import type { Express } from "express";
 import { storage } from "../../storage";
-import bcrypt from "bcrypt";
+import {
+  createVillageWithManager,
+  getVillagesWithStats,
+} from "./village.service";
 
 export function registerVillageRoutes(app: Express, requireAuth: any, requireRole: any, requireVillageAccess: any) {
   // Village routes
@@ -8,48 +11,9 @@ export function registerVillageRoutes(app: Express, requireAuth: any, requireRol
     try {
       const { villageName, managerName, managerPhone } = req.body;
 
-      // Generate village ID
-      const villages = await storage.getVillages();
+      const result = await createVillageWithManager({ villageName, managerName, managerPhone });
 
-      // Extract just the numeric parts from all village IDs (e.g., 'V013' → 13)
-      const maxIdNumber = villages.reduce((max, v) => {
-        const num = parseInt(v.villageId?.slice(1) || "0");
-        return num > max ? num : max;
-      }, 0);
-
-      // Assign the next unique ID
-      const villageId = `V${String(maxIdNumber + 1).padStart(3, '0')}`;
-
-
-      // Create village
-      const village = await storage.createVillage({
-        villageId,
-        name: villageName,
-      });
-
-      // Create manager
-      const managerId = `${villageId}-M1`;
-      const hashedPassword = await bcrypt.hash(managerId, 10);
-
-      const manager = await storage.createUser({
-        userId: managerId,
-        password: hashedPassword,
-        role: 'manager',
-        name: managerName,
-        phone: managerPhone,
-        villageId,
-      });
-
-      res.json({
-        village,
-        manager: {
-          ...manager,
-          credentials: {
-            userId: managerId,
-            password: managerId
-          }
-        }
-      });
+      res.json(result);
     } catch (error) {
       console.error("Create village error:", error);
       res.status(500).json({ message: "Failed to create village" });
@@ -58,13 +22,7 @@ export function registerVillageRoutes(app: Express, requireAuth: any, requireRol
 
   app.get('/api/villages', requireAuth, requireRole(['admin']), async (req, res) => {
     try {
-      const villages = await storage.getVillages();
-      const villagesWithStats = await Promise.all(
-        villages.slice(0, 50).map(async (village) => { // Limit to first 50 for performance
-          const stats = await storage.getVillageStats(village.villageId);
-          return { ...village, ...stats };
-        })
-      );
+      const villagesWithStats = await getVillagesWithStats();
       res.json(villagesWithStats);
     } catch (error) {
       console.error("Get villages error:", error);
@@ -126,8 +84,12 @@ export function registerVillageRoutes(app: Express, requireAuth: any, requireRol
 
   app.put('/api/villages/:villageId', requireAuth, requireRole(['admin']), async (req, res) => {
     try {
-      const village = await storage.updateVillage(req.params.villageId, req.body);
-      res.json(village);
+      const { villageId } = req.params;
+      const updates = req.body;
+
+      const village = await storage.updateVillage(villageId, updates);
+
+      res.json({ message: "Village updated successfully", village });
     } catch (error: any) {
       console.error("Update village error:", error);
       res.status(500).json({ message: error.message || "Failed to update village" });
@@ -143,21 +105,6 @@ export function registerVillageRoutes(app: Express, requireAuth: any, requireRol
     } catch (error) {
       console.error("Delete village error:", error);
       res.status(500).json({ message: "Failed to delete village" });
-    }
-  });
-
-  // Update village settings (including image upload requirement)
-  app.put('/api/villages/:villageId', requireAuth, requireRole(['admin']), async (req, res) => {
-    try {
-      const { villageId } = req.params;
-      const updates = req.body;
-
-      const village = await storage.updateVillage(villageId, updates);
-
-      res.json({ message: "Village updated successfully", village });
-    } catch (error) {
-      console.error("Update village error:", error);
-      res.status(500).json({ message: "Failed to update village" });
     }
   });
 }

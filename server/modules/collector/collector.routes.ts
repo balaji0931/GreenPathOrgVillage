@@ -1,6 +1,9 @@
 import type { Express } from "express";
 import { storage } from "../../storage";
-import bcrypt from "bcrypt";
+import {
+  createCollectorWithAccount,
+  getCollectorStatsForVillage,
+} from "./collector.service";
 
 export function registerCollectorRoutes(app: Express, requireAuth: any, requireRole: any, requireVillageAccess: any) {
   // Collector routes
@@ -9,28 +12,7 @@ export function registerCollectorRoutes(app: Express, requireAuth: any, requireR
       const { name, phone } = req.body;
       const villageId = req.session.villageId!;
 
-      // Generate UID
-      const existingCollectors = await storage.getCollectorsByVillage(villageId);
-      const uid = `${villageId}-C${existingCollectors.length + 1}`;
-
-      // Create collector
-      const collector = await storage.createCollector({
-        uid,
-        villageId,
-        name,
-        phone,
-      });
-
-      // Create user account for collector
-      const hashedPassword = await bcrypt.hash(uid, 10);
-      await storage.createUser({
-        userId: uid,
-        password: hashedPassword,
-        role: 'collector',
-        name,
-        phone,
-        villageId,
-      });
+      const collector = await createCollectorWithAccount({ name, phone, villageId });
 
       res.json(collector);
     } catch (error) {
@@ -74,18 +56,8 @@ export function registerCollectorRoutes(app: Express, requireAuth: any, requireR
   app.get('/api/collectors/stats/:villageId', requireAuth, requireRole(['manager']), requireVillageAccess, async (req, res) => {
     try {
       const { villageId } = req.params;
-      const collectors = await storage.getCollectorsByVillage(villageId);
 
-      const collectorStats = await Promise.all(
-        collectors.map(async (collector) => {
-          const stats = await storage.getCollectorStats(collector.id);
-          return {
-            id: collector.id,
-            name: collector.name,
-            ...stats,
-          };
-        })
-      );
+      const collectorStats = await getCollectorStatsForVillage(villageId);
 
       res.json(collectorStats);
     } catch (error) {

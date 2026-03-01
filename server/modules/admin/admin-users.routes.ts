@@ -1,6 +1,12 @@
 import type { Express } from "express";
 import { storage } from "../../storage";
 import bcrypt from "bcrypt";
+import {
+  createModerator,
+  getModeratorsWithVillages,
+  resetPasswordToUserId,
+  addManagerToVillage,
+} from "./admin-users.service";
 
 export function registerAdminUsersRoutes(app: Express, requireAuth: any, requireRole: any, requireVillageAccess: any) {
   app.get('/api/managers', requireAuth, requireRole(['admin']), async (req, res) => {
@@ -18,10 +24,7 @@ export function registerAdminUsersRoutes(app: Express, requireAuth: any, require
   app.put('/api/managers/:managerId/reset-password', requireAuth, requireRole(['admin']), async (req, res) => {
     try {
       const { managerId } = req.params;
-      const newPassword = managerId; // Reset to manager ID
-      const hashedPassword = await bcrypt.hash(newPassword, 10);
-
-      await storage.updateUserPassword(managerId, hashedPassword);
+      const newPassword = await resetPasswordToUserId(managerId);
 
       res.json({ message: "Password reset successfully", newPassword });
     } catch (error) {
@@ -46,21 +49,9 @@ export function registerAdminUsersRoutes(app: Express, requireAuth: any, require
       const { villageId } = req.params;
       const { managerName, managerPhone } = req.body;
 
-      const manager = await storage.addManagerToVillage({
-        villageId,
-        managerName,
-        managerPhone,
-      });
+      const result = await addManagerToVillage(villageId, { managerName, managerPhone });
 
-      res.json({
-        manager: {
-          ...manager,
-          credentials: {
-            userId: manager.userId,
-            password: manager.userId // Password is same as userId
-          }
-        }
-      });
+      res.json(result);
     } catch (error) {
       console.error("Add manager error:", error);
       res.status(500).json({ message: "Failed to add manager" });
@@ -78,73 +69,14 @@ export function registerAdminUsersRoutes(app: Express, requireAuth: any, require
     }
   });
 
-  app.put('/api/managers/:managerId/reset-password', requireAuth, requireRole(['admin']), async (req, res) => {
-    try {
-      const { managerId } = req.params;
-      const newPassword = managerId; // Reset to userId
-      await storage.updateUserPassword(managerId, newPassword);
-      res.json({ newPassword });
-    } catch (error) {
-      console.error("Reset password error:", error);
-      res.status(500).json({ message: "Failed to reset password" });
-    }
-  });
-
   app.post('/api/moderators', requireAuth, requireRole(['admin']), async (req, res) => {
     try {
       const { name, phone, email, villageIds = [] } = req.body;
       const createdBy = req.session.userId!;
 
-      // Generate moderator ID safely
-      const existingModerators = await storage.getModeratorsList();
+      const result = await createModerator({ name, phone, email, villageIds, createdBy });
 
-      // Extract existing numbers from IDs like "MOD-001"
-      const usedNumbers = existingModerators
-        .map((mod) => {
-          const match = mod.moderatorId.match(/MOD-(\d+)/);
-          return match ? parseInt(match[1], 10) : null;
-        })
-        .filter((n): n is number => n !== null)
-        .sort((a, b) => a - b);
-
-      // Find the first available number
-      let moderatorNumber = 1;
-      for (const n of usedNumbers) {
-        if (n === moderatorNumber) {
-          moderatorNumber++;
-        } else {
-          break;
-        }
-      }
-
-      const moderatorId = `MOD-${String(moderatorNumber).padStart(3, '0')}`;
-
-
-      // Create moderator
-      const moderator = await storage.createModerator({
-        moderatorId,
-        name,
-        phone,
-        email,
-        createdBy,
-      });
-
-      // Assign villages if provided
-      for (const villageId of villageIds) {
-        await storage.assignVillageToModerator({
-          moderatorId,
-          villageId,
-          assignedBy: createdBy,
-        });
-      }
-
-      res.json({
-        moderator,
-        credentials: {
-          userId: moderatorId,
-          password: moderatorId,
-        },
-      });
+      res.json(result);
     } catch (error) {
       console.error("Create moderator error:", error);
       res.status(500).json({ message: "Failed to create moderator" });
@@ -153,15 +85,7 @@ export function registerAdminUsersRoutes(app: Express, requireAuth: any, require
 
   app.get('/api/moderators', requireAuth, requireRole(['admin']), async (req, res) => {
     try {
-      const moderators = await storage.getModeratorsList();
-
-      // Get village assignments for each moderator (limited to first 50 for performance)
-      const moderatorsWithVillages = await Promise.all(
-        moderators.slice(0, 50).map(async (moderator) => {
-          const villages = await storage.getModeratorVillages(moderator.moderatorId);
-          return { ...moderator, villages };
-        })
-      );
+      const moderatorsWithVillages = await getModeratorsWithVillages();
 
       res.json(moderatorsWithVillages);
     } catch (error) {
@@ -240,9 +164,8 @@ export function registerAdminUsersRoutes(app: Express, requireAuth: any, require
   app.put('/api/moderators/:moderatorId/reset-password', requireAuth, requireRole(['admin']), async (req, res) => {
     try {
       const { moderatorId } = req.params;
-      const newPassword = moderatorId; // Reset to moderator ID
-      const hashedPassword = await bcrypt.hash(newPassword, 10);
-      await storage.updateUserPassword(moderatorId, hashedPassword);
+      const newPassword = await resetPasswordToUserId(moderatorId);
+
       res.json({ newPassword });
     } catch (error) {
       console.error("Reset moderator password error:", error);

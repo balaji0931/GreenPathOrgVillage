@@ -1,6 +1,6 @@
 import type { Express } from "express";
 import { storage } from "../../storage";
-import { getCache, cacheKeys } from "../../cache";
+import { createIssue, updateIssueStatus } from "./issue.service";
 
 export function registerIssueRoutes(app: Express, requireAuth: any, requireRole: any, requireVillageAccess: any) {
   // Issues routes
@@ -10,61 +10,42 @@ export function registerIssueRoutes(app: Express, requireAuth: any, requireRole:
       const reportedBy = req.session.userId!;
       const villageId = req.session.villageId!;
 
-      // Validate required fields
-      if (!title || !description || !category) {
-        return res.status(400).json({
-          message: "Title, description, and category are required",
-          missingFields: {
-            title: !title,
-            description: !description,
-            category: !category
-          }
-        });
-      }
-
-      const trimmedTitle = title.trim();
-      const trimmedDescription = description.trim();
-
-      if (trimmedTitle.length === 0 || trimmedDescription.length === 0) {
-        return res.status(400).json({ message: "Title and description cannot be empty" });
-      }
-
-      if (trimmedTitle.length < 3) {
-        return res.status(400).json({ message: "Title must be at least 3 characters long" });
-      }
-
-      if (trimmedDescription.length < 10) {
-        return res.status(400).json({ message: "Description must be at least 10 characters long" });
-      }
-
-      console.log('Creating issue:', {
-        title: trimmedTitle,
-        description: trimmedDescription,
+      const issue = await createIssue({
+        title,
+        description,
         category,
         reportedBy,
         villageId,
-        photoUrl: photoUrl || 'none'
+        photoUrl,
       });
-
-      const issue = await storage.createIssue({
-        title: trimmedTitle,
-        description: trimmedDescription,
-        category,
-        reportedBy,
-        villageId,
-        photoUrl: photoUrl || null,
-        status: 'open',
-      });
-
-      console.log('Issue created successfully with ID:', issue.id);
 
       res.status(201).json({
         ...issue,
         message: "Issue reported successfully"
       });
-    } catch (error) {
+    } catch (error: any) {
       const err = error as Error;
       console.error("Create issue error:", err);
+
+      // Handle structured validation errors
+      try {
+        const parsed = JSON.parse(err.message);
+        if (parsed.type === 'validation') {
+          return res.status(400).json({
+            message: parsed.message,
+            missingFields: parsed.missingFields
+          });
+        }
+      } catch {
+        // Not JSON, treat as plain error message
+      }
+
+      // Handle plain validation errors
+      if (err.message.includes("cannot be empty") ||
+        err.message.includes("must be at least")) {
+        return res.status(400).json({ message: err.message });
+      }
+
       res.status(500).json({
         message: "Failed to create issue",
         error: err.message,
@@ -117,35 +98,20 @@ export function registerIssueRoutes(app: Express, requireAuth: any, requireRole:
     try {
       const { id } = req.params;
       const { status, managerReply, managerProofPhotoUrl } = req.body;
-
-      // If status is being changed to in_progress or resolved, require proof photo
-      if ((status === 'in_progress' || status === 'resolved') && !managerProofPhotoUrl) {
-        return res.status(400).json({
-          message: "Proof photo is required when updating issue status to 'In Progress' or 'Resolved'"
-        });
-      }
-
-      const updates = {
-        status,
-        managerReply,
-        ...(managerProofPhotoUrl && { managerProofPhotoUrl }),
-        updatedAt: new Date()
-      };
-
-      const issue = await storage.updateIssue(parseInt(id), updates);
-
-      // Invalidate issues caches
-      const cache = getCache();
       const villageId = req.session.villageId;
-      if (villageId) {
-        await cache.delete(cacheKeys.issues(villageId));
-        await cache.clear(`issues:${villageId}:*`); // Clear paginated caches
-        await cache.delete(cacheKeys.villageDetails(villageId)); // Clear village details cache
-      }
+
+      const issue = await updateIssueStatus(
+        parseInt(id),
+        { status, managerReply, managerProofPhotoUrl },
+        villageId
+      );
 
       res.json(issue);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Update issue error:", error);
+      if (error.message.includes("Proof photo is required")) {
+        return res.status(400).json({ message: error.message });
+      }
       res.status(500).json({ message: "Failed to update issue" });
     }
   });
