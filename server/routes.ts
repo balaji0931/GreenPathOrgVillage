@@ -5,27 +5,27 @@ import multer from "multer";
 import session from "express-session";
 import { createClient } from "redis";
 import { RedisStore } from "connect-redis";
-import { randomBytes } from "crypto";
 
-import { registerPublicRoutes } from "./routes/public.routes";
-import { registerAuthRoutes } from "./routes/auth.routes";
-import { registerLegalRoutes } from "./routes/legal.routes";
-import { registerVehicleRoutes } from "./routes/vehicle.routes";
-import { registerVillageRoutes } from "./routes/village.routes";
-import { registerHouseholdRoutes } from "./routes/household.routes";
-import { registerCollectorRoutes } from "./routes/collector.routes";
-import { registerFieldWorkerRoutes } from "./routes/fieldworker.routes";
-import { registerWasteCollectionRoutes } from "./routes/waste-collection.routes";
-import { registerUploadRoutes } from "./routes/upload.routes";
-import { registerIssueRoutes } from "./routes/issue.routes";
-import { registerAnnouncementRoutes } from "./routes/announcement.routes";
-import { registerAdminRoutes } from "./routes/admin.routes";
-import { registerQRCodeRoutes } from "./routes/qr-code.routes";
-import { registerStatsRoutes } from "./routes/stats.routes";
-import { registerModeratorRoutes } from "./routes/moderator.routes";
-import { registerAdminUsersRoutes } from "./routes/admin-users.routes";
-import { registerProfileRoutes } from "./routes/profile.routes";
-import { registerMaterialLogRoutes } from "./routes/material-log.routes";
+import { registerPublicRoutes } from "./modules/website/public.routes";
+import { registerAuthRoutes } from "./modules/auth/auth.routes";
+import { registerLegalRoutes } from "./modules/legal/legal.routes";
+import { registerVehicleRoutes } from "./modules/vehicle/vehicle.routes";
+import { registerVillageRoutes } from "./modules/village/village.routes";
+import { registerHouseholdRoutes } from "./modules/household/household.routes";
+import { registerCollectorRoutes } from "./modules/collector/collector.routes";
+import { registerFieldWorkerRoutes } from "./modules/fieldwork/fieldworker.routes";
+import { registerWasteCollectionRoutes } from "./modules/waste-collection/waste-collection.routes";
+import { registerUploadRoutes } from "./modules/upload/upload.routes";
+import { registerIssueRoutes } from "./modules/issue/issue.routes";
+import { registerAnnouncementRoutes } from "./modules/announcement/announcement.routes";
+import { registerAdminRoutes } from "./modules/admin/admin.routes";
+import { registerQRCodeRoutes } from "./modules/fieldwork/qr-code.routes";
+import { registerStatsRoutes } from "./modules/analytics/stats.routes";
+import { registerModeratorRoutes } from "./modules/moderation/moderator.routes";
+import { registerAdminUsersRoutes } from "./modules/admin/admin-users.routes";
+import { registerProfileRoutes } from "./modules/profile/profile.routes";
+import { registerMaterialLogRoutes } from "./modules/material-log/material-log.routes";
+import { registerFeedbackRoutes } from "./modules/feedback/feedback.routes";
 
 // Configure multer for file uploads with enhanced security
 const upload = multer({
@@ -73,119 +73,10 @@ declare module 'express-session' {
   }
 }
 
-// Generate cryptographically secure CSRF token
-const generateCsrfToken = (): string => {
-  return randomBytes(32).toString('hex');
-};
-
-// CSRF protection middleware - validates token on state-changing requests
-const csrfProtection = (req: any, res: any, next: any) => {
-  // Skip CSRF check for safe methods
-  const safeMethods = ['GET', 'HEAD', 'OPTIONS'];
-  if (safeMethods.includes(req.method)) {
-    return next();
-  }
-
-  // Skip CSRF for public endpoints that don't require auth
-  const publicEndpoints = [
-    '/api/website-feedback',
-    '/api/auth/login',
-    '/api/auth/logout',
-    '/api/contact',
-    '/api/newsletter',
-    '/api/auth/csrf-token'
-  ];
-  // Normalize path by removing trailing slash for exact comparison
-  const normalizedPath = req.path.replace(/\/$/, '');
-  if (publicEndpoints.includes(normalizedPath)) {
-    return next();
-  }
-
-  // Skip CSRF for unauthenticated requests (they can't do anything sensitive anyway)
-  if (!req.session?.userId) {
-    return next();
-  }
-
-  // Get token from header
-  const headerToken = req.headers['x-csrf-token'];
-  const sessionToken = req.session?.csrfToken;
-
-  if (!headerToken || !sessionToken || headerToken !== sessionToken) {
-    return res.status(403).json({ message: 'Invalid CSRF token' });
-  }
-
-  next();
-};
-
-// Authentication middleware
-const requireAuth = (req: any, res: any, next: any) => {
-  if (!req.session?.userId) {
-    return res.status(401).json({ message: "Unauthorized" });
-  }
-  next();
-};
-
-const requireRole = (roles: string[]) => (req: any, res: any, next: any) => {
-  if (!req.session?.role || !roles.includes(req.session.role)) {
-    return res.status(403).json({ message: "Forbidden" });
-  }
-  next();
-};
-
-// Cross-village authorization middleware
-const requireVillageAccess = (req: any, res: any, next: any) => {
-  const requestedVillageId = req.params.villageId || req.body.villageId || req.query.villageId;
-  const userVillageId = req.session?.villageId;
-  const userRole = req.session?.role;
-
-  // Admins can access all villages
-  if (userRole === 'admin') {
-    return next();
-  }
-
-  // Moderators can access their assigned villages (check will be done in storage layer)
-  if (userRole === 'moderator') {
-    return next();
-  }
-
-  // Other roles must match village
-  if (requestedVillageId && userVillageId && requestedVillageId !== userVillageId) {
-    return res.status(403).json({ message: "Access denied: Village mismatch" });
-  }
-
-  next();
-};
-
-// Input validation and sanitization middleware
-const validateInput = (req: any, res: any, next: any) => {
-  // Sanitize string inputs
-  const sanitizeString = (str: string) => {
-    if (typeof str !== 'string') return str;
-    return str.trim().replace(/[<>'"]/g, ''); // Basic XSS prevention
-  };
-
-  // Recursively sanitize object
-  const sanitizeObject = (obj: any): any => {
-    if (typeof obj === 'string') {
-      return sanitizeString(obj);
-    } else if (Array.isArray(obj)) {
-      return obj.map(sanitizeObject);
-    } else if (obj && typeof obj === 'object') {
-      const sanitized: any = {};
-      for (const key in obj) {
-        sanitized[key] = sanitizeObject(obj[key]);
-      }
-      return sanitized;
-    }
-    return obj;
-  };
-
-  if (req.body && typeof req.body === 'object') {
-    req.body = sanitizeObject(req.body);
-  }
-
-  next();
-};
+import { generateCsrfToken, csrfProtection } from "./common/middleware/csrf";
+import { requireAuth, requireRole } from "./common/middleware/auth";
+import { requireVillageAccess } from "./common/middleware/village-access";
+import { validateInput } from "./common/middleware/validate-input";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Validate required environment variables
@@ -333,6 +224,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
 
 
+
+  // Feedback routes
+  registerFeedbackRoutes(app, requireAuth, requireRole);
 
   // Feedback and admin routes
   registerAdminRoutes(app, requireAuth, requireRole);

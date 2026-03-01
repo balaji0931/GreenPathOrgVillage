@@ -34,24 +34,28 @@ import {
   type InsertDryWasteSale,
   type InsertDryWasteSaleMaterial,
 } from "@shared/schema";
-import * as websiteContactStorage from "./storage/website-contact.storage";
-import * as announcementStorage from "./storage/announcement.storage";
-import * as issueStorage from "./storage/issue.storage";
-import * as feedbackStorage from "./storage/feedback.storage";
-import * as userStorage from "./storage/user.storage";
-import * as villageStorage from "./storage/village.storage";
-import * as householdStorage from "./storage/household.storage";
-import * as collectorStorage from "./storage/collector.storage";
-import * as qrcodeStorage from "./storage/qrcode.storage";
-import * as fieldworkerStorage from "./storage/fieldworker.storage";
-import * as vehicleStorage from "./storage/vehicle.storage";
-import * as materialLogStorage from "./storage/material-log.storage";
-import * as wasteCollectionStorage from "./storage/waste-collection.storage";
-import * as moderatorStorage from "./storage/moderator.storage";
-import * as adminStatsStorage from "./storage/admin-stats.storage";
-import * as dailyReportStorage from "./storage/daily-report.storage";
-import * as premiumReportStorage from "./storage/premium-report.storage";
-import * as systemAnalyticsStorage from "./storage/system-analytics.storage";
+import * as websiteContactStorage from "./modules/website/website-contact.storage";
+import * as announcementStorage from "./modules/announcement/announcement.storage";
+import * as issueStorage from "./modules/issue/issue.storage";
+import * as feedbackStorage from "./modules/feedback/feedback.storage";
+import * as userStorage from "./modules/auth/user.storage";
+import * as villageStorage from "./modules/village/village.storage";
+import * as householdStorage from "./modules/household/household.storage";
+import * as collectorStorage from "./modules/collector/collector.storage";
+import * as qrcodeStorage from "./modules/fieldwork/qrcode.storage";
+import * as fieldworkerStorage from "./modules/fieldwork/fieldworker.storage";
+import * as vehicleStorage from "./modules/vehicle/vehicle.storage";
+import * as dailyWasteLogStorage from "./modules/material-log/daily-waste-log.storage";
+import * as compostLogStorage from "./modules/material-log/compost-log.storage";
+import * as dryWasteSalesStorage from "./modules/material-log/dry-waste-sales.storage";
+import * as wasteCollectionStorage from "./modules/waste-collection/waste-collection.storage";
+import * as moderatorStorage from "./modules/moderation/moderator.storage";
+import * as moderatorStatsStorage from "./modules/moderation/moderator-stats.storage";
+import * as moderatorReportsStorage from "./modules/moderation/moderator-reports.storage";
+import * as adminStatsStorage from "./modules/analytics/admin-stats.storage";
+import * as dailyReportStorage from "./modules/analytics/daily-report.storage";
+import * as premiumReportStorage from "./modules/analytics/premium-report.storage";
+import * as systemAnalyticsStorage from "./modules/analytics/system-analytics.storage";
 
 import type { IStorage } from "./storage/storage.interface";
 export type { IStorage };
@@ -415,26 +419,26 @@ export class DatabaseStorage implements IStorage {
     totalOpenIssues: number;
     totalCollectionsToday: number;
   }> {
-    return moderatorStorage.getModeratorStats(villageIds);
+    return moderatorStatsStorage.getModeratorStats(villageIds);
   }
 
   async getModeratorReports(villageIds: string[], filters: {
     startDate?: Date;
     endDate?: Date;
   }): Promise<any> {
-    return moderatorStorage.getModeratorReports(villageIds, filters);
+    return moderatorReportsStorage.getModeratorReports(villageIds, filters);
   }
 
   async getModeratorIssues(villageIds: string[]): Promise<Issue[]> {
-    return moderatorStorage.getModeratorIssues(villageIds);
+    return moderatorReportsStorage.getModeratorIssues(villageIds);
   }
 
   async getModeratorCollectors(villageIds: string[]): Promise<any[]> {
-    return moderatorStorage.getModeratorCollectors(villageIds);
+    return moderatorStatsStorage.getModeratorCollectors(villageIds);
   }
 
   async getModeratorHouseholds(villageIds: string[]): Promise<any[]> {
-    return moderatorStorage.getModeratorHouseholds(villageIds);
+    return moderatorStatsStorage.getModeratorHouseholds(villageIds);
   }
 
   async getModeratorSystemAnalytics(villageIds: string[], selectedVillageId?: string): Promise<{
@@ -451,7 +455,7 @@ export class DatabaseStorage implements IStorage {
     totalCollectors: number;
     totalCollectionsToday: number;
   }> {
-    return moderatorStorage.getModeratorSystemAnalytics(villageIds, selectedVillageId);
+    return moderatorReportsStorage.getModeratorSystemAnalytics(villageIds, selectedVillageId);
   }
 
   async getModeratorDailyReportData(villageIds: string[], date?: string): Promise<{
@@ -464,7 +468,7 @@ export class DatabaseStorage implements IStorage {
     villagePerformance: any[];
     compostingData: any;
   }> {
-    return moderatorStorage.getModeratorDailyReportData(villageIds, date);
+    return moderatorReportsStorage.getModeratorDailyReportData(villageIds, date);
   }
 
   async getSystemAnalytics(villageFilter?: string): Promise<{
@@ -568,65 +572,65 @@ export class DatabaseStorage implements IStorage {
 
   // Daily Waste Log Operations
   async createDailyWasteLog(log: InsertDailyWasteLog): Promise<DailyWasteLog> {
-    return materialLogStorage.createDailyWasteLog(log);
+    return dailyWasteLogStorage.createDailyWasteLog(log);
   }
 
   async getDailyWasteLogsByVillage(villageId: string, startDate?: string, endDate?: string): Promise<DailyWasteLog[]> {
-    return materialLogStorage.getDailyWasteLogsByVillage(villageId, startDate, endDate);
+    return dailyWasteLogStorage.getDailyWasteLogsByVillage(villageId, startDate, endDate);
   }
 
   async getDailyWasteLogByDate(villageId: string, date: string): Promise<DailyWasteLog | undefined> {
-    return materialLogStorage.getDailyWasteLogByDate(villageId, date);
+    return dailyWasteLogStorage.getDailyWasteLogByDate(villageId, date);
   }
 
   async updateDailyWasteLog(id: number, updates: Partial<DailyWasteLog>): Promise<DailyWasteLog> {
-    return materialLogStorage.updateDailyWasteLog(id, updates);
+    return dailyWasteLogStorage.updateDailyWasteLog(id, updates);
   }
 
   async deleteDailyWasteLog(id: number): Promise<void> {
-    return materialLogStorage.deleteDailyWasteLog(id);
+    return dailyWasteLogStorage.deleteDailyWasteLog(id);
   }
 
   // Compost Production Log Operations
   async createCompostProductionLog(log: InsertCompostProductionLog): Promise<CompostProductionLog> {
-    return materialLogStorage.createCompostProductionLog(log);
+    return compostLogStorage.createCompostProductionLog(log);
   }
 
   async getCompostProductionLogsByVillage(villageId: string, startDate?: string, endDate?: string): Promise<CompostProductionLog[]> {
-    return materialLogStorage.getCompostProductionLogsByVillage(villageId, startDate, endDate);
+    return compostLogStorage.getCompostProductionLogsByVillage(villageId, startDate, endDate);
   }
 
   async getCompostProductionLogById(id: number): Promise<CompostProductionLog | undefined> {
-    return materialLogStorage.getCompostProductionLogById(id);
+    return compostLogStorage.getCompostProductionLogById(id);
   }
 
   async updateCompostProductionLog(id: number, updates: Partial<CompostProductionLog>): Promise<CompostProductionLog> {
-    return materialLogStorage.updateCompostProductionLog(id, updates);
+    return compostLogStorage.updateCompostProductionLog(id, updates);
   }
 
   async deleteCompostProductionLog(id: number): Promise<void> {
-    return materialLogStorage.deleteCompostProductionLog(id);
+    return compostLogStorage.deleteCompostProductionLog(id);
   }
 
   // Dry Waste Sales Operations
   async createDryWasteSale(sale: InsertDryWasteSale, materials: InsertDryWasteSaleMaterial[]): Promise<DryWasteSale & { materials: DryWasteSaleMaterial[] }> {
-    return materialLogStorage.createDryWasteSale(sale, materials);
+    return dryWasteSalesStorage.createDryWasteSale(sale, materials);
   }
 
   async getDryWasteSalesByVillage(villageId: string, startDate?: string, endDate?: string): Promise<(DryWasteSale & { materials: DryWasteSaleMaterial[] })[]> {
-    return materialLogStorage.getDryWasteSalesByVillage(villageId, startDate, endDate);
+    return dryWasteSalesStorage.getDryWasteSalesByVillage(villageId, startDate, endDate);
   }
 
   async getDryWasteSaleById(id: number): Promise<(DryWasteSale & { materials: DryWasteSaleMaterial[] }) | undefined> {
-    return materialLogStorage.getDryWasteSaleById(id);
+    return dryWasteSalesStorage.getDryWasteSaleById(id);
   }
 
   async updateDryWasteSale(id: number, saleUpdates: Partial<DryWasteSale>, materials?: InsertDryWasteSaleMaterial[]): Promise<DryWasteSale & { materials: DryWasteSaleMaterial[] }> {
-    return materialLogStorage.updateDryWasteSale(id, saleUpdates, materials);
+    return dryWasteSalesStorage.updateDryWasteSale(id, saleUpdates, materials);
   }
 
   async deleteDryWasteSale(id: number): Promise<void> {
-    return materialLogStorage.deleteDryWasteSale(id);
+    return dryWasteSalesStorage.deleteDryWasteSale(id);
   }
 }
 

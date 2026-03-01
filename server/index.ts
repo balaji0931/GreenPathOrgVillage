@@ -1,15 +1,15 @@
 import dotenv from "dotenv";
 import express, { type Request, Response, NextFunction } from "express";
-import helmet from "helmet";
 import compression from "compression";
-import cors from "cors";
-import rateLimit from "express-rate-limit";
-import slowDown from "express-slow-down";
 import morgan from "morgan";
 import { createLogger, format, transports } from "winston";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import { initializeCache } from "./cache";
+import { configureSecurityHeaders } from "./common/security";
+import { configureCors } from "./common/cors";
+import { configureRateLimiting } from "./common/rate-limit";
+import { registerPwaRoutes } from "./common/pwa-routes";
 
 import { storage } from "./storage";
 
@@ -67,89 +67,11 @@ if (process.env.NODE_ENV === "production") {
 }
 
 
-// Security headers with Helmet - Relaxed CSP for development
-app.use(
-  helmet({
-    contentSecurityPolicy: {
-      directives: {
-        defaultSrc: ["'self'"],
-        styleSrc: [
-          "'self'",
-          "'unsafe-inline'", // Allow inline styles
-          "https://fonts.googleapis.com"
-        ],
-        fontSrc: ["'self'", "https://fonts.gstatic.com"],
-        imgSrc: [
-          "'self'",
-          "data:",
-          "https:", // Allow all HTTPS images
-          "blob:"
-        ],
-        scriptSrc: [
-          "'self'",
-          "'unsafe-inline'", // Allow inline scripts
-          "'unsafe-eval'" // Allow eval for development
-        ],
-        connectSrc: [
-          "'self'",
-          "https:",
-          "wss:",
-          "ws:" // Allow websockets for development
-        ],
-        mediaSrc: [
-          "'self'",
-          "https:",
-          "blob:"
-        ],
-        workerSrc: ["'self'", "blob:"],
-        frameSrc: ["'self'"], // Allow same-origin frames
-        objectSrc: ["'none'"],
-        baseUri: ["'self'"],
-        formAction: ["'self'"],
-      },
-    },
-    crossOriginEmbedderPolicy: false, // Required for some PWA features
-    hsts: {
-      maxAge: 31536000, // 1 year
-      includeSubDomains: true,
-      preload: true
-    },
-  }),
-);
+// Security headers with Helmet
+configureSecurityHeaders(app);
 
-// CORS configuration - Environment-based and secure
-const getAllowedOrigins = () => {
-  if (process.env.NODE_ENV === "production") {
-    const origins = [];
-    if (process.env.CLIENT_URL) {
-      origins.push(process.env.CLIENT_URL);
-    }
-    if (process.env.ALLOWED_ORIGINS) {
-      origins.push(...process.env.ALLOWED_ORIGINS.split(',').map(origin => origin.trim()));
-    }
-    if (origins.length === 0) {
-      throw new Error('CLIENT_URL or ALLOWED_ORIGINS must be set in production');
-    }
-    return origins;
-  }
-  return true; // Allow all origins in development
-};
-
-const corsOptions = {
-  origin: getAllowedOrigins(),
-  credentials: true,
-  optionsSuccessStatus: 200,
-  methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
-  allowedHeaders: [
-    "Content-Type",
-    "Authorization",
-    "X-Requested-With",
-    "X-CSRF-Token" // For CSRF protection
-  ],
-  exposedHeaders: ["X-Total-Count"], // For pagination
-  maxAge: 86400, // Cache preflight responses for 24 hours
-};
-app.use(cors(corsOptions));
+// CORS configuration
+configureCors(app);
 
 // Compression middleware
 app.use(
@@ -165,69 +87,8 @@ app.use(
   }),
 );
 
-// Rate limiting - different limits for different endpoints
-const createRateLimit = (windowMs: number, max: number, message: string) =>
-  rateLimit({
-    windowMs,
-    max,
-    message: { error: message },
-    standardHeaders: true,
-    legacyHeaders: false,
-    handler: (req, res) => {
-      logger.warn(`Rate limit exceeded for IP: ${req.ip}`);
-      res.status(429).json({ error: message });
-    },
-  });
-
-// General API rate limiting
-app.use(
-  "/api/",
-  createRateLimit(
-    15 * 60 * 1000,
-    1000,
-    "Too many requests, please try again later",
-  ),
-);
-
-// Stricter rate limiting for auth endpoints
-app.use(
-  "/api/auth/login",
-  createRateLimit(
-    15 * 60 * 1000,
-    5,
-    "Too many login attempts, please try again later",
-  ),
-);
-app.use(
-  "/api/auth/register",
-  createRateLimit(
-    60 * 60 * 1000,
-    3,
-    "Too many registration attempts, please try again later",
-  ),
-);
-
-// Upload rate limiting
-app.use(
-  "/api/upload",
-  createRateLimit(
-    5 * 60 * 1000,
-    20,
-    "Too many upload requests, please try again later",
-  ),
-);
-
-// Slow down repeated requests - configured for express-slow-down v2
-app.use(
-  "/api/",
-  slowDown({
-    windowMs: 15 * 60 * 1000, // 15 minutes
-    delayAfter: 100, // Allow 100 requests per windowMs without delay
-    delayMs: () => 500, // Add 500ms delay per request after delayAfter (v2 syntax)
-    maxDelayMs: 20000, // Maximum delay of 20 seconds
-    validate: { delayMs: false }, // Suppress deprecation warning
-  }),
-);
+// Rate limiting
+configureRateLimiting(app, logger);
 
 // Request logging
 if (process.env.NODE_ENV === "production") {
@@ -273,130 +134,8 @@ app.use((req, res, next) => {
   next();
 });
 
-// Import required modules at the top
-import path from "path";
-import fs from "fs";
-
 // PWA routes - must be before registerRoutes to avoid conflicts
-app.get("/sw.js", (_req, res) => {
-  try {
-    res.setHeader("Content-Type", "application/javascript; charset=utf-8");
-    res.setHeader("Service-Worker-Allowed", "/");
-    res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
-    res.setHeader("Access-Control-Allow-Origin", "*");
-    const swPath = path.join(process.cwd(), "public", "sw.js");
-    if (fs.existsSync(swPath)) {
-      res.sendFile(swPath);
-    } else {
-      console.error("Service worker not found at:", swPath);
-      res.status(404).send("// Service worker not found");
-    }
-  } catch (error) {
-    console.error("SW route error:", error);
-    res.status(500).send("// Service worker error");
-  }
-});
-
-// Digital Asset Links route for Android app verification
-app.get("/.well-known/assetlinks.json", (_req, res) => {
-  try {
-    res.setHeader("Content-Type", "application/json; charset=utf-8");
-    res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
-    res.setHeader("Access-Control-Allow-Origin", "*");
-    const assetLinksPath = path.join(
-      process.cwd(),
-      "public",
-      ".well-known",
-      "assetlinks.json",
-    );
-    if (fs.existsSync(assetLinksPath)) {
-      res.sendFile(assetLinksPath);
-    } else {
-      console.error("assetlinks.json not found at:", assetLinksPath);
-      res.status(404).json({ error: "assetlinks.json not found" });
-    }
-  } catch (error) {
-    console.error("assetlinks.json route error:", error);
-    res.status(500).json({ error: "assetlinks.json error" });
-  }
-});
-
-app.get("/manifest.json", (_req, res) => {
-  try {
-    res.setHeader("Content-Type", "application/manifest+json; charset=utf-8");
-    res.setHeader("Cache-Control", "public, max-age=86400"); // Cache for 24 hours for better TWA performance
-    res.setHeader("Access-Control-Allow-Origin", "*");
-    res.setHeader("Cross-Origin-Resource-Policy", "cross-origin");
-
-    const manifestPath = path.join(process.cwd(), "public", "manifest.json");
-    if (fs.existsSync(manifestPath)) {
-      const manifestBuffer = fs.readFileSync(manifestPath);
-      res.setHeader("Content-Length", manifestBuffer.length.toString());
-      res.send(manifestBuffer);
-    } else {
-      console.error("Manifest not found at:", manifestPath);
-      res.status(404).json({ error: "Manifest not found" });
-    }
-  } catch (error) {
-    console.error("Manifest route error:", error);
-    res.status(500).json({ error: "Manifest error" });
-  }
-});
-
-// Serve icon files with correct MIME types - Enhanced for TWA compatibility
-app.get("/icons/:filename", (req, res) => {
-  try {
-    const filename = req.params.filename;
-    const iconPath = path.join(process.cwd(), "public", "icons", filename);
-
-    if (!fs.existsSync(iconPath)) {
-      return res.status(404).json({ error: "Icon not found" });
-    }
-
-    // Enhanced headers for TWA and PWA compatibility
-    res.setHeader("Content-Type", "image/png");
-    res.setHeader("Cache-Control", "public, max-age=31536000, immutable");
-    res.setHeader("Access-Control-Allow-Origin", "*");
-    res.setHeader("Access-Control-Allow-Methods", "GET, HEAD, OPTIONS");
-    res.setHeader(
-      "Access-Control-Allow-Headers",
-      "Origin, X-Requested-With, Content-Type, Accept",
-    );
-    res.setHeader("Cross-Origin-Resource-Policy", "cross-origin");
-
-    // Read file and set content length for better compatibility
-    const iconBuffer = fs.readFileSync(iconPath);
-    res.setHeader("Content-Length", iconBuffer.length.toString());
-
-    res.send(iconBuffer);
-  } catch (error) {
-    console.error("Icon route error:", error);
-    res.status(500).json({ error: "Icon error" });
-  }
-});
-
-// Serve favicon.ico
-app.get("/favicon.ico", (_req, res) => {
-  try {
-    const faviconPath = path.join(
-      process.cwd(),
-      "public",
-      "icons",
-      "icon-96x96.png",
-    );
-    if (fs.existsSync(faviconPath)) {
-      res.setHeader("Content-Type", "image/png");
-      res.setHeader("Cache-Control", "public, max-age=31536000");
-      res.sendFile(faviconPath);
-    } else {
-      res.status(204).end(); // No content
-    }
-  } catch (error) {
-    console.error("Favicon error:", error);
-    res.status(204).end();
-  }
-});
-
+registerPwaRoutes(app);
 
 
 
