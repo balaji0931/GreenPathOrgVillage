@@ -191,13 +191,10 @@ export const cacheKeys = {
   managersPaginated: (page: number, limit: number) => `managers:paginated:${page}:${limit}`,
   moderators: () => 'moderators:all',
   villageStats: (villageId: string) => `stats:village:${villageId}`,
-  adminStats: () => 'stats:admin',
   moderatorStats: (moderatorId: string) => `stats:moderator:${moderatorId}`,
   wards: (villageId: string) => `wards:${villageId}`,
   dailyReport: (villageId: string, date: string) => `report:daily:${villageId}:${date}`,
-  generateReport: (villageId: string, startDate: string, endDate: string) => `report:generate:${villageId}:${startDate}:${endDate}`,
   villageDetails: (villageId: string) => `village:details:${villageId}`,
-  systemAnalytics: (villageFilter?: string) => `analytics:system:${villageFilter || 'all'}`,
   websiteFeedback: (page: number, limit: number) => `feedback:website:${page}:${limit}`,
   contactSubmissions: (page: number, limit: number) => `contact:submissions:${page}:${limit}`,
 };

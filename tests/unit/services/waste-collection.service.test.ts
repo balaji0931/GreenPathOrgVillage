@@ -17,7 +17,7 @@ const mockCache = {
 jest.unstable_mockModule('../../../server/cache', () => ({
     getCache: () => mockCache,
     cacheKeys: {
-        adminStats: () => 'admin:stats',
+
         villageStats: (vid: string) => `village:${vid}:stats`,
         dailyReport: (vid: string, date: string) => `report:${vid}:${date}`,
     },
@@ -102,7 +102,7 @@ describe('waste-collection.service', () => {
             await submitCollection(validData);
 
             // Admin stats, village stats, daily report, and report:* pattern
-            expect(mockCache.delete).toHaveBeenCalledTimes(3);
+            expect(mockCache.delete).toHaveBeenCalledTimes(2);
             expect(mockCache.clear).toHaveBeenCalledWith('report:*');
         });
 

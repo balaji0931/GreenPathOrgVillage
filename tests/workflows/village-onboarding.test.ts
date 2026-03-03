@@ -216,11 +216,7 @@ describe('Village Onboarding — Full QR-First Lifecycle', () => {
         expect(res.body.collectionsToday).toBeGreaterThanOrEqual(1);
     });
 
-    test('12. Admin stats reflect village data', async () => {
-        const res = await adminAgent.get('/api/stats/admin');
-        expect(res.status).toBe(200);
-        expect(res.body.totalVillages).toBeGreaterThanOrEqual(1);
-    });
+
 
     test('13. Cross-village isolation: second village cannot see first village data', async () => {
         // Create second village

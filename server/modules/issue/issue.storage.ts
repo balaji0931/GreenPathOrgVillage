@@ -26,7 +26,6 @@ export async function createIssue(insertIssue: InsertIssue): Promise<Issue> {
         await cache.clear(`issues:${insertIssue.villageId}:*`);
         await cache.delete(cacheKeys.villageDetails(insertIssue.villageId));
     }
-    await cache.delete(cacheKeys.adminStats());
 
     return issue;
 }
@@ -102,7 +101,6 @@ export async function updateIssue(id: number, updates: Partial<Issue>): Promise<
         await cache.delete(cacheKeys.villageStats(issue.villageId));
         await cache.delete(cacheKeys.villageDetails(issue.villageId));
     }
-    await cache.delete(cacheKeys.adminStats());
 
     return issue;
 }

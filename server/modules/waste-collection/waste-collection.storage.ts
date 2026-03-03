@@ -77,7 +77,6 @@ export async function createWasteCollection(insertCollection: InsertWasteCollect
             await cache.delete(cacheKeys.wasteCollections(household.villageId));
             await cache.clear(`collections:${household.villageId}:*`);
             await cache.delete(cacheKeys.villageStats(household.villageId));
-            await cache.delete(cacheKeys.adminStats());
         }
     }
 

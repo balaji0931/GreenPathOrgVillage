@@ -14,19 +14,18 @@ import { useAuth } from "@/hooks/useAuth";
 import { apiRequest, queryClient, fetchWithCsrf } from "@/lib/queryClient";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
-  Users, AlertTriangle, TrendingUp, Plus, Megaphone, BarChart3,
-  LogOut, Settings, Copy, Download, Eye, Trash2, RotateCcw, Building2, UserPlus, X, Home, MessageSquare,
+  Users, AlertTriangle, Plus, Megaphone,
+  LogOut, Settings, Copy, Download, Eye, Trash2, RotateCcw, Building2, UserPlus, X, MessageSquare,
   User, FileText, Bell, Star, Award, Package,
   Leaf
 } from "lucide-react";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart as RechartsPieChart, Cell, Pie } from 'recharts';
 import { cn } from "@/lib/utils";
 
 export default function AdminDashboard() {
   const { user, logout } = useAuth();
   const { toast } = useToast();
 
-  const [activeTab, setActiveTab] = useState("overview");
+  const [activeTab, setActiveTab] = useState("villages");
   const [selectedVillage, setSelectedVillage] = useState("");
   const [createdCredentials, setCreatedCredentials] = useState<any>(null);
   const [villageList, setVillageList] = useState([{ villageName: "", managerName: "", managerPhone: "" }]);
@@ -61,17 +60,7 @@ export default function AdminDashboard() {
     confirmPassword: "",
   });
 
-  const [reportFilters, setReportFilters] = useState({
-    village: "all",
-    role: "all",
-    startDate: "",
-    endDate: "",
-  });
 
-  // Fetch admin stats
-  const { data: stats, isLoading: statsLoading } = useQuery<any>({
-    queryKey: ["/api/stats/admin"],
-  });
 
   // Fetch villages
   const { data: villages, isLoading: villagesLoading } = useQuery<any[]>({
@@ -88,48 +77,7 @@ export default function AdminDashboard() {
     queryKey: ["/api/moderators"],
   });
 
-  // Fetch reports
-  const { data: reportData, isLoading: reportLoading } = useQuery<any>({
-    queryKey: ["/api/reports", reportFilters],
-    enabled: activeTab === "reports",
-    queryFn: async () => {
-      const params = new URLSearchParams();
-      if (reportFilters.village !== "all") params.set("village", reportFilters.village);
-      if (reportFilters.role !== "all") params.set("role", reportFilters.role);
-      if (reportFilters.startDate) params.set("startDate", reportFilters.startDate);
-      if (reportFilters.endDate) params.set("endDate", reportFilters.endDate);
 
-      const response = await apiRequest("GET", `/api/reports?${params.toString()}`);
-      return response.json();
-    },
-  });
-
-  // Fetch system analytics with village filter
-  const { data: systemAnalytics, isLoading: analyticsLoading } = useQuery<any>({
-    queryKey: ["/api/analytics/system", reportFilters.village],
-    enabled: activeTab === "reports",
-    queryFn: async () => {
-      const params = new URLSearchParams();
-      if (reportFilters.village !== "all") params.set("village", reportFilters.village);
-
-      const response = await apiRequest("GET", `/api/analytics/system?${params.toString()}`);
-      return response.json();
-    },
-  });
-
-  // Fetch daily analytics with proper filters
-  const { data: dailyAnalytics, isLoading: dailyLoading } = useQuery<any>({
-    queryKey: ["/api/analytics/daily", reportFilters.village, reportFilters.startDate || new Date().toISOString().split('T')[0]],
-    enabled: activeTab === "reports",
-    queryFn: async () => {
-      const params = new URLSearchParams();
-      if (reportFilters.village !== "all") params.set("village", reportFilters.village);
-      params.set("date", reportFilters.startDate || new Date().toISOString().split('T')[0]);
-
-      const response = await apiRequest("GET", `/api/analytics/daily?${params.toString()}`);
-      return response.json();
-    },
-  });
 
   // Fetch existing announcements
   const { data: existingAnnouncements, isLoading: announcementsLoading } = useQuery<any[]>({
@@ -169,7 +117,6 @@ export default function AdminDashboard() {
       setCreatedCredentials(data.manager.credentials);
       setNewVillage({ villageName: "", managerName: "", managerPhone: "" });
       queryClient.invalidateQueries({ queryKey: ["/api/villages"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/stats/admin"] });
       queryClient.invalidateQueries({ queryKey: ["/api/managers"] });
     },
     onError: () => {
@@ -201,7 +148,6 @@ export default function AdminDashboard() {
       });
       setVillageList([{ villageName: "", managerName: "", managerPhone: "" }]);
       queryClient.invalidateQueries({ queryKey: ["/api/villages"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/stats/admin"] });
       queryClient.invalidateQueries({ queryKey: ["/api/managers"] });
     },
     onError: () => {
@@ -372,7 +318,6 @@ export default function AdminDashboard() {
         description: "Village deleted successfully",
       });
       queryClient.invalidateQueries({ queryKey: ["/api/villages"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/stats/admin"] });
       queryClient.invalidateQueries({ queryKey: ["/api/managers"] });
     },
     onError: () => {
@@ -418,7 +363,6 @@ export default function AdminDashboard() {
       });
       queryClient.invalidateQueries({ queryKey: ["/api/managers"] });
       queryClient.invalidateQueries({ queryKey: ["/api/villages"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/stats/admin"] });
     },
     onError: () => {
       toast({
@@ -443,7 +387,6 @@ export default function AdminDashboard() {
       setCreatedCredentials(data.credentials);
       setNewModerator({ name: "", phone: "", email: "", villageIds: [] });
       queryClient.invalidateQueries({ queryKey: ["/api/moderators"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/stats/admin"] });
     },
     onError: () => {
       toast({
@@ -466,7 +409,6 @@ export default function AdminDashboard() {
         description: "Moderator deleted successfully",
       });
       queryClient.invalidateQueries({ queryKey: ["/api/moderators"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/stats/admin"] });
     },
     onError: () => {
       toast({
@@ -674,140 +616,18 @@ export default function AdminDashboard() {
     URL.revokeObjectURL(url);
   };
 
-  const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8'];
 
   const navigationItems = [
-    { id: "overview", label: "Overview", icon: Home },
     { id: "villages", label: "Villages", icon: Building2 },
     { id: "managers", label: "Managers", icon: Users },
     { id: "moderators", label: "Moderators", icon: UserPlus },
-    { id: "reports", label: "Reports", icon: BarChart3 },
     { id: "announcements", label: "Announcements", icon: Bell },
     { id: "website-feedback", label: "Website Feedback", icon: MessageSquare },
     { id: "contact-submissions", label: "Contact Us", icon: FileText },
     { id: "profile", label: "Profile", icon: User },
   ];
 
-  const renderOverview = () => (
-    <div className="space-y-4 sm:space-y-6">
-      <div>
-        <h2 className="text-2xl sm:text-3xl font-bold mb-2">Admin Dashboard</h2>
-        <p className="text-muted-foreground">Manage your waste management system</p>
-      </div>
 
-      {/* Stats Cards - Mobile Responsive */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 p-3 sm:p-6">
-            <CardTitle className="text-xs sm:text-sm font-medium truncate pr-2">Total Villages</CardTitle>
-            <Building2 className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground flex-shrink-0" />
-          </CardHeader>
-          <CardContent className="p-3 sm:p-6 pt-0">
-            <div className="text-lg sm:text-2xl font-bold">{stats?.totalVillages || 0}</div>
-            <p className="text-xs text-muted-foreground">Active communities</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 p-3 sm:p-6">
-            <CardTitle className="text-xs sm:text-sm font-medium truncate pr-2">Total Managers</CardTitle>
-            <Users className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground flex-shrink-0" />
-          </CardHeader>
-          <CardContent className="p-3 sm:p-6 pt-0">
-            <div className="text-lg sm:text-2xl font-bold">{stats?.totalManagers || 0}</div>
-            <p className="text-xs text-muted-foreground">Village managers</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 p-3 sm:p-6">
-            <CardTitle className="text-xs sm:text-sm font-medium truncate pr-2">Open Issues</CardTitle>
-            <AlertTriangle className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground flex-shrink-0" />
-          </CardHeader>
-          <CardContent className="p-3 sm:p-6 pt-0">
-            <div className="text-lg sm:text-2xl font-bold">{stats?.totalOpenIssues || 0}</div>
-            <p className="text-xs text-muted-foreground">Pending resolution</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 p-3 sm:p-6">
-            <CardTitle className="text-xs sm:text-sm font-medium truncate pr-2">Today's Collections</CardTitle>
-            <TrendingUp className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground flex-shrink-0" />
-          </CardHeader>
-          <CardContent className="p-3 sm:p-6 pt-0">
-            <div className="text-lg sm:text-2xl font-bold">{stats?.totalCollectionsToday || 0}</div>
-            <p className="text-xs text-muted-foreground">Waste collections</p>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Quick Actions - Mobile Responsive */}
-      <Card>
-        <CardHeader className="p-3 sm:p-6">
-          <CardTitle className="text-lg sm:text-xl">Quick Actions</CardTitle>
-        </CardHeader>
-        <CardContent className="p-3 sm:p-6 pt-0">
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4">
-            <Button onClick={() => setActiveTab("villages")} className="h-16 sm:h-24 flex flex-col text-xs sm:text-sm">
-              <Plus className="h-4 w-4 sm:h-8 sm:w-8 mb-1 sm:mb-2" />
-              <span>Add Village</span>
-            </Button>
-            <Button onClick={() => setActiveTab("managers")} variant="outline" className="h-16 sm:h-24 flex flex-col text-xs sm:text-sm">
-              <UserPlus className="h-4 w-4 sm:h-8 sm:w-8 mb-1 sm:mb-2" />
-              <span>Manage Users</span>
-            </Button>
-            <Button onClick={() => setActiveTab("announcements")} variant="outline" className="h-16 sm:h-24 flex flex-col text-xs sm:text-sm">
-              <Megaphone className="h-4 w-4 sm:h-8 sm:w-8 mb-1 sm:mb-2" />
-              <span>Send Message</span>
-            </Button>
-            <Button onClick={() => setActiveTab("reports")} variant="outline" className="h-16 sm:h-24 flex flex-col text-xs sm:text-sm">
-              <BarChart3 className="h-4 w-4 sm:h-8 sm:w-8 mb-1 sm:mb-2" />
-              <span>View Reports</span>
-            </Button>
-            <Button onClick={() => setActiveTab("profile")} variant="outline" className="h-16 sm:h-24 flex flex-col text-xs sm:text-sm">
-              <Settings className="h-4 w-4 sm:h-8 sm:w-8 mb-1 sm:mb-2" />
-              <span>Settings</span>
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Recent Activity */}
-      <Card>
-        <CardHeader className="p-3 sm:p-6">
-          <CardTitle className="text-lg sm:text-xl">Recent Activity</CardTitle>
-        </CardHeader>
-        <CardContent className="p-3 sm:p-6 pt-0">
-          <div className="space-y-3 sm:space-y-4">
-            <div className="flex items-center space-x-3 sm:space-x-4">
-              <div className="w-2 h-2 bg-green-500 rounded-full flex-shrink-0"></div>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium">System running smoothly</p>
-                <p className="text-xs text-muted-foreground">All villages operational</p>
-              </div>
-            </div>
-            <div className="flex items-center space-x-3 sm:space-x-4">
-              <div className="w-2 h-2 bg-blue-500 rounded-full flex-shrink-0"></div>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium">{stats?.totalCollectionsToday || 0} collections today</p>
-                <p className="text-xs text-muted-foreground">Waste management active</p>
-              </div>
-            </div>
-            {stats?.totalOpenIssues > 0 && (
-              <div className="flex items-center space-x-3 sm:space-x-4">
-                <div className="w-2 h-2 bg-red-500 rounded-full flex-shrink-0"></div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium">{stats.totalOpenIssues} open issues</p>
-                  <p className="text-xs text-muted-foreground">Require attention</p>
-                </div>
-              </div>
-            )}
-          </div>
-        </CardContent>
-      </Card>
-    </div>
-  );
 
   const renderVillages = () => (
     <div className="space-y-4 sm:space-y-6">
@@ -1051,65 +871,7 @@ export default function AdminDashboard() {
                 </Card>
               </div>
 
-              {/* Village Performance Charts */}
-              {villageDetails.recentCollections && villageDetails.recentCollections.length > 0 && (
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
-                  <Card>
-                    <CardHeader className="p-3 sm:p-6">
-                      <CardTitle className="text-sm sm:text-base">Recent Collection Performance</CardTitle>
-                    </CardHeader>
-                    <CardContent className="p-3 sm:p-6 pt-0">
-                      <ResponsiveContainer width="100%" height={200}>
-                        <BarChart data={villageDetails.recentCollections.slice(0, 7)}>
-                          <CartesianGrid strokeDasharray="3 3" />
-                          <XAxis
-                            dataKey="collectionDate"
-                            tickFormatter={(date) => new Date(date).toLocaleDateString()}
-                            fontSize={12}
-                          />
-                          <YAxis domain={[0, 5]} fontSize={12} />
-                          <Tooltip
-                            labelFormatter={(date) => new Date(date).toLocaleDateString()}
-                          />
-                          <Bar dataKey="segregationRating" fill="#00C49F" name="Segregation Rating" />
-                          <Bar dataKey="plasticRating" fill="#FFBB28" name="Plastic Rating" />
-                        </BarChart>
-                      </ResponsiveContainer>
-                    </CardContent>
-                  </Card>
 
-                  <Card>
-                    <CardHeader className="p-3 sm:p-6">
-                      <CardTitle className="text-sm sm:text-base">Collection Status Distribution</CardTitle>
-                    </CardHeader>
-                    <CardContent className="p-3 sm:p-6 pt-0">
-                      <ResponsiveContainer width="100%" height={200}>
-                        <RechartsPieChart>
-                          <Pie
-                            data={[
-                              { name: 'Completed', value: villageDetails.recentCollections.filter((c: any) => c.status === 'collected').length },
-                              { name: 'Pending', value: villageDetails.recentCollections.filter((c: any) => c.status === 'pending').length },
-                              { name: 'Missed', value: villageDetails.recentCollections.filter((c: any) => c.status === 'missed').length },
-                            ]}
-                            cx="50%"
-                            cy="50%"
-                            outerRadius={60}
-                            fill="#8884d8"
-                            dataKey="value"
-                            label={({ name, value }) => `${name}: ${value}`}
-                            fontSize={10}
-                          >
-                            <Cell fill="#00C49F" />
-                            <Cell fill="#FFBB28" />
-                            <Cell fill="#FF8042" />
-                          </Pie>
-                          <Tooltip />
-                        </RechartsPieChart>
-                      </ResponsiveContainer>
-                    </CardContent>
-                  </Card>
-                </div>
-              )}
 
               {/* Managers Section */}
               <Card>
@@ -1643,852 +1405,7 @@ export default function AdminDashboard() {
     </div>
   );
 
-  const renderReports = () => (
-    <div className="space-y-4 sm:space-y-6">
-      <div>
-        <h2 className="text-2xl sm:text-3xl font-bold">Reports & Analytics</h2>
-        <p className="text-muted-foreground">Comprehensive performance insights and trends across all villages</p>
-      </div>
 
-      <Tabs defaultValue="overall" className="w-full">
-        <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="overall">Overall Reports</TabsTrigger>
-          <TabsTrigger value="daily">Daily Reports</TabsTrigger>
-        </TabsList>
-
-        {/* Overall Reports Tab */}
-        <TabsContent value="overall" className="space-y-6">
-          {/* Village Filter for Overall Reports */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Filter Overall Reports</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="flex gap-4 items-center">
-                <div className="flex-1">
-                  <Label htmlFor="overall-village">Filter by Village</Label>
-                  <Select value={reportFilters.village} onValueChange={(value) => setReportFilters({ ...reportFilters, village: value })}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select Village" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All Villages</SelectItem>
-                      {villages?.map((village: any) => (
-                        <SelectItem key={village.villageId} value={village.villageId}>
-                          {village.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <Button variant="outline" onClick={() => setReportFilters({ ...reportFilters, village: "all" })}>
-                  Clear Filter
-                </Button>
-              </div>
-              <p className="text-xs text-muted-foreground mt-2">
-                {reportFilters.village === "all" ? "Showing overall analytics for all villages" : `Showing analytics for ${villages?.find(v => v.villageId === reportFilters.village)?.name || "selected village"}`}
-              </p>
-            </CardContent>
-          </Card>
-
-          {/* Top KPI Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <Card className="bg-gradient-to-r from-blue-50 to-blue-100 border-blue-200">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium text-blue-800 flex items-center gap-2">
-                  <TrendingUp className="h-4 w-4" />
-                  Collection Efficiency
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-3xl font-bold text-blue-900">
-                  {(() => {
-                    if (reportFilters.village === "all") {
-                      return systemAnalytics?.totalCollectionsThisWeek || 0;
-                    } else {
-                      // Show collections for selected village
-                      const villageCollections = reportData?.collections?.find((c: any) => c.villageId === reportFilters.village);
-                      return villageCollections?.collections || 0;
-                    }
-                  })()}
-                </div>
-                <p className="text-xs text-blue-700 mt-1">
-                  {reportFilters.village === "all" ? "Total collections this week" : `Collections for ${villages?.find(v => v.villageId === reportFilters.village)?.name || "selected village"}`}
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card className="bg-gradient-to-r from-yellow-50 to-yellow-100 border-yellow-200">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium text-yellow-800 flex items-center gap-2">
-                  <Star className="h-4 w-4" />
-                  Average Segregation Rating
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-3xl font-bold text-yellow-900">
-                  {(() => {
-                    if (reportFilters.village === "all") {
-                      return systemAnalytics?.averageSegregationRating?.toFixed(1) || "0.0";
-                    } else {
-                      // Show rating for selected village
-                      const villageData = reportData?.collections?.find((c: any) => c.villageId === reportFilters.village);
-                      const rating = villageData?.avgSegregationRating;
-                      return rating ? (typeof rating === 'number' ? rating : parseFloat(rating)).toFixed(1) : "0.0";
-                    }
-                  })()}
-                </div>
-                <p className="text-xs text-yellow-700 mt-1">
-                  {reportFilters.village === "all" ? "Overall rating" : `Rating for ${villages?.find(v => v.villageId === reportFilters.village)?.name || "selected village"}`}
-                </p>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* 6 Analytics Cards */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* 1. Daily Collection Trend (Last 7 Days) */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <BarChart3 className="h-5 w-5 text-blue-600" />
-                  Daily Collection Trend (Last 7 Days)
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  {Array.from({ length: 7 }).map((_, i) => {
-                    const date = new Date();
-                    date.setDate(date.getDate() - (6 - i));
-                    const dateStr = date.toISOString().split('T')[0];
-
-                    // Find real data for this date
-                    const dayData = systemAnalytics?.collectionTrends?.find((trend: any) =>
-                      trend.date === dateStr || trend.collectionDate === dateStr
-                    );
-                    const collectionsForDay = Number(dayData?.collections) || 0;
-
-                    // Calculate total households and collection percentage
-                    const totalHouseholds = reportFilters.village === "all"
-                      ? systemAnalytics?.totalHouseholds || 0
-                      : villages?.find(v => v.villageId === reportFilters.village)?.totalHouseholds || 0;
-
-                    const dailyTotalHouseholds = Math.max(totalHouseholds, 1);
-                    const collectionPercentage = (collectionsForDay / dailyTotalHouseholds) * 100;
-                    const uncollected = Math.max(0, dailyTotalHouseholds - collectionsForDay);
-
-                    return (
-                      <div key={i} className="space-y-1">
-                        <div className="flex items-center justify-between text-xs">
-                          <span className="text-muted-foreground">
-                            {date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
-                          </span>
-                          <span className="font-medium">
-                            {collectionsForDay}/{dailyTotalHouseholds}
-                          </span>
-                        </div>
-                        <div className="flex h-4 bg-gray-200 rounded overflow-hidden">
-                          <div
-                            className="bg-green-500 transition-all"
-                            style={{ width: `${Math.min(collectionPercentage, 100)}%` }}
-                            title={`Collected: ${collectionsForDay}`}
-                          />
-                          <div
-                            className="bg-red-500 transition-all"
-                            style={{ width: `${Math.min(100 - collectionPercentage, 100)}%` }}
-                            title={`Not collected: ${uncollected}`}
-                          />
-                        </div>
-                        <div className="flex justify-between text-xs text-muted-foreground">
-                          <span className="text-green-600">Collected: {collectionsForDay}</span>
-                          <span className="text-red-600">Remaining: {uncollected}</span>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-                {(!systemAnalytics?.collectionTrends || systemAnalytics.collectionTrends.length === 0) && (
-                  <p className="text-center text-muted-foreground py-4">No collection trend data available</p>
-                )}
-              </CardContent>
-            </Card>
-
-            {/* 2. Segregation Rating Trends (Last 7 Days) */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <TrendingUp className="h-5 w-5 text-green-600" />
-                  Segregation Rating Trends (Last 7 Days)
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  {Array.from({ length: 7 }).map((_, i) => {
-                    const date = new Date();
-                    date.setDate(date.getDate() - (6 - i));
-                    const dateStr = date.toISOString().split('T')[0];
-
-                    // Find real data for this date
-                    const dayData = systemAnalytics?.collectionTrends?.find((trend: any) =>
-                      trend.date === dateStr || trend.collectionDate === dateStr
-                    );
-                    const avgRating = dayData?.avgRating || 0;
-
-                    return (
-                      <div key={i} className="flex items-center gap-3">
-                        <div className="w-16 text-xs text-muted-foreground">
-                          {date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
-                        </div>
-                        <div className="flex-1 bg-gray-200 rounded-full h-4 relative">
-                          <div
-                            className={`h-4 rounded-full transition-all ${avgRating >= 4 ? 'bg-green-500' :
-                              avgRating >= 3 ? 'bg-yellow-500' :
-                                avgRating > 0 ? 'bg-red-500' : 'bg-gray-300'
-                              }`}
-                            style={{ width: `${avgRating > 0 ? (avgRating / 5) * 100 : 0}%` }}
-                          />
-                        </div>
-                        <div className="w-12 text-xs text-right font-medium">
-                          {avgRating > 0 ? avgRating.toFixed(1) : 'N/A'}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* 3. Overall Segregation Rate Pie Chart */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Award className="h-5 w-5 text-purple-600" />
-                  {reportFilters.village === "all" ? "Overall Segregation Rate" : `Segregation Rate - ${villages?.find(v => v.villageId === reportFilters.village)?.name || "Village"}`}
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="flex items-center justify-center">
-                  {(() => {
-                    // Get appropriate distribution data based on filter
-                    let distribution = [];
-                    if (reportFilters.village === "all") {
-                      distribution = systemAnalytics?.segregationRateDistribution || [];
-                    } else {
-                      // For village-specific data, we need to fetch from daily analytics or calculate from collections
-                      distribution = dailyAnalytics?.ratingDistribution || [];
-                    }
-
-                    const excellent = distribution.filter((d: any) => d.rating >= 4).reduce((sum: number, d: any) => sum + d.count, 0);
-                    const good = distribution.filter((d: any) => d.rating >= 3 && d.rating < 4).reduce((sum: number, d: any) => sum + d.count, 0);
-                    const poor = distribution.filter((d: any) => d.rating < 3 && d.rating > 0).reduce((sum: number, d: any) => sum + d.count, 0);
-                    const total = excellent + good + poor || 1;
-
-                    return (
-                      <div className="w-48 h-48 relative">
-                        <svg viewBox="0 0 100 100" className="w-full h-full transform -rotate-90">
-                          <circle cx="50" cy="50" r="40" fill="none" stroke="#f3f4f6" strokeWidth="20" />
-                          <circle
-                            cx="50" cy="50" r="40" fill="none"
-                            stroke="#ef4444" strokeWidth="20"
-                            strokeDasharray={`${(poor / total) * 251.3} 251.3`}
-                            strokeDashoffset="0"
-                          />
-                          <circle
-                            cx="50" cy="50" r="40" fill="none"
-                            stroke="#eab308" strokeWidth="20"
-                            strokeDasharray={`${(good / total) * 251.3} 251.3`}
-                            strokeDashoffset={`-${(poor / total) * 251.3}`}
-                          />
-                          <circle
-                            cx="50" cy="50" r="40" fill="none"
-                            stroke="#22c55e" strokeWidth="20"
-                            strokeDasharray={`${(excellent / total) * 251.3} 251.3`}
-                            strokeDashoffset={`-${((poor + good) / total) * 251.3}`}
-                          />
-                        </svg>
-                        <div className="absolute inset-0 flex items-center justify-center">
-                          <div className="text-center">
-                            <div className="text-2xl font-bold">
-                              {total > 1 ? Math.round((excellent / total) * 100) : 0}%
-                            </div>
-                            <div className="text-xs text-muted-foreground">Excellent</div>
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })()}
-                </div>
-                <div className="grid grid-cols-3 gap-2 mt-4">
-                  <div className="text-center">
-                    <div className="w-4 h-4 bg-green-500 rounded mx-auto mb-1"></div>
-                    <div className="text-xs">Excellent (4-5★)</div>
-                  </div>
-                  <div className="text-center">
-                    <div className="w-4 h-4 bg-yellow-500 rounded mx-auto mb-1"></div>
-                    <div className="text-xs">Good (3-4★)</div>
-                  </div>
-                  <div className="text-center">
-                    <div className="w-4 h-4 bg-red-500 rounded mx-auto mb-1"></div>
-                    <div className="text-xs">Poor (0-3★)</div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* 4. Village Performance Comparison */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <TrendingUp className="h-5 w-5 text-indigo-600" />
-                  {reportFilters.village === "all" ? "Village Performance Comparison" : `Performance Details - ${villages?.find(v => v.villageId === reportFilters.village)?.name || "Village"}`}
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  {(() => {
-                    let performanceData = [];
-
-                    if (reportFilters.village === "all") {
-                      performanceData = systemAnalytics?.topPerformingVillages || reportData?.collections || [];
-                    } else {
-                      // Show single village performance or collectors within that village
-                      const villageData = reportData?.collections?.find((c: any) => c.villageId === reportFilters.village);
-                      if (villageData) {
-                        performanceData = [villageData];
-                      } else {
-                        // Show from village performance in daily analytics
-                        performanceData = dailyAnalytics?.villagePerformance || [];
-                      }
-                    }
-
-                    return performanceData.slice(0, 6).map((item: any, index: number) => {
-                      const avgRating = parseFloat(item.avgRating || item.avgSegregationRating) || 0;
-                      const collections = parseInt(item.collections) || 0;
-                      const name = item.villageName || item.name || `Performer ${index + 1}`;
-
-                      return (
-                        <div key={index} className="space-y-1">
-                          <div className="flex justify-between text-xs">
-                            <span className="font-medium truncate">{name}</span>
-                            <span>{collections} collections</span>
-                          </div>
-                          <div className="flex h-6 bg-gray-200 rounded overflow-hidden">
-                            <div
-                              className={`transition-all ${avgRating >= 4 ? 'bg-green-500' :
-                                avgRating >= 3 ? 'bg-yellow-500' :
-                                  avgRating > 0 ? 'bg-red-500' : 'bg-gray-300'
-                                }`}
-                              style={{ width: `${avgRating > 0 ? (avgRating / 5) * 100 : 0}%` }}
-                              title={`Rating: ${avgRating.toFixed(1)}`}
-                            />
-                          </div>
-                          <div className="text-xs text-muted-foreground text-right">
-                            {avgRating > 0 ? avgRating.toFixed(1) : 'N/A'}/5.0
-                          </div>
-                        </div>
-                      );
-                    });
-                  })()}
-                  {(!systemAnalytics?.topPerformingVillages && !reportData?.collections && !dailyAnalytics?.villagePerformance) && (
-                    <p className="text-center text-muted-foreground py-4">No performance data available</p>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* 5. Household Collection Status */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Package className="h-5 w-5 text-green-600" />
-                  Household Collection Status
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="flex items-center justify-center">
-                  {(() => {
-                    // Calculate real household collection status
-                    const totalHouseholds = reportFilters.village === "all"
-                      ? systemAnalytics?.totalHouseholds || 0
-                      : villages?.find(v => v.villageId === reportFilters.village)?.totalHouseholds || 0;
-
-                    const collectedToday = reportFilters.village === "all"
-                      ? systemAnalytics?.totalCollectionsToday || 0
-                      : dailyAnalytics?.collected || 0;
-
-                    const collectionRate = totalHouseholds > 0 ? (collectedToday / totalHouseholds) * 100 : 0;
-                    const notCollectedRate = 100 - collectionRate;
-
-                    return (
-                      <div className="w-40 h-40 relative">
-                        <svg viewBox="0 0 100 100" className="w-full h-full transform -rotate-90">
-                          <circle cx="50" cy="50" r="35" fill="none" stroke="#f3f4f6" strokeWidth="25" />
-                          <circle
-                            cx="50" cy="50" r="35" fill="none"
-                            stroke="#22c55e" strokeWidth="25"
-                            strokeDasharray={`${(collectionRate / 100) * 219.9} 219.9`}
-                            strokeDashoffset="0"
-                          />
-                        </svg>
-                        <div className="absolute inset-0 flex items-center justify-center">
-                          <div className="text-center">
-                            <div className="text-xl font-bold text-green-600">
-                              {Math.round(collectionRate)}%
-                            </div>
-                            <div className="text-xs text-muted-foreground">Collected Today</div>
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })()}
-                </div>
-                <div className="grid grid-cols-2 gap-2 mt-4">
-                  <div className="text-center">
-                    <div className="w-4 h-4 bg-green-500 rounded mx-auto mb-1"></div>
-                    <div className="text-xs">Collected</div>
-                    <div className="text-xs font-medium">
-                      {reportFilters.village === "all" ? systemAnalytics?.totalCollectionsToday || 0 : dailyAnalytics?.collected || 0}
-                    </div>
-                  </div>
-                  <div className="text-center">
-                    <div className="w-4 h-4 bg-gray-300 rounded mx-auto mb-1"></div>
-                    <div className="text-xs">Remaining</div>
-                    <div className="text-xs font-medium">
-                      {reportFilters.village === "all"
-                        ? (systemAnalytics?.totalHouseholds || 0) - (systemAnalytics?.totalCollectionsToday || 0)
-                        : dailyAnalytics?.remaining || 0}
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* 6. System Analytics */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <BarChart3 className="h-5 w-5 text-purple-600" />
-                  System Analytics
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between p-3 bg-blue-50 rounded-lg">
-                    <div>
-                      <p className="text-sm font-medium">Total Villages</p>
-                      <p className="text-xs text-muted-foreground">Active communities</p>
-                    </div>
-                    <div className="text-2xl font-bold text-blue-600">
-                      {systemAnalytics?.totalVillages || villages?.length || 0}
-                    </div>
-                  </div>
-
-                  <div className="flex items-center justify-between p-3 bg-green-50 rounded-lg">
-                    <div>
-                      <p className="text-sm font-medium">Total Households</p>
-                      <p className="text-xs text-muted-foreground">Registered users</p>
-                    </div>
-                    <div className="text-2xl font-bold text-green-600">
-                      {systemAnalytics?.totalHouseholds || 0}
-                    </div>
-                  </div>
-
-                  <div className="flex items-center justify-between p-3 bg-yellow-50 rounded-lg">
-                    <div>
-                      <p className="text-sm font-medium">Total Collectors</p>
-                      <p className="text-xs text-muted-foreground">Active staff</p>
-                    </div>
-                    <div className="text-2xl font-bold text-yellow-600">
-                      {systemAnalytics?.totalCollectors || 0}
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        </TabsContent>
-
-        {/* Daily Reports Tab */}
-        <TabsContent value="daily" className="space-y-6">
-          {/* Village and Date Filter for Daily Reports */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Select Village and Date for Daily Report</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="daily-village">Filter by Village</Label>
-                  <Select value={reportFilters.village} onValueChange={(value) => setReportFilters({ ...reportFilters, village: value })}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select Village" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All Villages</SelectItem>
-                      {villages?.map((village: any) => (
-                        <SelectItem key={village.villageId} value={village.villageId}>
-                          {village.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <Label htmlFor="daily-date">Select Date</Label>
-                  <Input
-                    id="daily-date"
-                    type="date"
-                    value={reportFilters.startDate || new Date().toISOString().split('T')[0]}
-                    onChange={(e) => setReportFilters({ ...reportFilters, startDate: e.target.value })}
-                  />
-                </div>
-              </div>
-              <div className="flex gap-2 mt-4">
-                <Button variant="outline" onClick={() => setReportFilters({ ...reportFilters, startDate: new Date().toISOString().split('T')[0] })}>
-                  Today
-                </Button>
-                <Button variant="outline" onClick={() => setReportFilters({ ...reportFilters, village: "all" })}>
-                  All Villages
-                </Button>
-              </div>
-              <p className="text-xs text-muted-foreground mt-2">
-                Showing daily report for {reportFilters.village === "all" ? "all villages" : villages?.find(v => v.villageId === reportFilters.village)?.name || "selected village"} on {new Date(reportFilters.startDate || new Date()).toLocaleDateString()}
-              </p>
-            </CardContent>
-          </Card>
-
-          {/* Daily KPI Cards */}
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-            <Card className="bg-gradient-to-r from-yellow-50 to-yellow-100 border-yellow-200">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium text-yellow-800">Avg Segregation Rating</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold text-yellow-900">
-                  {(() => {
-                    const rating = dailyAnalytics?.avgSegregationRating;
-                    if (rating == null || rating === undefined) return "0.0";
-                    const numRating = typeof rating === 'string' ? parseFloat(rating) : Number(rating);
-                    return isNaN(numRating) ? "0.0" : numRating.toFixed(1);
-                  })()}
-                </div>
-                <p className="text-xs text-yellow-700">Out of 5.0 stars</p>
-              </CardContent>
-            </Card>
-
-            <Card className="bg-gradient-to-r from-blue-50 to-blue-100 border-blue-200">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium text-blue-800">Total Houses</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold text-blue-900">
-                  {dailyAnalytics?.totalHouses || 0}
-                </div>
-                <p className="text-xs text-blue-700">Registered households</p>
-              </CardContent>
-            </Card>
-
-            <Card className="bg-gradient-to-r from-green-50 to-green-100 border-green-200">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium text-green-800">Collected</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold text-green-900">
-                  {dailyAnalytics?.collected || 0}
-                </div>
-                <p className="text-xs text-green-700">Collections completed</p>
-              </CardContent>
-            </Card>
-
-            <Card className="bg-gradient-to-r from-red-50 to-red-100 border-red-200">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium text-red-800">Remaining</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold text-red-900">
-                  {dailyAnalytics?.remaining || 0}
-                </div>
-                <p className="text-xs text-red-700">Yet to collect</p>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* 4 Analytics Cards for Daily Reports */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* 1. Collection Status Pie Chart */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Package className="h-5 w-5 text-blue-600" />
-                  Collection Status Overview
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="flex items-center justify-center">
-                  {(() => {
-                    const collected = dailyAnalytics?.collected || 0;
-                    const total = dailyAnalytics?.totalHouses || 1;
-                    const notCollected = total - collected;
-
-                    return (
-                      <div className="w-48 h-48 relative">
-                        <svg viewBox="0 0 100 100" className="w-full h-full transform -rotate-90">
-                          <circle cx="50" cy="50" r="40" fill="none" stroke="#f3f4f6" strokeWidth="20" />
-                          <circle
-                            cx="50" cy="50" r="40" fill="none"
-                            stroke="#22c55e" strokeWidth="20"
-                            strokeDasharray={`${(collected / total) * 251.3} 251.3`}
-                            strokeDashoffset="0"
-                          />
-                          <circle
-                            cx="50" cy="50" r="40" fill="none"
-                            stroke="#ef4444" strokeWidth="20"
-                            strokeDasharray={`${(notCollected / total) * 251.3} 251.3`}
-                            strokeDashoffset={`-${(collected / total) * 251.3}`}
-                          />
-                        </svg>
-                        <div className="absolute inset-0 flex items-center justify-center">
-                          <div className="text-center">
-                            <div className="text-2xl font-bold">
-                              {Math.round((collected / total) * 100)}%
-                            </div>
-                            <div className="text-xs text-muted-foreground">Collected</div>
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })()}
-                </div>
-                <div className="grid grid-cols-2 gap-2 mt-4">
-                  <div className="text-center">
-                    <div className="w-4 h-4 bg-green-500 rounded mx-auto mb-1"></div>
-                    <div className="text-xs">Collected</div>
-                  </div>
-                  <div className="text-center">
-                    <div className="w-4 h-4 bg-red-500 rounded mx-auto mb-1"></div>
-                    <div className="text-xs">Not Collected</div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* 2. Star Rating Distribution */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Star className="h-5 w-5 text-yellow-600" />
-                  Segregation Rating Distribution
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  {[5, 4, 3, 2, 1].map(stars => {
-                    // Use real data for star distribution
-                    const ratingData = dailyAnalytics?.ratingDistribution || [];
-                    const starCount = ratingData.find((r: any) => r.rating === stars)?.count || 0;
-                    const total = ratingData.reduce((sum: number, r: any) => sum + r.count, 0) || 1;
-                    const percentage = total > 0 ? (starCount / total) * 100 : 0;
-
-                    return (
-                      <div key={stars} className="flex items-center gap-3">
-                        <div className="flex items-center gap-1 w-16">
-                          <span className="text-sm font-medium">{stars}</span>
-                          <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
-                        </div>
-                        <div className="flex-1 bg-gray-200 rounded-full h-4 relative">
-                          <div
-                            className="bg-yellow-500 h-4 rounded-full transition-all"
-                            style={{ width: `${percentage}%` }}
-                          />
-                          <span className="absolute inset-0 flex items-center justify-center text-xs font-medium text-white">
-                            {starCount}
-                          </span>
-                        </div>
-                        <div className="w-12 text-xs text-right">
-                          {Math.round(percentage)}%
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* 3. Village Performance for the Day */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Users className="h-5 w-5 text-purple-600" />
-                  {reportFilters.village === "all" ? "Village Performance Today" : "Collector Performance Today"}
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  {dailyAnalytics?.villagePerformance?.length > 0 ? (
-                    dailyAnalytics.villagePerformance.slice(0, 5).map((performer: any, index: number) => {
-                      const collections = performer.collections || 0;
-                      const avgRating = performer.avgRating || 0;
-
-                      return (
-                        <div key={index} className="p-3 bg-gray-50 rounded-lg">
-                          <div className="flex items-center justify-between mb-2">
-                            <h4 className="font-medium">{performer.name}</h4>
-                            <Badge variant="outline">{collections} collections</Badge>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <div className="flex-1 bg-gray-200 rounded-full h-2">
-                              <div
-                                className={`h-2 rounded-full ${avgRating >= 4 ? 'bg-green-500' :
-                                  avgRating >= 3 ? 'bg-yellow-500' :
-                                    avgRating > 0 ? 'bg-red-500' : 'bg-gray-300'
-                                  }`}
-                                style={{ width: `${avgRating > 0 ? (avgRating / 5) * 100 : 0}%` }}
-                              />
-                            </div>
-                            <span className="text-sm font-medium">
-                              {avgRating > 0 ? avgRating.toFixed(1) : 'N/A'}
-                            </span>
-                          </div>
-                        </div>
-                      );
-                    })
-                  ) : (
-                    <p className="text-center text-muted-foreground py-4">No performance data available for selected date</p>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* 4. Collection Timeline */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <BarChart3 className="h-5 w-5 text-indigo-600" />
-                  Collection Timeline
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-2">
-                  {Array.from({ length: 12 }).map((_, i) => {
-                    const hour = i + 6; // Start from 8 AM
-                    const timelineData = dailyAnalytics?.collectionTimeline || [];
-                    const hourData = timelineData.find((t: any) => Number(t.hour) === hour);
-                    const hourCollections = hourData?.collections || 0;
-                    const maxCollections = Math.max(
-                      ...timelineData.map((t: any) => Number(t.collections) || 0),
-                      1
-                    );
-                    const percentage = maxCollections > 0 ? (hourCollections / maxCollections) * 100 : 0;
-
-                    return (
-                      <div key={i} className="flex items-center gap-3">
-                        <div className="w-16 text-xs text-muted-foreground">
-                          {hour}:00
-                        </div>
-                        <div className="flex-1 bg-gray-200 rounded-full h-3 relative">
-                          <div
-                            className="bg-indigo-500 h-3 rounded-full transition-all"
-                            style={{ width: `${percentage}%` }}
-                          />
-                          {hourCollections > 0 && (
-                            <span className="absolute inset-0 flex items-center justify-center text-xs font-medium text-white">
-                              {hourCollections}
-                            </span>
-                          )}
-                        </div>
-                        <div className="w-8 text-xs text-right">
-                          {hourCollections}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-                {(!dailyAnalytics?.collectionTimeline || dailyAnalytics.collectionTimeline.length === 0) && (
-                  <p className="text-center text-muted-foreground py-4">No collection data available for selected date</p>
-                )}
-              </CardContent>
-            </Card>
-
-            {/* 5. Home Composting Rate */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Leaf className="h-5 w-5" />
-                  Home Composting Rate
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="flex items-center justify-center">
-                  {(() => {
-                    const compostingData = dailyAnalytics?.compostingData || { composting: 0, notComposting: 0, total: 0 };
-                    const composting = Number(compostingData.composting) || 0;
-                    const notComposting = Number(compostingData.notComposting) || 0;
-                    const total = composting + notComposting || 1;
-                    const compostingPercentage = (composting / total) * 100;
-
-                    return (
-                      <div className="w-48 h-48 relative">
-                        <svg viewBox="0 0 100 100" className="w-full h-full transform -rotate-90">
-                          <circle cx="50" cy="50" r="40" fill="none" stroke="#f3f4f6" strokeWidth="20" />
-                          <circle
-                            cx="50" cy="50" r="40" fill="none"
-                            stroke="#22c55e" strokeWidth="20"
-                            strokeDasharray={`${(composting / total) * 251.3} 251.3`}
-                            strokeDashoffset="0"
-                          />
-                          <circle
-                            cx="50" cy="50" r="40" fill="none"
-                            stroke="#ef4444" strokeWidth="20"
-                            strokeDasharray={`${(notComposting / total) * 251.3} 251.3`}
-                            strokeDashoffset={`-${(composting / total) * 251.3}`}
-                          />
-                        </svg>
-                        <div className="absolute inset-0 flex items-center justify-center">
-                          <div className="text-center">
-                            <div className="text-2xl font-bold text-green-600">
-                              {Math.round(compostingPercentage)}%
-                            </div>
-                            <div className="text-xs text-muted-foreground">Composting</div>
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })()}
-                </div>
-                <div className="grid grid-cols-2 gap-2 mt-4">
-                  <div className="text-center">
-                    <div className="w-4 h-4 bg-green-500 rounded mx-auto mb-1"></div>
-                    <div className="text-xs">Composting</div>
-                    <div className="text-xs font-medium">
-                      {dailyAnalytics?.compostingData?.composting || 0}
-                    </div>
-                  </div>
-                  <div className="text-center">
-                    <div className="w-4 h-4 bg-red-500 rounded mx-auto mb-1"></div>
-                    <div className="text-xs">Not Composting</div>
-                    <div className="text-xs font-medium">
-                      {dailyAnalytics?.compostingData?.notComposting || 0}
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        </TabsContent>
-      </Tabs>
-
-      {reportLoading && (
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center justify-center">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-              <span className="ml-2 text-sm">Loading reports...</span>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-    </div>
-  );
 
   const renderAnnouncements = () => (
     <div className="space-y-4 sm:space-y-6">
@@ -2957,16 +1874,14 @@ export default function AdminDashboard() {
 
   const renderContent = () => {
     switch (activeTab) {
-      case "overview": return renderOverview();
       case "villages": return renderVillages();
       case "managers": return renderManagers();
       case "moderators": return renderModerators();
-      case "reports": return renderReports();
       case "announcements": return renderAnnouncements();
       case "website-feedback": return renderWebsiteFeedback();
       case "contact-submissions": return renderContactSubmissions();
       case "profile": return renderProfile();
-      default: return renderOverview();
+      default: return renderVillages();
     }
   };
 

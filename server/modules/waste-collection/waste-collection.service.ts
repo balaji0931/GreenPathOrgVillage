@@ -77,7 +77,6 @@ export async function submitCollection(data: {
 
     // Phase 4: Invalidate relevant caches
     const cache = getCache();
-    await cache.delete(cacheKeys.adminStats());
     await cache.delete(cacheKeys.villageStats(household.villageId));
     await cache.delete(cacheKeys.dailyReport(household.villageId, new Date().toISOString().split('T')[0]));
     await cache.clear('report:*'); // Clear all report caches

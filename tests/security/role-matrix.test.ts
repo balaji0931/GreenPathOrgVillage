@@ -183,11 +183,10 @@ const ENDPOINTS: EndpointSpec[] = [
 
     // ─── Stats ───
     { method: 'get', pathTemplate: '/api/manager/stats', label: 'GET /api/manager/stats', roles: allow('manager') },
-    { method: 'get', pathTemplate: '/api/stats/admin', label: 'GET /api/stats/admin', roles: allow('admin') },
+
     { method: 'get', pathTemplate: '/api/stats/moderator', label: 'GET /api/stats/moderator', roles: allow('moderator') },
     { method: 'get', pathTemplate: '/api/stats/village', label: 'GET /api/stats/village', roles: allow('manager') },
-    { method: 'get', pathTemplate: '/api/reports', label: 'GET /api/reports', roles: allow('admin') },
-    { method: 'get', pathTemplate: '/api/analytics/system', label: 'GET /api/analytics/system', roles: allow('admin') },
+
     { method: 'get', pathTemplate: '/api/analytics/premium', label: 'GET /api/analytics/premium', roles: allow('manager', 'admin') },
 
     // ─── Admin ───

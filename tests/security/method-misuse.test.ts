@@ -56,7 +56,7 @@ const TEST_CASES: MethodTestCase[] = [
     { path: '/api/auth/csrf-token', correctMethod: 'get', wrongMethods: ['post', 'delete'] },
     { path: '/api/moderators', correctMethod: 'get', wrongMethods: ['delete', 'patch'] },
     { path: '/api/managers', correctMethod: 'get', wrongMethods: ['post', 'delete', 'patch'] },
-    { path: '/api/stats/admin', correctMethod: 'get', wrongMethods: ['post', 'delete'] },
+
     { path: '/api/admin/website-feedback', correctMethod: 'get', wrongMethods: ['post', 'delete'] },
     { path: '/api/admin/contact-submissions', correctMethod: 'get', wrongMethods: ['post', 'delete'] },
 ];

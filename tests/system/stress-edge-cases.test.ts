@@ -51,11 +51,7 @@ describe('Stress Edge Cases', () => {
         expect(res.body.totalCollectors).toBe(0);
     });
 
-    test('2. Empty village: admin stats safe', async () => {
-        const res = await adminAgent.get('/api/stats/admin');
-        expect(res.status).toBe(200);
-        expect(res.body.totalVillages).toBeGreaterThanOrEqual(1);
-    });
+
 
     test('3. Empty village: pagination returns empty data + total 0', async () => {
         const vRes = await adminAgent

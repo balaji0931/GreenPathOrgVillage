@@ -53,9 +53,7 @@ import * as moderatorStorage from "./modules/moderation/moderator.storage";
 import * as moderatorStatsStorage from "./modules/moderation/moderator-stats.storage";
 import * as moderatorReportsStorage from "./modules/moderation/moderator-reports.storage";
 import * as adminStatsStorage from "./modules/analytics/admin-stats.storage";
-import * as dailyReportStorage from "./modules/analytics/daily-report.storage";
 import * as premiumReportStorage from "./modules/analytics/premium-report.storage";
-import * as systemAnalyticsStorage from "./modules/analytics/system-analytics.storage";
 
 import type { IStorage } from "./storage/storage.interface";
 export type { IStorage };
@@ -274,15 +272,6 @@ export class DatabaseStorage implements IStorage {
     return adminStatsStorage.getVillageStats(villageId);
   }
 
-  async getAdminStats(): Promise<{
-    totalVillages: number;
-    totalManagers: number;
-    totalOpenIssues: number;
-    totalCollectionsToday: number;
-  }> {
-    return adminStatsStorage.getAdminStats();
-  }
-
   async getManagersList(): Promise<User[]> {
     return adminStatsStorage.getManagersList();
   }
@@ -303,15 +292,6 @@ export class DatabaseStorage implements IStorage {
 
   async deleteVillage(villageId: string): Promise<void> {
     return villageStorage.deleteVillage(villageId);
-  }
-
-  async generateReport(filters: {
-    village?: string;
-    role?: string;
-    startDate?: Date;
-    endDate?: Date;
-  }): Promise<any> {
-    return adminStatsStorage.generateReport(filters);
   }
 
   async getVillageDetails(villageId: string): Promise<any> {
@@ -356,19 +336,6 @@ export class DatabaseStorage implements IStorage {
 
   async getRecentCollectionsByVillage(villageId: string, days: number = 7): Promise<any[]> {
     return wasteCollectionStorage.getRecentCollectionsByVillage(villageId, days);
-  }
-
-
-  async getDailyReportData(villageId?: string, date?: string): Promise<{
-    totalHouses: number;
-    collected: number;
-    remaining: number;
-    avgSegregationRating: number;
-    ratingDistribution: any[];
-    collectionTimeline: any[];
-    villagePerformance: any[];
-  }> {
-    return dailyReportStorage.getDailyReportData(villageId, date);
   }
 
   async getPremiumReportData(villageId: string, date: string): Promise<any> {
@@ -469,20 +436,6 @@ export class DatabaseStorage implements IStorage {
     compostingData: any;
   }> {
     return moderatorReportsStorage.getModeratorDailyReportData(villageIds, date);
-  }
-
-  async getSystemAnalytics(villageFilter?: string): Promise<{
-    totalVillages: number;
-    totalHouseholds: number;
-    totalCollectors: number;
-    totalCollectionsToday: number;
-    totalCollectionsThisWeek: number;
-    averageSegregationRating: number;
-    topPerformingVillages: any[];
-    collectionTrends: any[];
-    segregationRateDistribution: any;
-  }> {
-    return systemAnalyticsStorage.getSystemAnalytics(villageFilter);
   }
 
 

@@ -87,12 +87,10 @@ const PROTECTED_ENDPOINTS: Array<{ method: 'get' | 'post' | 'put' | 'patch' | 'd
 
     // Stats
     { method: 'get', path: '/api/manager/stats' },
-    { method: 'get', path: '/api/stats/admin' },
+
     { method: 'get', path: '/api/stats/moderator' },
     { method: 'get', path: '/api/stats/village' },
-    { method: 'get', path: '/api/reports' },
-    { method: 'get', path: '/api/analytics/system' },
-    { method: 'get', path: '/api/analytics/daily' },
+
     { method: 'get', path: '/api/analytics/premium' },
 
     // Admin

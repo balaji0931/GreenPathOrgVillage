@@ -370,7 +370,7 @@ export default function PublicHome({ initialSection = "home" }: PublicHomeProps 
           </h1>
 
           <p className="text-lg sm:text-xl md:text-2xl lg:text-3xl text-green-100 mb-6 sm:mb-8 font-light px-4">
-            🌱 Transforming Communities Through Smart Waste Management
+            Transforming Communities Through Smart Waste Management
           </p>
 
           <p className="text-base sm:text-lg text-white/90 max-w-4xl mx-auto mb-8 sm:mb-12 leading-relaxed px-4">
@@ -745,7 +745,7 @@ export default function PublicHome({ initialSection = "home" }: PublicHomeProps 
           </h1>
 
           <p className="text-lg sm:text-xl md:text-2xl text-purple-100 mb-6 sm:mb-8 font-light max-w-4xl mx-auto">
-            🌟 Discover the Story Behind Smart Waste Management
+            Discover the Story Behind Smart Waste Management
           </p>
 
           <p className="text-base sm:text-lg text-white/90 max-w-4xl mx-auto mb-8 sm:mb-12 leading-relaxed px-4">
@@ -1090,7 +1090,7 @@ export default function PublicHome({ initialSection = "home" }: PublicHomeProps 
           </h1>
 
           <p className="text-lg sm:text-xl md:text-2xl text-pink-100 mb-6 sm:mb-8 font-light max-w-4xl mx-auto">
-            💬 Help Us Improve GreenPath
+            Help Us Improve GreenPath
           </p>
 
           <p className="text-base sm:text-lg text-white/90 max-w-4xl mx-auto mb-8 sm:mb-12 leading-relaxed px-4">
@@ -1477,7 +1477,7 @@ export default function PublicHome({ initialSection = "home" }: PublicHomeProps 
           </h1>
 
           <p className="text-lg sm:text-xl md:text-2xl text-cyan-100 mb-6 sm:mb-8 font-light max-w-4xl mx-auto">
-            📞 Get in Touch with GreenPath
+            Get in Touch with GreenPath
           </p>
 
           <p className="text-base sm:text-lg text-white/90 max-w-4xl mx-auto mb-8 sm:mb-12 leading-relaxed px-4">

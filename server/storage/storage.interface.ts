@@ -111,24 +111,11 @@ export interface IStorage {
         collectionsToday: number;
     }>;
 
-    getAdminStats(): Promise<{
-        totalVillages: number;
-        totalManagers: number;
-        totalOpenIssues: number;
-        totalCollectionsToday: number;
-    }>;
-
     // Admin management methods
     getManagersList(): Promise<User[]>;
     updateUser(userId: string, updates: Partial<User>): Promise<User>;
     deleteUser(userId: string): Promise<void>;
     deleteVillage(villageId: string): Promise<void>;
-    generateReport(filters: {
-        village?: string;
-        role?: string;
-        startDate?: Date;
-        endDate?: Date;
-    }): Promise<any>;
     getVillageDetails(villageId: string): Promise<any>;
     addManagerToVillage(villageData: { villageId: string; managerName: string; managerPhone: string }): Promise<User>;
 
@@ -148,26 +135,6 @@ export interface IStorage {
     deleteHousehold(id: number): Promise<void>;
 
     getRecentCollectionsByVillage(villageId: string, days?: number): Promise<any[]>;
-    getSystemAnalytics(): Promise<{
-        totalVillages: number;
-        totalHouseholds: number;
-        totalCollectors: number;
-        totalCollectionsToday: number;
-        totalCollectionsThisWeek: number;
-        averageSegregationRating: number;
-        topPerformingVillages: any[];
-        collectionTrends: any[];
-        segregationRateDistribution: any;
-    }>;
-    getDailyReportData(villageId?: string, date?: string): Promise<{
-        totalHouses: number;
-        collected: number;
-        remaining: number;
-        avgSegregationRating: number;
-        ratingDistribution: any[];
-        collectionTimeline: any[];
-        villagePerformance: any[];
-    }>;
     getPremiumReportData(villageId: string, date: string): Promise<any>;
     getHouseholdByGeneratorUserId(generatorUserId: string): Promise<Household | undefined>;
 
