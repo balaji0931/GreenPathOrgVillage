@@ -10,10 +10,9 @@ import { eq, desc, asc, count, gte, lte, and, sql } from "drizzle-orm";
 import { getCache, cacheKeys } from "../../cache";
 
 export async function checkExistingCollection(householdId: number, collectorId: number, date: string): Promise<WasteCollection | undefined> {
-    const startDate = new Date(date);
-    startDate.setHours(0, 0, 0, 0);
-    const endDate = new Date(date);
-    endDate.setHours(23, 59, 59, 999);
+    const [year, month, day] = date.split('-').map(Number);
+    const startDate = new Date(year, month - 1, day, 0, 0, 0);
+    const endDate = new Date(year, month - 1, day, 23, 59, 59, 999);
 
     const [existing] = await db
         .select()
@@ -154,10 +153,9 @@ export async function getCollectionsByVillageWithDetails(villageId: string, date
     let conditions = [eq(households.villageId, villageId)];
 
     if (date) {
-        const startDate = new Date(date);
-        startDate.setHours(0, 0, 0, 0);
-        const endDate = new Date(date);
-        endDate.setHours(23, 59, 59, 999);
+        const [year, month, day] = date.split('-').map(Number);
+        const startDate = new Date(year, month - 1, day, 0, 0, 0);
+        const endDate = new Date(year, month - 1, day, 23, 59, 59, 999);
         conditions.push(sql`${wasteCollections.collectionDate} >= ${startDate}`);
         conditions.push(sql`${wasteCollections.collectionDate} <= ${endDate}`);
     }
@@ -207,10 +205,9 @@ export async function getCollectionsByVillageWithDetailsPaginated(villageId: str
     let conditions = [eq(households.villageId, villageId)];
 
     if (options.date) {
-        const startDate = new Date(options.date);
-        startDate.setHours(0, 0, 0, 0);
-        const endDate = new Date(options.date);
-        endDate.setHours(23, 59, 59, 999);
+        const [year, month, day] = options.date.split('-').map(Number);
+        const startDate = new Date(year, month - 1, day, 0, 0, 0);
+        const endDate = new Date(year, month - 1, day, 23, 59, 59, 999);
         conditions.push(sql`${wasteCollections.collectionDate} >= ${startDate}`);
         conditions.push(sql`${wasteCollections.collectionDate} <= ${endDate}`);
     }

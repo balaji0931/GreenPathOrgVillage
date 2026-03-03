@@ -34,7 +34,7 @@ export async function createCollectorWithAccount(data: {
     });
 
     // Create user account for collector
-    const hashedPassword = await bcrypt.hash(uid, 10);
+    const hashedPassword = await bcrypt.hash(uid, Number(process.env.BCRYPT_ROUNDS) || 10);
     await storage.createUser({
         userId: uid,
         password: hashedPassword,

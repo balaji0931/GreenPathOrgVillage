@@ -53,7 +53,8 @@ export async function getVillageStats(villageId: string): Promise<{
         .where(
             and(
                 eq(households.villageId, villageId),
-                sql`${wasteCollections.collectionDate} >= ${today} AND ${wasteCollections.collectionDate} < ${tomorrow}`
+                gte(wasteCollections.collectionDate, today),
+                sql`${wasteCollections.collectionDate} < ${tomorrow}`
             )
         );
 
@@ -97,7 +98,10 @@ export async function getAdminStats(): Promise<{
         .select({ count: count() })
         .from(wasteCollections)
         .where(
-            sql`${wasteCollections.collectionDate} >= ${today} AND ${wasteCollections.collectionDate} < ${tomorrow}`
+            and(
+                gte(wasteCollections.collectionDate, today),
+                sql`${wasteCollections.collectionDate} < ${tomorrow}`
+            )
         );
 
     return {

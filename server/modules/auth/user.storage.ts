@@ -68,7 +68,7 @@ export async function addManagerToVillage(villageData: {
     }
 
     const managerId = `${villageId}-M${managerNumber}`;
-    const hashedPassword = await bcrypt.hash(managerId, 10);
+    const hashedPassword = await bcrypt.hash(managerId, Number(process.env.BCRYPT_ROUNDS) || 10);
 
     // Insert new manager
     const [manager] = await db

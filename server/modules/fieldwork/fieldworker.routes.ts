@@ -49,7 +49,7 @@ export function registerFieldWorkerRoutes(app: Express, requireAuth: any, requir
         const uid = `${villageId}-FW${String(nextNumber).padStart(3, '0')}`;
 
         // Create user account for field worker
-        const hashedPassword = await bcrypt.hash(uid, 10);
+        const hashedPassword = await bcrypt.hash(uid, Number(process.env.BCRYPT_ROUNDS) || 10);
 
         const fieldworker = await storage.createUser({
           userId: uid,

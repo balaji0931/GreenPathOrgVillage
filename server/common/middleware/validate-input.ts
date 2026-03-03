@@ -1,29 +1,38 @@
-// Input validation and sanitization middleware
+// Input validation middleware — reject unsafe input with 400 (validate on input, encode on output)
 export const validateInput = (req: any, res: any, next: any) => {
-    // Sanitize string inputs
-    const sanitizeString = (str: string) => {
-        if (typeof str !== 'string') return str;
-        return str.trim().replace(/[<>'"]/g, ''); // Basic XSS prevention
+    // Dangerous patterns: HTML tags, event handlers, script injection
+    const DANGEROUS_PATTERN = /<|>|javascript:|onerror\s*=|onload\s*=/i;
+
+    // Check if a string contains dangerous content
+    const isDangerous = (value: string): boolean => {
+        if (typeof value !== 'string') return false;
+        return DANGEROUS_PATTERN.test(value);
     };
 
-    // Recursively sanitize object
-    const sanitizeObject = (obj: any): any => {
+    // Recursively check all string values in an object
+    const checkObject = (obj: any): boolean => {
         if (typeof obj === 'string') {
-            return sanitizeString(obj);
+            return isDangerous(obj);
         } else if (Array.isArray(obj)) {
-            return obj.map(sanitizeObject);
+            return obj.some(checkObject);
         } else if (obj && typeof obj === 'object') {
-            const sanitized: any = {};
-            for (const key in obj) {
-                sanitized[key] = sanitizeObject(obj[key]);
-            }
-            return sanitized;
+            return Object.values(obj).some(checkObject);
         }
-        return obj;
+        return false;
     };
 
+    // Validate request body
     if (req.body && typeof req.body === 'object') {
-        req.body = sanitizeObject(req.body);
+        if (checkObject(req.body)) {
+            return res.status(400).json({ message: "Invalid input" });
+        }
+    }
+
+    // Validate query parameters
+    if (req.query && typeof req.query === 'object') {
+        if (checkObject(req.query)) {
+            return res.status(400).json({ message: "Invalid input" });
+        }
     }
 
     next();

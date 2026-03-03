@@ -42,9 +42,15 @@ export async function submitCollection(data: {
         throw new Error("Collector not found");
     }
 
+    // Security: verify collector and household belong to the same village
+    if (household.villageId !== collector.villageId) {
+        throw new Error("VILLAGE_MISMATCH");
+    }
+
     // Check for existing collection today
     const collectionDate = clientCollectionDate ? new Date(clientCollectionDate) : new Date();
-    const dateStr = collectionDate.toISOString().split('T')[0];
+    // Use local date string (YYYY-MM-DD) instead of toISOString() to avoid UTC mismatch near midnight
+    const dateStr = `${collectionDate.getFullYear()}-${String(collectionDate.getMonth() + 1).padStart(2, '0')}-${String(collectionDate.getDate()).padStart(2, '0')}`;
     const existingCollection = await storage.checkExistingCollection(household.id, collector.id, dateStr);
 
     if (existingCollection) {

@@ -46,6 +46,9 @@ export function registerWasteCollectionRoutes(app: Express, requireAuth: any, re
       if (error.message === "Household not found" || error.message === "Collector not found") {
         return res.status(404).json({ message: error.message });
       }
+      if (error.message === "VILLAGE_MISMATCH") {
+        return res.status(403).json({ message: "Village mismatch" });
+      }
       res.status(500).json({ message: "Failed to create waste collection" });
     }
   });

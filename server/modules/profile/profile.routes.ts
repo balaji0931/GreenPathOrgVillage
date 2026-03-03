@@ -19,7 +19,7 @@ app.put('/api/profile', requireAuth, async (req, res) => {
         return res.status(401).json({ message: "Current password is incorrect" });
       }
 
-      const hashedPassword = await bcrypt.hash(newPassword, 10);
+      const hashedPassword = await bcrypt.hash(newPassword, Number(process.env.BCRYPT_ROUNDS) || 10);
       await storage.updateUserPassword(userId, hashedPassword);
     }
 

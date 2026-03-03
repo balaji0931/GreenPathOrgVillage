@@ -10,6 +10,7 @@ vite.config.ts.*
 .env.local
 .env.production
 .env.staging
+.env.test
 
 # Logs
 logs
@@ -41,3 +42,9 @@ node_modules/
 
 # Yarn Integrity file
 .yarn-integrity
+
+# Test output files
+results.txt
+test_run*.txt
+
+coverage-*.json

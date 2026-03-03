@@ -40,7 +40,7 @@ export async function createVillageWithManager(data: {
 
     // Create manager
     const managerId = `${villageId}-M1`;
-    const hashedPassword = await bcrypt.hash(managerId, 10);
+    const hashedPassword = await bcrypt.hash(managerId, Number(process.env.BCRYPT_ROUNDS) || 10);
 
     const manager = await storage.createUser({
         userId: managerId,

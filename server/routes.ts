@@ -31,7 +31,7 @@ import { registerFeedbackRoutes } from "./modules/feedback/feedback.routes";
 const upload = multer({
   dest: 'uploads/',
   limits: {
-    fileSize: 5 * 1024 * 1024, // 5MB limit
+    fileSize: 10 * 1024 * 1024, // 10MB limit
     files: 1, // Only one file per request
     fieldSize: 1024 * 1024, // 1MB field size limit
   },

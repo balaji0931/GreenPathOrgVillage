@@ -22,7 +22,7 @@ if (process.env.DATABASE_URL_POOLED) {
 // Enhanced connection pool configuration for 50K+ concurrent users
 const poolConfig: PoolConfig = {
   connectionString: DATABASE_URL,
-  ssl: process.env.NODE_ENV === 'production'
+  ssl: DATABASE_URL.includes('sslmode=require')
     ? { rejectUnauthorized: false }
     : false,
 

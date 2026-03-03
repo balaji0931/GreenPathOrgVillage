@@ -124,7 +124,7 @@ export function registerAuthRoutes(app: Express, requireAuth: any, generateCsrfT
   app.post('/api/auth/change-password', requireAuth, async (req, res) => {
     try {
       const { newPassword } = req.body;
-      const hashedPassword = await bcrypt.hash(newPassword, 10);
+      const hashedPassword = await bcrypt.hash(newPassword, Number(process.env.BCRYPT_ROUNDS) || 10);
 
       await storage.updateUserPassword(req.session.userId!, hashedPassword);
 

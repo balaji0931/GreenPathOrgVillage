@@ -24,7 +24,7 @@ export async function createModerator(insertModerator: InsertModerator): Promise
         .returning();
 
     // Create user account for moderator
-    const hashedPassword = await bcrypt.hash(insertModerator.moderatorId, 10);
+    const hashedPassword = await bcrypt.hash(insertModerator.moderatorId, Number(process.env.BCRYPT_ROUNDS) || 10);
     await db
         .insert(users)
         .values({

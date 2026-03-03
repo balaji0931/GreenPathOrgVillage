@@ -209,7 +209,7 @@ export const generateGeneratorCredentials = (uid: string): {
 } => {
   const userId = uid.startsWith('GEN-') ? uid : `GEN-${uid}`;
   const password = userId;
-  const hashedPassword = bcrypt.hashSync(password, 10);
+  const hashedPassword = bcrypt.hashSync(password, Number(process.env.BCRYPT_ROUNDS) || 10);
 
   return {
     userId,

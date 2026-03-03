@@ -17,6 +17,9 @@ const createRateLimit = (windowMs: number, max: number, message: string, logger:
     });
 
 export function configureRateLimiting(app: Express, logger: Logger) {
+    // Skip rate limiting in test environment
+    if (process.env.NODE_ENV === 'test') return;
+
     // General API rate limiting
     app.use(
         "/api/",

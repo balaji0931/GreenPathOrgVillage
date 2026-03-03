@@ -226,7 +226,7 @@ export function registerModeratorOperationsRoutes(app: Express, requireAuth: any
             }
 
             const newPassword = managerId; // Reset to manager ID
-            const hashedPassword = await bcrypt.hash(newPassword, 10);
+            const hashedPassword = await bcrypt.hash(newPassword, Number(process.env.BCRYPT_ROUNDS) || 10);
             await storage.updateUserPassword(managerId, hashedPassword);
 
             res.json({ message: "Password reset successfully", newPassword });

@@ -97,7 +97,7 @@ export async function getModeratorsWithVillages() {
  */
 export async function resetPasswordToUserId(userId: string) {
     const newPassword = userId; // Reset to user ID
-    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    const hashedPassword = await bcrypt.hash(newPassword, Number(process.env.BCRYPT_ROUNDS) || 10);
     await storage.updateUserPassword(userId, hashedPassword);
     return newPassword;
 }
