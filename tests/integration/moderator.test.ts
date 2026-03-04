@@ -62,17 +62,7 @@ describe('Moderator Integration', () => {
         });
     });
 
-    describe('GET /api/moderator/village/:villageId/details', () => {
-        test('returns details for assigned village', async () => {
-            const res = await moderatorAgent.get(`/api/moderator/village/${villageId}/details`);
-            expect(res.status).toBe(200);
-        });
 
-        test('returns 403 for non-assigned village', async () => {
-            const res = await moderatorAgent.get('/api/moderator/village/V999/details');
-            expect(res.status).toBe(403);
-        });
-    });
 
     describe('GET /api/moderator/village/:villageId/managers', () => {
         test('returns managers for assigned village', async () => {

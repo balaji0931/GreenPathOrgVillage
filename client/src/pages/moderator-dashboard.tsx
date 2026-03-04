@@ -66,7 +66,7 @@ export default function ModeratorDashboard() {
   const { toast } = useToast();
 
   const [activeTab, setActiveTab] = useState("villages");
-  const [selectedVillage, setSelectedVillage] = useState("");
+
   const [createdCredentials, setCreatedCredentials] = useState<any>(null);
 
 
@@ -120,15 +120,7 @@ export default function ModeratorDashboard() {
 
 
 
-  // Village details query
-  const { data: villageDetails } = useQuery({
-    queryKey: ["/api/moderator/village", selectedVillage, "details"],
-    queryFn: async () => {
-      const response = await apiRequest("GET", `/api/moderator/village/${selectedVillage}/details`);
-      return response.json();
-    },
-    enabled: !!selectedVillage,
-  });
+
 
 
 
@@ -236,8 +228,7 @@ export default function ModeratorDashboard() {
         description: "Manager added successfully",
       });
       setCreatedCredentials(data.manager.credentials);
-      queryClient.invalidateQueries({ queryKey: ["/api/moderator/villages"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/moderator/village", selectedVillage, "details"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/moderator/managers"] });
     },
     onError: () => {
       toast({
@@ -362,16 +353,7 @@ export default function ModeratorDashboard() {
                       </Badge>
                     </TableCell>
                     <TableCell>
-                      <div className="flex space-x-1 sm:space-x-2">
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => setSelectedVillage(village.villageId)}
-                          className="p-1 sm:p-2"
-                        >
-                          <Eye className="h-3 w-3 sm:h-4 sm:w-4" />
-                        </Button>
-                      </div>
+
                     </TableCell>
                   </TableRow>
                 ))}
@@ -381,421 +363,51 @@ export default function ModeratorDashboard() {
         </CardContent>
       </Card>
 
-      {/* Village Details Modal */}
-      {selectedVillage && villageDetails && (
-        <Dialog
-          open={!!selectedVillage}
-          onOpenChange={() => setSelectedVillage("")}
-        >
-          <DialogContent className="max-w-[95vw] sm:max-w-6xl max-h-[90vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle className="text-lg sm:text-xl">
-                Village Details - {villageDetails.village?.name}
-              </DialogTitle>
-            </DialogHeader>
-
-            <div className="space-y-4 sm:space-y-6">
-              {/* Stats */}
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
-                <Card>
-                  <CardContent className="p-3 sm:p-4">
-                    <div className="text-lg sm:text-2xl font-bold">
-                      {villageDetails.stats?.totalHouseholds || 0}
-                    </div>
-                    <div className="text-xs sm:text-sm text-muted-foreground">
-                      Households
-                    </div>
-                  </CardContent>
-                </Card>
-                <Card>
-                  <CardContent className="p-3 sm:p-4">
-                    <div className="text-lg sm:text-2xl font-bold">
-                      {villageDetails.stats?.totalCollectors || 0}
-                    </div>
-                    <div className="text-xs sm:text-sm text-muted-foreground">
-                      Collectors
-                    </div>
-                  </CardContent>
-                </Card>
-                <Card>
-                  <CardContent className="p-3 sm:p-4">
-                    <div className="text-lg sm:text-2xl font-bold">
-                      {villageDetails.stats?.openIssues || 0}
-                    </div>
-                    <div className="text-xs sm:text-sm text-muted-foreground">
-                      Open Issues
-                    </div>
-                  </CardContent>
-                </Card>
-                <Card>
-                  <CardContent className="p-3 sm:p-4">
-                    <div className="text-lg sm:text-2xl font-bold">
-                      {villageDetails.stats?.collectionsToday || 0}
-                    </div>
-                    <div className="text-xs sm:text-sm text-muted-foreground">
-                      Collections Today
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
-
-              {/* Village Performance Charts */}
-              {villageDetails.recentCollections &&
-                villageDetails.recentCollections.length > 0 && (
-                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
-                    <Card>
-                      <CardHeader className="p-3 sm:p-6">
-                        <CardTitle className="text-sm sm:text-base">
-                          Recent Collection Performance
-                        </CardTitle>
-                      </CardHeader>
-                      <CardContent className="p-3 sm:p-6 pt-0">
-                        <ResponsiveContainer width="100%" height={200}>
-                          <BarChart
-                            data={villageDetails.recentCollections.slice(0, 7)}
-                          >
-                            <CartesianGrid strokeDasharray="3 3" />
-                            <XAxis
-                              dataKey="collectionDate"
-                              tickFormatter={(date) =>
-                                new Date(date).toLocaleDateString()
-                              }
-                              fontSize={12}
-                            />
-                            <YAxis domain={[0, 5]} fontSize={12} />
-                            <Tooltip
-                              labelFormatter={(date) =>
-                                new Date(date).toLocaleDateString()
-                              }
-                            />
-                            <Bar
-                              dataKey="segregationRating"
-                              fill="#00C49F"
-                              name="Segregation Rating"
-                            />
-                            <Bar
-                              dataKey="plasticRating"
-                              fill="#FFBB28"
-                              name="Plastic Rating"
-                            />
-                          </BarChart>
-                        </ResponsiveContainer>
-                      </CardContent>
-                    </Card>
-
-                    <Card>
-                      <CardHeader className="p-3 sm:p-6">
-                        <CardTitle className="text-sm sm:text-base">
-                          Collection Status Distribution
-                        </CardTitle>
-                      </CardHeader>
-                      <CardContent className="p-3 sm:p-6 pt-0">
-                        <ResponsiveContainer width="100%" height={200}>
-                          <RechartsPieChart>
-                            <Pie
-                              data={[
-                                {
-                                  name: "Completed",
-                                  value:
-                                    villageDetails.recentCollections.filter(
-                                      (c: any) => c.status === "collected",
-                                    ).length,
-                                },
-                                {
-                                  name: "Pending",
-                                  value:
-                                    villageDetails.recentCollections.filter(
-                                      (c: any) => c.status === "pending",
-                                    ).length,
-                                },
-                                {
-                                  name: "Missed",
-                                  value:
-                                    villageDetails.recentCollections.filter(
-                                      (c: any) => c.status === "missed",
-                                    ).length,
-                                },
-                              ]}
-                              cx="50%"
-                              cy="50%"
-                              outerRadius={60}
-                              fill="#8884d8"
-                              dataKey="value"
-                              label={({ name, value }) => `${name}: ${value}`}
-                              fontSize={10}
-                            >
-                              <Cell fill="#00C49F" />
-                              <Cell fill="#FFBB28" />
-                              <Cell fill="#FF8042" />
-                            </Pie>
-                            <Tooltip />
-                          </RechartsPieChart>
-                        </ResponsiveContainer>
-                      </CardContent>
-                    </Card>
-                  </div>
-                )}
-
-              {/* Managers Section */}
-              <Card>
-                <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 p-3 sm:p-6">
-                  <CardTitle className="text-lg sm:text-xl">Managers</CardTitle>
-                  <Dialog>
-                    <DialogTrigger asChild>
-                      <Button size="sm" className="w-full sm:w-auto">
-                        <UserPlus className="h-4 w-4 mr-2" />
-                        Add Manager
-                      </Button>
-                    </DialogTrigger>
-                    <DialogContent className="max-w-[95vw] sm:max-w-md">
-                      <DialogHeader>
-                        <DialogTitle>
-                          Add Manager to {villageDetails.village?.name}
-                        </DialogTitle>
-                      </DialogHeader>
-                      <div className="space-y-4">
-                        <div>
-                          <Label>Manager Name</Label>
-                          <Input
-                            id="newManagerName"
-                            placeholder="Enter manager name"
-                          />
-                        </div>
-                        <div>
-                          <Label>Manager Phone</Label>
-                          <Input
-                            id="newManagerPhone"
-                            placeholder="Enter phone number"
-                          />
-                        </div>
-                        <Button
-                          onClick={() => {
-                            const nameInput = document.getElementById(
-                              "newManagerName",
-                            ) as HTMLInputElement;
-                            const phoneInput = document.getElementById(
-                              "newManagerPhone",
-                            ) as HTMLInputElement;
-                            if (nameInput.value && phoneInput.value) {
-                              addManagerMutation.mutate({
-                                villageId: selectedVillage,
-                                managerName: nameInput.value,
-                                managerPhone: phoneInput.value,
-                              });
-                              nameInput.value = "";
-                              phoneInput.value = "";
-                            }
-                          }}
-                          className="w-full"
-                        >
-                          Add Manager
-                        </Button>
-                      </div>
-                    </DialogContent>
-                  </Dialog>
-                </CardHeader>
-                <CardContent className="p-3 sm:p-6 pt-0">
-                  <div className="overflow-x-auto">
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead className="text-xs sm:text-sm">
-                            Manager ID
-                          </TableHead>
-                          <TableHead className="text-xs sm:text-sm">
-                            Name
-                          </TableHead>
-                          <TableHead className="text-xs sm:text-sm hidden sm:table-cell">
-                            Phone
-                          </TableHead>
-                          <TableHead className="text-xs sm:text-sm">
-                            Actions
-                          </TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {villageDetails.managers?.map((manager: any) => (
-                          <TableRow key={manager.id}>
-                            <TableCell className="text-xs sm:text-sm">
-                              {manager.userId}
-                            </TableCell>
-                            <TableCell className="text-xs sm:text-sm">
-                              {manager.name}
-                            </TableCell>
-                            <TableCell className="text-xs sm:text-sm hidden sm:table-cell">
-                              {manager.phone}
-                            </TableCell>
-                            <TableCell>
-                              <div className="flex space-x-1 sm:space-x-2">
-                                <Button
-                                  size="sm"
-                                  variant="outline"
-                                  onClick={() =>
-                                    resetManagerPasswordMutation.mutate(manager.userId)
-                                  }
-                                  className="p-1 sm:p-2"
-                                >
-                                  <RotateCcw className="h-3 w-3 sm:h-4 sm:w-4" />
-                                </Button>
-                              </div>
-                            </TableCell>
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Additional sections for households and issues */}
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
-                <Card>
-                  <CardHeader className="p-3 sm:p-6">
-                    <CardTitle className="text-lg sm:text-xl">
-                      Recent Households
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="p-3 sm:p-6 pt-0">
-                    <div className="overflow-x-auto">
-                      <Table>
-                        <TableHeader>
-                          <TableRow>
-                            <TableHead className="text-xs sm:text-sm">
-                              UID
-                            </TableHead>
-                            <TableHead className="text-xs sm:text-sm">
-                              Head Name
-                            </TableHead>
-                            <TableHead className="text-xs sm:text-sm">
-                              House Number
-                            </TableHead>
-                          </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                          {villageDetails.households
-                            ?.slice(0, 5)
-                            .map((household: any) => (
-                              <TableRow key={household.id}>
-                                <TableCell className="text-xs sm:text-sm">
-                                  {household.uid}
-                                </TableCell>
-                                <TableCell className="text-xs sm:text-sm">
-                                  {household.headName}
-                                </TableCell>
-                                <TableCell className="text-xs sm:text-sm">
-                                  {household.houseNumber}
-                                </TableCell>
-                              </TableRow>
-                            ))}
-                        </TableBody>
-                      </Table>
-                    </div>
-                  </CardContent>
-                </                Card>
-
-                <Card>
-                  <CardHeader className="p-3 sm:p-6">
-                    <CardTitle className="text-lg sm:text-xl">
-                      Recent Issues
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="p-3 sm:p-6 pt-0">
-                    <div className="overflow-x-auto">
-                      <Table>
-                        <TableHeader>
-                          <TableRow>
-                            <TableHead className="text-xs sm:text-sm">
-                              Title
-                            </TableHead>
-                            <TableHead className="text-xs sm:text-sm">
-                              Status
-                            </TableHead>
-                            <TableHead className="text-xs sm:text-sm">
-                              Date
-                            </TableHead>
-                          </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                          {villageDetails.issues
-                            ?.slice(0, 5)
-                            .map((issue: any) => (
-                              <TableRow key={issue.id}>
-                                <TableCell className="text-xs sm:text-sm">
-                                  {issue.title}
-                                </TableCell>
-                                <TableCell>
-                                  <Badge
-                                    variant={
-                                      issue.status === "open"
-                                        ? "destructive"
-                                        : "default"
-                                    }
-                                    className="text-xs"
-                                  >
-                                    {issue.status}
-                                  </Badge>
-                                </TableCell>
-                                <TableCell className="text-xs sm:text-sm">
-                                  {new Date(
-                                    issue.createdAt,
-                                  ).toLocaleDateString()}
-                                </TableCell>
-                              </TableRow>
-                            ))}
-                        </TableBody>
-                      </Table>
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
-            </div>
-          </DialogContent>
-        </Dialog>
-      )}
-
       {/* Credentials Display Modal */}
-      {createdCredentials && (
-        <Dialog
-          open={!!createdCredentials}
-          onOpenChange={() => setCreatedCredentials(null)}
-        >
-          <DialogContent className="max-w-[95vw] sm:max-w-md">
-            <DialogHeader>
-              <DialogTitle>Manager Credentials Created</DialogTitle>
-            </DialogHeader>
-            <div className="space-y-4">
-              <div className="bg-muted p-3 sm:p-4 rounded-lg">
-                <div className="space-y-2">
-                  <div className="text-sm sm:text-base">
-                    <strong>User ID:</strong> {createdCredentials.userId}
-                  </div>
-                  <div className="text-sm sm:text-base">
-                    <strong>Password:</strong> {createdCredentials.password}
+      {
+        createdCredentials && (
+          <Dialog
+            open={!!createdCredentials}
+            onOpenChange={() => setCreatedCredentials(null)}
+          >
+            <DialogContent className="max-w-[95vw] sm:max-w-md">
+              <DialogHeader>
+                <DialogTitle>Manager Credentials Created</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4">
+                <div className="bg-muted p-3 sm:p-4 rounded-lg">
+                  <div className="space-y-2">
+                    <div className="text-sm sm:text-base">
+                      <strong>User ID:</strong> {createdCredentials.userId}
+                    </div>
+                    <div className="text-sm sm:text-base">
+                      <strong>Password:</strong> {createdCredentials.password}
+                    </div>
                   </div>
                 </div>
+                <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2">
+                  <Button
+                    onClick={() => copyCredentials(createdCredentials)}
+                    className="flex-1"
+                  >
+                    <Copy className="h-4 w-4 mr-2" />
+                    Copy
+                  </Button>
+                  <Button
+                    onClick={() => downloadCredentials(createdCredentials)}
+                    variant="outline"
+                    className="flex-1"
+                  >
+                    <Download className="h-4 w-4 mr-2" />
+                    Download
+                  </Button>
+                </div>
               </div>
-              <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2">
-                <Button
-                  onClick={() => copyCredentials(createdCredentials)}
-                  className="flex-1"
-                >
-                  <Copy className="h-4 w-4 mr-2" />
-                  Copy
-                </Button>
-                <Button
-                  onClick={() => downloadCredentials(createdCredentials)}
-                  variant="outline"
-                  className="flex-1"
-                >
-                  <Download className="h-4 w-4 mr-2" />
-                  Download
-                </Button>
-              </div>
-            </div>
-          </DialogContent>
-        </Dialog>
-      )}
-    </div>
+            </DialogContent>
+          </Dialog>
+        )
+      }
+    </div >
   );
 
   const renderManagers = () => (
@@ -806,8 +418,77 @@ export default function ModeratorDashboard() {
       </div>
 
       <Card>
-        <CardHeader className="p-3 sm:p-6">
+        <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 p-3 sm:p-6 text-lg sm:text-xl">
           <CardTitle className="text-lg sm:text-xl">All Managers</CardTitle>
+          <Dialog>
+            <DialogTrigger asChild>
+              <Button size="sm" className="w-full sm:w-auto">
+                <UserPlus className="h-4 w-4 mr-2" />
+                Add Manager
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-[95vw] sm:max-w-md">
+              <DialogHeader>
+                <DialogTitle>Add New Manager</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4">
+                <div>
+                  <Label>Village</Label>
+                  <select
+                    id="newManagerVillageId"
+                    className="w-full p-2 border rounded-md"
+                  >
+                    <option value="">Select a village</option>
+                    {villages?.map((v: any) => (
+                      <option key={v.villageId} value={v.villageId}>
+                        {v.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <Label>Manager Name</Label>
+                  <Input
+                    id="newManagerName"
+                    placeholder="Enter manager name"
+                  />
+                </div>
+                <div>
+                  <Label>Manager Phone</Label>
+                  <Input
+                    id="newManagerPhone"
+                    placeholder="Enter phone number"
+                  />
+                </div>
+                <Button
+                  onClick={() => {
+                    const villageSelect = document.getElementById(
+                      "newManagerVillageId",
+                    ) as HTMLSelectElement;
+                    const nameInput = document.getElementById(
+                      "newManagerName",
+                    ) as HTMLInputElement;
+                    const phoneInput = document.getElementById(
+                      "newManagerPhone",
+                    ) as HTMLInputElement;
+                    if (villageSelect.value && nameInput.value && phoneInput.value) {
+                      addManagerMutation.mutate({
+                        villageId: villageSelect.value,
+                        managerName: nameInput.value,
+                        managerPhone: phoneInput.value,
+                      });
+                      villageSelect.value = "";
+                      nameInput.value = "";
+                      phoneInput.value = "";
+                    }
+                  }}
+                  className="w-full"
+                >
+                  Add Manager
+                </Button>
+              </div>
+            </DialogContent>
+          </Dialog>
         </CardHeader>
         <CardContent className="p-3 sm:p-6 pt-0">
           {managersLoading ? (

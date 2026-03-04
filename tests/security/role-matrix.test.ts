@@ -200,7 +200,7 @@ const ENDPOINTS: EndpointSpec[] = [
     { method: 'get', pathTemplate: '/api/moderator/households', label: 'GET /api/moderator/households', roles: allow('moderator') },
     { method: 'get', pathTemplate: '/api/moderator/managers', label: 'GET /api/moderator/managers', roles: allow('moderator') },
 
-    { method: 'get', pathTemplate: '/api/moderator/village/:villageId/details', label: 'GET /api/moderator/village/:id/details', roles: allow('moderator') },
+
     { method: 'get', pathTemplate: '/api/moderator/village/:villageId/managers', label: 'GET /api/moderator/village/:id/managers', roles: allow('moderator') },
 
     // ─── Fieldworker ───

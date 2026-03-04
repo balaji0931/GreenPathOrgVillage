@@ -100,31 +100,7 @@ export function registerModeratorOperationsRoutes(app: Express, requireAuth: any
         }
     });
 
-    app.get('/api/moderator/village/:villageId/details', requireAuth, requireRole(['moderator']), async (req, res) => {
-        try {
-            const { villageId } = req.params;
-            const moderatorId = req.session.userId!;
 
-            // Verify that this village is assigned to the moderator
-            const assignedVillages = await storage.getModeratorVillages(moderatorId);
-            const isAssigned = assignedVillages.some(v => v.villageId === villageId);
-
-            if (!isAssigned) {
-                return res.status(403).json({ message: "Access denied to this village" });
-            }
-
-            const details = await storage.getVillageDetails(villageId);
-
-            // Add recent collections data for village performance charts
-            const recentCollections = await storage.getRecentCollectionsByVillage(villageId, 7);
-            details.recentCollections = recentCollections;
-
-            res.json(details);
-        } catch (error) {
-            console.error("Get moderator village details error:", error);
-            res.status(500).json({ message: "Failed to get village details" });
-        }
-    });
 
     app.get('/api/moderator/village/:villageId/managers', requireAuth, requireRole(['moderator']), async (req, res) => {
         try {
@@ -264,26 +240,7 @@ export function registerModeratorOperationsRoutes(app: Express, requireAuth: any
         }
     });
 
-    app.get('/api/moderator/village/:villageId/issues', requireAuth, requireRole(['moderator']), async (req, res) => {
-        try {
-            const { villageId } = req.params;
-            const moderatorId = req.session.userId!;
 
-            // Verify that this village is assigned to the moderator
-            const assignedVillages = await storage.getModeratorVillages(moderatorId);
-            const isAssigned = assignedVillages.some(v => v.villageId === villageId);
-
-            if (!isAssigned) {
-                return res.status(403).json({ message: "Access denied to this village" });
-            }
-
-            const issues = await storage.getIssuesByVillage(villageId);
-            res.json(issues);
-        } catch (error) {
-            console.error("Get village issues error:", error);
-            res.status(500).json({ message: "Failed to get village issues" });
-        }
-    });
 
     app.patch('/api/moderator/issues/:id', requireAuth, requireRole(['moderator']), async (req, res) => {
         try {

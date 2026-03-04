@@ -327,7 +327,7 @@ describe('Cross-Module Invariants', () => {
             .send({ villageName: 'Unassigned Village', managerName: 'U Mgr', managerPhone: '1212121212' });
         const villageCId = vCRes.body.village.villageId;
 
-        const res = await modAgent.get(`/api/moderator/village/${villageCId}/details`);
+        const res = await modAgent.get(`/api/moderator/village/${villageCId}/managers`);
         expect(res.status).toBe(403);
     });
 });

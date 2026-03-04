@@ -182,20 +182,14 @@ describe('Village Isolation — Cross-village access denied', () => {
     });
 
     describe('Moderator assigned to A cannot access Village B', () => {
-        test('Moderator cannot view Village B details', async () => {
-            const res = await modAgent.get(`/api/moderator/village/${villageBId}/details`);
-            expect(res.status).toBe(403);
-        });
+
 
         test('Moderator cannot view Village B managers', async () => {
             const res = await modAgent.get(`/api/moderator/village/${villageBId}/managers`);
             expect(res.status).toBe(403);
         });
 
-        test('Moderator cannot view Village B issues', async () => {
-            const res = await modAgent.get(`/api/moderator/village/${villageBId}/issues`);
-            expect(res.status).toBe(403);
-        });
+
 
         test('Moderator cannot add manager to Village B', async () => {
             const res = await modAgent
