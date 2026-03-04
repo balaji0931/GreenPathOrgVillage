@@ -14,38 +14,6 @@ export function registerStatsRoutes(app: Express, requireAuth: any, requireRole:
     }
   });
 
-  app.get('/api/stats/moderator', requireAuth, requireRole(['moderator']), async (req, res) => {
-    try {
-      const moderatorId = req.session.userId!;
-      const villages = await storage.getModeratorVillages(moderatorId);
-
-      let totalHouseholds = 0;
-      let totalCollectors = 0;
-      let totalOpenIssues = 0;
-      let totalCollectionsToday = 0;
-
-      for (const village of villages) {
-        const stats = await storage.getVillageStats(village.villageId);
-        totalHouseholds += stats.totalHouseholds;
-        totalCollectors += stats.totalCollectors;
-        totalOpenIssues += stats.openIssues;
-        totalCollectionsToday += stats.collectionsToday;
-      }
-
-      res.json({
-        totalVillages: villages.length,
-        totalHouseholds,
-        totalCollectors,
-        totalOpenIssues,
-        totalCollectionsToday,
-        assignedVillages: villages,
-      });
-    } catch (error) {
-      console.error("Get moderator stats error:", error);
-      res.status(500).json({ message: "Failed to get moderator stats" });
-    }
-  });
-
   app.get('/api/stats/village', requireAuth, requireRole(['manager']), async (req, res) => {
     try {
       const villageId = req.session.villageId!;

@@ -102,13 +102,6 @@ describe('Moderator Integration', () => {
         });
     });
 
-    describe('GET /api/moderator/stats', () => {
-        test('returns aggregated stats', async () => {
-            const res = await moderatorAgent.get('/api/moderator/stats');
-            // May return 200 or 500 depending on implementation
-            expect([200, 404]).toContain(res.status);
-        });
-    });
 
     describe('PUT /api/moderator/managers/:managerId/reset-password', () => {
         test('resets password for manager in assigned village', async () => {

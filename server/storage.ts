@@ -51,7 +51,7 @@ import * as dryWasteSalesStorage from "./modules/material-log/dry-waste-sales.st
 import * as wasteCollectionStorage from "./modules/waste-collection/waste-collection.storage";
 import * as moderatorStorage from "./modules/moderation/moderator.storage";
 import * as moderatorStatsStorage from "./modules/moderation/moderator-stats.storage";
-import * as moderatorReportsStorage from "./modules/moderation/moderator-reports.storage";
+
 import * as adminStatsStorage from "./modules/analytics/admin-stats.storage";
 import * as premiumReportStorage from "./modules/analytics/premium-report.storage";
 
@@ -379,25 +379,8 @@ export class DatabaseStorage implements IStorage {
     return moderatorStorage.getManagersByVillage(villageId);
   }
 
-  async getModeratorStats(villageIds: string[]): Promise<{
-    totalVillages: number;
-    totalHouseholds: number;
-    totalCollectors: number;
-    totalOpenIssues: number;
-    totalCollectionsToday: number;
-  }> {
-    return moderatorStatsStorage.getModeratorStats(villageIds);
-  }
-
-  async getModeratorReports(villageIds: string[], filters: {
-    startDate?: Date;
-    endDate?: Date;
-  }): Promise<any> {
-    return moderatorReportsStorage.getModeratorReports(villageIds, filters);
-  }
-
   async getModeratorIssues(villageIds: string[]): Promise<Issue[]> {
-    return moderatorReportsStorage.getModeratorIssues(villageIds);
+    return moderatorStatsStorage.getModeratorIssues(villageIds);
   }
 
   async getModeratorCollectors(villageIds: string[]): Promise<any[]> {
@@ -408,35 +391,7 @@ export class DatabaseStorage implements IStorage {
     return moderatorStatsStorage.getModeratorHouseholds(villageIds);
   }
 
-  async getModeratorSystemAnalytics(villageIds: string[], selectedVillageId?: string): Promise<{
-    totalCollections: number;
-    avgRating: number;
-    villageStats: any[];
-    totalCollectionsThisWeek: number;
-    averageSegregationRating: number;
-    topPerformingVillages: any[];
-    collectionTrends: any[];
-    segregationRateDistribution: any[];
-    totalVillages: number;
-    totalHouseholds: number;
-    totalCollectors: number;
-    totalCollectionsToday: number;
-  }> {
-    return moderatorReportsStorage.getModeratorSystemAnalytics(villageIds, selectedVillageId);
-  }
 
-  async getModeratorDailyReportData(villageIds: string[], date?: string): Promise<{
-    totalHouses: number;
-    collected: number;
-    remaining: number;
-    avgSegregationRating: number;
-    ratingDistribution: any[];
-    collectionTimeline: any[];
-    villagePerformance: any[];
-    compostingData: any;
-  }> {
-    return moderatorReportsStorage.getModeratorDailyReportData(villageIds, date);
-  }
 
 
   // Website feedback operations

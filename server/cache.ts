@@ -191,7 +191,6 @@ export const cacheKeys = {
   managersPaginated: (page: number, limit: number) => `managers:paginated:${page}:${limit}`,
   moderators: () => 'moderators:all',
   villageStats: (villageId: string) => `stats:village:${villageId}`,
-  moderatorStats: (moderatorId: string) => `stats:moderator:${moderatorId}`,
   wards: (villageId: string) => `wards:${villageId}`,
   dailyReport: (villageId: string, date: string) => `report:daily:${villageId}:${date}`,
   villageDetails: (villageId: string) => `village:details:${villageId}`,

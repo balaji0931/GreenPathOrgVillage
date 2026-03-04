@@ -88,7 +88,7 @@ const PROTECTED_ENDPOINTS: Array<{ method: 'get' | 'post' | 'put' | 'patch' | 'd
     // Stats
     { method: 'get', path: '/api/manager/stats' },
 
-    { method: 'get', path: '/api/stats/moderator' },
+
     { method: 'get', path: '/api/stats/village' },
 
     { method: 'get', path: '/api/analytics/premium' },
@@ -103,8 +103,7 @@ const PROTECTED_ENDPOINTS: Array<{ method: 'get' | 'post' | 'put' | 'patch' | 'd
     { method: 'get', path: '/api/moderator/collectors' },
     { method: 'get', path: '/api/moderator/households' },
     { method: 'get', path: '/api/moderator/managers' },
-    { method: 'get', path: '/api/moderator/stats' },
-    { method: 'get', path: '/api/moderator/reports' },
+
     { method: 'post', path: '/api/moderator/announcements', body: {} },
     { method: 'put', path: '/api/moderator/managers/x/reset-password' },
     { method: 'delete', path: '/api/moderator/managers/x' },

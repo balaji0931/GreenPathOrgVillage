@@ -184,7 +184,7 @@ const ENDPOINTS: EndpointSpec[] = [
     // ─── Stats ───
     { method: 'get', pathTemplate: '/api/manager/stats', label: 'GET /api/manager/stats', roles: allow('manager') },
 
-    { method: 'get', pathTemplate: '/api/stats/moderator', label: 'GET /api/stats/moderator', roles: allow('moderator') },
+
     { method: 'get', pathTemplate: '/api/stats/village', label: 'GET /api/stats/village', roles: allow('manager') },
 
     { method: 'get', pathTemplate: '/api/analytics/premium', label: 'GET /api/analytics/premium', roles: allow('manager', 'admin') },
@@ -199,8 +199,7 @@ const ENDPOINTS: EndpointSpec[] = [
     { method: 'get', pathTemplate: '/api/moderator/collectors', label: 'GET /api/moderator/collectors', roles: allow('moderator') },
     { method: 'get', pathTemplate: '/api/moderator/households', label: 'GET /api/moderator/households', roles: allow('moderator') },
     { method: 'get', pathTemplate: '/api/moderator/managers', label: 'GET /api/moderator/managers', roles: allow('moderator') },
-    { method: 'get', pathTemplate: '/api/moderator/stats', label: 'GET /api/moderator/stats', roles: allow('moderator') },
-    { method: 'get', pathTemplate: '/api/moderator/reports', label: 'GET /api/moderator/reports', roles: allow('moderator') },
+
     { method: 'get', pathTemplate: '/api/moderator/village/:villageId/details', label: 'GET /api/moderator/village/:id/details', roles: allow('moderator') },
     { method: 'get', pathTemplate: '/api/moderator/village/:villageId/managers', label: 'GET /api/moderator/village/:id/managers', roles: allow('moderator') },
 
