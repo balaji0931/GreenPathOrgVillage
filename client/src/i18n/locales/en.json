@@ -76,7 +76,7 @@
     "loginDescription": "Sign in to access your waste management dashboard",
     "unauthorized": "Unauthorized access",
     "sessionExpired": "Session expired",
-    "changePassword":"Change Password"
+    "changePassword": "Change Password"
   },
   "roles": {
     "admin": "Administrator",
@@ -442,7 +442,6 @@
     "update": "Update",
     "reportsAnalytics": "Reports & Analytics",
     "comprehensiveInsights": "Comprehensive performance insights and trends",
-    "overallReports": "Overall Reports",
     "dailyReports": "Daily Reports",
     "collectionEfficiency": "Collection Efficiency",
     "households": "households",
@@ -450,7 +449,6 @@
     "outOf5Stars": "Out of 5.0 stars",
     "dailyCollectionTrend": "Daily Collection Trend (Last 7 Days)",
     "segregationRatingTrends": "Segregation Rating Trends (Last 7 Days)",
-    "overallSegregationRate": "Overall Segregation Rate",
     "excellent4to5": "Excellent (4-5★)",
     "good3to4": "Good (3-4★)",
     "poor0to3": "Poor (0-3★)",

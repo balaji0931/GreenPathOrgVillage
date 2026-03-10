@@ -60,8 +60,6 @@ import {
   QrCode,
   Download,
   AlertCircle,
-  TrendingUp,
-  Award,
   Package,
   AlertTriangle,
   Camera,
@@ -2454,14 +2452,13 @@ export default function ManagerDashboard() {
                                   : activeMoreScreen === "sales-logs" ? "Sales Logs"
                                     : activeMoreScreen === "vehicles" ? "Vehicle Management"
                                       : activeMoreScreen === "wards" ? "Wards Management"
-                                        : activeMoreScreen === "overall-reports" ? "Overall Reports"
-                                          : activeMoreScreen === "change-password" ? "Change Password"
-                                            : activeMoreScreen === "language" ? "Language"
-                                              : activeTab === "reports" ? "Daily Reports"
-                                                : activeTab === "collections" ? "Collections"
-                                                  : activeTab === "issues" ? "Issues"
-                                                    : activeTab === "more" ? "More"
-                                                      : "Dashboard"}
+                                        : activeMoreScreen === "change-password" ? "Change Password"
+                                          : activeMoreScreen === "language" ? "Language"
+                                            : activeTab === "reports" ? "Daily Reports"
+                                              : activeTab === "collections" ? "Collections"
+                                                : activeTab === "issues" ? "Issues"
+                                                  : activeTab === "more" ? "More"
+                                                    : "Dashboard"}
                 </span>
               </div>
             </div>
@@ -2607,7 +2604,6 @@ export default function ManagerDashboard() {
                   {[
                     { id: "vehicles", icon: Package, label: "Vehicles" },
                     { id: "wards", icon: MapPin, label: "Wards" },
-                    { id: "overall-reports", icon: TrendingUp, label: "Overall Reports" },
                   ].map(({ id, icon: Icon, label }) => (
                     <button
                       key={id}
@@ -2891,24 +2887,6 @@ export default function ManagerDashboard() {
                           <ArrowRight className="h-4 w-4 text-gray-300 flex-shrink-0" />
                         </button>
                       ))}
-                    </div>
-
-                    {/* Analytics group */}
-                    <p className="text-[11px] uppercase tracking-widest text-gray-400 font-bold px-1 pt-4 pb-1">Analytics</p>
-                    <div className="bg-white rounded-2xl ring-1 ring-black/5 shadow-sm overflow-hidden">
-                      <button
-                        onClick={() => setActiveMoreScreen("overall-reports")}
-                        className="w-full flex items-center gap-4 px-4 py-3 text-left transition-colors active:bg-gray-50 active:scale-[0.99]"
-                      >
-                        <div className="w-9 h-9 rounded-xl bg-blue-50 flex items-center justify-center flex-shrink-0">
-                          <TrendingUp className="h-4 w-4 text-blue-600" />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="font-semibold text-gray-900 text-sm">Overall Reports</p>
-                          <p className="text-xs text-gray-400 truncate">Village-wide analytics & trends</p>
-                        </div>
-                        <ArrowRight className="h-4 w-4 text-gray-300 flex-shrink-0" />
-                      </button>
                     </div>
 
                     {/* Settings/Management group */}
@@ -3316,12 +3294,10 @@ export default function ManagerDashboard() {
                           <div key={fw.userId} className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden flex" data-testid={`row-fieldworker-${fw.userId}`}>
                             <div className="w-1 flex-shrink-0 bg-green-500" />
                             <div className="flex-1 flex items-center justify-between p-3 min-w-0">
-                              <div className="min-w-0">
-                                <h4 className="text-[12px] font-black text-gray-900 truncate">{fw.name}</h4>
-                                <div className="flex items-center gap-1.5 mt-0.5">
-                                  <span className="text-[8px] font-bold text-gray-400 bg-gray-50 px-1.5 py-0.5 rounded-md">{fw.userId}</span>
-                                  {fw.phone && <span className="text-[8px] font-bold text-blue-500 bg-blue-50 px-1.5 py-0.5 rounded-md">{fw.phone}</span>}
-                                </div>
+                              <h4 className="text-[12px] font-black text-gray-900 truncate">{fw.name}</h4>
+                              <div className="flex items-center gap-1.5 mt-0.5">
+                                <span className="text-[8px] font-bold text-gray-400 bg-gray-50 px-1.5 py-0.5 rounded-md">{fw.userId}</span>
+                                {fw.phone && <span className="text-[8px] font-bold text-blue-500 bg-blue-50 px-1.5 py-0.5 rounded-md">{fw.phone}</span>}
                               </div>
                               <button
                                 onClick={() => setMoreDeleteConfirm({ label: 'field worker', onConfirm: () => deleteFieldWorkerMutation.mutate(fw.userId) })}
@@ -3417,417 +3393,7 @@ export default function ManagerDashboard() {
                   <MaterialLog defaultTab="sales" onBack={() => setActiveMoreScreen(null)} />
                 )}
 
-                {/* Overall Reports sub-screen */}
-                {activeMoreScreen === "overall-reports" && (
-                  <div className="space-y-6 p-3">
-                    {/* Top KPI Cards */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <Card className="bg-gradient-to-r from-blue-50 to-blue-100 border-blue-200">
-                        <CardHeader className="pb-2">
-                          <CardTitle className="text-sm font-medium text-blue-800 flex items-center gap-2">
-                            <TrendingUp className="h-4 w-4" />
-                            Collection Efficiency
-                          </CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                          <div className="text-3xl font-bold text-blue-900">
-                            {(() => {
-                              const targetDate = filters.date || new Date().toISOString().split('T')[0];
-                              const todayCollections = allCollections.filter(c =>
-                                new Date(c.collectionDate).toDateString() === new Date(targetDate).toDateString()
-                              ).length;
-                              return stats && stats.totalHouseholds > 0
-                                ? Math.round((todayCollections / stats.totalHouseholds) * 100)
-                                : 0;
-                            })()}%
-                          </div>
-                          <p className="text-xs text-blue-700 mt-1">
-                            {(() => {
-                              const targetDate = filters.date || new Date().toISOString().split('T')[0];
-                              const todayCollections = allCollections.filter(c =>
-                                new Date(c.collectionDate).toDateString() === new Date(targetDate).toDateString()
-                              ).length;
-                              return `${todayCollections} of ${stats?.totalHouseholds || 0} households`;
-                            })()}
-                          </p>
-                        </CardContent>
-                      </Card>
 
-                      <Card className="bg-gradient-to-r from-yellow-50 to-yellow-100 border-yellow-200">
-                        <CardHeader className="pb-2">
-                          <CardTitle className="text-sm font-medium text-yellow-800 flex items-center gap-2">
-                            <Star className="h-4 w-4" />
-                            Average Segregation Rating
-                          </CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                          <div className="text-3xl font-bold text-yellow-900">
-                            {(() => {
-                              let filteredCollections = allCollections;
-                              if (filters.date) {
-                                filteredCollections = allCollections.filter(c =>
-                                  new Date(c.collectionDate).toDateString() === new Date(filters.date).toDateString()
-                                );
-                              }
-                              return filteredCollections.length > 0
-                                ? (filteredCollections.reduce((sum, c) => sum + (c.segregationRating || 0), 0) / filteredCollections.length).toFixed(1)
-                                : "0.0";
-                            })()}
-                          </div>
-                          <p className="text-xs text-yellow-700 mt-1">
-                            Out of 5.0 stars ({(() => {
-                              let filteredCollections = allCollections;
-                              if (filters.date) {
-                                filteredCollections = allCollections.filter(c =>
-                                  new Date(c.collectionDate).toDateString() === new Date(filters.date).toDateString()
-                                );
-                              }
-                              return filteredCollections.length;
-                            })()} collections)
-                          </p>
-                        </CardContent>
-                      </Card>
-                    </div>
-
-                    {/* 6 Analytics Cards */}
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                      {/* 1. Daily Collection Trend (Last 7 Days) */}
-                      <Card>
-                        <CardHeader>
-                          <CardTitle className="flex items-center gap-2">
-                            <BarChart3 className="h-5 w-5 text-blue-600" />
-                            Daily Collection Trend (Last 7 Days)
-                          </CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                          <div className="space-y-3">
-                            {Array.from({ length: 7 }).map((_, i) => {
-                              const date = new Date();
-                              date.setDate(date.getDate() - (6 - i));
-                              const dateStr = date.toDateString();
-                              const collectionsForDay = allCollections.filter(c =>
-                                new Date(c.collectionDate).toDateString() === dateStr
-                              ).length;
-                              const percentage = (stats?.totalHouseholds ?? 0) > 0
-                                ? (collectionsForDay / (stats?.totalHouseholds ?? 1)) * 100
-                                : 0;
-
-                              return (
-                                <div key={i} className="flex items-center gap-3">
-                                  <div className="w-16 text-xs text-muted-foreground">
-                                    {date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
-                                  </div>
-                                  <div className="flex-1 bg-gray-200 rounded-full h-4 relative">
-                                    <div
-                                      className="bg-blue-500 h-4 rounded-full transition-all"
-                                      style={{ width: `${Math.min(percentage, 100)}%` }}
-                                    />
-                                    <span className="absolute inset-0 flex items-center justify-center text-xs font-medium text-white">
-                                      {collectionsForDay}
-                                    </span>
-                                  </div>
-                                  <div className="w-12 text-xs text-right">
-                                    {Math.round(percentage)}%
-                                  </div>
-                                </div>
-                              );
-                            })}
-                          </div>
-                        </CardContent>
-                      </Card>
-
-                      {/* 2. Segregation Rating Trends (Last 7 Days) */}
-                      <Card>
-                        <CardHeader>
-                          <CardTitle className="flex items-center gap-2">
-                            <TrendingUp className="h-5 w-5 text-green-600" />
-                            Segregation Rating Trends (Last 7 Days)
-                          </CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                          <div className="space-y-3">
-                            {Array.from({ length: 7 }).map((_, i) => {
-                              const date = new Date();
-                              date.setDate(date.getDate() - (6 - i));
-                              const dateStr = date.toDateString();
-                              const dayCollections = allCollections.filter(c =>
-                                new Date(c.collectionDate).toDateString() === dateStr
-                              );
-                              const avgRating = dayCollections.length > 0
-                                ? dayCollections.reduce((sum, c) => sum + (c.segregationRating || 0), 0) / dayCollections.length
-                                : 0;
-
-                              return (
-                                <div key={i} className="flex items-center gap-3">
-                                  <div className="w-16 text-xs text-muted-foreground">
-                                    {date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
-                                  </div>
-                                  <div className="flex-1 bg-gray-200 rounded-full h-4 relative">
-                                    <div
-                                      className={`h-4 rounded-full transition-all ${avgRating >= 4 ? 'bg-green-500' :
-                                        avgRating >= 3 ? 'bg-yellow-500' : 'bg-red-500'
-                                        }`}
-                                      style={{ width: `${(avgRating / 5) * 100}%` }}
-                                    />
-                                  </div>
-                                  <div className="w-12 text-xs text-right font-medium">
-                                    {avgRating.toFixed(1)}
-                                  </div>
-                                </div>
-                              );
-                            })}
-                          </div>
-                        </CardContent>
-                      </Card>
-
-                      {/* 3. Overall Segregation Rate Pie Chart */}
-                      <Card>
-                        <CardHeader>
-                          <CardTitle className="flex items-center gap-2">
-                            <Award className="h-5 w-5 text-purple-600" />
-                            Overall Segregation Rate
-                          </CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                          <div className="flex items-center justify-center">
-                            {(() => {
-                              let filteredCollections = allCollections;
-                              if (filters.date) {
-                                filteredCollections = allCollections.filter(c =>
-                                  new Date(c.collectionDate).toDateString() === new Date(filters.date).toDateString()
-                                );
-                              }
-
-                              const excellent = filteredCollections.filter(c => (c.segregationRating || 0) >= 4).length;
-                              const good = filteredCollections.filter(c => (c.segregationRating || 0) >= 3 && (c.segregationRating || 0) < 4).length;
-                              const poor = filteredCollections.filter(c => (c.segregationRating || 0) < 3).length;
-                              const total = filteredCollections.length;
-
-                              return (
-                                <div className="w-48 h-48 relative">
-                                  <svg viewBox="0 0 100 100" className="w-full h-full transform -rotate-90">
-                                    <circle cx="50" cy="50" r="40" fill="none" stroke="#f3f4f6" strokeWidth="20" />
-                                    {total > 0 && (
-                                      <>
-                                        <circle
-                                          cx="50" cy="50" r="40" fill="none"
-                                          stroke="#ef4444" strokeWidth="20"
-                                          strokeDasharray={`${(poor / total) * 251.3} 251.3`}
-                                          strokeDashoffset="0"
-                                        />
-                                        <circle
-                                          cx="50" cy="50" r="40" fill="none"
-                                          stroke="#eab308" strokeWidth="20"
-                                          strokeDasharray={`${(good / total) * 251.3} 251.3`}
-                                          strokeDashoffset={`-${(poor / total) * 251.3}`}
-                                        />
-                                        <circle
-                                          cx="50" cy="50" r="40" fill="none"
-                                          stroke="#22c55e" strokeWidth="20"
-                                          strokeDasharray={`${(excellent / total) * 251.3} 251.3`}
-                                          strokeDashoffset={`-${((poor + good) / total) * 251.3}`}
-                                        />
-                                      </>
-                                    )}
-                                  </svg>
-                                  <div className="absolute inset-0 flex items-center justify-center">
-                                    <div className="text-center">
-                                      <div className="text-2xl font-bold">
-                                        {total > 0 ? Math.round((excellent / total) * 100) : 0}%
-                                      </div>
-                                      <div className="text-xs text-muted-foreground">Excellent</div>
-                                    </div>
-                                  </div>
-                                </div>
-                              );
-                            })()}
-                          </div>
-                          <div className="grid grid-cols-3 gap-2 mt-4">
-                            <div className="text-center">
-                              <div className="w-4 h-4 bg-green-500 rounded mx-auto mb-1"></div>
-                              <div className="text-xs">Excellent (4-5★)</div>
-                            </div>
-                            <div className="text-center">
-                              <div className="w-4 h-4 bg-yellow-500 rounded mx-auto mb-1"></div>
-                              <div className="text-xs">Good (3-4★)</div>
-                            </div>
-                            <div className="text-center">
-                              <div className="w-4 h-4 bg-red-500 rounded mx-auto mb-1"></div>
-                              <div className="text-xs">Poor (0-3★)</div>
-                            </div>
-                          </div>
-                        </CardContent>
-                      </Card>
-
-                      {/* 4. Last 7 Days Segregation Rates Graph */}
-                      <Card>
-                        <CardHeader>
-                          <CardTitle className="flex items-center gap-2">
-                            <TrendingUp className="h-5 w-5 text-indigo-600" />
-                            7-Day Segregation Performance
-                          </CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                          <div className="space-y-2">
-                            {Array.from({ length: 7 }).map((_, i) => {
-                              const date = new Date();
-                              date.setDate(date.getDate() - (6 - i));
-                              const dateStr = date.toDateString();
-                              const dayCollections = allCollections.filter(c =>
-                                new Date(c.collectionDate).toDateString() === dateStr
-                              );
-
-                              const excellent = dayCollections.filter(c => (c.segregationRating || 0) >= 4).length;
-                              const good = dayCollections.filter(c => (c.segregationRating || 0) >= 3 && (c.segregationRating || 0) < 4).length;
-                              const poor = dayCollections.filter(c => (c.segregationRating || 0) < 3).length;
-                              const total = dayCollections.length;
-
-                              return (
-                                <div key={i} className="space-y-1">
-                                  <div className="flex justify-between text-xs">
-                                    <span>{date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>
-                                    <span>{total} collections</span>
-                                  </div>
-                                  <div className="flex h-6 bg-gray-200 rounded overflow-hidden">
-                                    {total > 0 ? (
-                                      <>
-                                        <div
-                                          className="bg-green-500"
-                                          style={{ width: `${(excellent / total) * 100}%` }}
-                                          title={`Excellent: ${excellent}`}
-                                        />
-                                        <div
-                                          className="bg-yellow-500"
-                                          style={{ width: `${(good / total) * 100}%` }}
-                                          title={`Good: ${good}`}
-                                        />
-                                        <div
-                                          className="bg-red-500"
-                                          style={{ width: `${(poor / total) * 100}%` }}
-                                          title={`Poor: ${poor}`}
-                                        />
-                                      </>
-                                    ) : (
-                                      <div className="w-full bg-gray-300" />
-                                    )}
-                                  </div>
-                                </div>
-                              );
-                            })}
-                          </div>
-                        </CardContent>
-                      </Card>
-
-                      {/* 5. Home Composting Pie Chart */}
-                      <Card>
-                        <CardHeader>
-                          <CardTitle className="flex items-center gap-2">
-                            <Package className="h-5 w-5 text-green-600" />
-                            Home Composting Rate
-                          </CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                          <div className="flex items-center justify-center">
-                            {(() => {
-                              let filteredCollections = allCollections;
-                              if (filters.date) {
-                                filteredCollections = allCollections.filter(c =>
-                                  new Date(c.collectionDate).toDateString() === new Date(filters.date).toDateString()
-                                );
-                              }
-
-                              // Assuming we have wetWasteComposting field in collections
-                              const composting = filteredCollections.filter(c => c.wasteSegregated === true).length;
-                              const notComposting = filteredCollections.length - composting;
-                              const total = filteredCollections.length;
-
-                              return (
-                                <div className="w-40 h-40 relative">
-                                  <svg viewBox="0 0 100 100" className="w-full h-full transform -rotate-90">
-                                    <circle cx="50" cy="50" r="35" fill="none" stroke="#f3f4f6" strokeWidth="25" />
-                                    {total > 0 && (
-                                      <>
-                                        <circle
-                                          cx="50" cy="50" r="35" fill="none"
-                                          stroke="#22c55e" strokeWidth="25"
-                                          strokeDasharray={`${(composting / total) * 219.9} 219.9`}
-                                          strokeDashoffset="0"
-                                        />
-                                      </>
-                                    )}
-                                  </svg>
-                                  <div className="absolute inset-0 flex items-center justify-center">
-                                    <div className="text-center">
-                                      <div className="text-xl font-bold text-green-600">
-                                        {total > 0 ? Math.round((composting / total) * 100) : 0}%
-                                      </div>
-                                      <div className="text-xs text-muted-foreground">Segregated</div>
-                                    </div>
-                                  </div>
-                                </div>
-                              );
-                            })()}
-                          </div>
-                          <div className="grid grid-cols-2 gap-2 mt-4">
-                            <div className="text-center">
-                              <div className="w-4 h-4 bg-green-500 rounded mx-auto mb-1"></div>
-                              <div className="text-xs">Segregated</div>
-                            </div>
-                            <div className="text-center">
-                              <div className="w-4 h-4 bg-gray-300 rounded mx-auto mb-1"></div>
-                              <div className="text-xs">Not Segregated</div>
-                            </div>
-                          </div>
-                        </CardContent>
-                      </Card>
-
-                      {/* 6. Collection Performance Metrics */}
-                      <Card>
-                        <CardHeader>
-                          <CardTitle className="flex items-center gap-2">
-                            <BarChart3 className="h-5 w-5 text-purple-600" />
-                            Collection Performance Metrics
-                          </CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                          <div className="space-y-4">
-                            {collectors.map(collector => {
-                              let collectorCollections = allCollections.filter(c => c.collectorId === collector.id);
-                              if (filters.date) {
-                                collectorCollections = collectorCollections.filter(c =>
-                                  new Date(c.collectionDate).toDateString() === new Date(filters.date).toDateString()
-                                );
-                              }
-
-                              const avgRating = collectorCollections.length > 0
-                                ? (collectorCollections.reduce((sum, c) => sum + (c.segregationRating || 0), 0) / collectorCollections.length)
-                                : 0;
-
-                              return (
-                                <div key={collector.id} className="flex items-center gap-3">
-                                  <div className="w-24 text-xs font-medium truncate">
-                                    {collector.name}
-                                  </div>
-                                  <div className="flex-1 bg-gray-200 rounded-full h-3">
-                                    <div
-                                      className={`h-3 rounded-full transition-all ${avgRating >= 4 ? 'bg-green-500' :
-                                        avgRating >= 3 ? 'bg-yellow-500' : 'bg-red-500'
-                                        }`}
-                                      style={{ width: `${(avgRating / 5) * 100}%` }}
-                                    />
-                                  </div>
-                                  <div className="w-16 text-xs text-right">
-                                    {avgRating.toFixed(1)} ({collectorCollections.length})
-                                  </div>
-                                </div>
-                              );
-                            })}
-                          </div>
-                        </CardContent>
-                      </Card>
-                    </div>
-                  </div>
-                )}
 
 
                 {/* Vehicles sub-screen — Premium */}
