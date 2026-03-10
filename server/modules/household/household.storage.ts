@@ -9,6 +9,7 @@ import {
 import { db } from "../../db";
 import { eq, count, and, or, like } from "drizzle-orm";
 import { getCache, cacheKeys } from "../../cache";
+import { incrementHouseholdCount, decrementHouseholdCount } from "../analytics/daily-stats.storage";
 
 export async function createHousehold(insertHousehold: InsertHousehold): Promise<Household> {
     const cache = getCache();
@@ -20,8 +21,14 @@ export async function createHousehold(insertHousehold: InsertHousehold): Promise
     // Invalidate households cache
     await cache.delete(cacheKeys.households(insertHousehold.villageId));
     await cache.clear(`households:${insertHousehold.villageId}:*`);
-
     await cache.delete(cacheKeys.villageStats(insertHousehold.villageId));
+
+    // Update pre-calculated daily stats
+    try {
+        await incrementHouseholdCount(insertHousehold.villageId, insertHousehold.ward || "Unknown");
+    } catch (err) {
+        console.error("[daily-stats] Failed to increment household count:", err);
+    }
 
     return household;
 }
@@ -121,8 +128,8 @@ export async function updateHousehold(id: number, updates: Partial<Household>): 
 
 export async function deleteHousehold(id: number): Promise<void> {
     const cache = getCache();
-    // Get villageId before deleting
-    const [household] = await db.select({ villageId: households.villageId })
+    // Get household details before deleting (need villageId and ward)
+    const [household] = await db.select({ villageId: households.villageId, ward: households.ward })
         .from(households)
         .where(eq(households.id, id))
         .limit(1);
@@ -135,12 +142,20 @@ export async function deleteHousehold(id: number): Promise<void> {
     await db.delete(feedback).where(eq(feedback.fromHouseholdId, id));
     await db.delete(households).where(eq(households.id, id));
 
+    // Update pre-calculated daily stats
+    if (household?.villageId) {
+        try {
+            await decrementHouseholdCount(household.villageId, household.ward || "Unknown");
+        } catch (err) {
+            console.error("[daily-stats] Failed to decrement household count:", err);
+        }
+    }
+
     // Invalidate household caches
     if (household?.villageId) {
         await cache.delete(cacheKeys.households(household.villageId));
         await cache.clear(`households:${household.villageId}:*`);
         await cache.delete(cacheKeys.villageStats(household.villageId));
-
     }
 }
 

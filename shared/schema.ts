@@ -12,6 +12,7 @@ export const villages = pgTable("villages", {
   wards: text("wards").array().default([]), // Array of ward names for this village
   locationServicesEnabled: boolean("location_services_enabled").default(false), // Admin setting for location mapping
   vehicles: json("vehicles").$type<{ registrationNumber: string; name: string; collectorIds: number[] }[]>().default([]), // Array of vehicles
+  totalHouseholds: integer("total_households").notNull().default(0), // Pre-calculated household count
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
@@ -521,3 +522,81 @@ export type DailyWasteLog = typeof dailyWasteLog.$inferSelect;
 export type CompostProductionLog = typeof compostProductionLog.$inferSelect;
 export type DryWasteSale = typeof dryWasteSales.$inferSelect;
 export type DryWasteSaleMaterial = typeof dryWasteSaleMaterials.$inferSelect;
+
+// ═══════════════════════════════════════════════════════════════════
+// Pre-Calculated Daily Analytics Tables
+// ═══════════════════════════════════════════════════════════════════
+
+// Daily village-level stats — one row per village per day
+export const dailyVillageStats = pgTable("daily_village_stats", {
+  id: serial("id").primaryKey(),
+  villageId: text("village_id").notNull().references(() => villages.villageId),
+  reportDate: date("report_date").notNull(),
+  totalHouseholds: integer("total_households").notNull().default(0),
+  collectedCount: integer("collected_count").notNull().default(0),
+  segregationSum: decimal("segregation_sum", { precision: 10, scale: 2 }).notNull().default("0"),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => [
+  uniqueIndex("idx_dvs_village_date").on(table.villageId, table.reportDate),
+]);
+
+// Daily ward-level stats — one row per village per ward per day
+export const dailyWardStats = pgTable("daily_ward_stats", {
+  id: serial("id").primaryKey(),
+  villageId: text("village_id").notNull().references(() => villages.villageId),
+  reportDate: date("report_date").notNull(),
+  wardName: text("ward_name").notNull(),
+  totalHouseholds: integer("total_households").notNull().default(0),
+  collectedCount: integer("collected_count").notNull().default(0),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => [
+  uniqueIndex("idx_dws_unique").on(table.villageId, table.reportDate, table.wardName),
+  index("idx_dws_village_date").on(table.villageId, table.reportDate),
+]);
+
+// Daily vehicle-level stats — one row per vehicle per village per day
+export const dailyVehicleStats = pgTable("daily_vehicle_stats", {
+  id: serial("id").primaryKey(),
+  villageId: text("village_id").notNull().references(() => villages.villageId),
+  reportDate: date("report_date").notNull(),
+  registrationNumber: text("registration_number").notNull(),
+  vehicleName: text("vehicle_name").notNull().default(""),
+  collectorNames: text("collector_names").notNull().default(""),
+  collectedCount: integer("collected_count").notNull().default(0),
+  firstCollectionAt: timestamp("first_collection_at"),
+  lastCollectionAt: timestamp("last_collection_at"),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => [
+  uniqueIndex("idx_dvhs_unique").on(table.villageId, table.reportDate, table.registrationNumber),
+  index("idx_dvhs_village_date").on(table.villageId, table.reportDate),
+]);
+
+// Daily hourly stats — one row per vehicle per hour per village per day
+export const dailyHourlyStats = pgTable("daily_hourly_stats", {
+  id: serial("id").primaryKey(),
+  villageId: text("village_id").notNull().references(() => villages.villageId),
+  reportDate: date("report_date").notNull(),
+  hour: integer("hour").notNull(),
+  vehicleName: text("vehicle_name").notNull(),
+  collectionCount: integer("collection_count").notNull().default(0),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => [
+  uniqueIndex("idx_dhs_unique").on(table.villageId, table.reportDate, table.hour, table.vehicleName),
+  index("idx_dhs_village_date").on(table.villageId, table.reportDate),
+]);
+
+// Insert schemas for Daily Analytics
+export const insertDailyVillageStatsSchema = createInsertSchema(dailyVillageStats).omit({ id: true, updatedAt: true });
+export const insertDailyWardStatsSchema = createInsertSchema(dailyWardStats).omit({ id: true, updatedAt: true });
+export const insertDailyVehicleStatsSchema = createInsertSchema(dailyVehicleStats).omit({ id: true, updatedAt: true });
+export const insertDailyHourlyStatsSchema = createInsertSchema(dailyHourlyStats).omit({ id: true, updatedAt: true });
+
+// Types for Daily Analytics
+export type DailyVillageStats = typeof dailyVillageStats.$inferSelect;
+export type DailyWardStats = typeof dailyWardStats.$inferSelect;
+export type DailyVehicleStats = typeof dailyVehicleStats.$inferSelect;
+export type DailyHourlyStats = typeof dailyHourlyStats.$inferSelect;
+export type InsertDailyVillageStats = z.infer<typeof insertDailyVillageStatsSchema>;
+export type InsertDailyWardStats = z.infer<typeof insertDailyWardStatsSchema>;
+export type InsertDailyVehicleStats = z.infer<typeof insertDailyVehicleStatsSchema>;
+export type InsertDailyHourlyStats = z.infer<typeof insertDailyHourlyStatsSchema>;

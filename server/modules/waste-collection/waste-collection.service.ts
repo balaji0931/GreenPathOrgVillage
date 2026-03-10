@@ -1,9 +1,10 @@
 import { storage } from "../../storage";
 import { getCache, cacheKeys } from "../../cache";
+import { updateDailyStatsAfterCollection } from "../analytics/daily-stats.storage";
 
 /**
  * Submit a waste collection entry.
- * Verbatim extraction from waste-collection.routes.ts POST /api/waste-collections
+ * After inserting the collection, updates pre-calculated daily stats tables.
  */
 export async function submitCollection(data: {
     householdUid: string;
@@ -75,11 +76,46 @@ export async function submitCollection(data: {
         missedReason,
     });
 
-    // Phase 4: Invalidate relevant caches
+    // Update pre-calculated daily stats (transactional — 4 atomic UPSERTs)
+    try {
+        const village = await storage.getVillageByVillageId(household.villageId);
+        const vehiclesList = (village?.vehicles as any[]) || [];
+        const regNo = collector.assignedVehicle || "Unassigned";
+        const vehicleEntry = vehiclesList.find((v: any) => v.registrationNumber === regNo);
+        const vehicleName = vehicleEntry?.name || regNo;
+
+        // Get collector names for this vehicle
+        let collectorNames = collector.name;
+        if (regNo !== "Unassigned") {
+            const allCollectors = await storage.getCollectorsByVillage(household.villageId);
+            const vehicleCollectors = allCollectors.filter((c: any) => c.assignedVehicle === regNo);
+            collectorNames = vehicleCollectors.map((c: any) => c.name).join(", ") || collector.name;
+        }
+
+        // Get ward household count
+        const allHouseholds = await storage.getHouseholdsByVillage(household.villageId);
+        const wardHouseholds = allHouseholds.filter((h: any) => h.ward === household.ward);
+
+        await updateDailyStatsAfterCollection({
+            villageId: household.villageId,
+            collectionDate,
+            segregationRating,
+            ward: household.ward || "Unknown",
+            registrationNumber: regNo,
+            vehicleName,
+            collectorNames,
+            currentTotalHouseholds: village?.totalHouseholds ?? allHouseholds.length,
+            wardTotalHouseholds: wardHouseholds.length,
+        });
+    } catch (statsError) {
+        // Stats update failure should not block the collection response.
+        // Stats can be reconciled via backfill script if needed.
+        console.error("[daily-stats] Failed to update daily stats after collection:", statsError);
+    }
+
+    // Invalidate relevant caches
     const cache = getCache();
     await cache.delete(cacheKeys.villageStats(household.villageId));
-    await cache.delete(cacheKeys.dailyReport(household.villageId, new Date().toISOString().split('T')[0]));
-    await cache.clear('report:*'); // Clear all report caches
 
     return { conflict: false, collection };
 }
