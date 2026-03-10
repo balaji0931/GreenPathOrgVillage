@@ -33,16 +33,7 @@ export function registerAdminUsersRoutes(app: Express, requireAuth: any, require
     }
   });
 
-  app.get('/api/villages/:villageId/details', requireAuth, requireRole(['admin']), requireVillageAccess, async (req, res) => {
-    try {
-      const { villageId } = req.params;
-      const details = await storage.getVillageDetails(villageId);
-      res.json(details);
-    } catch (error) {
-      console.error("Get village details error:", error);
-      res.status(500).json({ message: "Failed to get village details" });
-    }
-  });
+
 
   app.post('/api/villages/:villageId/managers', requireAuth, requireRole(['admin']), async (req, res) => {
     try {

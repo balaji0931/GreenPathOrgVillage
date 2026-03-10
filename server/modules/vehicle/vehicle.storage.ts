@@ -29,7 +29,7 @@ export async function addVehicleToVillage(villageId: string, vehicle: { registra
     // Clear cache
     const { getCache, cacheKeys } = await import('../../cache');
     await getCache().delete(cacheKeys.village(villageId));
-    await getCache().delete(cacheKeys.villageDetails(villageId));
+
 }
 
 export async function removeVehicleFromVillage(villageId: string, registrationNumber: string): Promise<void> {
@@ -53,7 +53,7 @@ export async function removeVehicleFromVillage(villageId: string, registrationNu
     // Clear cache
     const { getCache, cacheKeys } = await import('../../cache');
     await getCache().delete(cacheKeys.village(villageId));
-    await getCache().delete(cacheKeys.villageDetails(villageId));
+
 }
 
 export async function updateVehicleInVillage(villageId: string, registrationNumber: string, updates: { name: string; collectorIds: number[] }): Promise<void> {
@@ -94,7 +94,7 @@ export async function updateVehicleInVillage(villageId: string, registrationNumb
     // Clear cache
     const { getCache, cacheKeys } = await import('../../cache');
     await getCache().delete(cacheKeys.village(villageId));
-    await getCache().delete(cacheKeys.villageDetails(villageId));
+
 }
 
 export async function updateCollectorVehicle(collectorId: number, registrationNumber: string | null): Promise<void> {

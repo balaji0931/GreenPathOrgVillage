@@ -62,7 +62,7 @@ export async function updateVillage(villageId: string, updates: Partial<Village>
     // Invalidate all village caches including paginated
     await cache.delete(cacheKeys.village(villageId));
     await cache.delete(cacheKeys.villages());
-    await cache.delete(cacheKeys.villageDetails(villageId));
+
     await cache.clear('villages:paginated:*'); // Clear all paginated village caches
 
     return village;

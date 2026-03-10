@@ -294,9 +294,7 @@ export class DatabaseStorage implements IStorage {
     return villageStorage.deleteVillage(villageId);
   }
 
-  async getVillageDetails(villageId: string): Promise<any> {
-    return adminStatsStorage.getVillageDetails(villageId);
-  }
+
 
   async addManagerToVillage(villageData: {
     villageId: string;

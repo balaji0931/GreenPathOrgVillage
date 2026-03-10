@@ -101,7 +101,7 @@ export async function updateIssueStatus(
     if (villageId) {
         await cache.delete(cacheKeys.issues(villageId));
         await cache.clear(`issues:${villageId}:*`); // Clear paginated caches
-        await cache.delete(cacheKeys.villageDetails(villageId)); // Clear village details cache
+
     }
 
     return issue;

@@ -193,7 +193,7 @@ export const cacheKeys = {
   villageStats: (villageId: string) => `stats:village:${villageId}`,
   wards: (villageId: string) => `wards:${villageId}`,
   dailyReport: (villageId: string, date: string) => `report:daily:${villageId}:${date}`,
-  villageDetails: (villageId: string) => `village:details:${villageId}`,
+
   websiteFeedback: (page: number, limit: number) => `feedback:website:${page}:${limit}`,
   contactSubmissions: (page: number, limit: number) => `contact:submissions:${page}:${limit}`,
 };

@@ -20,7 +20,7 @@ export async function createHousehold(insertHousehold: InsertHousehold): Promise
     // Invalidate households cache
     await cache.delete(cacheKeys.households(insertHousehold.villageId));
     await cache.clear(`households:${insertHousehold.villageId}:*`);
-    await cache.delete(cacheKeys.villageDetails(insertHousehold.villageId));
+
     await cache.delete(cacheKeys.villageStats(insertHousehold.villageId));
 
     return household;
@@ -114,7 +114,7 @@ export async function updateHousehold(id: number, updates: Partial<Household>): 
     // Invalidate households cache
     await cache.delete(cacheKeys.households(household.villageId));
     await cache.clear(`households:${household.villageId}:*`);
-    await cache.delete(cacheKeys.villageDetails(household.villageId));
+
 
     return household;
 }
@@ -140,7 +140,7 @@ export async function deleteHousehold(id: number): Promise<void> {
         await cache.delete(cacheKeys.households(household.villageId));
         await cache.clear(`households:${household.villageId}:*`);
         await cache.delete(cacheKeys.villageStats(household.villageId));
-        await cache.delete(cacheKeys.villageDetails(household.villageId));
+
     }
 }
 

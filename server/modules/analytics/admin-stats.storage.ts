@@ -144,44 +144,4 @@ export async function getManagersListPaginated(options: {
 }
 
 
-export async function getVillageDetails(villageId: string): Promise<any> {
-    const cache = getCache();
-    const cacheKey = cacheKeys.villageDetails(villageId);
 
-    const cached = await cache.get(cacheKey);
-    if (cached) return cached;
-
-    // Run all queries in parallel for better performance
-    const [
-        village,
-        stats,
-        managers,
-        householdsResult,
-        collectorsResult,
-        issuesResult,
-    ] = await Promise.all([
-        villageStorage.getVillageByVillageId(villageId),
-        getVillageStats(villageId),
-        db.select().from(users)
-            .where(and(eq(users.villageId, villageId), eq(users.role, 'manager')))
-            .limit(1500), // Bounded
-        householdStorage.getHouseholdsByVillagePaginated(villageId, { page: 1, limit: 1600 }),
-        collectorStorage.getCollectorsByVillagePaginated(villageId, { page: 1, limit: 50 }),
-        issueStorage.getIssuesByVillagePaginated(villageId, { page: 1, limit: 50 }),
-    ]);
-
-    const result = {
-        village,
-        stats,
-        managers,
-        households: householdsResult.data,
-        householdsTotal: householdsResult.total,
-        collectors: collectorsResult.data,
-        collectorsTotal: collectorsResult.total,
-        issues: issuesResult.data,
-        issuesTotal: issuesResult.total,
-    };
-
-    await cache.set(cacheKey, result, 300); // 5 min cache
-    return result;
-}

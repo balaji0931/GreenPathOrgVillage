@@ -116,7 +116,7 @@ export interface IStorage {
     updateUser(userId: string, updates: Partial<User>): Promise<User>;
     deleteUser(userId: string): Promise<void>;
     deleteVillage(villageId: string): Promise<void>;
-    getVillageDetails(villageId: string): Promise<any>;
+
     addManagerToVillage(villageData: { villageId: string; managerName: string; managerPhone: string }): Promise<User>;
 
 

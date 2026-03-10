@@ -19,7 +19,7 @@ export async function createCollector(insertCollector: InsertCollector): Promise
     // Invalidate collector caches
     await cache.delete(cacheKeys.collectors(insertCollector.villageId));
     await cache.clear(`collectors:${insertCollector.villageId}:*`);
-    await cache.delete(cacheKeys.villageDetails(insertCollector.villageId));
+
     await cache.delete(cacheKeys.villageStats(insertCollector.villageId));
 
     return collector;
@@ -115,7 +115,7 @@ export async function deleteCollector(id: number): Promise<void> {
         await cache.delete(cacheKeys.collectors(collector.villageId));
         await cache.clear(`collectors:${collector.villageId}:*`);
         await cache.delete(cacheKeys.villageStats(collector.villageId));
-        await cache.delete(cacheKeys.villageDetails(collector.villageId));
+
     }
 }
 

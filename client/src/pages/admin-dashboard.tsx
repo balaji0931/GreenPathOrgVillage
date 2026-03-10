@@ -26,7 +26,7 @@ export default function AdminDashboard() {
   const { toast } = useToast();
 
   const [activeTab, setActiveTab] = useState("villages");
-  const [selectedVillage, setSelectedVillage] = useState("");
+
   const [createdCredentials, setCreatedCredentials] = useState<any>(null);
   const [villageList, setVillageList] = useState([{ villageName: "", managerName: "", managerPhone: "" }]);
 
@@ -97,11 +97,7 @@ export default function AdminDashboard() {
     enabled: activeTab === "contact-submissions",
   });
 
-  // Village details query
-  const { data: villageDetails } = useQuery<any>({
-    queryKey: ["/api/villages", selectedVillage, "details"],
-    enabled: !!selectedVillage,
-  });
+
 
   // Create village mutation
   const createVillageMutation = useMutation({
@@ -808,14 +804,58 @@ export default function AdminDashboard() {
                     </TableCell>
                     <TableCell>
                       <div className="flex space-x-3 sm:space-x-2">
-                        <Button
-                          size="default"
-                          variant="outline"
-                          onClick={() => setSelectedVillage(village.villageId)}
-                          className="p-1 sm:p-2"
-                        >
-                          <Eye className="h-3 w-3 sm:h-4 sm:w-4" />
-                        </Button>
+                        <Dialog>
+                          <DialogTrigger asChild>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="p-1 sm:p-2"
+                              title="Add Manager"
+                            >
+                              <UserPlus className="h-3 w-3 sm:h-4 sm:w-4" />
+                            </Button>
+                          </DialogTrigger>
+                          <DialogContent className="max-w-[95vw] sm:max-w-md">
+                            <DialogHeader>
+                              <DialogTitle>Add Manager to {village.name}</DialogTitle>
+                            </DialogHeader>
+                            <div className="space-y-4">
+                              <div>
+                                <Label htmlFor={`mgr-name-${village.villageId}`}>Manager Name</Label>
+                                <Input
+                                  id={`mgr-name-${village.villageId}`}
+                                  placeholder="Enter manager name"
+                                />
+                              </div>
+                              <div>
+                                <Label htmlFor={`mgr-phone-${village.villageId}`}>Manager Phone</Label>
+                                <Input
+                                  id={`mgr-phone-${village.villageId}`}
+                                  placeholder="Enter phone number"
+                                />
+                              </div>
+                              <Button
+                                onClick={() => {
+                                  const nameInput = document.getElementById(`mgr-name-${village.villageId}`) as HTMLInputElement;
+                                  const phoneInput = document.getElementById(`mgr-phone-${village.villageId}`) as HTMLInputElement;
+                                  if (nameInput.value && phoneInput.value) {
+                                    addManagerMutation.mutate({
+                                      villageId: village.villageId,
+                                      managerName: nameInput.value,
+                                      managerPhone: phoneInput.value
+                                    });
+                                    nameInput.value = '';
+                                    phoneInput.value = '';
+                                  }
+                                }}
+                                className="w-full"
+                                disabled={addManagerMutation.isPending}
+                              >
+                                {addManagerMutation.isPending ? "Adding..." : "Add Manager"}
+                              </Button>
+                            </div>
+                          </DialogContent>
+                        </Dialog>
                         <Button
                           size="sm"
                           variant="destructive"
@@ -834,208 +874,7 @@ export default function AdminDashboard() {
         </CardContent>
       </Card>
 
-      {/* Village Details Modal */}
-      {selectedVillage && villageDetails && (
-        <Dialog open={!!selectedVillage} onOpenChange={() => setSelectedVillage("")}>
-          <DialogContent className="max-w-[95vw] sm:max-w-6xl max-h-[90vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle className="text-lg sm:text-xl">Village Details - {villageDetails.village?.name}</DialogTitle>
-            </DialogHeader>
 
-            <div className="space-y-4 sm:space-y-6">
-              {/* Stats */}
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
-                <Card>
-                  <CardContent className="p-3 sm:p-4">
-                    <div className="text-lg sm:text-2xl font-bold">{villageDetails.stats?.totalHouseholds || 0}</div>
-                    <div className="text-xs sm:text-sm text-muted-foreground">Households</div>
-                  </CardContent>
-                </Card>
-                <Card>
-                  <CardContent className="p-3 sm:p-4">
-                    <div className="text-lg sm:text-2xl font-bold">{villageDetails.stats?.totalCollectors || 0}</div>
-                    <div className="text-xs sm:text-sm text-muted-foreground">Collectors</div>
-                  </CardContent>
-                </Card>
-                <Card>
-                  <CardContent className="p-3 sm:p-4">
-                    <div className="text-lg sm:text-2xl font-bold">{villageDetails.stats?.openIssues || 0}</div>
-                    <div className="text-xs sm:text-sm text-muted-foreground">Open Issues</div>
-                  </CardContent>
-                </Card>
-                <Card>
-                  <CardContent className="p-3 sm:p-4">
-                    <div className="text-lg sm:text-2xl font-bold">{villageDetails.stats?.collectionsToday || 0}</div>
-                    <div className="text-xs sm:text-sm text-muted-foreground">Collections Today</div>
-                  </CardContent>
-                </Card>
-              </div>
-
-
-
-              {/* Managers Section */}
-              <Card>
-                <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 p-3 sm:p-6">
-                  <CardTitle className="text-lg sm:text-xl">Managers</CardTitle>
-                  <Dialog                >
-                    <DialogTrigger asChild>
-                      <Button size="sm" className="w-full sm:w-auto">
-                        <UserPlus className="h-4 w-4 mr-2" />
-                        Add Manager
-                      </Button>
-                    </DialogTrigger>
-                    <DialogContent className="max-w-[95vw] sm:max-w-md">
-                      <DialogHeader>
-                        <DialogTitle>Add Manager to {villageDetails.village?.name}</DialogTitle>
-                      </DialogHeader>
-                      <div className="space-y-4">
-                        <div>
-                          <Label>Manager Name</Label>
-                          <Input
-                            id="newManagerName"
-                            placeholder="Enter manager name"
-                          />
-                        </div>
-                        <div>
-                          <Label>Manager Phone</Label>
-                          <Input
-                            id="newManagerPhone"
-                            placeholder="Enter phone number"
-                          />
-                        </div>
-                        <Button
-                          onClick={() => {
-                            const nameInput = document.getElementById('newManagerName') as HTMLInputElement;
-                            const phoneInput = document.getElementById('newManagerPhone') as HTMLInputElement;
-                            if (nameInput.value && phoneInput.value) {
-                              addManagerMutation.mutate({
-                                villageId: selectedVillage,
-                                managerName: nameInput.value,
-                                managerPhone: phoneInput.value
-                              });
-                              nameInput.value = '';
-                              phoneInput.value = '';
-                            }
-                          }}
-                          className="w-full"
-                        >
-                          Add Manager
-                        </Button>
-                      </div>
-                    </DialogContent>
-                  </Dialog>
-                </CardHeader>
-                <CardContent className="p-3 sm:p-6 pt-0">
-                  <div className="overflow-x-auto">
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead className="text-xs sm:text-sm">Manager ID</TableHead>
-                          <TableHead className="text-xs sm:text-sm">Name</TableHead>
-                          <TableHead className="text-xs sm:text-sm hidden sm:table-cell">Phone</TableHead>
-                          <TableHead className="text-xs sm:text-sm">Actions</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {villageDetails.managers?.map((manager: any) => (
-                          <TableRow key={manager.id}>
-                            <TableCell className="text-xs sm:text-sm">{manager.userId}</TableCell>
-                            <TableCell className="text-xs sm:text-sm">{manager.name}</TableCell>
-                            <TableCell className="text-xs sm:text-sm hidden sm:table-cell">{manager.phone}</TableCell>
-                            <TableCell>
-                              <div className="flex space-x-1 sm:space-x-2">
-                                <Button
-                                  size="sm"
-                                  variant="outline"
-                                  onClick={() => resetPasswordMutation.mutate(manager.userId)}
-                                  className="p-1 sm:p-2"
-                                >
-                                  <RotateCcw className="h-3 w-3 sm:h-4 sm:w-4" />
-                                </Button>
-                                <Button
-                                  size="sm"
-                                  variant="destructive"
-                                  onClick={() => deleteManagerMutation.mutate(manager.userId)}
-                                  className="p-1 sm:p-2"
-                                >
-                                  <Trash2 className="h-3 w-3 sm:h-4 sm:w-4" />
-                                </Button>
-                              </div>
-                            </TableCell>
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Additional sections for households and issues */}
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
-                <Card>
-                  <CardHeader className="p-3 sm:p-6">
-                    <CardTitle className="text-lg sm:text-xl">Recent Households</CardTitle>
-                  </CardHeader>
-                  <CardContent className="p-3 sm:p-6 pt-0">
-                    <div className="overflow-x-auto">
-                      <Table>
-                        <TableHeader>
-                          <TableRow>
-                            <TableHead className="text-xs sm:text-sm">UID</TableHead>
-                            <TableHead className="text-xs sm:text-sm">Head Name</TableHead>
-                            <TableHead className="text-xs sm:text-sm">House Number</TableHead>
-                          </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                          {villageDetails.households?.slice(0, 5).map((household: any) => (
-                            <TableRow key={household.id}>
-                              <TableCell className="text-xs sm:text-sm">{household.uid}</TableCell>
-                              <TableCell className="text-xs sm:text-sm">{household.headName}</TableCell>
-                              <TableCell className="text-xs sm:text-sm">{household.houseNumber}</TableCell>
-                            </TableRow>
-                          ))}
-                        </TableBody>
-                      </Table>
-                    </div>
-                  </CardContent>
-                </Card>
-
-                <Card>
-                  <CardHeader className="p-3 sm:p-6">
-                    <CardTitle className="text-lg sm:text-xl">Recent Issues</CardTitle>
-                  </CardHeader>
-                  <CardContent className="p-3 sm:p-6 pt-0">
-                    <div className="overflow-x-auto">
-                      <Table>
-                        <TableHeader>
-                          <TableRow>
-                            <TableHead className="text-xs sm:text-sm">Title</TableHead>
-                            <TableHead className="text-xs sm:text-sm">Status</TableHead>
-                            <TableHead className="text-xs sm:text-sm">Date</TableHead>
-                          </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                          {villageDetails.issues?.slice(0, 5).map((issue: any) => (
-                            <TableRow key={issue.id}>
-                              <TableCell className="text-xs sm:text-sm">{issue.title}</TableCell>
-                              <TableCell>
-                                <Badge variant={issue.status === 'open' ? 'destructive' : 'default'} className="text-xs">
-                                  {issue.status}
-                                </Badge>
-                              </TableCell>
-                              <TableCell className="text-xs sm:text-sm">{new Date(issue.createdAt).toLocaleDateString()}</TableCell>
-                            </TableRow>
-                          ))}
-                        </TableBody>
-                      </Table>
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
-            </div>
-          </DialogContent>
-        </Dialog>
-      )}
 
       {/* Credentials Display Modal */}
       {createdCredentials && (
