@@ -83,7 +83,8 @@ import {
   Volume2,
   ChevronDown,
   Car,
-  Shield
+  Shield,
+  Send
 } from "lucide-react";
 import html2canvas from "html2canvas";
 import { jsPDF } from "jspdf";
@@ -108,7 +109,6 @@ interface Household {
   phone: string;
   villageId: string;
   ward: string;
-  qrCodeUrl: string;
   qrPrinted: boolean;
   latitude: number | null;
   longitude: number | null;
@@ -1455,7 +1455,12 @@ const ReportsTabContent = ({
   reportData: any;
   isLoading: boolean;
 }) => {
-  const targetDate = filters.date || format(new Date(), 'yyyy-MM-dd');
+  const targetDate = useMemo(() => {
+    if (filters.date) return filters.date;
+    const istOffset = 5.5 * 60 * 60 * 1000;
+    const nowIst = new Date(Date.now() + istOffset);
+    return nowIst.toISOString().split('T')[0];
+  }, [filters.date]);
 
   if (isLoading) {
     return (
@@ -1631,7 +1636,11 @@ export default function ManagerDashboard() {
   });
 
   // REDESIGNED: Collections tab state
-  const [collectionsDate, setCollectionsDate] = useState(new Date().toISOString().split('T')[0]);
+  const [collectionsDate, setCollectionsDate] = useState(() => {
+    const istOffset = 5.5 * 60 * 60 * 1000;
+    const nowIst = new Date(Date.now() + istOffset);
+    return nowIst.toISOString().split('T')[0];
+  });
   const [collectionsSearch, setCollectionsSearch] = useState("");
   const deferredCollectionsSearch = useDeferredValue(collectionsSearch);
   const [isCollectionsSearching, setIsCollectionsSearching] = useState(false);
@@ -1681,7 +1690,10 @@ export default function ManagerDashboard() {
   const { data: reportData, isLoading: isReportLoading } = useQuery({
     queryKey: ["/api/analytics/premium", user?.villageId, filters.date],
     queryFn: async () => {
-      const date = filters.date || new Date().toISOString().split('T')[0];
+      const istOffset = 5.5 * 60 * 60 * 1000;
+      const nowIst = new Date(Date.now() + istOffset);
+      const defaultDate = nowIst.toISOString().split('T')[0];
+      const date = filters.date || defaultDate;
       const response = await fetch(`/api/analytics/premium?village=${user?.villageId}&date=${date}`, { credentials: "include" });
       if (!response.ok) throw new Error("Failed to fetch premium report data");
       return response.json();
@@ -1751,7 +1763,7 @@ export default function ManagerDashboard() {
         justify-content:center;
       ">
         <img 
-          src="${h.qrCodeUrl}" 
+          src="/api/qr-codes/${h.uid}/image" 
           style="width:100%; height:100%; object-fit:contain;"
         />
       </div>
@@ -1866,7 +1878,7 @@ export default function ManagerDashboard() {
   // (Fetched above to support useMemo)
 
   // Total households count is the actual length since we fetch all
-  const totalHouseholdsCount = households.length;
+  const totalHouseholdsCount = households?.length ?? 0;
 
   const { data: collectorStats = [] } = useQuery<CollectorStats[]>({
     queryKey: ["/api/collectors/stats", user?.villageId],
@@ -1877,7 +1889,7 @@ export default function ManagerDashboard() {
   // (Fetched above to support useMemo)
 
   // Total collections count is the actual length since we fetch all
-  const totalCollectionsCount = allCollections.length;
+  const totalCollectionsCount = allCollections?.length ?? 0;
 
   // Paginated issues query with infinite scroll support
   const {
@@ -2434,10 +2446,10 @@ export default function ManagerDashboard() {
               <img
                 src="/logos/logo-full.svg"
                 alt="GreenPath"
-                className="hidden md:block h-8 w-auto flex-shrink-0"
+                className="hidden md:block h-12 w-auto flex-shrink-0"
               />
-              <div className="flex flex-col justify-center min-w-0">
-                <span className="text-[10px] text-green-600 font-bold uppercase tracking-widest leading-none truncate">
+              <div className="sm:pl-10 flex flex-col justify-center min-w-0">
+                <span className="text-[10px] sm:text-[12px] text-green-600 font-bold uppercase tracking-widest leading-none truncate">
                   {villageData?.name || "GreenPath"}
                 </span>
                 <span className="text-lg font-bold text-gray-900 leading-tight truncate">
@@ -2545,7 +2557,6 @@ export default function ManagerDashboard() {
                   </button>
                 ))}
                 <div className="mt-4 pt-3 border-t border-gray-100">
-                  <p className="text-[10px] uppercase tracking-widest text-gray-400 font-semibold px-3 mb-2">More Screens</p>
                   <p className="text-[10px] uppercase tracking-widest text-gray-400 font-semibold px-3 mb-1">Households</p>
                   {[
                     { id: "household-details", icon: Home, label: "Household Details" },
@@ -3338,17 +3349,40 @@ export default function ManagerDashboard() {
                             placeholder="Type your announcement..."
                             className="min-h-[80px] rounded-xl border-gray-200 text-sm"
                             id="announcement-message"
+                            value={announcementMessage}
+                            onChange={(e) => setAnnouncementMessage(e.target.value)}
                           />
-                          <Select defaultValue="all">
+                          <Select value={announcementTarget} onValueChange={setAnnouncementTarget}>
                             <SelectTrigger className="rounded-xl border-gray-200 h-10 text-sm">
                               <SelectValue placeholder="Select audience" />
                             </SelectTrigger>
                             <SelectContent>
                               <SelectItem value="all">All</SelectItem>
                               <SelectItem value="collectors">Collectors</SelectItem>
-                              <SelectItem value="households">Households</SelectItem>
+                              <SelectItem value="generators">Households</SelectItem>
                             </SelectContent>
                           </Select>
+                          <Button
+                            className="w-full rounded-xl h-10 bg-green-600 hover:bg-green-700 text-white font-bold text-sm"
+                            disabled={!announcementMessage.trim() || sendAnnouncementMutation.isPending}
+                            onClick={() => sendAnnouncementMutation.mutate({
+                              message: announcementMessage.trim(),
+                              targetAudience: announcementTarget,
+                              photoFile: null,
+                            })}
+                          >
+                            {sendAnnouncementMutation.isPending ? (
+                              <span className="flex items-center gap-2">
+                                <span className="h-4 w-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                                Sending...
+                              </span>
+                            ) : (
+                              <span className="flex items-center gap-2">
+                                <Send className="h-4 w-4" />
+                                Send Announcement
+                              </span>
+                            )}
+                          </Button>
                         </div>
 
                         {/* Recent Announcements */}
@@ -4121,43 +4155,36 @@ export default function ManagerDashboard() {
                   </div>
 
                   <div className="flex flex-col items-center justify-center p-3 bg-muted/30 rounded-2xl space-y-3">
-                    {viewingHousehold.qrCodeUrl ? (
-                      <>
-                        <div className="bg-white rounded-xl shadow-sm">
-                          <img
-                            src={viewingHousehold.qrCodeUrl}
-                            alt="QR Code"
-                            className="w-48 h-48 object-contain"
-                          />
-                        </div>
-                        <Button
-                          variant="outline"
-                          size="lg"
-                          className="w-full bg-blue-300"
-                          onClick={() => handleDownloadSingleQR(viewingHousehold)}
-                        >
-                          <Download className="mr-2 h-5 w-5" />
-                          Download QR Code Card
-                        </Button>
-                        <Button
-                          variant="destructive"
-                          size="lg"
-                          className="w-full"
-                          onClick={() => {
-                            setDeletingHousehold(viewingHousehold);
-                            setShowDeleteConfirm(true);
-                          }}
-                        >
-                          <Trash2 className="mr-2 h-5 w-5" />
-                          Delete Household
-                        </Button>
-                      </>
-                    ) : (
-                      <div className="text-center py-12">
-                        <QrCode className="h-16 w-16 mx-auto text-muted-foreground mb-4 opacity-20" />
-                        <p className="text-muted-foreground">QR code not generated yet</p>
+                    <>
+                      <div className="bg-white rounded-xl shadow-sm">
+                        <img
+                          src={`/api/qr-codes/${viewingHousehold.uid}/image`}
+                          alt="QR Code"
+                          className="w-48 h-48 object-contain"
+                        />
                       </div>
-                    )}
+                      <Button
+                        variant="outline"
+                        size="lg"
+                        className="w-full bg-blue-300"
+                        onClick={() => handleDownloadSingleQR(viewingHousehold)}
+                      >
+                        <Download className="mr-2 h-5 w-5" />
+                        Download QR Code Card
+                      </Button>
+                      <Button
+                        variant="destructive"
+                        size="lg"
+                        className="w-full"
+                        onClick={() => {
+                          setDeletingHousehold(viewingHousehold);
+                          setShowDeleteConfirm(true);
+                        }}
+                      >
+                        <Trash2 className="mr-2 h-5 w-5" />
+                        Delete Household
+                      </Button>
+                    </>
                   </div>
                 </div>
               )}

@@ -15,17 +15,15 @@ jest.unstable_mockModule('../../../server/storage', () => ({
 }));
 
 jest.unstable_mockModule('../../../server/modules/fieldwork/qr-service', () => ({
-    generatePreMappedQR: jest.fn().mockResolvedValue({
-        qrCodeUrl: 'https://test.cloudinary.com/qr-premapped.png',
-        qrCodePublicId: 'test/qr-premapped-001',
-    } as never),
+    generateQRBuffer: jest.fn().mockResolvedValue(Buffer.from('fake-qr') as never),
     generatePreMappedQRCodesPDF: jest.fn().mockResolvedValue(Buffer.from('fake-pdf') as never),
     toFullUid: (uid: string) => uid.startsWith('GEN-') ? uid : `GEN-${uid}`,
-    generateGeneratorCredentials: (uid: string) => ({
-        userId: `GEN-${uid}`,
-        password: `GEN-${uid}`,
+    getScannableUid: (uid: string) => uid.replace(/^GEN-/, ''),
+    generateGeneratorCredentials: jest.fn().mockResolvedValue({
+        userId: 'GEN-V001-0001',
+        password: 'GEN-V001-0001',
         hashedPassword: 'hashed-GEN',
-    }),
+    } as never),
 }));
 
 const { createBatchQRCodes, validateQRAccess, mapQRToHousehold, generateBatchPDF } =
@@ -37,7 +35,7 @@ describe('qr-code.service', () => {
     });
 
     describe('createBatchQRCodes', () => {
-        test('creates batch of QR codes', async () => {
+        test('creates batch of QR codes (DB only, no Cloudinary)', async () => {
             mockStorage.getNextBatchId.mockResolvedValue('BATCH-V001-001' as never);
             mockStorage.getNextQRCodeUid.mockResolvedValue(['GEN-V001-0001', 'GEN-V001-0002'] as never);
             mockStorage.createBatchQRCodes.mockResolvedValue([
@@ -48,6 +46,12 @@ describe('qr-code.service', () => {
             const result = await createBatchQRCodes('V001', 2);
             expect(result.batchId).toBe('BATCH-V001-001');
             expect(result.count).toBe(2);
+
+            // Verify no QR generation/upload calls — pure DB insert
+            expect(mockStorage.createBatchQRCodes).toHaveBeenCalledWith([
+                { uid: 'GEN-V001-0001', villageId: 'V001', batchId: 'BATCH-V001-001', status: 'notMapped' },
+                { uid: 'GEN-V001-0002', villageId: 'V001', batchId: 'BATCH-V001-001', status: 'notMapped' },
+            ]);
         });
 
         test('throws when quantity is 0', async () => {
@@ -92,10 +96,9 @@ describe('qr-code.service', () => {
     });
 
     describe('mapQRToHousehold', () => {
-        test('maps QR to new household', async () => {
+        test('maps QR to new household (no qrCodeUrl)', async () => {
             mockStorage.getQRCodeByUid.mockResolvedValue({
                 uid: 'GEN-V001-0001', villageId: 'V001', status: 'notMapped',
-                qrCodeUrl: 'https://qr.png', qrCodePublicId: 'test/qr',
             } as never);
             mockStorage.createHousehold.mockResolvedValue({ id: 1, uid: 'V001-0001' } as never);
             mockStorage.createUser.mockResolvedValue({} as never);
@@ -110,6 +113,11 @@ describe('qr-code.service', () => {
             expect(result.household).toBeDefined();
             expect(result.credentials).toBeDefined();
             expect(mockStorage.updateQRCodeStatus).toHaveBeenCalledWith('GEN-V001-0001', 'mapped', 1);
+
+            // Verify no qrCodeUrl or qrCodePublicId in household creation
+            const createCall = mockStorage.createHousehold.mock.calls[0][0];
+            expect(createCall).not.toHaveProperty('qrCodeUrl');
+            expect(createCall).not.toHaveProperty('qrCodePublicId');
         });
 
         test('throws when QR already mapped', async () => {
@@ -140,7 +148,7 @@ describe('qr-code.service', () => {
     describe('generateBatchPDF', () => {
         test('generates PDF for batch', async () => {
             mockStorage.getQRCodesByBatch.mockResolvedValue([
-                { uid: 'GEN-V001-0001' },
+                { uid: 'GEN-V001-0001', villageId: 'V001' },
             ] as never);
 
             const result = await generateBatchPDF('BATCH-V001-001');

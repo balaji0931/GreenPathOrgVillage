@@ -56,6 +56,34 @@ export function registerQRCodeRoutes(app: Express, requireAuth: any, requireRole
     }
   });
 
+  // On-demand QR image generation — replaces Cloudinary URLs
+  app.get('/api/qr-codes/:uid/image', requireAuth, async (req, res) => {
+    try {
+      const { uid } = req.params;
+      const { generateQRBuffer, toFullUid } = await import('./qr-service');
+      const fullUid = toFullUid(uid);
+
+      // Verify village access — prevent cross-village QR image requests
+      const qrCode = await storage.getQRCodeByUid(fullUid);
+      if (!qrCode) {
+        // Also check households table (for directly-created households)
+        const household = await storage.getHouseholdByUid(uid.replace(/^GEN-/, ''));
+        if (!household || household.villageId !== req.session.villageId) {
+          return res.status(404).json({ message: "QR code not found" });
+        }
+      } else if (qrCode.villageId !== req.session.villageId) {
+        return res.status(403).json({ message: "Access denied" });
+      }
+
+      const buffer = await generateQRBuffer(fullUid);
+      res.setHeader('Content-Type', 'image/png');
+      res.send(buffer);
+    } catch (error) {
+      console.error("Generate QR image error:", error);
+      res.status(500).json({ message: "Failed to generate QR image" });
+    }
+  });
+
   // Field worker QR code lookup route
   app.get('/api/qr-codes/:uid', requireAuth, requireRole(['fieldworker', 'manager']), async (req, res) => {
     try {

@@ -60,6 +60,12 @@ export async function getPremiumReportData(villageId: string, date: string): Pro
     const materialLog = await dailyWasteLogStorage.getDailyWasteLogByDate(villageId, date);
 
     // ── Query 6: Collection timestamps for session derivation ──
+    // Align boundaries with IST: 
+    // IST Today (e.g. Mar 11) is UTC (Mar 10 18:30:00 to Mar 11 18:29:59)
+    const istStartOffset = 5.5 * 60 * 60 * 1000;
+    const startOfIstDayUTC = new Date(targetDate.getTime() - istStartOffset);
+    const endOfIstDayUTC = new Date(startOfIstDayUTC.getTime() + 86400000);
+
     // Join through households+collectors to get per-vehicle timestamps
     const collectionRows = await db.select({
         collectionDate: wasteCollections.collectionDate,
@@ -70,8 +76,8 @@ export async function getPremiumReportData(villageId: string, date: string): Pro
         .innerJoin(collectors, eq(wasteCollections.collectorId, collectors.id))
         .where(and(
             eq(households.villageId, villageId),
-            sql`${wasteCollections.collectionDate} >= ${targetDate}`,
-            sql`${wasteCollections.collectionDate} < ${new Date(targetDate.getTime() + 86400000)}`
+            sql`${wasteCollections.collectionDate} >= ${startOfIstDayUTC.toISOString()}`,
+            sql`${wasteCollections.collectionDate} < ${endOfIstDayUTC.toISOString()}`
         ))
         .orderBy(wasteCollections.collectionDate);
 

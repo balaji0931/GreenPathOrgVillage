@@ -46,8 +46,7 @@ export const households = pgTable("households", {
   familySize: integer("family_size").default(1),
   address: text("address"),
   status: text("status").default("active"),
-  qrCodeUrl: text("qr_code_url"),
-  qrCodePublicId: text("qr_code_public_id"),
+
   qrPrinted: boolean("qr_printed").default(false), // Track if QR code has been printed
   generatorUserId: text("generator_user_id"),
   generatorPassword: text("generator_password"),
@@ -322,8 +321,7 @@ export const contactSubmissions = pgTable("contact_submissions", {
 export const qrCodes = pgTable("qr_codes", {
   id: serial("id").primaryKey(),
   uid: text("uid").notNull().unique(), // GEN-V001-0001, GEN-V001-0002, etc.
-  qrCodeUrl: text("qr_code_url").notNull(),
-  qrCodePublicId: text("qr_code_public_id").notNull(),
+
   status: text("status").default("notMapped"), // notMapped, mapped
   villageId: text("village_id").notNull().references(() => villages.villageId),
   householdId: integer("household_id").references(() => households.id),

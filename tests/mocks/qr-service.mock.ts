@@ -1,5 +1,5 @@
 /**
- * QR Service mock — stubs QR generation and Cloudinary uploads.
+ * QR Service mock — stubs QR generation (local, no Cloudinary).
  * Keeps helper functions (toFullUid, generateGeneratorCredentials) real.
  *
  * This mock is NOT auto-applied. Import it explicitly in tests that need it:
@@ -7,19 +7,9 @@
  */
 import bcrypt from 'bcrypt';
 
-// Stub: QR generation functions that depend on Cloudinary
-export const generateHouseholdQR = jest.fn().mockResolvedValue({
-    qrCodeUrl: 'https://test.cloudinary.com/qr-household.png',
-    qrCodePublicId: 'test/qr-household-001',
-});
-
-export const generatePreMappedQR = jest.fn().mockResolvedValue({
-    qrCodeUrl: 'https://test.cloudinary.com/qr-premapped.png',
-    qrCodePublicId: 'test/qr-premapped-001',
-});
-
-export const generateBulkQRCodesPDF = jest.fn().mockResolvedValue(
-    Buffer.from('fake-pdf-content')
+// Stub: QR generation functions (no Cloudinary)
+export const generateQRBuffer = jest.fn().mockResolvedValue(
+    Buffer.from('fake-qr-png-data')
 );
 
 export const generatePreMappedQRCodesPDF = jest.fn().mockResolvedValue(
@@ -27,19 +17,23 @@ export const generatePreMappedQRCodesPDF = jest.fn().mockResolvedValue(
 );
 
 // Real helper functions — keep actual logic
+export function getScannableUid(fullUid: string): string {
+    return fullUid.replace(/^GEN-/, '');
+}
+
 export function toFullUid(uid: string): string {
     if (uid.startsWith('GEN-')) return uid;
     return `GEN-${uid}`;
 }
 
-export function generateGeneratorCredentials(uid: string): {
+export async function generateGeneratorCredentials(uid: string): Promise<{
     userId: string;
     password: string;
     hashedPassword: string;
-} {
+}> {
     const userId = uid.startsWith('GEN-') ? uid : `GEN-${uid}`;
     const password = userId;
-    const hashedPassword = bcrypt.hashSync(password, Number(process.env.BCRYPT_ROUNDS) || 10);
+    const hashedPassword = await bcrypt.hash(password, Number(process.env.BCRYPT_ROUNDS) || 10);
 
     return {
         userId,

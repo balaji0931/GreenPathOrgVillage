@@ -1146,35 +1146,23 @@ export default function GeneratorDashboard() {
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="text-center space-y-4">
-                    {householdData.qrCodeUrl ? (
-                      <div className="flex flex-col items-center space-y-4">
-                        <div className="p-4 bg-white border-2 border-gray-200 rounded-lg shadow-sm">
-                          <img
-                            src={householdData.qrCodeUrl}
-                            alt="Household QR Code"
-                            className="w-48 h-48 mx-auto"
-                          />
-                        </div>
+                    <div className="flex flex-col items-center space-y-4">
+                      <div className="p-4 bg-white border-2 border-gray-200 rounded-lg shadow-sm">
+                        <img
+                          src={`/api/qr-codes/${householdData.uid}/image`}
+                          alt="Household QR Code"
+                          className="w-48 h-48 mx-auto"
+                        />
+                      </div>
 
-                        <div className="space-y-2 text-center">
-                          <div className="p-3 bg-green-50 rounded-lg border-l-4 border-green-400">
-                            <p className="text-sm text-green-800 font-medium">
-                              📱 Show this QR code to the waste collector during pickup
-                            </p>
-                          </div>
+                      <div className="space-y-2 text-center">
+                        <div className="p-3 bg-green-50 rounded-lg border-l-4 border-green-400">
+                          <p className="text-sm text-green-800 font-medium">
+                            📱 Show this QR code to the waste collector during pickup
+                          </p>
                         </div>
                       </div>
-                    ) : (
-                      <div className="text-center py-8">
-                        <QrCode className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-                        <h3 className="text-lg font-medium text-gray-900 mb-2">
-                          QR Code Not Available
-                        </h3>
-                        <p className="text-gray-500 mb-4">
-                          Your QR code hasn't been generated yet. Contact your village manager.
-                        </p>
-                      </div>
-                    )}
+                    </div>
                   </CardContent>
                 </Card>
 

@@ -14,14 +14,14 @@ import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { QRScanner } from "@/components/qr-scanner";
 import MapPicker from "@/components/MapPicker";
-import { 
-  LogOut, 
-  MapPin, 
-  User, 
-  Camera, 
-  Search, 
-  Check, 
-  X, 
+import {
+  LogOut,
+  MapPin,
+  User,
+  Camera,
+  Search,
+  Check,
+  X,
   Lock,
   Eye,
   Home,
@@ -45,7 +45,6 @@ interface HouseholdForm {
 interface QRCodeData {
   id: number;
   uid: string;
-  qrCodeUrl: string;
   status: 'notMapped' | 'mapped';
   villageId: string;
   batchId: string;
@@ -56,7 +55,7 @@ export default function FieldWorkerDashboard() {
   const { toast } = useToast();
   const { isMobile, isLoading: isMobileLoading } = useIsMobileWithLoading();
   const [activeTab, setActiveTab] = useState<'map' | 'account'>('map');
-  
+
   const [showScanner, setShowScanner] = useState(false);
   const [searchUid, setSearchUid] = useState("");
   const [scannedQRCode, setScannedQRCode] = useState<QRCodeData | null>(null);
@@ -67,18 +66,18 @@ export default function FieldWorkerDashboard() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [mappingSuccess, setMappingSuccess] = useState(false);
 
-const { data: village } = useQuery<Village>({
-  queryKey: ['village', user?.villageId],
-  enabled: !!user?.villageId,
-  queryFn: () =>
-    fetch(`/api/villages/${user?.villageId}`).then((res) => res.json()),
-});
+  const { data: village } = useQuery<Village>({
+    queryKey: ['village', user?.villageId],
+    enabled: !!user?.villageId,
+    queryFn: () =>
+      fetch(`/api/villages/${user?.villageId}`).then((res) => res.json()),
+  });
 
 
-  const wardOptions = village?.wards && village.wards.length > 0 
-    ? village.wards 
+  const wardOptions = village?.wards && village.wards.length > 0
+    ? village.wards
     : ["ward-1"];
-  
+
   const [householdForm, setHouseholdForm] = useState<HouseholdForm>({
     headName: "",
     phone: "",
@@ -238,12 +237,12 @@ const { data: village } = useQuery<Village>({
     lookupQRCodeMutation.mutate(trimmedUid);
   };
 
-const requiredFields: { key: keyof HouseholdForm; label: string }[] = [
-  { key: "headName", label: "Head of household name" },
-  { key: "phone", label: "Phone number" },
-  { key: "houseNumber", label: "House number" },
-  { key: "ward", label: "Ward" },
-];
+  const requiredFields: { key: keyof HouseholdForm; label: string }[] = [
+    { key: "headName", label: "Head of household name" },
+    { key: "phone", label: "Phone number" },
+    { key: "houseNumber", label: "House number" },
+    { key: "ward", label: "Ward" },
+  ];
 
   const handlePreview = () => {
     for (const { key, label } of requiredFields) {
@@ -355,8 +354,8 @@ const requiredFields: { key: keyof HouseholdForm; label: string }[] = [
                 Open this page on your mobile device to continue working.
               </p>
             </div>
-            <Button 
-              variant="outline" 
+            <Button
+              variant="outline"
               onClick={() => logout()}
               className="w-full"
               data-testid="button-logout-desktop"
@@ -374,15 +373,15 @@ const requiredFields: { key: keyof HouseholdForm; label: string }[] = [
     <div className="min-h-screen bg-gray-50 pb-20">
       <div className="bg-green-600 text-white p-3 sticky top-0 z-10">
         <div className="flex items-center justify-center">
-          <img 
-            src="/logos/logo-dark.svg" 
-            alt="GreenPath" 
-            className="w-auto h-9" 
+          <img
+            src="/logos/logo-dark.svg"
+            alt="GreenPath"
+            className="w-auto h-9"
           />
         </div>
       </div>
 
-      
+
       <div className="p-4">
         {activeTab === 'map' && (
           <div className="space-y-4">
@@ -408,15 +407,15 @@ const requiredFields: { key: keyof HouseholdForm; label: string }[] = [
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                <Button 
-                  onClick={() => setShowScanner(true)} 
+                <Button
+                  onClick={() => setShowScanner(true)}
                   className="w-full bg-green-600 hover:bg-green-700"
                   data-testid="button-scan-qr"
                 >
                   <Camera className="h-5 w-5 mr-2" />
                   Scan QR Code
                 </Button>
-                
+
                 <div className="relative">
                   <div className="absolute inset-0 flex items-center">
                     <span className="w-full border-t" />
@@ -425,7 +424,7 @@ const requiredFields: { key: keyof HouseholdForm; label: string }[] = [
                     <span className="bg-white px-2 text-gray-500">or</span>
                   </div>
                 </div>
-                
+
                 <div className="flex gap-2">
                   <Input
                     placeholder="Enter QR UID (e.g., GEN-V001-0001)"
@@ -433,7 +432,7 @@ const requiredFields: { key: keyof HouseholdForm; label: string }[] = [
                     onChange={(e) => setSearchUid(e.target.value)}
                     data-testid="input-search-uid"
                   />
-                  <Button 
+                  <Button
                     onClick={handleSearchByUid}
                     variant="outline"
                     disabled={lookupQRCodeMutation.isPending}
@@ -442,7 +441,7 @@ const requiredFields: { key: keyof HouseholdForm; label: string }[] = [
                     <Search className="h-4 w-4" />
                   </Button>
                 </div>
-                
+
                 {lookupQRCodeMutation.isPending && (
                   <div className="text-center py-4">
                     <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600 mx-auto"></div>
@@ -451,7 +450,7 @@ const requiredFields: { key: keyof HouseholdForm; label: string }[] = [
                 )}
               </CardContent>
             </Card>
-            
+
             <Card className="bg-blue-50 border-blue-200">
               <CardContent className="pt-4">
                 <h3 className="font-medium text-blue-900 mb-2">How to Map</h3>
@@ -464,7 +463,7 @@ const requiredFields: { key: keyof HouseholdForm; label: string }[] = [
             </Card>
           </div>
         )}
-        
+
         {activeTab === 'account' && (
           <div className="space-y-4">
             <Card>
@@ -500,7 +499,7 @@ const requiredFields: { key: keyof HouseholdForm; label: string }[] = [
                 </div>
               </CardContent>
             </Card>
-            
+
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
@@ -509,8 +508,8 @@ const requiredFields: { key: keyof HouseholdForm; label: string }[] = [
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
-                <Button 
-                  variant="outline" 
+                <Button
+                  variant="outline"
                   className="w-full"
                   onClick={() => setShowPasswordModal(true)}
                   data-testid="button-change-password"
@@ -518,8 +517,8 @@ const requiredFields: { key: keyof HouseholdForm; label: string }[] = [
                   <Lock className="h-4 w-4 mr-2" />
                   Change Password
                 </Button>
-                <Button 
-                  variant="destructive" 
+                <Button
+                  variant="destructive"
                   onClick={() => logout()}
                   className="w-full"
                   data-testid="button-logout"
@@ -532,22 +531,20 @@ const requiredFields: { key: keyof HouseholdForm; label: string }[] = [
           </div>
         )}
       </div>
-      
+
       <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 px-4 py-3 flex justify-around safe-area-bottom">
         <button
           onClick={() => setActiveTab('map')}
-          className={`flex flex-col items-center py-2 px-6 rounded-lg transition-colors ${
-            activeTab === 'map' ? 'text-green-600 bg-green-50' : 'text-gray-500'
-          }`}
+          className={`flex flex-col items-center py-2 px-6 rounded-lg transition-colors ${activeTab === 'map' ? 'text-green-600 bg-green-50' : 'text-gray-500'
+            }`}
           data-testid="tab-map"
         >
           <MapPin className="h-6 w-6" />
         </button>
         <button
           onClick={() => setActiveTab('account')}
-          className={`flex flex-col items-center py-2 px-6 rounded-lg transition-colors ${
-            activeTab === 'account' ? 'text-green-600 bg-green-50' : 'text-gray-500'
-          }`}
+          className={`flex flex-col items-center py-2 px-6 rounded-lg transition-colors ${activeTab === 'account' ? 'text-green-600 bg-green-50' : 'text-gray-500'
+            }`}
           data-testid="tab-account"
         >
           <User className="h-6 w-6" />
@@ -561,7 +558,7 @@ const requiredFields: { key: keyof HouseholdForm; label: string }[] = [
               <DialogTitle>Scan QR Code</DialogTitle>
             </DialogHeader>
             <div className="p-4">
-              <QRScanner 
+              <QRScanner
                 onScan={handleQRScan}
                 onClose={() => setShowScanner(false)}
               />
@@ -584,7 +581,7 @@ const requiredFields: { key: keyof HouseholdForm; label: string }[] = [
                 <p className="text-xs text-green-600 font-medium">QR Code UID</p>
                 <p className="text-sm font-mono">{scannedQRCode.uid}</p>
               </div>
-              
+
               <div className="space-y-3">
                 <div className="space-y-1">
                   <Label htmlFor="headName" className="flex items-center gap-1">
@@ -594,12 +591,12 @@ const requiredFields: { key: keyof HouseholdForm; label: string }[] = [
                   <Input
                     id="headName"
                     value={householdForm.headName}
-                    onChange={(e) => setHouseholdForm({...householdForm, headName: e.target.value})}
+                    onChange={(e) => setHouseholdForm({ ...householdForm, headName: e.target.value })}
                     placeholder="Full name"
                     data-testid="input-head-name"
                   />
                 </div>
-                
+
                 <div className="space-y-1">
                   <Label htmlFor="phone" className="flex items-center gap-1">
                     <Phone className="h-4 w-4" />
@@ -609,12 +606,12 @@ const requiredFields: { key: keyof HouseholdForm; label: string }[] = [
                     id="phone"
                     type="tel"
                     value={householdForm.phone}
-                    onChange={(e) => setHouseholdForm({...householdForm, phone: e.target.value})}
+                    onChange={(e) => setHouseholdForm({ ...householdForm, phone: e.target.value })}
                     placeholder="Mobile number"
                     data-testid="input-phone"
                   />
                 </div>
-                
+
                 <div className="space-y-1">
                   <Label htmlFor="houseNumber" className="flex items-center gap-1">
                     <Home className="h-4 w-4" />
@@ -623,20 +620,20 @@ const requiredFields: { key: keyof HouseholdForm; label: string }[] = [
                   <Input
                     id="houseNumber"
                     value={householdForm.houseNumber}
-                    onChange={(e) => setHouseholdForm({...householdForm, houseNumber: e.target.value})}
+                    onChange={(e) => setHouseholdForm({ ...householdForm, houseNumber: e.target.value })}
                     placeholder="House/Door number"
                     data-testid="input-house-number"
                   />
                 </div>
-                
+
                 <div className="space-y-1">
                   <Label htmlFor="ward" className="flex items-center gap-1">
                     <MapPinned className="h-4 w-4" />
                     Ward <span className="text-red-500">*</span>
                   </Label>
-                  <Select 
-                    value={householdForm.ward} 
-                    onValueChange={(value) => setHouseholdForm({...householdForm, ward: value})}
+                  <Select
+                    value={householdForm.ward}
+                    onValueChange={(value) => setHouseholdForm({ ...householdForm, ward: value })}
                   >
                     <SelectTrigger data-testid="select-ward">
                       <SelectValue placeholder="Select ward" />
@@ -648,7 +645,7 @@ const requiredFields: { key: keyof HouseholdForm; label: string }[] = [
                     </SelectContent>
                   </Select>
                 </div>
-                
+
                 <div className="space-y-1">
                   <Label htmlFor="familySize" className="flex items-center gap-1">
                     <Users className="h-4 w-4" />
@@ -659,11 +656,11 @@ const requiredFields: { key: keyof HouseholdForm; label: string }[] = [
                     type="number"
                     min="0"
                     value={householdForm.familySize}
-                    onChange={(e) => setHouseholdForm({...householdForm, familySize: parseInt(e.target.value) || 1})}
+                    onChange={(e) => setHouseholdForm({ ...householdForm, familySize: parseInt(e.target.value) || 1 })}
                     data-testid="input-family-size"
                   />
                 </div>
-                
+
                 <div className="space-y-1">
                   <Label htmlFor="address" className="flex items-center gap-1">
                     <MapPin className="h-4 w-4" />
@@ -672,7 +669,7 @@ const requiredFields: { key: keyof HouseholdForm; label: string }[] = [
                   <Input
                     id="address"
                     value={householdForm.address}
-                    onChange={(e) => setHouseholdForm({...householdForm, address: e.target.value})}
+                    onChange={(e) => setHouseholdForm({ ...householdForm, address: e.target.value })}
                     placeholder="Full address"
                     data-testid="input-address"
                   />
@@ -684,9 +681,9 @@ const requiredFields: { key: keyof HouseholdForm; label: string }[] = [
                     <div className="flex flex-col gap-2">
 
                       {/* Open Fullscreen Map Modal */}
-                      <Button 
-                        type="button" 
-                        variant="outline" 
+                      <Button
+                        type="button"
+                        variant="outline"
                         onClick={() => {
                           setShowMapModal(true);
                           fetchLocation(); // center to GPS
@@ -726,7 +723,7 @@ const requiredFields: { key: keyof HouseholdForm; label: string }[] = [
       )}
 
       {showPreview && scannedQRCode && (
-        <Dialog open={showPreview} onOpenChange={(open) => { if (!open) { setShowPreview(false); setShowForm(true); }}}>
+        <Dialog open={showPreview} onOpenChange={(open) => { if (!open) { setShowPreview(false); setShowForm(true); } }}>
           <DialogContent className="sm:max-w-md">
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2">
@@ -739,7 +736,7 @@ const requiredFields: { key: keyof HouseholdForm; label: string }[] = [
                 <p className="text-xs text-green-600 font-medium">QR Code UID</p>
                 <p className="text-sm font-mono">{scannedQRCode.uid}</p>
               </div>
-              
+
               <div className="space-y-2 text-sm">
                 <div className="flex justify-between py-2 border-b">
                   <span className="text-gray-500">Head of Household</span>
@@ -772,21 +769,21 @@ const requiredFields: { key: keyof HouseholdForm; label: string }[] = [
                   </div>
                 )}
               </div>
-              
+
               <div className="bg-yellow-50 p-3 rounded-lg text-sm text-yellow-800">
                 Please verify all details before confirming. This action cannot be undone.
               </div>
             </div>
             <DialogFooter className="gap-2 sm:gap-0">
-              <Button 
-                variant="outline" 
+              <Button
+                variant="outline"
                 onClick={() => { setShowPreview(false); setShowForm(true); }}
                 data-testid="button-edit"
               >
                 <X className="h-4 w-4 mr-2" />
                 Edit
               </Button>
-              <Button 
+              <Button
                 onClick={handleConfirmMapping}
                 disabled={mapHouseholdMutation.isPending}
                 className="bg-green-600 hover:bg-green-700"
@@ -846,7 +843,7 @@ const requiredFields: { key: keyof HouseholdForm; label: string }[] = [
               <Button variant="outline" onClick={() => handlePasswordModalClose(false)}>
                 Cancel
               </Button>
-              <Button 
+              <Button
                 onClick={handleChangePassword}
                 disabled={isChangePasswordPending}
                 className="bg-green-600 hover:bg-green-700"
@@ -886,10 +883,10 @@ const requiredFields: { key: keyof HouseholdForm; label: string }[] = [
 
             {/* Footer */}
             <div className="flex items-center justify-between p-1 space-x-2  bg-white">
-              
-              <Button 
-                type="button" 
-                variant="outline" 
+
+              <Button
+                type="button"
+                variant="outline"
                 onClick={fetchLocation}
                 className="bg-blue-50 border-blue-200 text-blue-700 hover:bg-blue-100 p-1"
               >

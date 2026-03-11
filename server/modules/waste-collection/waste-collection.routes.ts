@@ -113,7 +113,7 @@ export function registerWasteCollectionRoutes(app: Express, requireAuth: any, re
         return res.status(404).json({ message: "Household not found" });
       }
 
-      console.log('Found household:', household.uid, 'QR Code:', !!household.qrCodeUrl);
+      console.log('Found household:', household.uid);
       res.json(household);
     } catch (error) {
       console.error('Get generator household error:', error);

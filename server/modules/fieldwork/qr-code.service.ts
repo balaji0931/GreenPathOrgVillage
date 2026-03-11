@@ -2,7 +2,8 @@ import { storage } from "../../storage";
 
 /**
  * Create a batch of pre-mapped QR codes for a village.
- * Verbatim extraction from qr-code.routes.ts POST /api/qr-codes/batch
+ * No Cloudinary — just creates DB rows with UIDs.
+ * 500 codes: ~200ms (single DB insert).
  */
 export async function createBatchQRCodes(villageId: string, quantity: number) {
     if (!quantity || quantity < 1 || quantity > 500) {
@@ -13,24 +14,15 @@ export async function createBatchQRCodes(villageId: string, quantity: number) {
     const batchId = await storage.getNextBatchId(villageId);
     const uids = await storage.getNextQRCodeUid(villageId, quantity);
 
-    // Import the QR generation function
-    const { generatePreMappedQR } = await import('./qr-service');
+    // No Cloudinary upload — just create DB records with UIDs
+    const qrCodeRecords = uids.map(uid => ({
+        uid,
+        villageId,
+        batchId,
+        status: 'notMapped',
+    }));
 
-    // Generate QR codes and upload to Cloudinary
-    const qrCodeRecords = [];
-    for (const uid of uids) {
-        const { qrCodeUrl, qrCodePublicId } = await generatePreMappedQR(uid, villageId);
-        qrCodeRecords.push({
-            uid,
-            qrCodeUrl,
-            qrCodePublicId,
-            villageId,
-            batchId,
-            status: 'notMapped',
-        });
-    }
-
-    // Save to database
+    // Single bulk insert
     const savedQRCodes = await storage.createBatchQRCodes(qrCodeRecords);
 
     return {
@@ -42,7 +34,6 @@ export async function createBatchQRCodes(villageId: string, quantity: number) {
 
 /**
  * Validate QR code access for a village.
- * Verbatim extraction from qr-code.routes.ts GET /api/qr-codes/:uid
  */
 export async function validateQRAccess(uid: string, villageId: string) {
     const { toFullUid } = await import('./qr-service');
@@ -63,7 +54,6 @@ export async function validateQRAccess(uid: string, villageId: string) {
 
 /**
  * Map a QR code to a new household.
- * Verbatim extraction from qr-code.routes.ts POST /api/qr-codes/:uid/map
  */
 export async function mapQRToHousehold(
     uid: string,
@@ -103,10 +93,10 @@ export async function mapQRToHousehold(
     // The household UID is the same as the full QR UID (GEN-V001-H0001)
     const householdUid = fullUid.replace('GEN-', '');
 
-    // Generate generator credentials (uses the full UID)
-    const { userId: generatorUserId, hashedPassword } = generateGeneratorCredentials(householdUid);
+    // Generate generator credentials (async bcrypt)
+    const { userId: generatorUserId, hashedPassword } = await generateGeneratorCredentials(householdUid);
 
-    // Create household with qrPrinted = true (since they already have the physical QR)
+    // Create household — no qrCodeUrl/qrCodePublicId needed
     const household = await storage.createHousehold({
         uid: householdUid,
         villageId,
@@ -119,8 +109,6 @@ export async function mapQRToHousehold(
         latitude: latitude?.toString(),
         longitude: longitude?.toString(),
         status: 'active',
-        qrCodeUrl: qrCode.qrCodeUrl,
-        qrCodePublicId: qrCode.qrCodePublicId,
         qrPrinted: true,
         generatorUserId,
         generatorPassword: generatorUserId,
@@ -150,7 +138,7 @@ export async function mapQRToHousehold(
 
 /**
  * Generate PDF for a batch of QR codes.
- * Verbatim extraction from qr-code.routes.ts GET /api/qr-codes/batch/:batchId/pdf
+ * QR images are generated locally — no Cloudinary fetch.
  */
 export async function generateBatchPDF(batchId: string) {
     const qrCodes = await storage.getQRCodesByBatch(batchId);
