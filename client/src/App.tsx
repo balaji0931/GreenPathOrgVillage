@@ -3,7 +3,6 @@ import { Toaster } from "@/components/ui/toaster";
 import { useAuth } from "@/hooks/useAuth";
 import { InstallPWA } from "@/components/InstallPWA";
 import Login from "@/pages/login";
-import PublicHome from "@/pages/public-home";
 import AdminDashboard from "@/pages/admin-dashboard";
 import ManagerDashboard from "@/pages/manager-dashboard";
 import CollectorDashboard from "@/pages/collector-dashboard";
@@ -13,9 +12,17 @@ import FieldWorkerDashboard from "@/pages/fieldworker-dashboard";
 import PrivacyPolicy from "@/pages/privacy-policy";
 import TermsOfService from "@/pages/terms-of-service";
 import DataProtection from "@/pages/data-protection";
-import Pricing from "@/pages/pricing";
 import NotFound from "@/pages/not-found";
 import "./i18n";
+
+// New public pages
+import HomePage from "@/pages/public/HomePage";
+import ProductPage from "@/pages/public/ProductPage";
+import SolutionsPage from "@/pages/public/SolutionsPage";
+import PricingPage from "@/pages/public/PricingPage";
+import AboutPage from "@/pages/public/AboutPage";
+import ContactPage from "@/pages/public/ContactPage";
+import CaseStudiesPage from "@/pages/public/CaseStudiesPage";
 
 function App() {
   return (
@@ -48,15 +55,23 @@ function Router() {
         <Route path="/privacy-policy" component={PrivacyPolicy} />
         <Route path="/terms-of-service" component={TermsOfService} />
         <Route path="/data-protection" component={DataProtection} />
-        <Route path="/pricing">{() => <Pricing />}</Route>
 
-        <Route path="/home">{() => <PublicHome initialSection="home" />}</Route>
-        <Route path="/about">{() => <PublicHome initialSection="about" />}</Route>
-        <Route path="/feedback">{() => <PublicHome initialSection="feedback" />}</Route>
-        <Route path="/contact">{() => <PublicHome initialSection="contact" />}</Route>
+        {/* New public pages */}
+        <Route path="/product" component={ProductPage} />
+        <Route path="/solutions" component={SolutionsPage} />
+        <Route path="/pricing" component={PricingPage} />
+        <Route path="/about" component={AboutPage} />
+        <Route path="/contact" component={ContactPage} />
+        <Route path="/case-studies" component={CaseStudiesPage} />
+        <Route path="/impact">{() => <Redirect to="/product" />}</Route>
+        <Route path="/blog">{() => <Redirect to="/about" />}</Route>
+
+        {/* Legacy routes redirect to new pages */}
+        <Route path="/home">{() => <HomePage />}</Route>
+        <Route path="/feedback">{() => <Redirect to="/contact" />}</Route>
 
         <Route path="/">
-          {() => <PublicHome initialSection="home" />}
+          {() => <HomePage />}
         </Route>
 
         <Route component={NotFound} />
@@ -89,12 +104,18 @@ function Router() {
       <Route path="/privacy-policy" component={PrivacyPolicy} />
       <Route path="/terms-of-service" component={TermsOfService} />
       <Route path="/data-protection" component={DataProtection} />
-      <Route path="/pricing">{() => <Pricing />}</Route>
 
-      <Route path="/home">{() => <PublicHome initialSection="home" />}</Route>
-      <Route path="/about">{() => <PublicHome initialSection="about" />}</Route>
-      <Route path="/feedback">{() => <PublicHome initialSection="feedback" />}</Route>
-      <Route path="/contact">{() => <PublicHome initialSection="contact" />}</Route>
+      {/* Public marketing pages (also accessible when logged in) */}
+      <Route path="/product" component={ProductPage} />
+      <Route path="/solutions" component={SolutionsPage} />
+      <Route path="/pricing" component={PricingPage} />
+      <Route path="/about" component={AboutPage} />
+      <Route path="/contact" component={ContactPage} />
+      <Route path="/case-studies" component={CaseStudiesPage} />
+      <Route path="/impact">{() => <Redirect to="/product" />}</Route>
+      <Route path="/blog">{() => <Redirect to="/about" />}</Route>
+      <Route path="/home">{() => <HomePage />}</Route>
+      <Route path="/feedback">{() => <Redirect to="/contact" />}</Route>
 
       {/* Role-specific routes */}
       <Route path="/admin">

@@ -96,7 +96,7 @@ const { app, logger } = createApp();
   // this serves both the API and the client.
   // It is the only port that is not firewalled.
   //testing ci
-  const port = 5001;
+  const port = 5002;
   server.listen(
     {
       port,

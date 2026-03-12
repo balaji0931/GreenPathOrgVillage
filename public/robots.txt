@@ -1,15 +1,24 @@
+# GreenPath — robots.txt
+# https://greenpathindia.in
+
 User-agent: *
+
+# Public pages
 Allow: /
-Allow: /login
-Allow: /about
+Allow: /product
+Allow: /solutions
+Allow: /case-studies
 Allow: /pricing
-Allow: /feedback
+Allow: /about
 Allow: /contact
+
+# Legal pages
 Allow: /privacy-policy
 Allow: /terms-of-service
 Allow: /data-protection
-Allow: /home
 
+# Block dashboard and API routes
+Disallow: /login
 Disallow: /admin
 Disallow: /manager
 Disallow: /collector
@@ -18,4 +27,5 @@ Disallow: /moderator
 Disallow: /fieldworker
 Disallow: /api/
 
+# Sitemap
 Sitemap: https://greenpathindia.in/sitemap.xml
