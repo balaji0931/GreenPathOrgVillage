@@ -38,7 +38,7 @@ beforeAll(async () => {
     const vRes = await adminAgent
         .post('/api/villages')
         .set('x-csrf-token', adminCsrf)
-        .send({ villageName: 'Input Village', managerName: 'Input Mgr', managerPhone: '1111111111' });
+        .send({ villageName: 'Input Village', managerName: 'Input Mgr', paymentsEnabled: true, managerPhone: '1111111111' });
     villageId = vRes.body.village.villageId;
     const managerId = vRes.body.manager.credentials.userId;
 
@@ -114,7 +114,7 @@ describe('Input Validation Attacks', () => {
                 const res = await adminAgent
                     .post('/api/villages')
                     .set('x-csrf-token', adminCsrf)
-                    .send({ villageName: xss, managerName: 'Test', managerPhone: '0000000000' });
+                    .send({ villageName: xss, managerName: 'Test', paymentsEnabled: true, managerPhone: '0000000000' });
                 expect(res.status).toBe(400);
             });
         }
@@ -166,7 +166,7 @@ describe('Input Validation Attacks', () => {
             const res = await adminAgent
                 .post('/api/villages')
                 .set('x-csrf-token', adminCsrf)
-                .send({ villageName: OVERSIZED_STRING, managerName: 'Test', managerPhone: '0000000000' });
+                .send({ villageName: OVERSIZED_STRING, managerName: 'Test', paymentsEnabled: true, managerPhone: '0000000000' });
             // No server-side length validation — accepted or DB error, never crash
             expect(res.status).not.toBe(500);
         });
@@ -250,7 +250,7 @@ describe('Input Validation Attacks', () => {
                 .send({
                     villageName: 'Extra Village',
                     managerName: 'Extra Mgr',
-                    managerPhone: '0000000000',
+                    paymentsEnabled: true, managerPhone: '0000000000',
                     isAdmin: true,
                     role: 'admin',
                     __proto__: { admin: true },

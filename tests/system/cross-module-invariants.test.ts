@@ -43,7 +43,7 @@ beforeAll(async () => {
     const vARes = await adminAgent
         .post('/api/villages')
         .set('x-csrf-token', adminCsrf)
-        .send({ villageName: 'Invariant Village A', managerName: 'Inv Mgr A', managerPhone: '1111111111' });
+        .send({ villageName: 'Invariant Village A', managerName: 'Inv Mgr A', paymentsEnabled: true, managerPhone: '1111111111' });
     villageAId = vARes.body.village.villageId;
     const mgrAId = vARes.body.manager.credentials.userId;
 
@@ -87,8 +87,8 @@ describe('Cross-Module Invariants', () => {
             .set('x-csrf-token', collectorACsrf)
             .send({
                 householdUid: 'NONEXISTENT-UID',
-                segregationRating: 4, plasticRating: 3,
-                observations: [], remarks: '', photoUrl: '', voiceUrl: '',
+                segregationRating: 4,
+                remarks: '', photoUrl: '', voiceUrl: '',
                 status: 'collected', missedReason: '',
             });
         expect(res.status).toBe(404);
@@ -113,7 +113,7 @@ describe('Cross-Module Invariants', () => {
         const vBRes = await adminAgent
             .post('/api/villages')
             .set('x-csrf-token', adminCsrf)
-            .send({ villageName: 'Invariant Village B', managerName: 'Inv Mgr B', managerPhone: '4444444444' });
+            .send({ villageName: 'Invariant Village B', managerName: 'Inv Mgr B', paymentsEnabled: true, managerPhone: '4444444444' });
         const villageBId = vBRes.body.village.villageId;
 
         const hhB = await seedHousehold(villageBId, {
@@ -126,8 +126,8 @@ describe('Cross-Module Invariants', () => {
             .set('x-csrf-token', collectorACsrf)
             .send({
                 householdUid: hhB.household.uid,
-                segregationRating: 4, plasticRating: 3,
-                observations: [], remarks: '', photoUrl: '', voiceUrl: '',
+                segregationRating: 4,
+                remarks: '', photoUrl: '', voiceUrl: '',
                 status: 'collected', missedReason: '',
             });
         expect(res.status).toBe(403);
@@ -141,8 +141,8 @@ describe('Cross-Module Invariants', () => {
             .set('x-csrf-token', collectorACsrf)
             .send({
                 householdUid: householdAUid,
-                segregationRating: 4, plasticRating: 3,
-                observations: [], remarks: '', photoUrl: '', voiceUrl: '',
+                segregationRating: 4,
+                remarks: '', photoUrl: '', voiceUrl: '',
                 status: 'collected', missedReason: '',
             });
 
@@ -191,8 +191,8 @@ describe('Cross-Module Invariants', () => {
             .set('x-csrf-token', collectorACsrf)
             .send({
                 householdUid: tempHH.household.uid,
-                segregationRating: 4, plasticRating: 3,
-                observations: [], remarks: '', photoUrl: '', voiceUrl: '',
+                segregationRating: 4,
+                remarks: '', photoUrl: '', voiceUrl: '',
                 status: 'collected', missedReason: '',
             });
         expect(res.status).toBe(404);
@@ -204,7 +204,7 @@ describe('Cross-Module Invariants', () => {
         const v3Res = await adminAgent
             .post('/api/villages')
             .set('x-csrf-token', adminCsrf)
-            .send({ villageName: 'PW Test Village', managerName: 'PW Mgr', managerPhone: '7777777777' });
+            .send({ villageName: 'PW Test Village', managerName: 'PW Mgr', paymentsEnabled: true, managerPhone: '7777777777' });
         const mgrId = v3Res.body.manager.credentials.userId;
 
         // Login
@@ -233,7 +233,7 @@ describe('Cross-Module Invariants', () => {
         const v4Res = await adminAgent
             .post('/api/villages')
             .set('x-csrf-token', adminCsrf)
-            .send({ villageName: 'PW Test Village 2', managerName: 'PW Mgr 2', managerPhone: '8888888888' });
+            .send({ villageName: 'PW Test Village 2', managerName: 'PW Mgr 2', paymentsEnabled: true, managerPhone: '8888888888' });
         const mgrId = v4Res.body.manager.credentials.userId;
 
         const mgrAgent = request.agent(app);
@@ -260,7 +260,7 @@ describe('Cross-Module Invariants', () => {
         const v5Res = await adminAgent
             .post('/api/villages')
             .set('x-csrf-token', adminCsrf)
-            .send({ villageName: 'Reset PW Village', managerName: 'Reset Mgr', managerPhone: '9999999999' });
+            .send({ villageName: 'Reset PW Village', managerName: 'Reset Mgr', paymentsEnabled: true, managerPhone: '9999999999' });
         const mgrId = v5Res.body.manager.credentials.userId;
 
         // Change password first
@@ -324,10 +324,10 @@ describe('Cross-Module Invariants', () => {
         const vCRes = await adminAgent
             .post('/api/villages')
             .set('x-csrf-token', adminCsrf)
-            .send({ villageName: 'Unassigned Village', managerName: 'U Mgr', managerPhone: '1212121212' });
+            .send({ villageName: 'Unassigned Village', managerName: 'U Mgr', paymentsEnabled: true, managerPhone: '1212121212' });
         const villageCId = vCRes.body.village.villageId;
 
-        const res = await modAgent.get(`/api/moderator/village/${villageCId}/details`);
+        const res = await modAgent.get(`/api/moderator/village/${villageCId}/managers`);
         expect(res.status).toBe(403);
     });
 });

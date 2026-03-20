@@ -25,6 +25,8 @@ import {
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { QRScanner } from "@/components/qr-scanner";
+import { ConfirmDialog } from "@/components/confirm-dialog";
 import { Label } from "@/components/ui/label";
 import {
   Select,
@@ -60,13 +62,12 @@ import {
   QrCode,
   Download,
   AlertCircle,
-  TrendingUp,
-  Award,
   Package,
   AlertTriangle,
   Camera,
   CheckCircle,
   Bell,
+  TrendingUp,
   LayoutDashboard,
   ArrowLeft,
   ArrowRight,
@@ -85,11 +86,19 @@ import {
   Volume2,
   ChevronDown,
   Car,
-  Shield
+  Shield,
+  Send,
+  FileDown,
+  RefreshCw,
+  Wrench
 } from "lucide-react";
 import html2canvas from "html2canvas";
 import { jsPDF } from "jspdf";
+import { generateDailyReportPDF, type PDFReportData } from "@/components/DailyReportPDF";
+import { DataExportWizard } from "@/components/DataExportWizard";
 import { MaterialLog } from "@/components/manager/MaterialLog";
+import PaymentsTab from "@/components/payments-tab";
+import ActivityLog from "@/components/ActivityLog";
 import { cn } from "@/lib/utils";
 
 interface Collector {
@@ -110,7 +119,6 @@ interface Household {
   phone: string;
   villageId: string;
   ward: string;
-  qrCodeUrl: string;
   qrPrinted: boolean;
   latitude: number | null;
   longitude: number | null;
@@ -142,8 +150,6 @@ interface WasteCollection {
   houseNumber: string;
   collectorName: string;
   segregationRating: number;
-  plasticRating: number;
-  observations?: string;
   remarks?: string;
   status?: string;
   missedReason?: string;
@@ -302,6 +308,7 @@ const AttentionDetailSheet = ({ household, onClose }: { household: any, onClose:
   if (!household) return null;
   const [isPlaying, setIsPlaying] = React.useState(false);
   const audioRef = React.useRef<HTMLAudioElement>(null);
+  const { toast: detailToast } = useToast();
 
   const togglePlay = () => {
     if (!audioRef.current) return;
@@ -323,7 +330,7 @@ const AttentionDetailSheet = ({ household, onClose }: { household: any, onClose:
     if (household.latitude && household.longitude) {
       window.open(`https://www.google.com/maps/search/?api=1&query=${household.latitude},${household.longitude}`);
     } else {
-      alert("Coordinates not available for this household.");
+      detailToast({ title: "Coordinates not available", description: "This household has no GPS coordinates.", variant: "destructive" });
     }
   };
 
@@ -621,7 +628,7 @@ const CollectionDetailView = ({
                       <div className="flex gap-2">
                         {collection.photoUrl && (
                           <Button
-                            onClick={() => setMediaPopup({ type: 'photo', url: collection.photoUrl, remarks: collection.remarks || collection.observations })}
+                            onClick={() => setMediaPopup({ type: 'photo', url: collection.photoUrl, remarks: collection.remarks })}
                             variant="secondary"
                             className="h-8 px-3 rounded-full bg-blue-50 text-blue-600 hover:bg-blue-100 border-none text-[9px] font-black uppercase tracking-widest gap-1.5"
                           >
@@ -629,9 +636,9 @@ const CollectionDetailView = ({
                             Photo
                           </Button>
                         )}
-                        {(collection.voiceUrl || collection.remarks || collection.observations) && (
+                        {(collection.voiceUrl || collection.remarks) && (
                           <Button
-                            onClick={() => setMediaPopup({ type: 'voice', url: collection.voiceUrl || null, remarks: collection.remarks || collection.observations })}
+                            onClick={() => setMediaPopup({ type: 'voice', url: collection.voiceUrl || null, remarks: collection.remarks })}
                             variant="secondary"
                             className="h-8 px-3 rounded-full bg-purple-50 text-purple-600 hover:bg-purple-100 border-none text-[9px] font-black uppercase tracking-widest gap-1.5"
                           >
@@ -1109,7 +1116,7 @@ const WasteMaterialChart = ({ data }: { data: any[] }) => {
     <PremiumReportCard title="Waste Material Logs">
       <div className="w-full h-72">
         <RechartsContainer width="100%" height="100%">
-          <BarChart data={data} margin={{ top: 30, right: 30, left: 20, bottom: 5 }}>
+          <BarChart data={data} margin={{ top: 30, right: 0, left: 0, bottom: 10 }}>
             <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f3f4f6" />
             <XAxis
               dataKey="name"
@@ -1129,6 +1136,105 @@ const WasteMaterialChart = ({ data }: { data: any[] }) => {
             </Bar>
           </BarChart>
         </RechartsContainer>
+      </div>
+    </PremiumReportCard>
+  );
+};
+
+const WasteDiversionGauge = ({ materialData }: { materialData: { wet: number; dry: number; sanitary: number; specialCare: number; mixed: number } }) => {
+  const diverted = materialData.wet + materialData.dry;
+  const landfill = materialData.mixed + materialData.sanitary + materialData.specialCare;
+  const total = diverted + landfill;
+  const diversionRate = total > 0 ? (diverted / total) * 100 : 0;
+
+  const statusColor = diversionRate >= 70 ? '#22c55e' : diversionRate >= 40 ? '#f59e0b' : '#ef4444';
+  const statusBg = diversionRate >= 70 ? 'bg-green-50' : diversionRate >= 40 ? 'bg-amber-50' : 'bg-red-50';
+  const statusLabel = diversionRate >= 70 ? 'Excellent' : diversionRate >= 40 ? 'Needs Improvement' : 'Critical';
+
+  const gaugeData = [
+    { name: 'Diverted', value: diverted || 0, color: '#22c55e' },
+    { name: 'Landfill', value: landfill || (total === 0 ? 1 : 0), color: '#ef4444' },
+  ];
+
+  return (
+    <PremiumReportCard title="Waste Diversion Rate">
+      <div className="flex flex-col items-center justify-center">
+        {/* Semicircle gauge */}
+        <div className="w-full h-32 relative">
+          <RechartsContainer width="100%" height="100%">
+            <PieChart>
+              <Pie
+                data={gaugeData}
+                cx="50%"
+                cy="85%"
+                startAngle={180}
+                endAngle={0}
+                innerRadius={55}
+                outerRadius={75}
+                paddingAngle={2}
+                dataKey="value"
+                stroke="none"
+              >
+                {gaugeData.map((entry, index) => (
+                  <Cell key={`div-cell-${index}`} fill={entry.color} />
+                ))}
+              </Pie>
+            </PieChart>
+          </RechartsContainer>
+          <div className="absolute inset-0 flex flex-col items-center justify-end pb-1 pointer-events-none">
+            <span className="text-3xl font-black font-outfit leading-none" style={{ color: statusColor }}>
+              {total > 0 ? Math.round(diversionRate) : '—'}<span className="text-sm text-gray-400">{total > 0 ? '%' : ''}</span>
+            </span>
+            <span className={`text-[8px] font-black uppercase tracking-widest mt-1 px-2 py-0.5 rounded-full ${statusBg}`} style={{ color: statusColor }}>
+              {total > 0 ? statusLabel : 'No Data'}
+            </span>
+          </div>
+        </div>
+
+        {/* Diverted vs Landfill legend */}
+        <div className="mt-3 grid grid-cols-2 gap-4 w-full">
+          <div className="flex justify-center items-center gap-2">
+            <div className="w-2 h-2 rounded-sm bg-[#22c55e]" />
+            <div className="flex flex-col">
+              <span className="text-[10px] font-black text-gray-900 leading-none">{diverted.toFixed(1)} kg</span>
+              <span className="text-[8px] text-gray-400 font-bold uppercase tracking-tighter">Diverted (Wet+Dry)</span>
+            </div>
+          </div>
+          <div className="flex justify-center items-center gap-2">
+            <div className="w-2 h-2 rounded-sm bg-[#ef4444]" />
+            <div className="flex flex-col">
+              <span className="text-[10px] font-black text-gray-900 leading-none">{landfill.toFixed(1)} kg</span>
+              <span className="text-[8px] text-gray-400 font-bold uppercase tracking-tighter">Landfill Stream</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Proportional breakdown bar */}
+        {total > 0 && (
+          <div className="mt-3 w-full">
+            <div className="flex h-2 rounded-full overflow-hidden bg-gray-100">
+              {materialData.wet > 0 && <div className="bg-[#22c55e]" style={{ width: `${(materialData.wet / total) * 100}%` }} title={`Wet: ${materialData.wet}kg`} />}
+              {materialData.dry > 0 && <div className="bg-[#3b82f6]" style={{ width: `${(materialData.dry / total) * 100}%` }} title={`Dry: ${materialData.dry}kg`} />}
+              {materialData.mixed > 0 && <div className="bg-[#6b7280]" style={{ width: `${(materialData.mixed / total) * 100}%` }} title={`Mixed: ${materialData.mixed}kg`} />}
+              {materialData.sanitary > 0 && <div className="bg-[#ec4899]" style={{ width: `${(materialData.sanitary / total) * 100}%` }} title={`Sanitary: ${materialData.sanitary}kg`} />}
+              {materialData.specialCare > 0 && <div className="bg-[#f59e0b]" style={{ width: `${(materialData.specialCare / total) * 100}%` }} title={`Special Care: ${materialData.specialCare}kg`} />}
+            </div>
+            <div className="flex flex-wrap justify-center gap-x-3 gap-y-1 mt-2">
+              {[
+                { label: 'Wet', value: materialData.wet, color: '#22c55e' },
+                { label: 'Dry', value: materialData.dry, color: '#3b82f6' },
+                { label: 'Mixed', value: materialData.mixed, color: '#6b7280' },
+                { label: 'Sanitary', value: materialData.sanitary, color: '#ec4899' },
+                { label: 'Special', value: materialData.specialCare, color: '#f59e0b' },
+              ].filter(i => i.value > 0).map(item => (
+                <div key={item.label} className="flex items-center gap-1">
+                  <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: item.color }} />
+                  <span className="text-[8px] font-bold text-gray-500 uppercase">{item.label}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
     </PremiumReportCard>
   );
@@ -1291,10 +1397,10 @@ const CreateCollectorDialog = ({ villageId }: { villageId: string }) => {
       setFormData({ name: "", phone: "" });
       setOpen(false);
     },
-    onError: (error: any) => {
+    onError: (_error: unknown) => {
       toast({
         title: t("messages.operationFailed"),
-        description: error.message,
+        description: "Could not complete the operation. Please try again.",
         variant: "destructive",
       });
     },
@@ -1450,14 +1556,55 @@ const ReportsTabContent = ({
   filters,
   updateFilter,
   reportData,
-  isLoading
+  isLoading,
+  villageName,
+  villageId,
+  managerName
 }: {
   filters: any;
   updateFilter: (k: any, v: any) => void;
   reportData: any;
   isLoading: boolean;
+  villageName: string;
+  villageId: string;
+  managerName: string;
 }) => {
-  const targetDate = filters.date || format(new Date(), 'yyyy-MM-dd');
+  const [pdfGenerating, setPdfGenerating] = React.useState(false);
+  const [pdfProgress, setPdfProgress] = React.useState("");
+  const { toast } = useToast();
+
+  const handleDownloadPDF = async () => {
+    if (!reportData || pdfGenerating) return;
+    setPdfGenerating(true);
+    setPdfProgress("Preparing...");
+    try {
+      const pdfData: PDFReportData = {
+        villageName,
+        villageId,
+        date: targetDate,
+        managerName,
+        kpis: reportData.kpis,
+        pulses: reportData.pulses,
+        wardPerformance: reportData.wardPerformance,
+        materialData: reportData.materialData,
+        vehicleStats: reportData.vehicleStats,
+        collectionTimeline: reportData.collectionTimeline,
+      };
+      await generateDailyReportPDF(pdfData, setPdfProgress);
+      toast({ title: "✅ Daily report PDF downloaded!" });
+    } catch (_err) {
+      toast({ title: "Failed to generate PDF", variant: "destructive" });
+    } finally {
+      setPdfGenerating(false);
+      setPdfProgress("");
+    }
+  };
+  const targetDate = useMemo(() => {
+    if (filters.date) return filters.date;
+    const istOffset = 5.5 * 60 * 60 * 1000;
+    const nowIst = new Date(Date.now() + istOffset);
+    return nowIst.toISOString().split('T')[0];
+  }, [filters.date]);
 
   if (isLoading) {
     return (
@@ -1476,7 +1623,8 @@ const ReportsTabContent = ({
     { name: 'Wet', value: materialData.wet, color: '#22c55e' },
     { name: 'Dry', value: materialData.dry, color: '#3b82f6' },
     { name: 'Sanitary', value: materialData.sanitary, color: '#ec4899' },
-    { name: 'SpecialCare', value: materialData.rejected, color: '#ef4444' },
+    { name: 'Special Care', value: materialData.specialCare, color: '#f59e0b' },
+    { name: 'Mixed', value: materialData.mixed, color: '#6b7280' },
   ];
 
   return (
@@ -1485,6 +1633,32 @@ const ReportsTabContent = ({
         date={targetDate}
         onChange={(d) => updateFilter("date", d)}
       />
+
+      {/* PDF Download Button */}
+      {reportData && (
+        <div className="flex justify-center mb-2">
+          <button
+            onClick={handleDownloadPDF}
+            disabled={pdfGenerating}
+            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all active:scale-95 ${pdfGenerating
+              ? 'bg-gray-100 text-gray-400 cursor-wait'
+              : 'bg-emerald-600 text-white hover:bg-emerald-700 shadow-sm hover:shadow-md'
+              }`}
+          >
+            {pdfGenerating ? (
+              <>
+                <div className="w-3.5 h-3.5 border-2 border-gray-300 border-t-gray-500 rounded-full animate-spin" />
+                {pdfProgress || 'Generating...'}
+              </>
+            ) : (
+              <>
+                <Download className="h-3.5 w-3.5" />
+                Download PDF Report
+              </>
+            )}
+          </button>
+        </div>
+      )}
 
       <motion.div
         className="px-2 sm:px-6 space-y-3 max-w-5xl mx-auto w-full"
@@ -1533,6 +1707,13 @@ const ReportsTabContent = ({
             </div>
           )}
         </section>
+
+        {/* Section 3.5: Waste Diversion Rate — only when material data logged */}
+        {materialData.isLogged && (
+          <section>
+            <WasteDiversionGauge materialData={materialData} />
+          </section>
+        )}
 
         {/* Section 4: Wards */}
         <section>
@@ -1606,6 +1787,859 @@ const ReportsTabContent = ({
   );
 };
 
+// ═══════════════════════════════════════════
+// Household Performance Monitor
+// ═══════════════════════════════════════════
+const DEFAULT_THRESHOLDS = { minAvgRating: 3, maxMixed7Days: 3, maxInactiveDays: 21 };
+
+function getHouseholdFlag(stats: any, thresholds: any) {
+  if (stats.totalCollections === 0) return { flag: 'no_data', reasons: ['No collections recorded'] };
+
+  const reasons: string[] = [];
+  const t = thresholds || DEFAULT_THRESHOLDS;
+
+  if (stats.avgRatingLast10 && parseFloat(stats.avgRatingLast10) < t.minAvgRating) {
+    reasons.push(`Avg rating ${parseFloat(stats.avgRatingLast10).toFixed(1)} (min: ${t.minAvgRating})`);
+  }
+  if (stats.mixedCountLast7 > t.maxMixed7Days) {
+    reasons.push(`Mixed waste ${stats.mixedCountLast7}x this week (max: ${t.maxMixed7Days})`);
+  }
+  // Only apply inactivity when totalCollections >= 3
+  if (stats.totalCollections >= 3 && stats.daysSinceLastCollection > t.maxInactiveDays) {
+    reasons.push(`Inactive for ${stats.daysSinceLastCollection} days (max: ${t.maxInactiveDays})`);
+  }
+
+  return reasons.length > 0
+    ? { flag: 'needs_attention', reasons }
+    : { flag: 'good', reasons: [] };
+}
+
+function HouseholdPerformance({ onBack, villageId }: { onBack: () => void; villageId: string }) {
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const [activeFilter, setActiveFilter] = useState<string>('all_flagged');
+  const [wardFilter, setWardFilter] = useState<string>('all');
+  const [showSettings, setShowSettings] = useState(false);
+  const [thresholdForm, setThresholdForm] = useState(DEFAULT_THRESHOLDS);
+
+  // Fetch stats + thresholds
+  const { data, isLoading } = useQuery<any>({
+    queryKey: ['/api/behaviour/stats', villageId, wardFilter],
+    queryFn: async () => {
+      const url = wardFilter !== 'all'
+        ? `/api/behaviour/stats?ward=${encodeURIComponent(wardFilter)}`
+        : '/api/behaviour/stats';
+      const response = await fetch(url, { credentials: 'include' });
+      if (!response.ok) throw new Error('Failed');
+      return response.json();
+    },
+  });
+
+  const updateThresholdsMutation = useMutation({
+    mutationFn: async (t: any) => {
+      const response = await apiRequest('PUT', '/api/behaviour/thresholds', t);
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({ title: 'Thresholds updated' });
+      queryClient.invalidateQueries({ queryKey: ['/api/behaviour/stats'] });
+      setShowSettings(false);
+    },
+    onError: () => {
+      toast({ title: 'Failed to update', variant: 'destructive' });
+    },
+  });
+
+  const stats = data?.stats || [];
+  const thresholds = data?.thresholds || DEFAULT_THRESHOLDS;
+
+  // Compute flags for each household
+  const flaggedStats = stats.map((s: any) => ({
+    ...s,
+    ...getHouseholdFlag(s, thresholds),
+    participationRate: Math.round((s.collectionsLast7 / 7) * 100),
+  }));
+
+  const needsAttention = flaggedStats.filter((s: any) => s.flag === 'needs_attention');
+  const good = flaggedStats.filter((s: any) => s.flag === 'good');
+  const noData = flaggedStats.filter((s: any) => s.flag === 'no_data');
+
+  // Apply filter
+  const filtered = (() => {
+    switch (activeFilter) {
+      case 'all_flagged': return needsAttention;
+      case 'low_rating': return needsAttention.filter((s: any) =>
+        s.avgRatingLast10 && parseFloat(s.avgRatingLast10) < thresholds.minAvgRating);
+      case 'mixed_waste': return needsAttention.filter((s: any) =>
+        s.mixedCountLast7 > thresholds.maxMixed7Days);
+      case 'inactive': return needsAttention.filter((s: any) =>
+        s.totalCollections >= 3 && s.daysSinceLastCollection > thresholds.maxInactiveDays);
+      case 'never': return noData;
+      case 'good': return good;
+      default: return needsAttention;
+    }
+  })();
+
+  // Get unique wards
+  const wards = Array.from(new Set(stats.map((s: any) => s.ward))).sort() as string[];
+
+  return (
+    <div className="flex flex-col h-full">
+      {/* Header */}
+      <div className="flex items-center gap-2 p-3 pb-2">
+        <button onClick={onBack} className="p-1.5 rounded-full hover:bg-gray-100">
+          <ArrowLeft className="h-5 w-5 text-gray-600" />
+        </button>
+        <h2 className="text-sm font-black uppercase tracking-tight text-gray-900 flex-1">Household Performance</h2>
+        <button onClick={() => { setThresholdForm(thresholds); setShowSettings(true); }}
+          className="p-1.5 rounded-full hover:bg-gray-100">
+          <Settings className="h-4 w-4 text-gray-500" />
+        </button>
+      </div>
+
+      {/* Summary counters */}
+      <div className="flex gap-2 px-3 pb-2">
+        <button onClick={() => setActiveFilter('all_flagged')}
+          className={`flex-1 rounded-xl p-2 text-center transition-all ${activeFilter === 'all_flagged' ? 'ring-2 ring-red-400' : ''} bg-red-50`}>
+          <div className="text-lg font-bold text-red-700">{needsAttention.length}</div>
+          <div className="text-[10px] font-bold text-red-600 uppercase">Attention</div>
+        </button>
+        <button onClick={() => setActiveFilter('good')}
+          className={`flex-1 rounded-xl p-2 text-center transition-all ${activeFilter === 'good' ? 'ring-2 ring-green-400' : ''} bg-green-50`}>
+          <div className="text-lg font-bold text-green-700">{good.length}</div>
+          <div className="text-[10px] font-bold text-green-600 uppercase">Good</div>
+        </button>
+        <button onClick={() => setActiveFilter('never')}
+          className={`flex-1 rounded-xl p-2 text-center transition-all ${activeFilter === 'never' ? 'ring-2 ring-gray-400' : ''} bg-gray-50`}>
+          <div className="text-lg font-bold text-gray-700">{noData.length}</div>
+          <div className="text-[10px] font-bold text-gray-500 uppercase">No Data</div>
+        </button>
+        <div className="flex-1 bg-blue-50 rounded-xl p-2 text-center">
+          <div className="text-lg font-bold text-blue-700">{stats.length}</div>
+          <div className="text-[10px] font-bold text-blue-500 uppercase">Total</div>
+        </div>
+      </div>
+
+      {/* Filter tabs */}
+      <div className="flex gap-1.5 px-3 pb-2 overflow-x-auto">
+        {[
+          { id: 'all_flagged', label: 'All Flagged' },
+          { id: 'low_rating', label: 'Low Rating' },
+          { id: 'mixed_waste', label: 'Mixed Waste' },
+          { id: 'inactive', label: 'Inactive' },
+          { id: 'never', label: 'Never' },
+          { id: 'good', label: 'Good' },
+        ].map(({ id, label }) => (
+          <button
+            key={id}
+            onClick={() => setActiveFilter(id)}
+            className={`px-3 py-1 text-[10px] font-bold rounded-full whitespace-nowrap transition-all ${activeFilter === id ? 'bg-gray-900 text-white' : 'bg-gray-100 text-gray-600'
+              }`}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+
+      {/* Ward filter */}
+      {wards.length > 1 && (
+        <div className="px-3 pb-2">
+          <select
+            value={wardFilter}
+            onChange={(e) => setWardFilter(e.target.value)}
+            className="w-full text-xs border rounded-lg px-2 py-1.5 bg-gray-50"
+          >
+            <option value="all">All Wards</option>
+            {wards.map(w => <option key={w} value={w}>{w}</option>)}
+          </select>
+        </div>
+      )}
+
+      {/* List */}
+      <div className="flex-1 overflow-y-auto px-3 pb-4 space-y-2">
+        {isLoading ? (
+          <div className="text-center py-12 text-sm text-gray-400">Loading...</div>
+        ) : filtered.length === 0 ? (
+          <div className="text-center py-12">
+            <TrendingUp className="h-10 w-10 text-gray-200 mx-auto mb-3" />
+            <p className="text-sm text-gray-500">No households in this category</p>
+          </div>
+        ) : (
+          filtered.map((h: any) => (
+            <div key={h.householdId} className="bg-white border border-gray-200 rounded-xl p-3">
+              <div className="flex items-start justify-between mb-1">
+                <div>
+                  <p className="text-sm font-bold text-gray-800">{h.headName}</p>
+                  <p className="text-[10px] text-gray-400">
+                    {h.houseNumber ? `#${h.houseNumber} · ` : ''}{h.ward} · {h.uid}
+                  </p>
+                </div>
+                <div className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${h.flag === 'needs_attention' ? 'bg-red-100 text-red-700' :
+                  h.flag === 'good' ? 'bg-green-100 text-green-700' :
+                    'bg-gray-100 text-gray-500'
+                  }`}>
+                  {h.flag === 'needs_attention' ? '🔴' : h.flag === 'good' ? '🟢' : '⚪'}
+                </div>
+              </div>
+
+              {/* Flag reasons */}
+              {h.reasons.length > 0 && h.flag === 'needs_attention' && (
+                <div className="space-y-0.5 mb-2">
+                  {h.reasons.map((r: string, i: number) => (
+                    <p key={i} className="text-[11px] text-red-600 font-medium">⚠ {r}</p>
+                  ))}
+                </div>
+              )}
+
+              {/* Stats row */}
+              <div className="flex items-center gap-3 text-[10px] text-gray-500">
+                {h.lastCollectionDate ? (
+                  <span>Last: {h.daysSinceLastCollection === 0 ? 'today' :
+                    h.daysSinceLastCollection === 1 ? 'yesterday' :
+                      `${h.daysSinceLastCollection}d ago`}
+                    {h.lastCollectionType === 'mixed' ? ' 🟤' : ' 🟢'}
+                  </span>
+                ) : (
+                  <span>Never collected</span>
+                )}
+                <span className="text-gray-300">|</span>
+                <span>⭐{h.avgRatingLast10 ? parseFloat(h.avgRatingLast10).toFixed(1) : '—'}</span>
+                <span className="text-gray-300">|</span>
+                <span>7d: {h.collectionsLast7}</span>
+                <span className="text-gray-300">|</span>
+                <span>{h.participationRate}%</span>
+              </div>
+            </div>
+          ))
+        )}
+      </div>
+
+      {/* Threshold settings dialog */}
+      {showSettings && (
+        <Dialog open={showSettings} onOpenChange={setShowSettings}>
+          <DialogContent className="max-w-[95vw] sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>Monitoring Thresholds</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <p className="text-xs text-gray-500">Configure when a household gets flagged for attention.</p>
+              <div>
+                <Label>Min avg segregation rating (1–5)</Label>
+                <Input type="number" min={1} max={5} step={0.5}
+                  value={thresholdForm.minAvgRating}
+                  onChange={(e) => setThresholdForm({ ...thresholdForm, minAvgRating: parseFloat(e.target.value) })} />
+              </div>
+              <div>
+                <Label>Max mixed waste per 7 days</Label>
+                <Input type="number" min={0}
+                  value={thresholdForm.maxMixed7Days}
+                  onChange={(e) => setThresholdForm({ ...thresholdForm, maxMixed7Days: parseInt(e.target.value) })} />
+              </div>
+              <div>
+                <Label>Max inactive days</Label>
+                <Input type="number" min={1}
+                  value={thresholdForm.maxInactiveDays}
+                  onChange={(e) => setThresholdForm({ ...thresholdForm, maxInactiveDays: parseInt(e.target.value) })} />
+              </div>
+              <Button
+                onClick={() => updateThresholdsMutation.mutate(thresholdForm)}
+                disabled={updateThresholdsMutation.isPending}
+                className="w-full"
+              >
+                {updateThresholdsMutation.isPending ? 'Saving...' : 'Save Thresholds'}
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════
+// Staff Screen — Manage Helpers & Segregators
+// ═══════════════════════════════════════════
+const WORK_TYPE_OPTIONS = [
+  { value: 'compost_helper', label: 'Compost Helper' },
+  { value: 'sweeper', label: 'Sweeper' },
+  { value: 'driver', label: 'Driver' },
+  { value: 'loader', label: 'Loader' },
+  { value: 'garden_worker', label: 'Garden Worker' },
+  { value: 'drain_cleaner', label: 'Drain Cleaner' },
+];
+
+function StaffScreen({ onBack, staffType, title }: { onBack: () => void; staffType: 'helper' | 'segregator'; title: string }) {
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const [showForm, setShowForm] = useState(false);
+  const [name, setName] = useState('');
+  const [phone, setPhone] = useState('');
+  const [workType, setWorkType] = useState('compost_helper');
+  const [confirmDeleteId, setConfirmDeleteId] = useState<number | null>(null);
+  const [confirmDeleteName, setConfirmDeleteName] = useState('');
+
+  const { data: staff = [], isLoading } = useQuery<any[]>({
+    queryKey: ['/api/staff', staffType],
+    queryFn: async () => {
+      const res = await fetch(`/api/staff?type=${staffType}`, { credentials: 'include' });
+      if (!res.ok) throw new Error('Failed');
+      return res.json();
+    },
+  });
+
+  const createMutation = useMutation({
+    mutationFn: async () => {
+      const res = await apiRequest('POST', '/api/staff', {
+        name,
+        phone: phone || undefined,
+        staffType,
+        workType: staffType === 'helper' ? workType : undefined,
+      });
+      return res.json();
+    },
+    onSuccess: (data) => {
+      toast({ title: `${staffType === 'helper' ? 'Helper' : 'Segregator'} Added`, description: data.name });
+      queryClient.invalidateQueries({ queryKey: ['/api/staff'] });
+      setShowForm(false);
+      setName('');
+      setPhone('');
+    },
+    onError: () => {
+      toast({ title: 'Failed to add staff', variant: 'destructive' });
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async (id: number) => {
+      const res = await apiRequest('DELETE', `/api/staff/${id}`);
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/staff'] });
+      toast({ title: 'Staff removed' });
+    },
+  });
+
+  return (
+    <div className="flex flex-col h-full">
+      <div className="flex items-center gap-2 p-3 pb-2">
+        <button onClick={onBack} className="p-1.5 rounded-full hover:bg-gray-100">
+          <ArrowLeft className="h-5 w-5 text-gray-600" />
+        </button>
+        <h2 className="text-sm font-black uppercase tracking-tight text-gray-900 flex-1">{title}</h2>
+        <span className="text-xs text-gray-400 font-bold">{staff.length} total</span>
+      </div>
+
+      <div className="flex-1 overflow-y-auto px-3 pb-4 space-y-2">
+        {isLoading ? (
+          <div className="text-center py-12 text-sm text-gray-400">Loading...</div>
+        ) : staff.length === 0 ? (
+          <div className="text-center py-12">
+            <Users className="h-10 w-10 text-gray-200 mx-auto mb-3" />
+            <p className="text-sm text-gray-500">No {title.toLowerCase()} added yet</p>
+          </div>
+        ) : (
+          staff.map((s: any) => (
+            <div key={s.id} className="bg-white border border-gray-200 rounded-xl p-3 flex items-center gap-3">
+              <div className="w-9 h-9 rounded-full bg-green-100 flex items-center justify-center text-green-700 font-bold text-sm flex-shrink-0">
+                {s.name.charAt(0).toUpperCase()}
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-bold text-gray-800 truncate">{s.name}</p>
+                <div className="flex items-center gap-1.5">
+                  <p className="text-[10px] text-gray-400 uppercase">{s.uid}</p>
+                  {s.workType && (
+                    <span className="text-[9px] bg-blue-50 text-blue-600 font-bold px-1.5 py-0.5 rounded-full uppercase">
+                      {s.workType.replace(/_/g, ' ')}
+                    </span>
+                  )}
+                </div>
+              </div>
+              {s.phone && (
+                <a
+                  href={`tel:${s.phone}`}
+                  className="w-8 h-8 rounded-full bg-green-50 flex items-center justify-center text-green-600 hover:bg-green-100 active:scale-95 transition-all flex-shrink-0"
+                >
+                  <Phone className="h-3.5 w-3.5" />
+                </a>
+              )}
+              <button
+                onClick={() => {
+                  setConfirmDeleteId(s.id);
+                  setConfirmDeleteName(s.name);
+                }}
+                className="w-8 h-8 rounded-full bg-red-50 flex items-center justify-center text-red-400 hover:bg-red-100 active:scale-95 transition-all flex-shrink-0"
+              >
+                <Trash2 className="h-3.5 w-3.5" />
+              </button>
+            </div>
+          ))
+        )}
+      </div>
+
+      <div className="px-3 pb-3">
+        <button
+          onClick={() => setShowForm(true)}
+          className="w-full py-2.5 text-xs font-bold text-gray-500 bg-gray-50 border border-gray-200 rounded-xl hover:bg-gray-100"
+        >
+          + Add {staffType === 'helper' ? 'Helper' : 'Waste Segregator'}
+        </button>
+      </div>
+
+      {showForm && (
+        <Dialog open={showForm} onOpenChange={setShowForm}>
+          <DialogContent className="max-w-[95vw] sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>Add {staffType === 'helper' ? 'Helper' : 'Waste Segregator'}</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div>
+                <Label>Full Name *</Label>
+                <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Enter full name" />
+              </div>
+              <div>
+                <Label>Mobile Number</Label>
+                <Input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="10-digit number" type="tel" />
+              </div>
+              {staffType === 'helper' && (
+                <div>
+                  <Label>Work Type</Label>
+                  <select
+                    value={workType}
+                    onChange={(e) => setWorkType(e.target.value)}
+                    className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white"
+                  >
+                    {WORK_TYPE_OPTIONS.map((opt) => (
+                      <option key={opt.value} value={opt.value}>{opt.label}</option>
+                    ))}
+                  </select>
+                </div>
+              )}
+              <Button
+                onClick={() => createMutation.mutate()}
+                disabled={!name.trim() || createMutation.isPending}
+                className="w-full"
+              >
+                {createMutation.isPending ? 'Adding...' : `Add ${staffType === 'helper' ? 'Helper' : 'Segregator'}`}
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
+
+      <ConfirmDialog
+        open={confirmDeleteId !== null}
+        onOpenChange={(open) => { if (!open) setConfirmDeleteId(null); }}
+        title={`Remove ${confirmDeleteName}?`}
+        description="This staff member will be removed from the system."
+        confirmLabel="Remove"
+        variant="danger"
+        onConfirm={() => {
+          if (confirmDeleteId !== null) deleteMutation.mutate(confirmDeleteId);
+          setConfirmDeleteId(null);
+        }}
+      />
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════
+// Attendance Screen — Mark attendance + view shifts
+// ═══════════════════════════════════════════
+function AttendanceScreen({ onBack, villageId, mode = 'mark' }: { onBack: () => void; villageId: string; mode?: 'centers' | 'mark' | 'shifts' }) {
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const [workerType, setWorkerType] = useState<'collector' | 'helper' | 'segregator'>('collector');
+  const [attDate, setAttDate] = useState(() => {
+    const istOffset = 5.5 * 60 * 60 * 1000;
+    return new Date(Date.now() + istOffset).toISOString().split('T')[0];
+  });
+  const [showCenterForm, setShowCenterForm] = useState(false);
+  const [centerName, setCenterName] = useState('');
+  const [centerRadius, setCenterRadius] = useState('200');
+  const [rotateConfirm, setRotateConfirm] = useState<number | null>(null);
+
+  // Fetch daily attendance + shift data
+  const { data: dailyData, isLoading } = useQuery<any>({
+    queryKey: ['/api/attendance/daily', villageId, attDate, workerType],
+    enabled: mode !== 'centers',
+    queryFn: async () => {
+      const response = await fetch(`/api/attendance/daily?date=${attDate}&workerType=${workerType}`, { credentials: 'include' });
+      if (!response.ok) throw new Error('Failed to fetch attendance');
+      return response.json();
+    },
+  });
+
+  // Fetch centers
+  const { data: centers = [] } = useQuery<any[]>({
+    queryKey: ['/api/attendance/centers', villageId],
+    queryFn: async () => {
+      const response = await fetch('/api/attendance/centers', { credentials: 'include' });
+      if (!response.ok) throw new Error('Failed');
+      return response.json();
+    },
+  });
+
+  // Mark attendance mutation
+  const markMutation = useMutation({
+    mutationFn: async (data: { workerId: string; workerName: string; status: string }) => {
+      const response = await apiRequest('POST', '/api/attendance/mark', {
+        ...data,
+        attendanceDate: attDate,
+      });
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/attendance/daily'] });
+    },
+    onError: () => {
+      toast({ title: 'Failed to mark attendance', variant: 'destructive' });
+    },
+  });
+
+  // Create center mutation
+  const createCenterMutation = useMutation({
+    mutationFn: async () => {
+      const position = await new Promise<GeolocationPosition>((resolve, reject) => {
+        navigator.geolocation.getCurrentPosition(resolve, reject, {
+          enableHighAccuracy: true, timeout: 10000, maximumAge: 0,
+        });
+      });
+      const response = await apiRequest('POST', '/api/attendance/centers', {
+        name: centerName,
+        latitude: position.coords.latitude,
+        longitude: position.coords.longitude,
+        radiusMeters: parseInt(centerRadius) || 200,
+      });
+      return response.json();
+    },
+    onSuccess: (data) => {
+      toast({ title: 'Center Created', description: `${data.name} — QR poster downloading...` });
+      queryClient.invalidateQueries({ queryKey: ['/api/attendance/centers'] });
+      setShowCenterForm(false);
+      setCenterName('');
+      // Auto-download QR poster for new center
+      setTimeout(() => window.open(`/api/attendance/centers/${data.id}/qr`, '_blank'), 500);
+    },
+    onError: (_error: unknown) => {
+      toast({ title: 'Failed', description: 'Could not create center. Please try again.', variant: 'destructive' });
+    },
+  });
+
+  // Rotate QR mutation
+  const rotateMutation = useMutation({
+    mutationFn: async (centerId: number) => {
+      const response = await apiRequest('PUT', `/api/attendance/centers/${centerId}/rotate-qr`);
+      return response.json();
+    },
+    onSuccess: (_data, centerId) => {
+      toast({ title: 'QR Rotated', description: 'New QR poster downloading. Please remove the old one and print this.' });
+      queryClient.invalidateQueries({ queryKey: ['/api/attendance/centers'] });
+      setRotateConfirm(null);
+      // Auto-download new QR after rotation
+      setTimeout(() => window.open(`/api/attendance/centers/${centerId}/qr`, '_blank'), 500);
+    },
+    onError: () => {
+      toast({ title: 'Failed to rotate QR', variant: 'destructive' });
+    },
+  });
+
+  const workers = dailyData?.workers || [];
+  const presentCount = workers.filter((w: any) => w.attendance === 'present').length;
+  const halfCount = workers.filter((w: any) => w.attendance === 'half_day').length;
+  const absentCount = workers.filter((w: any) => w.attendance === 'absent').length;
+
+  // Worker type toggle (for mark and shifts modes)
+  const WorkerTypeToggle = () => (
+    <div className="flex mx-3 mb-3 bg-gray-100 rounded-xl p-1">
+      {([
+        { type: 'collector' as const, label: 'Collectors' },
+        { type: 'helper' as const, label: 'Helpers' },
+        { type: 'segregator' as const, label: 'Segregators' },
+      ]).map(({ type, label }) => (
+        <button
+          key={type}
+          onClick={() => setWorkerType(type)}
+          className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all ${workerType === type ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500'}`}
+        >
+          {label}
+        </button>
+      ))}
+    </div>
+  );
+
+  return (
+    <div className="flex flex-col h-full">
+      {/* Header */}
+      <div className="flex items-center gap-2 p-3 pb-2">
+        <button onClick={onBack} className="p-1.5 rounded-full hover:bg-gray-100">
+          <ArrowLeft className="h-5 w-5 text-gray-600" />
+        </button>
+        <h2 className="text-sm font-black uppercase tracking-tight text-gray-900 flex-1">
+          {mode === 'centers' ? 'Attendance Centers' : mode === 'mark' ? 'Mark Attendance' : 'View Shifts'}
+        </h2>
+        {mode !== 'centers' && (
+          <input
+            type="date"
+            value={attDate}
+            onChange={(e) => setAttDate(e.target.value)}
+            className="text-xs border rounded-lg px-2 py-1.5 bg-gray-50"
+          />
+        )}
+      </div>
+
+      {/* ── CENTERS MODE ── */}
+      {mode === 'centers' && (
+        <div className="flex-1 overflow-y-auto px-3 pb-4 space-y-3">
+          {centers.length === 0 ? (
+            <div className="text-center py-12">
+              <MapPin className="h-10 w-10 text-gray-200 mx-auto mb-3" />
+              <p className="text-sm text-gray-500">No attendance centers yet</p>
+            </div>
+          ) : (
+            centers.map((c: any) => (
+              <div key={c.id} className="bg-white border border-gray-200 rounded-xl p-4 space-y-3">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-bold text-gray-800">{c.name}</p>
+                    <p className="text-[10px] text-gray-400">{c.radiusMeters}m radius</p>
+                  </div>
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => window.open(`/api/attendance/centers/${c.id}/qr`, '_blank')}
+                    className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg bg-green-600 hover:bg-green-700 text-white text-[11px] font-bold uppercase tracking-wider shadow-sm active:scale-95 transition-all"
+                  >
+                    <Download className="h-3.5 w-3.5" />
+                    Download QR
+                  </button>
+                  <button
+                    onClick={() => setRotateConfirm(c.id)}
+                    className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg bg-orange-50 hover:bg-orange-100 text-orange-700 text-[11px] font-bold border border-orange-200 active:scale-95 transition-all"
+                  >
+                    <RefreshCw className="h-3.5 w-3.5" />
+                    Rotate QR
+                  </button>
+                </div>
+              </div>
+            ))
+          )}
+          <button
+            onClick={() => setShowCenterForm(true)}
+            className="w-full py-2.5 text-xs font-bold text-gray-500 bg-gray-50 border border-gray-200 rounded-xl hover:bg-gray-100"
+          >
+            + Add Attendance Center
+          </button>
+        </div>
+      )}
+
+      {/* ── MARK MODE ── */}
+      {mode === 'mark' && (
+        <>
+          {/* Summary */}
+          <div className="flex gap-2 px-3 pb-2">
+            <div className="flex-1 bg-green-50 rounded-xl p-2 text-center">
+              <div className="text-lg font-bold text-green-700">{presentCount}</div>
+              <div className="text-[10px] font-bold text-green-600 uppercase">Present</div>
+            </div>
+            <div className="flex-1 bg-yellow-50 rounded-xl p-2 text-center">
+              <div className="text-lg font-bold text-yellow-700">{halfCount}</div>
+              <div className="text-[10px] font-bold text-yellow-600 uppercase">Half Day</div>
+            </div>
+            <div className="flex-1 bg-red-50 rounded-xl p-2 text-center">
+              <div className="text-lg font-bold text-red-700">{absentCount}</div>
+              <div className="text-[10px] font-bold text-red-600 uppercase">Absent</div>
+            </div>
+            <div className="flex-1 bg-gray-50 rounded-xl p-2 text-center">
+              <div className="text-lg font-bold text-gray-700">{workers.length}</div>
+              <div className="text-[10px] font-bold text-gray-500 uppercase">Total</div>
+            </div>
+          </div>
+
+          <WorkerTypeToggle />
+
+          <div className="flex-1 overflow-y-auto px-3 pb-4 space-y-2">
+            {isLoading ? (
+              <div className="text-center py-12 text-sm text-gray-400">Loading...</div>
+            ) : workers.length === 0 ? (
+              <div className="text-center py-12">
+                <Clock className="h-10 w-10 text-gray-200 mx-auto mb-3" />
+                <p className="text-sm text-gray-500">No {workerType}s found</p>
+              </div>
+            ) : (
+              workers.map((worker: any) => (
+                <div key={worker.workerId} className="bg-white border border-gray-200 rounded-xl p-3">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-bold text-gray-800">{worker.workerName}</p>
+                      <p className="text-[10px] text-gray-400 uppercase">
+                        {worker.workerId}
+                        {worker.workType && ` · ${worker.workType.replace(/_/g, ' ')}`}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex gap-2 mt-2">
+                    {[
+                      { status: 'present', label: 'Present', bg: 'bg-green-500', bgOut: 'bg-green-50 text-green-700 border border-green-200' },
+                      { status: 'half_day', label: 'Half Day', bg: 'bg-yellow-500', bgOut: 'bg-yellow-50 text-yellow-700 border border-yellow-200' },
+                      { status: 'absent', label: 'Absent', bg: 'bg-red-500', bgOut: 'bg-red-50 text-red-700 border border-red-200' },
+                    ].map(({ status, label, bg, bgOut }) => (
+                      <button
+                        key={status}
+                        onClick={() => markMutation.mutate({ workerId: worker.workerId, workerName: worker.workerName, status })}
+                        disabled={markMutation.isPending}
+                        className={`flex-1 py-2 rounded-lg text-xs font-bold transition-all ${worker.attendance === status ? `${bg} text-white shadow-sm` : bgOut
+                          }`}
+                      >
+                        {label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        </>
+      )}
+
+      {/* ── SHIFTS MODE ── */}
+      {mode === 'shifts' && (
+        <>
+          <WorkerTypeToggle />
+
+          <div className="flex-1 overflow-y-auto px-3 pb-4 space-y-2">
+            {isLoading ? (
+              <div className="text-center py-12 text-sm text-gray-400">Loading...</div>
+            ) : workers.length === 0 ? (
+              <div className="text-center py-12">
+                <Clock className="h-10 w-10 text-gray-200 mx-auto mb-3" />
+                <p className="text-sm text-gray-500">No {workerType}s found</p>
+              </div>
+            ) : (
+              workers.map((worker: any) => (
+                <div key={worker.workerId} className="bg-white border border-gray-200 rounded-xl p-3">
+                  <div className="flex items-center justify-between mb-2">
+                    <div>
+                      <p className="text-sm font-bold text-gray-800">{worker.workerName}</p>
+                      {worker.workType && <p className="text-[10px] text-gray-400">{worker.workType.replace(/_/g, ' ')}</p>}
+                    </div>
+                    {worker.shifts.length > 0 ? (
+                      <Badge className="bg-green-100 text-green-700 text-[10px]">
+                        {worker.shifts.length} shift{worker.shifts.length > 1 ? 's' : ''}
+                      </Badge>
+                    ) : (
+                      <Badge className="bg-gray-100 text-gray-500 text-[10px]">No shifts</Badge>
+                    )}
+                  </div>
+                  {worker.shifts.length > 0 ? (
+                    <div className="space-y-1.5">
+                      {worker.shifts.map((shift: any) => {
+                        const startTime = shift.startedAt
+                          ? new Date(shift.startedAt).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true })
+                          : '—';
+                        const endTime = shift.endedAt
+                          ? new Date(shift.endedAt).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true })
+                          : null;
+                        const durationMin = shift.startedAt && shift.endedAt
+                          ? Math.round((new Date(shift.endedAt).getTime() - new Date(shift.startedAt).getTime()) / 60000)
+                          : null;
+                        const durationH = durationMin ? Math.floor(durationMin / 60) : null;
+                        const durationM = durationMin ? durationMin % 60 : null;
+
+                        return (
+                          <div key={shift.shiftNumber} className="flex items-center justify-between bg-gray-50 rounded-lg px-3 py-2">
+                            <div>
+                              <p className="text-xs font-bold text-gray-700">Shift #{shift.shiftNumber}</p>
+                              <p className="text-[11px] text-gray-500">
+                                {startTime} → {endTime || <span className="text-green-600 font-bold animate-pulse">Active</span>}
+                              </p>
+                            </div>
+                            <div>
+                              {durationMin != null ? (
+                                <Badge className="bg-blue-50 text-blue-700 text-[10px]">
+                                  {durationH! > 0 ? `${durationH}h ` : ''}{durationM}m
+                                </Badge>
+                              ) : !shift.endedAt ? (
+                                <Badge className="bg-green-100 text-green-700 text-[10px] animate-pulse">Active</Badge>
+                              ) : null}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    <p className="text-[11px] text-gray-400 italic">No shift scans recorded for this date</p>
+                  )}
+                </div>
+              ))
+            )}
+          </div>
+        </>
+      )}
+
+      {/* Center creation dialog */}
+      {showCenterForm && (
+        <Dialog open={showCenterForm} onOpenChange={setShowCenterForm}>
+          <DialogContent className="max-w-[95vw] sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>Create Attendance Center</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <p className="text-xs text-gray-500">Stand at the center location and tap create. Your current GPS will be used.</p>
+              <div>
+                <Label>Center Name</Label>
+                <Input value={centerName} onChange={(e) => setCenterName(e.target.value)} placeholder="e.g. Main Depot" />
+              </div>
+              <div>
+                <Label>Radius (meters)</Label>
+                <Input type="number" value={centerRadius} onChange={(e) => setCenterRadius(e.target.value)} placeholder="200" />
+              </div>
+              <Button
+                onClick={() => createCenterMutation.mutate()}
+                disabled={!centerName || createCenterMutation.isPending}
+                className="w-full"
+              >
+                {createCenterMutation.isPending ? 'Creating...' : 'Create Center (Use My Location)'}
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
+
+      {/* QR Rotation confirmation dialog */}
+      {rotateConfirm !== null && (
+        <Dialog open={rotateConfirm !== null} onOpenChange={() => setRotateConfirm(null)}>
+          <DialogContent className="max-w-[95vw] sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>Rotate QR Code?</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div className="bg-orange-50 border border-orange-200 rounded-lg p-3">
+                <p className="text-sm text-orange-800 font-medium">⚠️ Please note:</p>
+                <ul className="text-xs text-orange-700 mt-1 space-y-1 list-disc list-inside">
+                  <li>The old QR code will stop working immediately</li>
+                  <li>Remove the old QR poster from the center</li>
+                  <li>Print and paste the new QR at the center</li>
+                </ul>
+              </div>
+              <div className="flex gap-2">
+                <Button variant="outline" className="flex-1" onClick={() => setRotateConfirm(null)}>Cancel</Button>
+                <Button
+                  className="flex-1 bg-orange-600 hover:bg-orange-700"
+                  disabled={rotateMutation.isPending}
+                  onClick={() => rotateMutation.mutate(rotateConfirm)}
+                >
+                  {rotateMutation.isPending ? 'Rotating...' : 'Rotate & Download New QR'}
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
+    </div>
+  );
+}
+
 export default function ManagerDashboard() {
   const { user } = useAuth();
   const { toast } = useToast();
@@ -1618,6 +2652,7 @@ export default function ManagerDashboard() {
   const [householdApproachTab, setHouseholdApproachTab] = useState("details");
   const [qrFirstSubTab, setQrFirstSubTab] = useState("generate-batch");
   const [showPasswordDialog, setShowPasswordDialog] = useState(false);
+  const [sliderRadius, setSliderRadius] = useState<number | null>(null);
   const [moreDeleteConfirm, setMoreDeleteConfirm] = useState<{ label: string; onConfirm: () => void } | null>(null);
   const [selectedIssue, setSelectedIssue] = useState<Issue | null>(null);
   const [showIssueDialog, setShowIssueDialog] = useState(false);
@@ -1633,7 +2668,11 @@ export default function ManagerDashboard() {
   });
 
   // REDESIGNED: Collections tab state
-  const [collectionsDate, setCollectionsDate] = useState(new Date().toISOString().split('T')[0]);
+  const [collectionsDate, setCollectionsDate] = useState(() => {
+    const istOffset = 5.5 * 60 * 60 * 1000;
+    const nowIst = new Date(Date.now() + istOffset);
+    return nowIst.toISOString().split('T')[0];
+  });
   const [collectionsSearch, setCollectionsSearch] = useState("");
   const deferredCollectionsSearch = useDeferredValue(collectionsSearch);
   const [isCollectionsSearching, setIsCollectionsSearching] = useState(false);
@@ -1683,7 +2722,10 @@ export default function ManagerDashboard() {
   const { data: reportData, isLoading: isReportLoading } = useQuery({
     queryKey: ["/api/analytics/premium", user?.villageId, filters.date],
     queryFn: async () => {
-      const date = filters.date || new Date().toISOString().split('T')[0];
+      const istOffset = 5.5 * 60 * 60 * 1000;
+      const nowIst = new Date(Date.now() + istOffset);
+      const defaultDate = nowIst.toISOString().split('T')[0];
+      const date = filters.date || defaultDate;
       const response = await fetch(`/api/analytics/premium?village=${user?.villageId}&date=${date}`, { credentials: "include" });
       if (!response.ok) throw new Error("Failed to fetch premium report data");
       return response.json();
@@ -1753,7 +2795,7 @@ export default function ManagerDashboard() {
         justify-content:center;
       ">
         <img 
-          src="${h.qrCodeUrl}" 
+          src="/api/qr-codes/${h.uid}/image" 
           style="width:100%; height:100%; object-fit:contain;"
         />
       </div>
@@ -1799,8 +2841,7 @@ export default function ManagerDashboard() {
 
       toast({ title: "QR Card downloaded successfully" });
 
-    } catch (err) {
-      console.error(err);
+    } catch (_err) {
       toast({
         title: "Failed to download QR",
         variant: "destructive",
@@ -1822,10 +2863,10 @@ export default function ManagerDashboard() {
       setShowDeleteConfirm(false);
       setShowHouseholdDetails(false);
     },
-    onError: (error: any) => {
+    onError: (_error: unknown) => {
       toast({
         title: "Failed to delete household",
-        description: error.message,
+        description: "Could not delete household. Please try again.",
         variant: "destructive",
       });
     },
@@ -1868,7 +2909,7 @@ export default function ManagerDashboard() {
   // (Fetched above to support useMemo)
 
   // Total households count is the actual length since we fetch all
-  const totalHouseholdsCount = households.length;
+  const totalHouseholdsCount = households?.length ?? 0;
 
   const { data: collectorStats = [] } = useQuery<CollectorStats[]>({
     queryKey: ["/api/collectors/stats", user?.villageId],
@@ -1879,7 +2920,7 @@ export default function ManagerDashboard() {
   // (Fetched above to support useMemo)
 
   // Total collections count is the actual length since we fetch all
-  const totalCollectionsCount = allCollections.length;
+  const totalCollectionsCount = allCollections?.length ?? 0;
 
   // Paginated issues query with infinite scroll support
   const {
@@ -1982,10 +3023,10 @@ export default function ManagerDashboard() {
       queryClient.invalidateQueries({ queryKey: ["/api/issues/paginated"] });
       setShowIssueDialog(false);
     },
-    onError: (error: any) => {
+    onError: (_error: unknown) => {
       toast({
         title: "Failed to update issue",
-        description: error.message || "Please try again",
+        description: "Please try again.",
         variant: "destructive"
       });
     },
@@ -2007,8 +3048,8 @@ export default function ManagerDashboard() {
       setNewFieldWorkerName("");
       setNewFieldWorkerPhone("");
     },
-    onError: (error: any) => {
-      toast({ title: "Failed to create field worker", description: error.message, variant: "destructive" });
+    onError: (_error: unknown) => {
+      toast({ title: "Failed to create field worker", description: "Please try again.", variant: "destructive" });
     },
   });
 
@@ -2020,8 +3061,8 @@ export default function ManagerDashboard() {
       toast({ title: "Field worker deleted" });
       queryClient.invalidateQueries({ queryKey: ["/api/fieldworkers"] });
     },
-    onError: (error: any) => {
-      toast({ title: "Failed to delete field worker", description: error.message, variant: "destructive" });
+    onError: (_error: unknown) => {
+      toast({ title: "Failed to delete field worker", description: "Please try again.", variant: "destructive" });
     },
   });
 
@@ -2035,8 +3076,8 @@ export default function ManagerDashboard() {
       toast({ title: "QR Codes Generated", description: `Batch ${data.batchId} with ${data.qrCodes.length} QR codes created` });
       queryClient.invalidateQueries({ queryKey: ["/api/qr-codes"] });
     },
-    onError: (error: any) => {
-      toast({ title: "Failed to generate QR codes", description: error.message, variant: "destructive" });
+    onError: (_error: unknown) => {
+      toast({ title: "Failed to generate QR codes", description: "Please try again.", variant: "destructive" });
     },
   });
 
@@ -2094,10 +3135,10 @@ export default function ManagerDashboard() {
       toast({ title: "Password changed successfully" });
       setShowPasswordDialog(false);
     },
-    onError: (error: any) => {
+    onError: (_error: unknown) => {
       toast({
         title: "Failed to change password",
-        description: error.message,
+        description: "Please check your current password and try again.",
         variant: "destructive"
       });
     },
@@ -2112,10 +3153,10 @@ export default function ManagerDashboard() {
       setNewWard("");
       setShowWardForm(false);
     },
-    onError: (error: any) => {
+    onError: (_error: unknown) => {
       toast({
         title: "Error",
-        description: error.message || "Failed to add ward",
+        description: "Failed to add ward. It may already exist.",
         variant: "destructive",
       });
     },
@@ -2134,8 +3175,8 @@ export default function ManagerDashboard() {
       setSelectedVehicleCollectors([]);
       setShowVehicleForm(false);
     },
-    onError: (error: any) => {
-      toast({ title: "Error", description: error.message || "Failed to add vehicle", variant: "destructive" });
+    onError: (_error: unknown) => {
+      toast({ title: "Error", description: "Failed to add vehicle. Please try again.", variant: "destructive" });
     },
   });
 
@@ -2155,8 +3196,8 @@ export default function ManagerDashboard() {
       setSelectedVehicleCollectors([]);
       setShowVehicleForm(false);
     },
-    onError: (error: any) => {
-      toast({ title: "Error", description: error.message || "Failed to update vehicle", variant: "destructive" });
+    onError: (_error: unknown) => {
+      toast({ title: "Error", description: "Failed to update vehicle. Please try again.", variant: "destructive" });
     },
   });
 
@@ -2436,10 +3477,10 @@ export default function ManagerDashboard() {
               <img
                 src="/logos/logo-full.svg"
                 alt="GreenPath"
-                className="hidden md:block h-8 w-auto flex-shrink-0"
+                className="hidden md:block h-12 w-auto flex-shrink-0"
               />
-              <div className="flex flex-col justify-center min-w-0">
-                <span className="text-[10px] text-green-600 font-bold uppercase tracking-widest leading-none truncate">
+              <div className="sm:pl-10 flex flex-col justify-center min-w-0">
+                <span className="text-[10px] sm:text-[12px] text-green-600 font-bold uppercase tracking-widest leading-none truncate">
                   {villageData?.name || "GreenPath"}
                 </span>
                 <span className="text-lg font-bold text-gray-900 leading-tight truncate">
@@ -2448,20 +3489,29 @@ export default function ManagerDashboard() {
                       : activeMoreScreen === "download-qr" ? "Download QR Batches"
                         : activeMoreScreen === "collectors" ? "Collectors"
                           : activeMoreScreen === "fieldworkers" ? "Field Workers"
-                            : activeMoreScreen === "announcements" ? "Announcements"
-                              : activeMoreScreen === "daily-waste-logs" ? "Daily Waste Logs"
-                                : activeMoreScreen === "compost-logs" ? "Compost Logs"
-                                  : activeMoreScreen === "sales-logs" ? "Sales Logs"
-                                    : activeMoreScreen === "vehicles" ? "Vehicle Management"
-                                      : activeMoreScreen === "wards" ? "Wards Management"
-                                        : activeMoreScreen === "overall-reports" ? "Overall Reports"
-                                          : activeMoreScreen === "change-password" ? "Change Password"
-                                            : activeMoreScreen === "language" ? "Language"
-                                              : activeTab === "reports" ? "Daily Reports"
-                                                : activeTab === "collections" ? "Collections"
-                                                  : activeTab === "issues" ? "Issues"
-                                                    : activeTab === "more" ? "More"
-                                                      : "Dashboard"}
+                            : activeMoreScreen === "helpers" ? "Helpers"
+                              : activeMoreScreen === "segregators" ? "Waste Segregators"
+                                : activeMoreScreen === "announcements" ? "Announcements"
+                                  : activeMoreScreen === "daily-waste-logs" ? "Daily Waste Logs"
+                                    : activeMoreScreen === "compost-logs" ? "Compost Logs"
+                                      : activeMoreScreen === "sales-logs" ? "Sales Logs"
+                                        : activeMoreScreen === "vehicles" ? "Vehicle Management"
+                                          : activeMoreScreen === "wards" ? "Wards Management"
+                                            : activeMoreScreen === "village-settings" ? "Village Settings"
+                                              : activeMoreScreen === "payments-ledger" ? "Payment Ledger"
+                                                : activeMoreScreen === "payments-settings" ? "Payment Settings"
+                                                  : activeMoreScreen === "att-centers" ? "Attendance Centers"
+                                                    : activeMoreScreen === "att-mark" ? "Mark Attendance"
+                                                      : activeMoreScreen === "att-shifts" ? "View Shifts"
+                                                        : activeMoreScreen === "activity-log" ? "Activity Log"
+                                                          : activeMoreScreen === "data-export" ? "Data Export"
+                                                            : activeMoreScreen === "change-password" ? "Change Password"
+                                                              : activeMoreScreen === "language" ? "Language"
+                                                                : activeTab === "reports" ? "Daily Reports"
+                                                                  : activeTab === "collections" ? "Collections"
+                                                                    : activeTab === "issues" ? "Issues"
+                                                                      : activeTab === "more" ? "More"
+                                                                        : "Dashboard"}
                 </span>
               </div>
             </div>
@@ -2523,22 +3573,21 @@ export default function ManagerDashboard() {
             </div>
           </div>
 
-          {/* Desktop Sidebar Navigation */}
+          {/* Desktop Sidebar Navigation — no More button, all items inline */}
           <div className="hidden md:block w-56 bg-white border-r sticky top-[64px] h-[calc(100vh-64px)] overflow-y-auto">
             <div className="p-3">
               <nav className="space-y-1">
                 {[
-                  { id: "reports", icon: BarChart3, label: "Reports & Analytics" },
+                  { id: "reports", icon: BarChart3, label: "Daily Report" },
                   { id: "collections", icon: Package, label: t("navigation.collections") },
                   { id: "issues", icon: AlertCircle, label: t("navigation.issues") },
-                  { id: "more", icon: LayoutDashboard, label: "More" },
                 ].map(({ id, icon: Icon, label }) => (
                   <button
                     key={id}
                     onClick={() => { setActiveTab(id); setActiveMoreScreen(null); }}
                     className={cn(
                       "w-full flex items-center gap-3 px-3 py-2 rounded-xl text-left transition-colors text-sm font-medium",
-                      activeTab === id
+                      activeTab === id && !activeMoreScreen
                         ? "bg-green-50 text-green-700"
                         : "text-gray-600 hover:bg-gray-50",
                     )}
@@ -2548,7 +3597,6 @@ export default function ManagerDashboard() {
                   </button>
                 ))}
                 <div className="mt-4 pt-3 border-t border-gray-100">
-                  <p className="text-[10px] uppercase tracking-widest text-gray-400 font-semibold px-3 mb-2">More Screens</p>
                   <p className="text-[10px] uppercase tracking-widest text-gray-400 font-semibold px-3 mb-1">Households</p>
                   {[
                     { id: "household-details", icon: Home, label: "Household Details" },
@@ -2571,6 +3619,8 @@ export default function ManagerDashboard() {
                   {[
                     { id: "collectors", icon: Users, label: "Collectors" },
                     { id: "fieldworkers", icon: Users, label: "Field Workers" },
+                    { id: "helpers", icon: Wrench, label: "Helpers" },
+                    { id: "segregators", icon: Users, label: "Waste Segregators" },
                     { id: "announcements", icon: Bell, label: "Announcements" },
                   ].map(({ id, icon: Icon, label }) => (
                     <button
@@ -2603,11 +3653,9 @@ export default function ManagerDashboard() {
                       {label}
                     </button>
                   ))}
-                  <p className="text-[10px] uppercase tracking-widest text-gray-400 font-semibold px-3 mt-3 mb-1">Management</p>
+                  <p className="text-[10px] uppercase tracking-widest text-gray-400 font-semibold px-3 mt-3 mb-1">Analytics</p>
                   {[
-                    { id: "vehicles", icon: Package, label: "Vehicles" },
-                    { id: "wards", icon: MapPin, label: "Wards" },
-                    { id: "overall-reports", icon: TrendingUp, label: "Overall Reports" },
+                    { id: "household-performance", icon: TrendingUp, label: "Household Performance" },
                   ].map(({ id, icon: Icon, label }) => (
                     <button
                       key={id}
@@ -2621,6 +3669,69 @@ export default function ManagerDashboard() {
                       {label}
                     </button>
                   ))}
+                  <p className="text-[10px] uppercase tracking-widest text-gray-400 font-semibold px-3 mt-3 mb-1">Management</p>
+                  {[
+                    { id: "vehicles", icon: Package, label: "Vehicles" },
+                    { id: "wards", icon: MapPin, label: "Wards" },
+                    { id: "village-settings", icon: Settings, label: "Village Settings" },
+                    { id: "activity-log", icon: ClipboardList, label: "Activity Log" },
+                    { id: "data-export", icon: FileDown, label: "Data Export" },
+                  ].map(({ id, icon: Icon, label }) => (
+                    <button
+                      key={id}
+                      onClick={() => { setActiveTab("more"); setActiveMoreScreen(id); }}
+                      className={cn(
+                        "w-full flex items-center gap-3 px-3 py-2 rounded-xl text-left transition-colors text-sm font-medium",
+                        activeMoreScreen === id ? "bg-blue-50 text-blue-700" : "text-gray-600 hover:bg-gray-50",
+                      )}
+                    >
+                      <Icon className="h-4 w-4 flex-shrink-0" />
+                      {label}
+                    </button>
+                  ))}
+                  {villageData?.paymentsEnabled && (
+                    <>
+                      <p className="text-[10px] uppercase tracking-widest text-gray-400 font-semibold px-3 mt-3 mb-1">Payments & Billing</p>
+                      {[
+                        { id: "payments-ledger", icon: BarChart3, label: "Payment Ledger" },
+                        { id: "payments-settings", icon: Settings, label: "Payment Settings" },
+                      ].map(({ id, icon: Icon, label }) => (
+                        <button
+                          key={id}
+                          onClick={() => { setActiveTab("more"); setActiveMoreScreen(id); }}
+                          className={cn(
+                            "w-full flex items-center gap-3 px-3 py-2 rounded-xl text-left transition-colors text-sm font-medium",
+                            activeMoreScreen === id ? "bg-purple-50 text-purple-700" : "text-gray-600 hover:bg-gray-50",
+                          )}
+                        >
+                          <Icon className="h-4 w-4 flex-shrink-0" />
+                          {label}
+                        </button>
+                      ))}
+                    </>
+                  )}
+                  {villageData?.attendanceEnabled && (
+                    <>
+                      <p className="text-[10px] uppercase tracking-widest text-gray-400 font-semibold px-3 mt-3 mb-1">Attendance & Shifts</p>
+                      {[
+                        { id: "att-centers", icon: MapPin, label: "Attendance Centers" },
+                        { id: "att-mark", icon: Clock, label: "Mark Attendance" },
+                        { id: "att-shifts", icon: ClipboardList, label: "View Shifts" },
+                      ].map(({ id, icon: Icon, label }) => (
+                        <button
+                          key={id}
+                          onClick={() => { setActiveTab("more"); setActiveMoreScreen(id); }}
+                          className={cn(
+                            "w-full flex items-center gap-3 px-3 py-2 rounded-xl text-left transition-colors text-sm font-medium",
+                            activeMoreScreen === id ? "bg-teal-50 text-teal-700" : "text-gray-600 hover:bg-gray-50",
+                          )}
+                        >
+                          <Icon className="h-4 w-4 flex-shrink-0" />
+                          {label}
+                        </button>
+                      ))}
+                    </>
+                  )}
                 </div>
               </nav>
             </div>
@@ -2809,35 +3920,7 @@ export default function ManagerDashboard() {
                       </div>
                     </div>
 
-                    {/* Material Logs group */}
-                    <p className="text-[11px] uppercase tracking-widest text-gray-400 font-bold px-1 pt-4 pb-1">Material Logs</p>
-                    <div className="bg-white rounded-2xl ring-1 ring-black/5 shadow-sm overflow-hidden mb-2">
-                      {[
-                        { id: "daily-waste-logs", icon: ClipboardList, label: "Daily Waste Logs", description: "Log & view daily waste records" },
-                        { id: "compost-logs", icon: Package, label: "Compost Logs", description: "Track compost production" },
-                        { id: "sales-logs", icon: BarChart3, label: "Sales Logs", description: "Record material sales" },
-                      ].map(({ id, icon: Icon, label, description }, idx, arr) => (
-                        <button
-                          key={id}
-                          onClick={() => setActiveMoreScreen(id)}
-                          className={cn(
-                            "w-full flex items-center gap-4 px-4 py-3 text-left transition-colors active:bg-gray-50 active:scale-[0.99]",
-                            idx < arr.length - 1 ? "border-b border-gray-100" : ""
-                          )}
-                        >
-                          <div className="w-9 h-9 rounded-xl bg-orange-50 flex items-center justify-center flex-shrink-0">
-                            <Icon className="h-4 w-4 text-orange-500" />
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <p className="font-semibold text-gray-900 text-sm">{label}</p>
-                            <p className="text-xs text-gray-400 truncate">{description}</p>
-                          </div>
-                          <ArrowRight className="h-4 w-4 text-gray-300 flex-shrink-0" />
-                        </button>
-                      ))}
-                    </div>
-
-                    {/* Daily Ops group */}
+                    {/* Households group */}
                     <p className="text-[11px] uppercase tracking-widest text-gray-400 font-bold px-1 pt-2 pb-1">Households</p>
                     <div className="bg-white rounded-2xl ring-1 ring-black/5 shadow-sm overflow-hidden">
                       {[
@@ -2871,6 +3954,8 @@ export default function ManagerDashboard() {
                       {[
                         { id: "collectors", icon: Users, label: "Collectors", description: "View & manage collectors" },
                         { id: "fieldworkers", icon: Users, label: "Field Workers", description: "Manage field staff" },
+                        { id: "helpers", icon: Wrench, label: "Helpers", description: "Manage helpers (compost, sweeper, etc.)" },
+                        { id: "segregators", icon: Users, label: "Waste Segregators", description: "Manage waste segregators" },
                         { id: "announcements", icon: Bell, label: "Announcements", description: "Send & view announcements" },
                       ].map(({ id, icon: Icon, label, description }, idx, arr) => (
                         <button
@@ -2893,30 +3978,69 @@ export default function ManagerDashboard() {
                       ))}
                     </div>
 
+                    {/* Material Logs group */}
+                    <p className="text-[11px] uppercase tracking-widest text-gray-400 font-bold px-1 pt-4 pb-1">Material Logs</p>
+                    <div className="bg-white rounded-2xl ring-1 ring-black/5 shadow-sm overflow-hidden">
+                      {[
+                        { id: "daily-waste-logs", icon: ClipboardList, label: "Daily Waste Logs", description: "Log & view daily waste records" },
+                        { id: "compost-logs", icon: Package, label: "Compost Logs", description: "Track compost production" },
+                        { id: "sales-logs", icon: BarChart3, label: "Sales Logs", description: "Record material sales" },
+                      ].map(({ id, icon: Icon, label, description }, idx, arr) => (
+                        <button
+                          key={id}
+                          onClick={() => setActiveMoreScreen(id)}
+                          className={cn(
+                            "w-full flex items-center gap-4 px-4 py-3 text-left transition-colors active:bg-gray-50 active:scale-[0.99]",
+                            idx < arr.length - 1 ? "border-b border-gray-100" : ""
+                          )}
+                        >
+                          <div className="w-9 h-9 rounded-xl bg-orange-50 flex items-center justify-center flex-shrink-0">
+                            <Icon className="h-4 w-4 text-orange-500" />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="font-semibold text-gray-900 text-sm">{label}</p>
+                            <p className="text-xs text-gray-400 truncate">{description}</p>
+                          </div>
+                          <ArrowRight className="h-4 w-4 text-gray-300 flex-shrink-0" />
+                        </button>
+                      ))}
+                    </div>
+
                     {/* Analytics group */}
                     <p className="text-[11px] uppercase tracking-widest text-gray-400 font-bold px-1 pt-4 pb-1">Analytics</p>
                     <div className="bg-white rounded-2xl ring-1 ring-black/5 shadow-sm overflow-hidden">
-                      <button
-                        onClick={() => setActiveMoreScreen("overall-reports")}
-                        className="w-full flex items-center gap-4 px-4 py-3 text-left transition-colors active:bg-gray-50 active:scale-[0.99]"
-                      >
-                        <div className="w-9 h-9 rounded-xl bg-blue-50 flex items-center justify-center flex-shrink-0">
-                          <TrendingUp className="h-4 w-4 text-blue-600" />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="font-semibold text-gray-900 text-sm">Overall Reports</p>
-                          <p className="text-xs text-gray-400 truncate">Village-wide analytics & trends</p>
-                        </div>
-                        <ArrowRight className="h-4 w-4 text-gray-300 flex-shrink-0" />
-                      </button>
+                      {[
+                        { id: "household-performance", icon: TrendingUp, label: "Household Performance", description: "Monitor behaviour & compliance" },
+                      ].map(({ id, icon: Icon, label, description }, idx, arr) => (
+                        <button
+                          key={id}
+                          onClick={() => setActiveMoreScreen(id)}
+                          className={cn(
+                            "w-full flex items-center gap-4 px-4 py-3 text-left transition-colors active:bg-gray-50 active:scale-[0.99]",
+                            idx < arr.length - 1 ? "border-b border-gray-100" : ""
+                          )}
+                        >
+                          <div className="w-9 h-9 rounded-xl bg-blue-50 flex items-center justify-center flex-shrink-0">
+                            <Icon className="h-4 w-4 text-blue-600" />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="font-semibold text-gray-900 text-sm">{label}</p>
+                            <p className="text-xs text-gray-400 truncate">{description}</p>
+                          </div>
+                          <ArrowRight className="h-4 w-4 text-gray-300 flex-shrink-0" />
+                        </button>
+                      ))}
                     </div>
 
-                    {/* Settings/Management group */}
+                    {/* Management group */}
                     <p className="text-[11px] uppercase tracking-widest text-gray-400 font-bold px-1 pt-4 pb-1">Management</p>
                     <div className="bg-white rounded-2xl ring-1 ring-black/5 shadow-sm overflow-hidden">
                       {[
                         { id: "vehicles", icon: Package, label: "Vehicle Management", description: "Manage collection vehicles" },
                         { id: "wards", icon: MapPin, label: "Wards Management", description: "Configure village wards" },
+                        { id: "village-settings", icon: Settings, label: "Village Settings", description: "Configure collection settings" },
+                        { id: "activity-log", icon: ClipboardList, label: "Activity Log", description: "View all important actions & changes" },
+                        { id: "data-export", icon: FileDown, label: "Data Export", description: "Download village data as CSV" },
                       ].map(({ id, icon: Icon, label, description }, idx, arr) => (
                         <button
                           key={id}
@@ -2938,7 +4062,70 @@ export default function ManagerDashboard() {
                       ))}
                     </div>
 
-                    {/* Analytics group */}
+                    {/* Payments & Billing group */}
+                    {villageData?.paymentsEnabled && (
+                      <>
+                        <p className="text-[11px] uppercase tracking-widest text-gray-400 font-bold px-1 pt-4 pb-1">Payments & Billing</p>
+                        <div className="bg-white rounded-2xl ring-1 ring-black/5 shadow-sm overflow-hidden">
+                          {[
+                            { id: "payments-ledger", icon: BarChart3, label: "Payment Ledger", description: "Monthly billing & collection ledger" },
+                            { id: "payments-settings", icon: Settings, label: "Payment Settings", description: "Fee policy & gateway config" },
+                          ].map(({ id, icon: Icon, label, description }, idx, arr) => (
+                            <button
+                              key={id}
+                              onClick={() => setActiveMoreScreen(id)}
+                              className={cn(
+                                "w-full flex items-center gap-4 px-4 py-3 text-left transition-colors active:bg-gray-50 active:scale-[0.99]",
+                                idx < arr.length - 1 ? "border-b border-gray-100" : ""
+                              )}
+                            >
+                              <div className="w-9 h-9 rounded-xl bg-purple-50 flex items-center justify-center flex-shrink-0">
+                                <Icon className="h-4 w-4 text-purple-600" />
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <p className="font-semibold text-gray-900 text-sm">{label}</p>
+                                <p className="text-xs text-gray-400 truncate">{description}</p>
+                              </div>
+                              <ArrowRight className="h-4 w-4 text-gray-300 flex-shrink-0" />
+                            </button>
+                          ))}
+                        </div>
+                      </>
+                    )}
+
+                    {/* Attendance & Shifts group */}
+                    {villageData?.attendanceEnabled && (
+                      <>
+                        <p className="text-[11px] uppercase tracking-widest text-gray-400 font-bold px-1 pt-4 pb-1">Attendance & Shifts</p>
+                        <div className="bg-white rounded-2xl ring-1 ring-black/5 shadow-sm overflow-hidden">
+                          {[
+                            { id: "att-centers", icon: MapPin, label: "Attendance Centers", description: "Manage centers & QR codes" },
+                            { id: "att-mark", icon: Clock, label: "Mark Attendance", description: "Mark daily attendance for all staff" },
+                            { id: "att-shifts", icon: ClipboardList, label: "View Shifts", description: "View shift scan timeline" },
+                          ].map(({ id, icon: Icon, label, description }, idx, arr) => (
+                            <button
+                              key={id}
+                              onClick={() => setActiveMoreScreen(id)}
+                              className={cn(
+                                "w-full flex items-center gap-4 px-4 py-3 text-left transition-colors active:bg-gray-50 active:scale-[0.99]",
+                                idx < arr.length - 1 ? "border-b border-gray-100" : ""
+                              )}
+                            >
+                              <div className="w-9 h-9 rounded-xl bg-teal-50 flex items-center justify-center flex-shrink-0">
+                                <Icon className="h-4 w-4 text-teal-600" />
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <p className="font-semibold text-gray-900 text-sm">{label}</p>
+                                <p className="text-xs text-gray-400 truncate">{description}</p>
+                              </div>
+                              <ArrowRight className="h-4 w-4 text-gray-300 flex-shrink-0" />
+                            </button>
+                          ))}
+                        </div>
+                      </>
+                    )}
+
+                    {/* Account group */}
                     <p className="text-[11px] uppercase tracking-widest text-gray-400 font-bold px-1 pt-4 pb-1">Account</p>
                     <div className="bg-white rounded-2xl ring-1 ring-black/5 shadow-sm overflow-hidden">
                       {[
@@ -3316,12 +4503,10 @@ export default function ManagerDashboard() {
                           <div key={fw.userId} className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden flex" data-testid={`row-fieldworker-${fw.userId}`}>
                             <div className="w-1 flex-shrink-0 bg-green-500" />
                             <div className="flex-1 flex items-center justify-between p-3 min-w-0">
-                              <div className="min-w-0">
-                                <h4 className="text-[12px] font-black text-gray-900 truncate">{fw.name}</h4>
-                                <div className="flex items-center gap-1.5 mt-0.5">
-                                  <span className="text-[8px] font-bold text-gray-400 bg-gray-50 px-1.5 py-0.5 rounded-md">{fw.userId}</span>
-                                  {fw.phone && <span className="text-[8px] font-bold text-blue-500 bg-blue-50 px-1.5 py-0.5 rounded-md">{fw.phone}</span>}
-                                </div>
+                              <h4 className="text-[12px] font-black text-gray-900 truncate">{fw.name}</h4>
+                              <div className="flex items-center gap-1.5 mt-0.5">
+                                <span className="text-[8px] font-bold text-gray-400 bg-gray-50 px-1.5 py-0.5 rounded-md">{fw.userId}</span>
+                                {fw.phone && <span className="text-[8px] font-bold text-blue-500 bg-blue-50 px-1.5 py-0.5 rounded-md">{fw.phone}</span>}
                               </div>
                               <button
                                 onClick={() => setMoreDeleteConfirm({ label: 'field worker', onConfirm: () => deleteFieldWorkerMutation.mutate(fw.userId) })}
@@ -3362,17 +4547,40 @@ export default function ManagerDashboard() {
                             placeholder="Type your announcement..."
                             className="min-h-[80px] rounded-xl border-gray-200 text-sm"
                             id="announcement-message"
+                            value={announcementMessage}
+                            onChange={(e) => setAnnouncementMessage(e.target.value)}
                           />
-                          <Select defaultValue="all">
+                          <Select value={announcementTarget} onValueChange={setAnnouncementTarget}>
                             <SelectTrigger className="rounded-xl border-gray-200 h-10 text-sm">
                               <SelectValue placeholder="Select audience" />
                             </SelectTrigger>
                             <SelectContent>
                               <SelectItem value="all">All</SelectItem>
                               <SelectItem value="collectors">Collectors</SelectItem>
-                              <SelectItem value="households">Households</SelectItem>
+                              <SelectItem value="generators">Households</SelectItem>
                             </SelectContent>
                           </Select>
+                          <Button
+                            className="w-full rounded-xl h-10 bg-green-600 hover:bg-green-700 text-white font-bold text-sm"
+                            disabled={!announcementMessage.trim() || sendAnnouncementMutation.isPending}
+                            onClick={() => sendAnnouncementMutation.mutate({
+                              message: announcementMessage.trim(),
+                              targetAudience: announcementTarget,
+                              photoFile: null,
+                            })}
+                          >
+                            {sendAnnouncementMutation.isPending ? (
+                              <span className="flex items-center gap-2">
+                                <span className="h-4 w-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                                Sending...
+                              </span>
+                            ) : (
+                              <span className="flex items-center gap-2">
+                                <Send className="h-4 w-4" />
+                                Send Announcement
+                              </span>
+                            )}
+                          </Button>
                         </div>
 
                         {/* Recent Announcements */}
@@ -3417,417 +4625,7 @@ export default function ManagerDashboard() {
                   <MaterialLog defaultTab="sales" onBack={() => setActiveMoreScreen(null)} />
                 )}
 
-                {/* Overall Reports sub-screen */}
-                {activeMoreScreen === "overall-reports" && (
-                  <div className="space-y-6 p-3">
-                    {/* Top KPI Cards */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <Card className="bg-gradient-to-r from-blue-50 to-blue-100 border-blue-200">
-                        <CardHeader className="pb-2">
-                          <CardTitle className="text-sm font-medium text-blue-800 flex items-center gap-2">
-                            <TrendingUp className="h-4 w-4" />
-                            Collection Efficiency
-                          </CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                          <div className="text-3xl font-bold text-blue-900">
-                            {(() => {
-                              const targetDate = filters.date || new Date().toISOString().split('T')[0];
-                              const todayCollections = allCollections.filter(c =>
-                                new Date(c.collectionDate).toDateString() === new Date(targetDate).toDateString()
-                              ).length;
-                              return stats && stats.totalHouseholds > 0
-                                ? Math.round((todayCollections / stats.totalHouseholds) * 100)
-                                : 0;
-                            })()}%
-                          </div>
-                          <p className="text-xs text-blue-700 mt-1">
-                            {(() => {
-                              const targetDate = filters.date || new Date().toISOString().split('T')[0];
-                              const todayCollections = allCollections.filter(c =>
-                                new Date(c.collectionDate).toDateString() === new Date(targetDate).toDateString()
-                              ).length;
-                              return `${todayCollections} of ${stats?.totalHouseholds || 0} households`;
-                            })()}
-                          </p>
-                        </CardContent>
-                      </Card>
 
-                      <Card className="bg-gradient-to-r from-yellow-50 to-yellow-100 border-yellow-200">
-                        <CardHeader className="pb-2">
-                          <CardTitle className="text-sm font-medium text-yellow-800 flex items-center gap-2">
-                            <Star className="h-4 w-4" />
-                            Average Segregation Rating
-                          </CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                          <div className="text-3xl font-bold text-yellow-900">
-                            {(() => {
-                              let filteredCollections = allCollections;
-                              if (filters.date) {
-                                filteredCollections = allCollections.filter(c =>
-                                  new Date(c.collectionDate).toDateString() === new Date(filters.date).toDateString()
-                                );
-                              }
-                              return filteredCollections.length > 0
-                                ? (filteredCollections.reduce((sum, c) => sum + (c.segregationRating || 0), 0) / filteredCollections.length).toFixed(1)
-                                : "0.0";
-                            })()}
-                          </div>
-                          <p className="text-xs text-yellow-700 mt-1">
-                            Out of 5.0 stars ({(() => {
-                              let filteredCollections = allCollections;
-                              if (filters.date) {
-                                filteredCollections = allCollections.filter(c =>
-                                  new Date(c.collectionDate).toDateString() === new Date(filters.date).toDateString()
-                                );
-                              }
-                              return filteredCollections.length;
-                            })()} collections)
-                          </p>
-                        </CardContent>
-                      </Card>
-                    </div>
-
-                    {/* 6 Analytics Cards */}
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                      {/* 1. Daily Collection Trend (Last 7 Days) */}
-                      <Card>
-                        <CardHeader>
-                          <CardTitle className="flex items-center gap-2">
-                            <BarChart3 className="h-5 w-5 text-blue-600" />
-                            Daily Collection Trend (Last 7 Days)
-                          </CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                          <div className="space-y-3">
-                            {Array.from({ length: 7 }).map((_, i) => {
-                              const date = new Date();
-                              date.setDate(date.getDate() - (6 - i));
-                              const dateStr = date.toDateString();
-                              const collectionsForDay = allCollections.filter(c =>
-                                new Date(c.collectionDate).toDateString() === dateStr
-                              ).length;
-                              const percentage = (stats?.totalHouseholds ?? 0) > 0
-                                ? (collectionsForDay / (stats?.totalHouseholds ?? 1)) * 100
-                                : 0;
-
-                              return (
-                                <div key={i} className="flex items-center gap-3">
-                                  <div className="w-16 text-xs text-muted-foreground">
-                                    {date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
-                                  </div>
-                                  <div className="flex-1 bg-gray-200 rounded-full h-4 relative">
-                                    <div
-                                      className="bg-blue-500 h-4 rounded-full transition-all"
-                                      style={{ width: `${Math.min(percentage, 100)}%` }}
-                                    />
-                                    <span className="absolute inset-0 flex items-center justify-center text-xs font-medium text-white">
-                                      {collectionsForDay}
-                                    </span>
-                                  </div>
-                                  <div className="w-12 text-xs text-right">
-                                    {Math.round(percentage)}%
-                                  </div>
-                                </div>
-                              );
-                            })}
-                          </div>
-                        </CardContent>
-                      </Card>
-
-                      {/* 2. Segregation Rating Trends (Last 7 Days) */}
-                      <Card>
-                        <CardHeader>
-                          <CardTitle className="flex items-center gap-2">
-                            <TrendingUp className="h-5 w-5 text-green-600" />
-                            Segregation Rating Trends (Last 7 Days)
-                          </CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                          <div className="space-y-3">
-                            {Array.from({ length: 7 }).map((_, i) => {
-                              const date = new Date();
-                              date.setDate(date.getDate() - (6 - i));
-                              const dateStr = date.toDateString();
-                              const dayCollections = allCollections.filter(c =>
-                                new Date(c.collectionDate).toDateString() === dateStr
-                              );
-                              const avgRating = dayCollections.length > 0
-                                ? dayCollections.reduce((sum, c) => sum + (c.segregationRating || 0), 0) / dayCollections.length
-                                : 0;
-
-                              return (
-                                <div key={i} className="flex items-center gap-3">
-                                  <div className="w-16 text-xs text-muted-foreground">
-                                    {date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
-                                  </div>
-                                  <div className="flex-1 bg-gray-200 rounded-full h-4 relative">
-                                    <div
-                                      className={`h-4 rounded-full transition-all ${avgRating >= 4 ? 'bg-green-500' :
-                                        avgRating >= 3 ? 'bg-yellow-500' : 'bg-red-500'
-                                        }`}
-                                      style={{ width: `${(avgRating / 5) * 100}%` }}
-                                    />
-                                  </div>
-                                  <div className="w-12 text-xs text-right font-medium">
-                                    {avgRating.toFixed(1)}
-                                  </div>
-                                </div>
-                              );
-                            })}
-                          </div>
-                        </CardContent>
-                      </Card>
-
-                      {/* 3. Overall Segregation Rate Pie Chart */}
-                      <Card>
-                        <CardHeader>
-                          <CardTitle className="flex items-center gap-2">
-                            <Award className="h-5 w-5 text-purple-600" />
-                            Overall Segregation Rate
-                          </CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                          <div className="flex items-center justify-center">
-                            {(() => {
-                              let filteredCollections = allCollections;
-                              if (filters.date) {
-                                filteredCollections = allCollections.filter(c =>
-                                  new Date(c.collectionDate).toDateString() === new Date(filters.date).toDateString()
-                                );
-                              }
-
-                              const excellent = filteredCollections.filter(c => (c.segregationRating || 0) >= 4).length;
-                              const good = filteredCollections.filter(c => (c.segregationRating || 0) >= 3 && (c.segregationRating || 0) < 4).length;
-                              const poor = filteredCollections.filter(c => (c.segregationRating || 0) < 3).length;
-                              const total = filteredCollections.length;
-
-                              return (
-                                <div className="w-48 h-48 relative">
-                                  <svg viewBox="0 0 100 100" className="w-full h-full transform -rotate-90">
-                                    <circle cx="50" cy="50" r="40" fill="none" stroke="#f3f4f6" strokeWidth="20" />
-                                    {total > 0 && (
-                                      <>
-                                        <circle
-                                          cx="50" cy="50" r="40" fill="none"
-                                          stroke="#ef4444" strokeWidth="20"
-                                          strokeDasharray={`${(poor / total) * 251.3} 251.3`}
-                                          strokeDashoffset="0"
-                                        />
-                                        <circle
-                                          cx="50" cy="50" r="40" fill="none"
-                                          stroke="#eab308" strokeWidth="20"
-                                          strokeDasharray={`${(good / total) * 251.3} 251.3`}
-                                          strokeDashoffset={`-${(poor / total) * 251.3}`}
-                                        />
-                                        <circle
-                                          cx="50" cy="50" r="40" fill="none"
-                                          stroke="#22c55e" strokeWidth="20"
-                                          strokeDasharray={`${(excellent / total) * 251.3} 251.3`}
-                                          strokeDashoffset={`-${((poor + good) / total) * 251.3}`}
-                                        />
-                                      </>
-                                    )}
-                                  </svg>
-                                  <div className="absolute inset-0 flex items-center justify-center">
-                                    <div className="text-center">
-                                      <div className="text-2xl font-bold">
-                                        {total > 0 ? Math.round((excellent / total) * 100) : 0}%
-                                      </div>
-                                      <div className="text-xs text-muted-foreground">Excellent</div>
-                                    </div>
-                                  </div>
-                                </div>
-                              );
-                            })()}
-                          </div>
-                          <div className="grid grid-cols-3 gap-2 mt-4">
-                            <div className="text-center">
-                              <div className="w-4 h-4 bg-green-500 rounded mx-auto mb-1"></div>
-                              <div className="text-xs">Excellent (4-5★)</div>
-                            </div>
-                            <div className="text-center">
-                              <div className="w-4 h-4 bg-yellow-500 rounded mx-auto mb-1"></div>
-                              <div className="text-xs">Good (3-4★)</div>
-                            </div>
-                            <div className="text-center">
-                              <div className="w-4 h-4 bg-red-500 rounded mx-auto mb-1"></div>
-                              <div className="text-xs">Poor (0-3★)</div>
-                            </div>
-                          </div>
-                        </CardContent>
-                      </Card>
-
-                      {/* 4. Last 7 Days Segregation Rates Graph */}
-                      <Card>
-                        <CardHeader>
-                          <CardTitle className="flex items-center gap-2">
-                            <TrendingUp className="h-5 w-5 text-indigo-600" />
-                            7-Day Segregation Performance
-                          </CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                          <div className="space-y-2">
-                            {Array.from({ length: 7 }).map((_, i) => {
-                              const date = new Date();
-                              date.setDate(date.getDate() - (6 - i));
-                              const dateStr = date.toDateString();
-                              const dayCollections = allCollections.filter(c =>
-                                new Date(c.collectionDate).toDateString() === dateStr
-                              );
-
-                              const excellent = dayCollections.filter(c => (c.segregationRating || 0) >= 4).length;
-                              const good = dayCollections.filter(c => (c.segregationRating || 0) >= 3 && (c.segregationRating || 0) < 4).length;
-                              const poor = dayCollections.filter(c => (c.segregationRating || 0) < 3).length;
-                              const total = dayCollections.length;
-
-                              return (
-                                <div key={i} className="space-y-1">
-                                  <div className="flex justify-between text-xs">
-                                    <span>{date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>
-                                    <span>{total} collections</span>
-                                  </div>
-                                  <div className="flex h-6 bg-gray-200 rounded overflow-hidden">
-                                    {total > 0 ? (
-                                      <>
-                                        <div
-                                          className="bg-green-500"
-                                          style={{ width: `${(excellent / total) * 100}%` }}
-                                          title={`Excellent: ${excellent}`}
-                                        />
-                                        <div
-                                          className="bg-yellow-500"
-                                          style={{ width: `${(good / total) * 100}%` }}
-                                          title={`Good: ${good}`}
-                                        />
-                                        <div
-                                          className="bg-red-500"
-                                          style={{ width: `${(poor / total) * 100}%` }}
-                                          title={`Poor: ${poor}`}
-                                        />
-                                      </>
-                                    ) : (
-                                      <div className="w-full bg-gray-300" />
-                                    )}
-                                  </div>
-                                </div>
-                              );
-                            })}
-                          </div>
-                        </CardContent>
-                      </Card>
-
-                      {/* 5. Home Composting Pie Chart */}
-                      <Card>
-                        <CardHeader>
-                          <CardTitle className="flex items-center gap-2">
-                            <Package className="h-5 w-5 text-green-600" />
-                            Home Composting Rate
-                          </CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                          <div className="flex items-center justify-center">
-                            {(() => {
-                              let filteredCollections = allCollections;
-                              if (filters.date) {
-                                filteredCollections = allCollections.filter(c =>
-                                  new Date(c.collectionDate).toDateString() === new Date(filters.date).toDateString()
-                                );
-                              }
-
-                              // Assuming we have wetWasteComposting field in collections
-                              const composting = filteredCollections.filter(c => c.wasteSegregated === true).length;
-                              const notComposting = filteredCollections.length - composting;
-                              const total = filteredCollections.length;
-
-                              return (
-                                <div className="w-40 h-40 relative">
-                                  <svg viewBox="0 0 100 100" className="w-full h-full transform -rotate-90">
-                                    <circle cx="50" cy="50" r="35" fill="none" stroke="#f3f4f6" strokeWidth="25" />
-                                    {total > 0 && (
-                                      <>
-                                        <circle
-                                          cx="50" cy="50" r="35" fill="none"
-                                          stroke="#22c55e" strokeWidth="25"
-                                          strokeDasharray={`${(composting / total) * 219.9} 219.9`}
-                                          strokeDashoffset="0"
-                                        />
-                                      </>
-                                    )}
-                                  </svg>
-                                  <div className="absolute inset-0 flex items-center justify-center">
-                                    <div className="text-center">
-                                      <div className="text-xl font-bold text-green-600">
-                                        {total > 0 ? Math.round((composting / total) * 100) : 0}%
-                                      </div>
-                                      <div className="text-xs text-muted-foreground">Segregated</div>
-                                    </div>
-                                  </div>
-                                </div>
-                              );
-                            })()}
-                          </div>
-                          <div className="grid grid-cols-2 gap-2 mt-4">
-                            <div className="text-center">
-                              <div className="w-4 h-4 bg-green-500 rounded mx-auto mb-1"></div>
-                              <div className="text-xs">Segregated</div>
-                            </div>
-                            <div className="text-center">
-                              <div className="w-4 h-4 bg-gray-300 rounded mx-auto mb-1"></div>
-                              <div className="text-xs">Not Segregated</div>
-                            </div>
-                          </div>
-                        </CardContent>
-                      </Card>
-
-                      {/* 6. Collection Performance Metrics */}
-                      <Card>
-                        <CardHeader>
-                          <CardTitle className="flex items-center gap-2">
-                            <BarChart3 className="h-5 w-5 text-purple-600" />
-                            Collection Performance Metrics
-                          </CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                          <div className="space-y-4">
-                            {collectors.map(collector => {
-                              let collectorCollections = allCollections.filter(c => c.collectorId === collector.id);
-                              if (filters.date) {
-                                collectorCollections = collectorCollections.filter(c =>
-                                  new Date(c.collectionDate).toDateString() === new Date(filters.date).toDateString()
-                                );
-                              }
-
-                              const avgRating = collectorCollections.length > 0
-                                ? (collectorCollections.reduce((sum, c) => sum + (c.segregationRating || 0), 0) / collectorCollections.length)
-                                : 0;
-
-                              return (
-                                <div key={collector.id} className="flex items-center gap-3">
-                                  <div className="w-24 text-xs font-medium truncate">
-                                    {collector.name}
-                                  </div>
-                                  <div className="flex-1 bg-gray-200 rounded-full h-3">
-                                    <div
-                                      className={`h-3 rounded-full transition-all ${avgRating >= 4 ? 'bg-green-500' :
-                                        avgRating >= 3 ? 'bg-yellow-500' : 'bg-red-500'
-                                        }`}
-                                      style={{ width: `${(avgRating / 5) * 100}%` }}
-                                    />
-                                  </div>
-                                  <div className="w-16 text-xs text-right">
-                                    {avgRating.toFixed(1)} ({collectorCollections.length})
-                                  </div>
-                                </div>
-                              );
-                            })}
-                          </div>
-                        </CardContent>
-                      </Card>
-                    </div>
-                  </div>
-                )}
 
 
                 {/* Vehicles sub-screen — Premium */}
@@ -4033,6 +4831,182 @@ export default function ManagerDashboard() {
                   </div>
                 )}
 
+                {/* Village Settings sub-screen */}
+                {activeMoreScreen === "village-settings" && (
+                  <div className="space-y-4 p-3">
+                    <div className="flex items-center gap-2">
+                      <button onClick={() => setActiveMoreScreen(null)} className="p-1.5 rounded-full hover:bg-gray-100">
+                        <ArrowLeft className="h-5 w-5 text-gray-600" />
+                      </button>
+                      <h2 className="text-sm font-black uppercase tracking-tight text-gray-900">Village Settings</h2>
+                    </div>
+
+                    <div className="bg-white rounded-2xl ring-1 ring-black/5 shadow-sm overflow-hidden">
+                      {/* Village name */}
+                      <div className="px-4 py-3 border-b border-gray-100">
+                        <p className="text-[10px] uppercase tracking-widest text-gray-400 font-bold">Village</p>
+                        <p className="text-sm font-bold text-gray-900 mt-0.5">{villageData?.name || 'Loading...'}</p>
+                        <p className="text-xs text-gray-500">{user?.villageId}</p>
+                      </div>
+
+                      {/* Weight Required Toggle */}
+                      <div className="px-4 py-4 border-b border-gray-100 flex items-center justify-between">
+                        <div className="flex-1 min-w-0 pr-4">
+                          <p className="font-semibold text-gray-900 text-sm">⚖️ Household Weight Entry</p>
+                          <p className="text-xs text-gray-400 mt-0.5">When enabled, collectors must enter estimated waste weight (kg) during each collection</p>
+                        </div>
+                        <button
+                          onClick={async () => {
+                            try {
+                              const newVal = !villageData?.weightRequired;
+                              await apiRequest('PATCH', `/api/villages/${user?.villageId}`, { weightRequired: newVal });
+                              queryClient.invalidateQueries({ queryKey: ["/api/villages", user?.villageId] });
+                              toast({ title: newVal ? 'Weight entry enabled' : 'Weight entry disabled' });
+                            } catch (_err: unknown) {
+                              toast({ title: 'Failed to update. Please try again.', variant: 'destructive' });
+                            }
+                          }}
+                          className={cn(
+                            "relative inline-flex h-7 w-12 items-center rounded-full transition-colors flex-shrink-0",
+                            villageData?.weightRequired ? "bg-green-500" : "bg-gray-300"
+                          )}
+                        >
+                          <span className={cn(
+                            "inline-block h-5 w-5 rounded-full bg-white shadow-md transition-transform",
+                            villageData?.weightRequired ? "translate-x-6" : "translate-x-1"
+                          )} />
+                        </button>
+                      </div>
+
+                      {/* Image Upload Required Toggle */}
+                      <div className="px-4 py-4 flex items-center justify-between">
+                        <div className="flex-1 min-w-0 pr-4">
+                          <p className="font-semibold text-gray-900 text-sm">📸 Photo Required for All Collections</p>
+                          <p className="text-xs text-gray-400 mt-0.5">When enabled, collectors must upload a photo for every collection. When disabled, photos are only required for low-rated collections (≤3 stars)</p>
+                        </div>
+                        <button
+                          onClick={async () => {
+                            try {
+                              const newVal = !villageData?.imageUploadRequired;
+                              await apiRequest('PATCH', `/api/villages/${user?.villageId}`, { imageUploadRequired: newVal });
+                              queryClient.invalidateQueries({ queryKey: ["/api/villages", user?.villageId] });
+                              toast({ title: newVal ? 'Photo required for all' : 'Photo required only for low ratings' });
+                            } catch (_err: unknown) {
+                              toast({ title: 'Failed to update. Please try again.', variant: 'destructive' });
+                            }
+                          }}
+                          className={cn(
+                            "relative inline-flex h-7 w-12 items-center rounded-full transition-colors flex-shrink-0",
+                            villageData?.imageUploadRequired ? "bg-green-500" : "bg-gray-300"
+                          )}
+                        >
+                          <span className={cn(
+                            "inline-block h-5 w-5 rounded-full bg-white shadow-md transition-transform",
+                            villageData?.imageUploadRequired ? "translate-x-6" : "translate-x-1"
+                          )} />
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Vehicle Notification Settings — only if proximity alerts enabled */}
+                    {villageData?.proximityAlertsEnabled && (
+                      <div className="bg-white rounded-2xl ring-1 ring-black/5 shadow-sm overflow-hidden">
+                        <div className="px-4 py-3 border-b border-gray-100 bg-amber-50/50">
+                          <p className="font-semibold text-gray-900 text-sm flex items-center gap-1.5">🔔 Vehicle Notification Settings</p>
+                          <p className="text-[10px] text-gray-400 mt-0.5">Configure proximity alerts sent to households when a collection vehicle is nearby</p>
+                        </div>
+
+                        {/* Notification Radius */}
+                        <div className="px-4 py-4 border-b border-gray-100">
+                          <div className="flex items-center justify-between mb-2">
+                            <p className="text-xs font-semibold text-gray-700">📍 Notification Radius</p>
+                            <span className="text-xs font-bold text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full">{sliderRadius ?? villageData?.notificationRadiusMeters ?? 150}m</span>
+                          </div>
+                          <input
+                            type="range"
+                            min={120}
+                            max={300}
+                            step={10}
+                            value={sliderRadius ?? villageData?.notificationRadiusMeters ?? 150}
+                            onChange={(e) => setSliderRadius(parseInt(e.target.value))}
+                            onMouseUp={async () => {
+                              if (sliderRadius == null) return;
+                              try {
+                                await apiRequest('PATCH', `/api/villages/${user?.villageId}`, { notificationRadiusMeters: sliderRadius });
+                                queryClient.invalidateQueries({ queryKey: ["/api/villages", user?.villageId] });
+                              } catch {
+                                toast({ title: 'Failed to update radius', variant: 'destructive' });
+                              }
+                              setSliderRadius(null);
+                            }}
+                            onTouchEnd={async () => {
+                              if (sliderRadius == null) return;
+                              try {
+                                await apiRequest('PATCH', `/api/villages/${user?.villageId}`, { notificationRadiusMeters: sliderRadius });
+                                queryClient.invalidateQueries({ queryKey: ["/api/villages", user?.villageId] });
+                              } catch {
+                                toast({ title: 'Failed to update radius', variant: 'destructive' });
+                              }
+                              setSliderRadius(null);
+                            }}
+                            className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-amber-500"
+                          />
+                          <div className="flex justify-between text-[9px] text-gray-400 mt-1">
+                            <span>120m</span>
+                            <span>300m</span>
+                          </div>
+                        </div>
+
+                        {/* Notification Window Start */}
+                        <div className="px-4 py-4 border-b border-gray-100 flex items-center justify-between">
+                          <div className="flex-1 min-w-0 pr-4">
+                            <p className="text-xs font-semibold text-gray-700">🌅 Window Start</p>
+                            <p className="text-[10px] text-gray-400">Earliest time to push notifications</p>
+                          </div>
+                          <input
+                            type="time"
+                            value={villageData?.notificationWindowStart || "05:30"}
+                            onChange={async (e) => {
+                              try {
+                                await apiRequest('PATCH', `/api/villages/${user?.villageId}`, { notificationWindowStart: e.target.value });
+                                queryClient.invalidateQueries({ queryKey: ["/api/villages", user?.villageId] });
+                                toast({ title: `Window start set to ${e.target.value}` });
+                              } catch {
+                                toast({ title: 'Failed to update', variant: 'destructive' });
+                              }
+                            }}
+                            className="px-2 py-1.5 rounded-lg border border-gray-200 text-sm font-semibold text-gray-800 bg-gray-50 focus:ring-2 focus:ring-amber-300 focus:border-amber-400 outline-none"
+                          />
+                        </div>
+
+                        {/* Notification Window End */}
+                        <div className="px-4 py-4 flex items-center justify-between">
+                          <div className="flex-1 min-w-0 pr-4">
+                            <p className="text-xs font-semibold text-gray-700">🌇 Window End</p>
+                            <p className="text-[10px] text-gray-400">Latest time to push notifications</p>
+                          </div>
+                          <input
+                            type="time"
+                            value={villageData?.notificationWindowEnd || "13:00"}
+                            onChange={async (e) => {
+                              try {
+                                await apiRequest('PATCH', `/api/villages/${user?.villageId}`, { notificationWindowEnd: e.target.value });
+                                queryClient.invalidateQueries({ queryKey: ["/api/villages", user?.villageId] });
+                                toast({ title: `Window end set to ${e.target.value}` });
+                              } catch {
+                                toast({ title: 'Failed to update', variant: 'destructive' });
+                              }
+                            }}
+                            className="px-2 py-1.5 rounded-lg border border-gray-200 text-sm font-semibold text-gray-800 bg-gray-50 focus:ring-2 focus:ring-amber-300 focus:border-amber-400 outline-none"
+                          />
+                        </div>
+                      </div>
+                    )}
+
+                    <p className="text-[10px] text-center text-gray-300 mt-4">Changes take effect immediately for all collectors</p>
+                  </div>
+                )}
+
                 {/* Change Password sub-screen — Premium */}
                 {activeMoreScreen === "change-password" && (
                   <div className="space-y-4 p-3">
@@ -4073,6 +5047,96 @@ export default function ManagerDashboard() {
                       <LanguageSwitcher />
                     </div>
                   </div>
+                )}
+
+                {/* Payments sub-screen — Ledger */}
+                {activeMoreScreen === "payments-ledger" && villageData?.paymentsEnabled && (
+                  <div>
+                    <div className="flex items-center gap-2 p-3 pb-0">
+                      <button onClick={() => setActiveMoreScreen(null)} className="p-1.5 rounded-full hover:bg-gray-100">
+                        <ArrowLeft className="h-5 w-5 text-gray-600" />
+                      </button>
+                      <h2 className="text-sm font-black uppercase tracking-tight text-gray-900">Payment Ledger</h2>
+                    </div>
+                    <PaymentsTab initialScreen="overview" />
+                  </div>
+                )}
+
+                {/* Payments sub-screen — Settings */}
+                {activeMoreScreen === "payments-settings" && villageData?.paymentsEnabled && (
+                  <div>
+                    <div className="flex items-center gap-2 p-3 pb-0">
+                      <button onClick={() => setActiveMoreScreen(null)} className="p-1.5 rounded-full hover:bg-gray-100">
+                        <ArrowLeft className="h-5 w-5 text-gray-600" />
+                      </button>
+                      <h2 className="text-sm font-black uppercase tracking-tight text-gray-900">Payment Settings</h2>
+                    </div>
+                    <PaymentsTab initialScreen="settings" />
+                  </div>
+                )}
+
+                {/* Activity Log sub-screen */}
+
+                {/* Household Performance sub-screen */}
+                {activeMoreScreen === "household-performance" && (
+                  <HouseholdPerformance
+                    onBack={() => setActiveMoreScreen(null)}
+                    villageId={user?.villageId || ""}
+                  />
+                )}
+
+                {/* Attendance — 3 separate screens */}
+                {activeMoreScreen === "att-centers" && villageData?.attendanceEnabled && (
+                  <AttendanceScreen
+                    onBack={() => setActiveMoreScreen(null)}
+                    villageId={user?.villageId || ""}
+                    mode="centers"
+                  />
+                )}
+                {activeMoreScreen === "att-mark" && villageData?.attendanceEnabled && (
+                  <AttendanceScreen
+                    onBack={() => setActiveMoreScreen(null)}
+                    villageId={user?.villageId || ""}
+                    mode="mark"
+                  />
+                )}
+                {activeMoreScreen === "att-shifts" && villageData?.attendanceEnabled && (
+                  <AttendanceScreen
+                    onBack={() => setActiveMoreScreen(null)}
+                    villageId={user?.villageId || ""}
+                    mode="shifts"
+                  />
+                )}
+
+                {/* Helpers sub-screen */}
+                {activeMoreScreen === "helpers" && (
+                  <StaffScreen
+                    onBack={() => setActiveMoreScreen(null)}
+                    staffType="helper"
+                    title="Helpers"
+                  />
+                )}
+
+                {/* Segregators sub-screen */}
+                {activeMoreScreen === "segregators" && (
+                  <StaffScreen
+                    onBack={() => setActiveMoreScreen(null)}
+                    staffType="segregator"
+                    title="Waste Segregators"
+                  />
+                )}
+
+                {activeMoreScreen === "activity-log" && (
+                  <ActivityLog onBack={() => setActiveMoreScreen(null)} apiUrl="/api/audit-logs" />
+                )}
+
+                {activeMoreScreen === "data-export" && (
+                  <DataExportWizard
+                    role="manager"
+                    userVillageId={user?.villageId ?? undefined}
+                    userId={user?.userId}
+                    onBack={() => setActiveMoreScreen(null)}
+                  />
                 )}
               </div>
             )}
@@ -4233,6 +5297,9 @@ export default function ManagerDashboard() {
                 updateFilter={updateFilter}
                 reportData={reportData}
                 isLoading={isReportLoading}
+                villageName={villageData?.name || "Village"}
+                villageId={user?.villageId || ""}
+                managerName={user?.name || "Manager"}
               />
             )}
 
@@ -4555,43 +5622,36 @@ export default function ManagerDashboard() {
                   </div>
 
                   <div className="flex flex-col items-center justify-center p-3 bg-muted/30 rounded-2xl space-y-3">
-                    {viewingHousehold.qrCodeUrl ? (
-                      <>
-                        <div className="bg-white rounded-xl shadow-sm">
-                          <img
-                            src={viewingHousehold.qrCodeUrl}
-                            alt="QR Code"
-                            className="w-48 h-48 object-contain"
-                          />
-                        </div>
-                        <Button
-                          variant="outline"
-                          size="lg"
-                          className="w-full bg-blue-300"
-                          onClick={() => handleDownloadSingleQR(viewingHousehold)}
-                        >
-                          <Download className="mr-2 h-5 w-5" />
-                          Download QR Code Card
-                        </Button>
-                        <Button
-                          variant="destructive"
-                          size="lg"
-                          className="w-full"
-                          onClick={() => {
-                            setDeletingHousehold(viewingHousehold);
-                            setShowDeleteConfirm(true);
-                          }}
-                        >
-                          <Trash2 className="mr-2 h-5 w-5" />
-                          Delete Household
-                        </Button>
-                      </>
-                    ) : (
-                      <div className="text-center py-12">
-                        <QrCode className="h-16 w-16 mx-auto text-muted-foreground mb-4 opacity-20" />
-                        <p className="text-muted-foreground">QR code not generated yet</p>
+                    <>
+                      <div className="bg-white rounded-xl shadow-sm">
+                        <img
+                          src={`/api/qr-codes/${viewingHousehold.uid}/image`}
+                          alt="QR Code"
+                          className="w-48 h-48 object-contain"
+                        />
                       </div>
-                    )}
+                      <Button
+                        variant="outline"
+                        size="lg"
+                        className="w-full bg-blue-300"
+                        onClick={() => handleDownloadSingleQR(viewingHousehold)}
+                      >
+                        <Download className="mr-2 h-5 w-5" />
+                        Download QR Code Card
+                      </Button>
+                      <Button
+                        variant="destructive"
+                        size="lg"
+                        className="w-full"
+                        onClick={() => {
+                          setDeletingHousehold(viewingHousehold);
+                          setShowDeleteConfirm(true);
+                        }}
+                      >
+                        <Trash2 className="mr-2 h-5 w-5" />
+                        Delete Household
+                      </Button>
+                    </>
                   </div>
                 </div>
               )}

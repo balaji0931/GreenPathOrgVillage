@@ -27,8 +27,9 @@ export async function createVillageWithManager(data: {
     villageName: string;
     managerName: string;
     managerPhone: string;
+    paymentsEnabled?: boolean;
 }) {
-    const { villageName, managerName, managerPhone } = data;
+    const { villageName, managerName, managerPhone, paymentsEnabled } = data;
 
     const villageId = await generateVillageId();
 
@@ -36,6 +37,7 @@ export async function createVillageWithManager(data: {
     const village = await storage.createVillage({
         villageId,
         name: villageName,
+        paymentsEnabled: paymentsEnabled ?? false,
     });
 
     // Create manager

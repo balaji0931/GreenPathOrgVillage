@@ -23,7 +23,6 @@ export function registerUploadRoutes(app: Express, requireAuth: any, requireRole
 
       res.json({ url: result.secure_url, public_id: result.public_id });
     } catch (error) {
-      console.error("Photo upload error:", error);
       res.status(500).json({ message: "Failed to upload photo" });
     }
   });
@@ -48,7 +47,6 @@ export function registerUploadRoutes(app: Express, requireAuth: any, requireRole
 
       res.json({ url: result.secure_url, public_id: result.public_id });
     } catch (error) {
-      console.error("Voice upload error:", error);
       res.status(500).json({ message: "Failed to upload voice recording" });
     }
   });
@@ -74,7 +72,6 @@ export function registerUploadRoutes(app: Express, requireAuth: any, requireRole
 
       res.json({ url: result.secure_url, public_id: result.public_id });
     } catch (error) {
-      console.error("Manager proof photo upload error:", error);
       res.status(500).json({ message: "Failed to upload manager proof photo" });
     }
   });
@@ -89,7 +86,6 @@ export function registerUploadRoutes(app: Express, requireAuth: any, requireRole
       const fileUrl = `/uploads/${req.file.filename}`;
       res.json({ url: fileUrl });
     } catch (error) {
-      console.error("File upload error:", error);
       res.status(500).json({ message: "Failed to upload file" });
     }
   });

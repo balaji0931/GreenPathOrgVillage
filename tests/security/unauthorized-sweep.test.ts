@@ -87,12 +87,10 @@ const PROTECTED_ENDPOINTS: Array<{ method: 'get' | 'post' | 'put' | 'patch' | 'd
 
     // Stats
     { method: 'get', path: '/api/manager/stats' },
-    { method: 'get', path: '/api/stats/admin' },
-    { method: 'get', path: '/api/stats/moderator' },
+
+
     { method: 'get', path: '/api/stats/village' },
-    { method: 'get', path: '/api/reports' },
-    { method: 'get', path: '/api/analytics/system' },
-    { method: 'get', path: '/api/analytics/daily' },
+
     { method: 'get', path: '/api/analytics/premium' },
 
     // Admin
@@ -105,8 +103,7 @@ const PROTECTED_ENDPOINTS: Array<{ method: 'get' | 'post' | 'put' | 'patch' | 'd
     { method: 'get', path: '/api/moderator/collectors' },
     { method: 'get', path: '/api/moderator/households' },
     { method: 'get', path: '/api/moderator/managers' },
-    { method: 'get', path: '/api/moderator/stats' },
-    { method: 'get', path: '/api/moderator/reports' },
+
     { method: 'post', path: '/api/moderator/announcements', body: {} },
     { method: 'put', path: '/api/moderator/managers/x/reset-password' },
     { method: 'delete', path: '/api/moderator/managers/x' },
@@ -144,6 +141,39 @@ const PROTECTED_ENDPOINTS: Array<{ method: 'get' | 'post' | 'put' | 'patch' | 'd
     { method: 'post', path: '/api/upload/voice' },
     { method: 'post', path: '/api/upload/manager-proof' },
     { method: 'post', path: '/api/upload' },
+
+    // Payment / Billing
+    { method: 'get', path: '/api/household-types' },
+    { method: 'post', path: '/api/household-types', body: { name: 'x', fee: 100 } },
+    { method: 'get', path: '/api/payments/fee-config' },
+    { method: 'post', path: '/api/payments/fee-config', body: {} },
+    { method: 'get', path: '/api/payments/activation-preview' },
+    { method: 'post', path: '/api/payments/activate-cycle', body: {} },
+    { method: 'get', path: '/api/payments/cycles' },
+    { method: 'get', path: '/api/payments/bills' },
+    { method: 'get', path: '/api/payments/bills/household/1' },
+    { method: 'post', path: '/api/payments/add-bill', body: {} },
+    { method: 'post', path: '/api/payments/mark-paid', body: {} },
+    { method: 'post', path: '/api/payments/mark-paid-bulk', body: {} },
+    { method: 'post', path: '/api/payments/undo/1', body: {} },
+    { method: 'post', path: '/api/payments/waive/1', body: {} },
+    { method: 'get', path: '/api/payments/summary' },
+    { method: 'get', path: '/api/payments/household-unpaid/1' },
+    { method: 'get', path: '/api/payments/gateway/status' },
+    { method: 'get', path: '/api/payments/gateway/config/razorpay' },
+    { method: 'delete', path: '/api/payments/gateway/config/razorpay' },
+    { method: 'post', path: '/api/payments/gateway/config', body: {} },
+    { method: 'post', path: '/api/payments/gateway/test', body: {} },
+    { method: 'get', path: '/api/payments/gateway/available' },
+    { method: 'post', path: '/api/payments/gateway/create-order', body: {} },
+    { method: 'get', path: '/api/payments/order-status/FAKE' },
+    { method: 'get', path: '/api/payments/my-bills' },
+    { method: 'get', path: '/api/payments/my-history' },
+    { method: 'get', path: '/api/payments/my-gateway-status' },
+    { method: 'post', path: '/api/payments/gateway/verify-payment', body: {} },
+
+    // Generator household
+    { method: 'get', path: '/api/generator/household' },
 ];
 
 describe('Unauthorized Sweep — No Session → 401', () => {

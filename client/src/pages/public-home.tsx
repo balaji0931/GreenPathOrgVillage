@@ -256,7 +256,7 @@ export default function PublicHome({ initialSection = "home" }: PublicHomeProps 
 
       if (!response.ok) {
         const error = await response.json();
-        throw new Error(error.message || 'Failed to submit feedback');
+        throw new Error('Failed to submit feedback');
       }
 
       return response.json();
@@ -267,10 +267,10 @@ export default function PublicHome({ initialSection = "home" }: PublicHomeProps 
         description: "Thank you for your feedback! We'll review it soon.",
       });
     },
-    onError: (error: any) => {
+    onError: (_error: unknown) => {
       toast({
         title: "Error",
-        description: error.message || "Failed to submit feedback",
+        description: "Failed to submit feedback. Please try again.",
         variant: "destructive",
       });
     },
@@ -295,7 +295,7 @@ export default function PublicHome({ initialSection = "home" }: PublicHomeProps 
 
       if (!response.ok) {
         const error = await response.json();
-        throw new Error(error.message || 'Failed to send message');
+        throw new Error('Failed to send message');
       }
 
       return response.json();
@@ -306,10 +306,10 @@ export default function PublicHome({ initialSection = "home" }: PublicHomeProps 
         description: "Thank you for contacting us! We'll respond within 24 hours.",
       });
     },
-    onError: (error: any) => {
+    onError: (_error: unknown) => {
       toast({
         title: "Error",
-        description: error.message || "Failed to send message",
+        description: "Failed to send message. Please try again.",
         variant: "destructive",
       });
     },
@@ -370,7 +370,7 @@ export default function PublicHome({ initialSection = "home" }: PublicHomeProps 
           </h1>
 
           <p className="text-lg sm:text-xl md:text-2xl lg:text-3xl text-green-100 mb-6 sm:mb-8 font-light px-4">
-            🌱 Transforming Communities Through Smart Waste Management
+            Transforming Communities Through Smart Waste Management
           </p>
 
           <p className="text-base sm:text-lg text-white/90 max-w-4xl mx-auto mb-8 sm:mb-12 leading-relaxed px-4">
@@ -745,7 +745,7 @@ export default function PublicHome({ initialSection = "home" }: PublicHomeProps 
           </h1>
 
           <p className="text-lg sm:text-xl md:text-2xl text-purple-100 mb-6 sm:mb-8 font-light max-w-4xl mx-auto">
-            🌟 Discover the Story Behind Smart Waste Management
+            Discover the Story Behind Smart Waste Management
           </p>
 
           <p className="text-base sm:text-lg text-white/90 max-w-4xl mx-auto mb-8 sm:mb-12 leading-relaxed px-4">
@@ -1090,7 +1090,7 @@ export default function PublicHome({ initialSection = "home" }: PublicHomeProps 
           </h1>
 
           <p className="text-lg sm:text-xl md:text-2xl text-pink-100 mb-6 sm:mb-8 font-light max-w-4xl mx-auto">
-            💬 Help Us Improve GreenPath
+            Help Us Improve GreenPath
           </p>
 
           <p className="text-base sm:text-lg text-white/90 max-w-4xl mx-auto mb-8 sm:mb-12 leading-relaxed px-4">
@@ -1477,7 +1477,7 @@ export default function PublicHome({ initialSection = "home" }: PublicHomeProps 
           </h1>
 
           <p className="text-lg sm:text-xl md:text-2xl text-cyan-100 mb-6 sm:mb-8 font-light max-w-4xl mx-auto">
-            📞 Get in Touch with GreenPath
+            Get in Touch with GreenPath
           </p>
 
           <p className="text-base sm:text-lg text-white/90 max-w-4xl mx-auto mb-8 sm:mb-12 leading-relaxed px-4">

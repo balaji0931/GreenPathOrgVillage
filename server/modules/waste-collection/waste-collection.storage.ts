@@ -6,16 +6,16 @@ import {
     type InsertWasteCollection,
 } from "@shared/schema";
 import { db } from "../../db";
-import { eq, desc, asc, count, gte, lte, and, sql } from "drizzle-orm";
+import { eq, desc, asc, count, gte, lte, and, or, sql } from "drizzle-orm";
 import { getCache, cacheKeys } from "../../cache";
 
-export async function checkExistingCollection(householdId: number, collectorId: number, date: string): Promise<WasteCollection | undefined> {
+export async function checkExistingCollection(householdId: number, collectorId: number, date: string) {
     const [year, month, day] = date.split('-').map(Number);
     const startDate = new Date(year, month - 1, day, 0, 0, 0);
     const endDate = new Date(year, month - 1, day, 23, 59, 59, 999);
 
     const [existing] = await db
-        .select()
+        .select({ id: wasteCollections.id })
         .from(wasteCollections)
         .where(
             and(
@@ -36,13 +36,11 @@ export async function createWasteCollection(insertCollection: InsertWasteCollect
     const cache = getCache();
 
     // Ensure numeric values for ratings
-    const valuesToInsert = {
-        ...insertCollection,
+    const { latitude, longitude, ...rest } = insertCollection as any;
+    const dbValues = {
+        ...rest,
         segregationRating: Number(insertCollection.segregationRating),
-        plasticRating: Number(insertCollection.plasticRating),
     };
-    // Remove latitude/longitude from valuesToInsert as they don't exist in waste_collections table
-    const { latitude, longitude, ...dbValues } = valuesToInsert as any;
 
     const [collection] = await db
         .insert(wasteCollections)
@@ -50,7 +48,12 @@ export async function createWasteCollection(insertCollection: InsertWasteCollect
         .returning();
 
     // Invalidate collections cache - lookup household to get villageId
-    const [household] = await db.select()
+    const [household] = await db.select({
+        id: households.id,
+        villageId: households.villageId,
+        latitude: households.latitude,
+        longitude: households.longitude,
+    })
         .from(households)
         .where(eq(households.id, insertCollection.householdId))
         .limit(1);
@@ -77,7 +80,6 @@ export async function createWasteCollection(insertCollection: InsertWasteCollect
             await cache.delete(cacheKeys.wasteCollections(household.villageId));
             await cache.clear(`collections:${household.villageId}:*`);
             await cache.delete(cacheKeys.villageStats(household.villageId));
-            await cache.delete(cacheKeys.adminStats());
         }
     }
 
@@ -96,8 +98,6 @@ export async function getCollectionsByHousehold(householdId: number, options?: {
             id: wasteCollections.id,
             collectionDate: wasteCollections.collectionDate,
             segregationRating: wasteCollections.segregationRating,
-            plasticRating: wasteCollections.plasticRating,
-            observations: wasteCollections.observations,
             remarks: wasteCollections.remarks,
             photoUrl: wasteCollections.photoUrl,
             voiceUrl: wasteCollections.voiceUrl,
@@ -133,7 +133,20 @@ export async function getCollectionsByHousehold(householdId: number, options?: {
 
 export async function getCollectionsByCollector(collectorId: number, limit: number = 500): Promise<WasteCollection[]> {
     return await db
-        .select()
+        .select({
+            id: wasteCollections.id,
+            householdId: wasteCollections.householdId,
+            collectorId: wasteCollections.collectorId,
+            collectionDate: wasteCollections.collectionDate,
+            segregationRating: wasteCollections.segregationRating,
+            remarks: wasteCollections.remarks,
+            photoUrl: wasteCollections.photoUrl,
+            voiceUrl: wasteCollections.voiceUrl,
+            status: wasteCollections.status,
+            missedReason: wasteCollections.missedReason,
+            wasteTypes: wasteCollections.wasteTypes,
+            weightKg: wasteCollections.weightKg,
+        })
         .from(wasteCollections)
         .where(eq(wasteCollections.collectorId, collectorId))
         .orderBy(desc(wasteCollections.collectionDate))
@@ -142,7 +155,20 @@ export async function getCollectionsByCollector(collectorId: number, limit: numb
 
 export async function getCollectionById(collectionId: number): Promise<any> {
     const [collection] = await db
-        .select()
+        .select({
+            id: wasteCollections.id,
+            householdId: wasteCollections.householdId,
+            collectorId: wasteCollections.collectorId,
+            collectionDate: wasteCollections.collectionDate,
+            segregationRating: wasteCollections.segregationRating,
+            remarks: wasteCollections.remarks,
+            photoUrl: wasteCollections.photoUrl,
+            voiceUrl: wasteCollections.voiceUrl,
+            status: wasteCollections.status,
+            missedReason: wasteCollections.missedReason,
+            wasteTypes: wasteCollections.wasteTypes,
+            weightKg: wasteCollections.weightKg,
+        })
         .from(wasteCollections)
         .where(eq(wasteCollections.id, collectionId))
         .limit(1);
@@ -169,8 +195,6 @@ export async function getCollectionsByVillageWithDetails(villageId: string, date
             id: wasteCollections.id,
             collectionDate: wasteCollections.collectionDate,
             segregationRating: wasteCollections.segregationRating,
-            plasticRating: wasteCollections.plasticRating,
-            observations: wasteCollections.observations,
             remarks: wasteCollections.remarks,
             photoUrl: wasteCollections.photoUrl,
             voiceUrl: wasteCollections.voiceUrl,
@@ -233,8 +257,6 @@ export async function getCollectionsByVillageWithDetailsPaginated(villageId: str
             id: wasteCollections.id,
             collectionDate: wasteCollections.collectionDate,
             segregationRating: wasteCollections.segregationRating,
-            plasticRating: wasteCollections.plasticRating,
-            observations: wasteCollections.observations,
             remarks: wasteCollections.remarks,
             photoUrl: wasteCollections.photoUrl,
             voiceUrl: wasteCollections.voiceUrl,
@@ -299,7 +321,18 @@ export async function getDailyCollectionSummary(villageId: string, date: string)
             )
         )
         .leftJoin(collectors, eq(wasteCollections.collectorId, collectors.id))
-        .where(eq(households.villageId, villageId))
+        .where(
+            and(
+                eq(households.villageId, villageId),
+                or(
+                    eq(households.status, 'active'),
+                    and(
+                        eq(households.status, 'deleted'),
+                        sql`${households.updatedAt} >= ${startDate}`
+                    )
+                )
+            )
+        )
         .orderBy(asc(households.headName));
 
     const collectedRows = rows.filter(r => r.collectionId !== null);
@@ -354,7 +387,6 @@ export async function getRecentCollectionsByVillage(villageId: string, days: num
             collectionDate: sql<string>`DATE(${wasteCollections.collectionDate})`,
             collections: count(wasteCollections.id),
             avgSegregationRating: sql<number>`COALESCE(AVG(${wasteCollections.segregationRating}), 0)`,
-            avgPlasticRating: sql<number>`COALESCE(AVG(${wasteCollections.plasticRating}), 0)`,
         })
         .from(wasteCollections)
         .innerJoin(households, eq(wasteCollections.householdId, households.id))

@@ -42,7 +42,7 @@ describe('Village Integration', () => {
                 .send({
                     villageName: 'Test Village',
                     managerName: 'Test Manager',
-                    managerPhone: '9876543210',
+                    paymentsEnabled: true, managerPhone: '9876543210',
                 });
 
             expect(res.status).toBe(200);
@@ -60,7 +60,7 @@ describe('Village Integration', () => {
                 .send({
                     villageName: 'Second Village',
                     managerName: 'Manager Two',
-                    managerPhone: '1234567890',
+                    paymentsEnabled: true, managerPhone: '1234567890',
                 });
 
             expect(res.status).toBe(200);
@@ -166,7 +166,7 @@ describe('Village Integration', () => {
                 .send({
                     villageName: 'To Delete',
                     managerName: 'Temp Manager',
-                    managerPhone: '0000000000',
+                    paymentsEnabled: true, managerPhone: '0000000000',
                 });
             const tempVillageId = createRes.body.village.villageId;
 

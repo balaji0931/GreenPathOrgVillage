@@ -26,6 +26,14 @@ import { registerAdminUsersRoutes } from "./modules/admin/admin-users.routes";
 import { registerProfileRoutes } from "./modules/profile/profile.routes";
 import { registerMaterialLogRoutes } from "./modules/material-log/material-log.routes";
 import { registerFeedbackRoutes } from "./modules/feedback/feedback.routes";
+import { registerPaymentRoutes } from "./modules/payment/payment.routes";
+import { registerAuditRoutes } from "./modules/audit/audit.routes";
+import { registerExportRoutes } from "./modules/export/export.routes";
+import { registerAttendanceRoutes } from "./modules/attendance/attendance.routes";
+import { registerBehaviourRoutes } from "./modules/behaviour/behaviour.routes";
+import { checkAndRunDailyRefresh } from "./modules/behaviour/behaviour.storage";
+import { registerStaffRoutes } from "./modules/staff/staff.routes";
+import { registerPushRoutes } from "./modules/push/push.routes";
 
 // Configure multer for file uploads with enhanced security
 const upload = multer({
@@ -174,13 +182,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   registerCollectorRoutes(app, requireAuth, requireRole, requireVillageAccess);
 
   // Field Worker routes
-  registerFieldWorkerRoutes(app, requireAuth, requireRole);
+  registerFieldWorkerRoutes(app, requireAuth, requireRole, requireVillageAccess);
 
 
 
   // Pre-mapped QR Code routes (for field worker mapping)
   // QR Code routes
-  registerQRCodeRoutes(app, requireAuth, requireRole);
+  registerQRCodeRoutes(app, requireAuth, requireRole, requireVillageAccess);
 
   // Waste collection routes
   registerWasteCollectionRoutes(app, requireAuth, requireRole, requireVillageAccess);
@@ -191,7 +199,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   registerIssueRoutes(app, requireAuth, requireRole, requireVillageAccess);
 
   // Announcements routes
-  registerAnnouncementRoutes(app, requireAuth, requireRole);
+  registerAnnouncementRoutes(app, requireAuth, requireRole, requireVillageAccess);
 
   // Manager stats route
   // Stats routes
@@ -213,6 +221,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Material log routes (Daily Waste, Compost, Dry Waste Sales)
   registerMaterialLogRoutes(app, requireAuth, requireRole, requireVillageAccess, upload);
 
+  // Payment Ledger routes (Phase A1)
+  registerPaymentRoutes(app, requireAuth, requireRole, requireVillageAccess);
+  registerAttendanceRoutes(app, requireAuth, requireRole, requireVillageAccess);
+  registerBehaviourRoutes(app, requireAuth, requireRole, requireVillageAccess);
+  registerStaffRoutes(app);
+
+  // Push notification routes (proximity alerts)
+  registerPushRoutes(app, requireAuth, requireRole);
+
+  // Start nightly behaviour stats refresh guard
+  // Runs on server start + every hour; only refreshes once per day (IST)
+  checkAndRunDailyRefresh().catch((e) => console.error("[BehaviourStats] Initial refresh failed:", e));
+  setInterval(() => {
+    checkAndRunDailyRefresh().catch((e) => console.error("[BehaviourStats] Hourly check failed:", e));
+  }, 60 * 60 * 1000);
+
 
   // Moderator-specific API endpoints
 
@@ -231,10 +255,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Feedback and admin routes
   registerAdminRoutes(app, requireAuth, requireRole);
 
+  // Audit log routes (A6)
+  registerAuditRoutes(app, requireAuth, requireRole, requireVillageAccess);
+
+  // CSV Export routes (P0)
+  registerExportRoutes(app, requireAuth, requireRole, requireVillageAccess);
+
   // Note: manifest.json and icon routes are handled in server/index.ts to avoid conflicts
 
-  // Serve uploaded files
-  app.use('/uploads', express.static('uploads'));
+  // Serve uploaded files — AUTHENTICATED
+  app.use('/uploads', (req, res, next) => {
+    if (!req.session?.userId) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+    next();
+  }, express.static('uploads'));
 
 
   // Legal compliance routes

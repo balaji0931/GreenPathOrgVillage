@@ -31,7 +31,7 @@ beforeAll(async () => {
     const villageRes = await adminAgent
         .post('/api/villages')
         .set('x-csrf-token', adminCsrf)
-        .send({ villageName: 'WC Village', managerName: 'WC Manager', managerPhone: '1111111111' });
+        .send({ villageName: 'WC Village', managerName: 'WC Manager', paymentsEnabled: true, managerPhone: '1111111111' });
     villageId = villageRes.body.village.villageId;
     const managerId = villageRes.body.manager.credentials.userId;
 
@@ -74,8 +74,6 @@ describe('Waste Collection Integration', () => {
                 .send({
                     householdUid,
                     segregationRating: 4,
-                    plasticRating: 3,
-                    observations: ['clean'],
                     remarks: 'Good',
                     photoUrl: '',
                     voiceUrl: '',
@@ -94,8 +92,6 @@ describe('Waste Collection Integration', () => {
                 .send({
                     householdUid,
                     segregationRating: 5,
-                    plasticRating: 5,
-                    observations: [],
                     remarks: '',
                     photoUrl: '',
                     voiceUrl: '',
@@ -114,8 +110,6 @@ describe('Waste Collection Integration', () => {
                 .send({
                     householdUid: 'NONEXISTENT',
                     segregationRating: 3,
-                    plasticRating: 3,
-                    observations: [],
                     remarks: '',
                     photoUrl: '',
                     voiceUrl: '',

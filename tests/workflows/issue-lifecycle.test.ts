@@ -34,7 +34,7 @@ beforeAll(async () => {
     const vRes = await adminAgent
         .post('/api/villages')
         .set('x-csrf-token', adminCsrf)
-        .send({ villageName: 'Issue Village', managerName: 'Issue Mgr', managerPhone: '1111111111' });
+        .send({ villageName: 'Issue Village', managerName: 'Issue Mgr', paymentsEnabled: true, managerPhone: '1111111111' });
     villageId = vRes.body.village.villageId;
     const mgrId = vRes.body.manager.credentials.userId;
 
@@ -153,7 +153,7 @@ describe('Issue Lifecycle', () => {
         const v2 = await adminAgent
             .post('/api/villages')
             .set('x-csrf-token', adminCsrf)
-            .send({ villageName: 'Other Issue Village', managerName: 'Other Mgr', managerPhone: '5555555555' });
+            .send({ villageName: 'Other Issue Village', managerName: 'Other Mgr', paymentsEnabled: true, managerPhone: '5555555555' });
         const mgr2Id = v2.body.manager.credentials.userId;
 
         const mgr2Agent = request.agent(app);

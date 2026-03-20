@@ -1,6 +1,9 @@
 import type { Express } from "express";
 import { storage } from "../../storage";
 import { submitCollection } from "./waste-collection.service";
+import { db } from "../../db";
+import { wasteCollections, households } from "@shared/schema";
+import { eq, and, sql, count } from "drizzle-orm";
 
 export function registerWasteCollectionRoutes(app: Express, requireAuth: any, requireRole: any, requireVillageAccess: any) {
   // Waste collection routes
@@ -9,28 +12,32 @@ export function registerWasteCollectionRoutes(app: Express, requireAuth: any, re
       const {
         householdUid,
         segregationRating,
-        plasticRating,
-        observations,
-        remarks,
-        photoUrl,
-        voiceUrl,
-        status,
-        missedReason,
-        collectionDate
-      } = req.body;
-
-      const result = await submitCollection({
-        householdUid,
-        collectorUserId: req.session.userId!,
-        segregationRating,
-        plasticRating,
-        observations,
         remarks,
         photoUrl,
         voiceUrl,
         status,
         missedReason,
         collectionDate,
+        wasteTypes,
+        weightKg,
+        latitude,
+        longitude
+      } = req.body;
+
+      const result = await submitCollection({
+        householdUid,
+        collectorUserId: req.session.userId!,
+        segregationRating,
+        remarks,
+        photoUrl,
+        voiceUrl,
+        status,
+        missedReason,
+        collectionDate,
+        wasteTypes,
+        weightKg,
+        latitude,
+        longitude,
       });
 
       if (result.conflict) {
@@ -42,7 +49,6 @@ export function registerWasteCollectionRoutes(app: Express, requireAuth: any, re
 
       res.json(result.collection);
     } catch (error: any) {
-      console.error("Create waste collection error:", error);
       if (error.message === "Household not found" || error.message === "Collector not found") {
         return res.status(404).json({ message: error.message });
       }
@@ -53,11 +59,17 @@ export function registerWasteCollectionRoutes(app: Express, requireAuth: any, re
     }
   });
 
-  app.get('/api/waste-collections/household/:uid', requireAuth, async (req, res) => {
+  app.get('/api/waste-collections/household/:uid', requireAuth, requireRole(['manager', 'collector']), async (req, res) => {
     try {
       const { uid } = req.params;
       const household = await storage.getHouseholdByUid(uid);
       if (!household) {
+        return res.status(404).json({ message: "Household not found" });
+      }
+
+      // Verify household belongs to user's village
+      const userVillageId = req.session.villageId;
+      if (userVillageId && household.villageId !== userVillageId) {
         return res.status(404).json({ message: "Household not found" });
       }
 
@@ -67,7 +79,6 @@ export function registerWasteCollectionRoutes(app: Express, requireAuth: any, re
       const result = await storage.getCollectionsByHousehold(household.id, { limit, offset });
       res.json(result);
     } catch (error) {
-      console.error("Get household collections error:", error);
       res.status(500).json({ message: "Failed to get collections" });
     }
   });
@@ -83,29 +94,20 @@ export function registerWasteCollectionRoutes(app: Express, requireAuth: any, re
       }
 
       const result = await storage.getCollectionsByHousehold(household.id, { limit: 50 });
-      res.json(result);
+      // Strip internal IDs from collection data for generators
+      const sanitized = Array.isArray(result)
+        ? result.map(({ collectorId, ...rest }: any) => rest)
+        : result;
+      res.json(sanitized);
     } catch (error) {
-      console.error("Get generator household collections error:", error);
       res.status(500).json({ message: "Failed to get collections" });
     }
   });
 
   // Get household data for logged-in generator
-  app.get('/api/generator/household', async (req, res) => {
+  app.get('/api/generator/household', requireAuth, requireRole(['generator']), async (req, res) => {
     try {
-      // Simple auth check
-      if (!req.session?.userId) {
-        return res.status(401).json({ message: "Please log in" });
-      }
-
-      const userId = req.session.userId;
-      console.log('Generator household request for:', userId);
-
-      // Get user to verify they're a generator
-      const user = await storage.getUserByUserId(userId);
-      if (!user || user.role !== 'generator') {
-        return res.status(403).json({ message: "Access denied" });
-      }
+      const userId = req.session.userId!;
 
       // Find household by generator user ID
       const household = await storage.getHouseholdByGeneratorUserId(userId);
@@ -113,11 +115,11 @@ export function registerWasteCollectionRoutes(app: Express, requireAuth: any, re
         return res.status(404).json({ message: "Household not found" });
       }
 
-      console.log('Found household:', household.uid, 'QR Code:', !!household.qrCodeUrl);
-      res.json(household);
+      // Strip sensitive/internal fields — generator sees own info but not credentials or internal IDs
+      const { generatorPassword, generatorUserId, ...safeHousehold } = household as any;
+      res.json(safeHousehold);
     } catch (error) {
-      console.error('Get generator household error:', error);
-      res.status(500).json({ message: "Server error" });
+      res.status(500).json({ message: "Failed to load household data" });
     }
   });
 
@@ -133,7 +135,6 @@ export function registerWasteCollectionRoutes(app: Express, requireAuth: any, re
       const collections = await storage.getCollectionsByCollector(collector.id);
       res.json(collections);
     } catch (error) {
-      console.error("Get collector collections error:", error);
       res.status(500).json({ message: "Failed to get collections" });
     }
   });
@@ -152,7 +153,6 @@ export function registerWasteCollectionRoutes(app: Express, requireAuth: any, re
 
       res.json(collections);
     } catch (error) {
-      console.error("Get village collections error:", error);
       res.status(500).json({ message: "Failed to get village collections" });
     }
   });
@@ -161,7 +161,7 @@ export function registerWasteCollectionRoutes(app: Express, requireAuth: any, re
     try {
       const villageId = req.session.villageId!;
       const page = parseInt(req.query.page as string) || 1;
-      const limit = parseInt(req.query.limit as string) || 5000;
+      const limit = Math.min(parseInt(req.query.limit as string) || 100, 500);
       const date = req.query.date as string;
       const collectorId = req.query.collectorId ? parseInt(req.query.collectorId as string) : undefined;
       const status = req.query.status as string;
@@ -176,7 +176,6 @@ export function registerWasteCollectionRoutes(app: Express, requireAuth: any, re
 
       res.json(result);
     } catch (error) {
-      console.error("Get paginated village collections error:", error);
       res.status(500).json({ message: "Failed to get village collections" });
     }
   });
@@ -184,13 +183,40 @@ export function registerWasteCollectionRoutes(app: Express, requireAuth: any, re
   app.get('/api/collections/daily-summary', requireAuth, requireRole(['manager']), requireVillageAccess, async (req, res) => {
     try {
       const villageId = req.session.villageId!;
-      const date = req.query.date as string || new Date().toISOString().split('T0')[0];
+      const date = req.query.date as string || new Date().toISOString().split('T')[0];
 
       const summary = await storage.getDailyCollectionSummary(villageId, date);
       res.json(summary);
     } catch (error) {
-      console.error("Get daily collection summary error:", error);
       res.status(500).json({ message: "Failed to get daily collection summary" });
+    }
+  });
+
+  // Lightweight village-wide today count for collectors
+  app.get('/api/village/today-count', requireAuth, requireRole(['collector', 'manager']), requireVillageAccess, async (req, res) => {
+    try {
+      const villageId = req.session.villageId!;
+      const now = new Date();
+      const todayStr = now.toISOString().split('T')[0];
+      const [year, month, day] = todayStr.split('-').map(Number);
+      const startDate = new Date(year, month - 1, day, 0, 0, 0);
+      const endDate = new Date(year, month - 1, day, 23, 59, 59, 999);
+
+      const [result] = await db
+        .select({ count: count() })
+        .from(wasteCollections)
+        .innerJoin(households, eq(wasteCollections.householdId, households.id))
+        .where(
+          and(
+            eq(households.villageId, villageId),
+            sql`${wasteCollections.collectionDate} >= ${startDate}`,
+            sql`${wasteCollections.collectionDate} <= ${endDate}`
+          )
+        );
+
+      res.json({ collectedToday: result?.count || 0 });
+    } catch (error) {
+      res.status(500).json({ message: "Failed to get today count" });
     }
   });
 }

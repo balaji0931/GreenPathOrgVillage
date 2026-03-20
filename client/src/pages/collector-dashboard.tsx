@@ -42,14 +42,12 @@ interface CollectionForm {
   wasteSegregated: boolean | null;
   wasteAccepted: boolean | null;
   segregationRating: number;
-  plasticReduced: boolean | null;
-  wetWasteComposting: boolean | null;
-  cleanlinessRating: number;
-  observations: string[];
   remarks: string;
   photoFile: File | null;
   voiceRecording: File | null;
   notCollectedReason: string;
+  wasteTypes: string[];
+  weightKg: string;
 }
 
 
@@ -74,6 +72,7 @@ const ISSUE_CATEGORIES = [
   "Other"
 ];
 
+
 export default function CollectorDashboard() {
   const [isSubmitLocked, setIsSubmitLocked] = useState(false);
 
@@ -87,6 +86,10 @@ export default function CollectorDashboard() {
   const [scannedHousehold, setScannedHousehold] = useState<any>(null);
   const [activeTab, setActiveTab] = useState('home');
   const [showPasswordModal, setShowPasswordModal] = useState(false);
+
+  // Shift tab state
+  const [showShiftScanner, setShowShiftScanner] = useState(false);
+  const [shiftScanResult, setShiftScanResult] = useState<any>(null);
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
 
@@ -94,14 +97,12 @@ export default function CollectorDashboard() {
     wasteSegregated: null,
     wasteAccepted: null,
     segregationRating: 0,
-    plasticReduced: null,
-    wetWasteComposting: null,
-    cleanlinessRating: 0,
-    observations: [],
     remarks: "",
     photoFile: null,
     voiceRecording: null,
-    notCollectedReason: ""
+    notCollectedReason: "",
+    wasteTypes: [],
+    weightKg: ""
   });
 
   const [isRecording, setIsRecording] = useState(false);
@@ -151,6 +152,16 @@ export default function CollectorDashboard() {
     refetchInterval: 60000, // Refetch every minute
   });
 
+  // Fetch village-wide today collection count
+  const { data: villageTodayData } = useQuery<{ collectedToday: number }>({
+    queryKey: ["/api/village/today-count"],
+    queryFn: async () => {
+      const response = await apiRequest("GET", "/api/village/today-count");
+      return response.json();
+    },
+    refetchInterval: 30000,
+  });
+
   // Fetch current village data to get image upload requirements
   const { data: villageData } = useQuery<any>({
     queryKey: ["/api/villages", user?.villageId, "details"],
@@ -161,6 +172,101 @@ export default function CollectorDashboard() {
     },
     enabled: !!user?.villageId,
   });
+
+  // Fetch current shift state (for Shift tab)
+  const { data: shiftState, refetch: refetchShiftState } = useQuery<any>({
+    queryKey: ["/api/attendance/my-shift"],
+    queryFn: async () => {
+      const response = await apiRequest("GET", "/api/attendance/my-shift");
+      return response.json();
+    },
+    enabled: !!user?.villageId && !!villageData?.attendanceEnabled,
+
+  });
+
+  // Shift scan mutation
+  const shiftScanMutation = useMutation({
+    mutationFn: async (data: { qrToken: string; latitude: number; longitude: number }) => {
+      const response = await apiRequest("POST", "/api/attendance/scan-shift", data);
+      if (!response.ok) {
+        const err = await response.json();
+        throw err;
+      }
+      return response.json();
+    },
+    onSuccess: (result) => {
+      setShiftScanResult(result);
+      refetchShiftState();
+      toast({
+        title: result.eventType === 'shift_start' ? 'Shift Started' : 'Shift Ended',
+        description: `Shift #${result.shiftNumber} ${result.eventType === 'shift_start' ? 'started' : 'ended'} at ${result.centerName} (${result.distance}m away)`,
+      });
+    },
+    onError: (error: any) => {
+      if (error.error === 'too_far') {
+        setShiftScanResult({
+          error: 'too_far',
+          distance: error.distance,
+          maxDistance: error.maxDistance,
+          message: 'You are too far from the center.',
+        });
+      } else {
+        toast({
+          title: "Scan Failed",
+          description: "Failed to record shift. Please try again.",
+          variant: "destructive",
+        });
+      }
+    },
+  });
+
+  // Handle shift QR scan
+  const handleShiftQRScan = async (qrData: string) => {
+    setShowShiftScanner(false);
+    setShiftScanResult(null);
+
+    try {
+      let qrToken: string | null = null;
+      try {
+        const parsed = JSON.parse(qrData);
+        if (parsed.type === 'attendance' && parsed.token) {
+          qrToken = parsed.token;
+        }
+      } catch {
+        // Not JSON
+      }
+
+      if (!qrToken) {
+        toast({
+          title: "Invalid QR",
+          description: "This is not an attendance QR code",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Get GPS
+      const position = await new Promise<GeolocationPosition>((resolve, reject) => {
+        navigator.geolocation.getCurrentPosition(resolve, reject, {
+          enableHighAccuracy: true,
+          timeout: 10000,
+          maximumAge: 0,
+        });
+      });
+
+      shiftScanMutation.mutate({
+        qrToken,
+        latitude: position.coords.latitude,
+        longitude: position.coords.longitude,
+      });
+    } catch (error: any) {
+      toast({
+        title: "Location Error",
+        description: "Could not get your location. Please enable GPS.",
+        variant: "destructive",
+      });
+    }
+  };
 
   const households = householdsQuery.data;
   const collections = collectionsQuery.data;
@@ -247,7 +353,7 @@ export default function CollectorDashboard() {
       } else {
         toast({
           title: "Error",
-          description: error.message || "Failed to record collection",
+          description: "Failed to record collection. Please try again.",
           variant: "destructive",
         });
       }
@@ -269,10 +375,10 @@ export default function CollectorDashboard() {
       setNewPassword("");
       setConfirmPassword("");
     },
-    onError: (error: any) => {
+    onError: (_error: unknown) => {
       toast({
         title: "Error",
-        description: error.message || "Failed to change password",
+        description: "Failed to change password. Please try again.",
         variant: "destructive",
       });
     },
@@ -350,11 +456,10 @@ export default function CollectorDashboard() {
           "Your issue has been reported successfully. The manager will review it soon.",
       });
     },
-    onError: (error: any) => {
+    onError: (_error: unknown) => {
       toast({
         title: "Error",
-        description:
-          error?.message || "Failed to report issue. Please try again.",
+        description: "Failed to report issue. Please try again.",
         variant: "destructive",
       });
     },
@@ -365,14 +470,12 @@ export default function CollectorDashboard() {
       wasteSegregated: null,
       wasteAccepted: null,
       segregationRating: 0,
-      plasticReduced: null,
-      wetWasteComposting: null,
-      cleanlinessRating: 0,
-      observations: [],
       remarks: "",
       photoFile: null,
       voiceRecording: null,
-      notCollectedReason: ""
+      notCollectedReason: "",
+      wasteTypes: [],
+      weightKg: ""
     });
     setScannedHousehold(null);
     setShowConfirmSubmit(false);
@@ -456,21 +559,34 @@ export default function CollectorDashboard() {
 
 
 
-  const handleStarClick = (type: 'segregation' | 'cleanliness', rating: number) => {
-    if (type === 'segregation') {
-      setCollectionForm({ ...collectionForm, segregationRating: rating });
-    } else {
-      setCollectionForm({ ...collectionForm, cleanlinessRating: rating });
+  // Smart waste type preselection based on segregation answer
+  React.useEffect(() => {
+    if (collectionForm.wasteSegregated === true) {
+      // Segregated = yes → preselect wet + dry
+      setCollectionForm(prev => ({ ...prev, wasteTypes: ['wet', 'dry'] }));
+    } else if (collectionForm.wasteSegregated === false) {
+      // Segregated = no → preselect mixed
+      setCollectionForm(prev => ({ ...prev, wasteTypes: ['mixed'] }));
+    } else if (collectionForm.wasteAccepted === false) {
+      // Not collected → no types
+      setCollectionForm(prev => ({ ...prev, wasteTypes: [] }));
     }
+  }, [collectionForm.wasteSegregated, collectionForm.wasteAccepted]);
+
+  const toggleWasteType = (type: string) => {
+    setCollectionForm(prev => {
+      const types = prev.wasteTypes.includes(type)
+        ? prev.wasteTypes.filter(t => t !== type)
+        : [...prev.wasteTypes, type];
+      return { ...prev, wasteTypes: types };
+    });
   };
 
-  const handleObservationChange = (observation: string, checked: boolean) => {
-    const updatedObservations = checked
-      ? [...collectionForm.observations, observation]
-      : collectionForm.observations.filter(obs => obs !== observation);
-
-    setCollectionForm({ ...collectionForm, observations: updatedObservations });
+  const handleStarClick = (_type: 'segregation', rating: number) => {
+    setCollectionForm({ ...collectionForm, segregationRating: rating });
   };
+
+
 
   const startVoiceRecording = async () => {
     try {
@@ -570,35 +686,17 @@ export default function CollectorDashboard() {
     setIsSubmitLocked(true);
 
     try {
-      // Get current location
-      let latitude = null;
-      let longitude = null;
-
-      try {
-        const position = await new Promise<GeolocationPosition>((resolve, reject) => {
-          navigator.geolocation.getCurrentPosition(resolve, reject, {
-            enableHighAccuracy: true,
-            timeout: 5000,
-            maximumAge: 0
-          });
-        });
-        latitude = position.coords.latitude.toString();
-        longitude = position.coords.longitude.toString();
-      } catch (geoError) {
-        console.warn("Could not get geolocation", geoError);
-      }
-
       const collectionData = {
         householdUid: scannedHousehold.uid,
         status: collectionForm.wasteAccepted ? 'collected' : 'missed',
         segregationRating: collectionForm.segregationRating,
-        plasticRating: collectionForm.cleanlinessRating,
-        observations: collectionForm.observations,
         remarks: collectionForm.remarks,
         missedReason: collectionForm.wasteAccepted ? null : collectionForm.notCollectedReason,
         collectionDate: new Date().toISOString(),
-        latitude,
-        longitude
+        latitude: null,
+        longitude: null,
+        wasteTypes: collectionForm.wasteAccepted ? collectionForm.wasteTypes : [],
+        weightKg: collectionForm.wasteAccepted && collectionForm.weightKg ? collectionForm.weightKg : null,
       };
 
       if (isOnline) {
@@ -855,15 +953,19 @@ export default function CollectorDashboard() {
         {/* HOME TAB */}
         {activeTab === 'home' && (
           <div className="space-y-3 p-4">
-            {/* Stats Cards - Compact */}
-            <div className="collector-daily-stats grid grid-cols-2 gap-3" key={`stats-${collectionsToday.length}`}>
-              <div className="bg-green-50 p-3 rounded-lg border">
-                <div className="text-xl font-bold text-green-600">{collectionsToday.length}</div>
-                <div className="text-xs text-green-700">{t('collections.todayCollections')}</div>
+            {/* Stats Cards - 3 KPI Cards */}
+            <div className="collector-daily-stats grid grid-cols-3 gap-2" key={`stats-${collectionsToday.length}`}>
+              <div className="bg-blue-50 p-3 rounded-lg border border-blue-100">
+                <div className="text-xl font-bold text-blue-600">{households?.length || 0}</div>
+                <div className="text-[10px] text-blue-700 font-medium leading-tight">Total Households</div>
               </div>
-              <div className="bg-orange-50 p-3 rounded-lg border">
-                <div className="text-xl font-bold text-orange-600">{pendingHouseholds.length}</div>
-                <div className="text-xs text-orange-700">{t('app.pending')}</div>
+              <div className="bg-green-50 p-3 rounded-lg border border-green-100">
+                <div className="text-xl font-bold text-green-600">{collectionsToday.length}</div>
+                <div className="text-[10px] text-green-700 font-medium leading-tight">Collected by You</div>
+              </div>
+              <div className="bg-purple-50 p-3 rounded-lg border border-purple-100">
+                <div className="text-xl font-bold text-purple-600">{villageTodayData?.collectedToday ?? '—'}</div>
+                <div className="text-[10px] text-purple-700 font-medium leading-tight">Village Total Colected</div>
               </div>
             </div>
 
@@ -994,6 +1096,174 @@ export default function CollectorDashboard() {
         )}
 
         {/* SCAN TAB */}
+        {/* SHIFT TAB */}
+        {activeTab === 'shift' && villageData?.attendanceEnabled && (
+          <div className="p-4 space-y-4">
+            {/* Today header */}
+            <div className="text-center">
+              <p className="text-sm text-gray-500 font-medium">
+                {new Date().toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'short', year: 'numeric' })}
+              </p>
+            </div>
+
+            {/* Attendance status (marked by manager) */}
+            {shiftState?.attendanceStatus && (
+              <div className={`rounded-xl p-3 flex items-center gap-3 ${
+                shiftState.attendanceStatus === 'present' ? 'bg-green-50 border border-green-200' :
+                shiftState.attendanceStatus === 'half_day' ? 'bg-yellow-50 border border-yellow-200' :
+                'bg-red-50 border border-red-200'
+              }`}>
+                <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white ${
+                  shiftState.attendanceStatus === 'present' ? 'bg-green-500' :
+                  shiftState.attendanceStatus === 'half_day' ? 'bg-yellow-500' :
+                  'bg-red-500'
+                }`}>
+                  {shiftState.attendanceStatus === 'present' ? '✓' :
+                   shiftState.attendanceStatus === 'half_day' ? '½' : '✗'}
+                </div>
+                <div>
+                  <p className={`text-sm font-bold ${
+                    shiftState.attendanceStatus === 'present' ? 'text-green-700' :
+                    shiftState.attendanceStatus === 'half_day' ? 'text-yellow-700' :
+                    'text-red-700'
+                  }`}>
+                    {shiftState.attendanceStatus === 'present' ? 'Marked Present' :
+                     shiftState.attendanceStatus === 'half_day' ? 'Marked Half Day' : 'Marked Absent'}
+                  </p>
+                  <p className="text-[10px] text-gray-400">By Manager</p>
+                </div>
+              </div>
+            )}
+
+            {/* Shift status */}
+            {!shiftState || shiftState.shifts?.length === 0 ? (
+              // No shift started
+              <div className="text-center space-y-6 pt-8">
+                <div className="bg-gray-50 rounded-2xl p-6">
+                  <Clock className="h-12 w-12 text-gray-300 mx-auto mb-3" />
+                  <p className="text-lg font-bold text-gray-700">No Shift Started</p>
+                  <p className="text-sm text-gray-400 mt-1">Go to your depot and scan the attendance QR</p>
+                </div>
+
+                <button
+                  onClick={() => { setShiftScanResult(null); setShowShiftScanner(true); }}
+                  disabled={shiftScanMutation.isPending}
+                  className="w-full py-5 bg-green-500 hover:bg-green-600 active:bg-green-700 text-white rounded-2xl text-lg font-bold flex items-center justify-center gap-3 transition-all shadow-lg shadow-green-200"
+                >
+                  <Camera className="h-7 w-7" />
+                  {shiftScanMutation.isPending ? 'Scanning...' : 'SCAN QR TO START SHIFT'}
+                </button>
+              </div>
+            ) : shiftState.isShiftActive ? (
+              // Shift active — show status + end button
+              <div className="space-y-4">
+                <div className="bg-green-50 border-2 border-green-200 rounded-2xl p-5 text-center">
+                  <div className="text-xs font-bold text-green-600 uppercase tracking-widest mb-1">On Shift</div>
+                  <p className="text-lg font-bold text-green-700">
+                    Shift #{shiftState.currentShiftNumber} · Started at{' '}
+                    {new Date(shiftState.shifts[shiftState.shifts.length - 1]?.startedAt).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true })}
+                  </p>
+                </div>
+
+                <button
+                  onClick={() => { setShiftScanResult(null); setShowShiftScanner(true); }}
+                  disabled={shiftScanMutation.isPending}
+                  className="w-full py-5 bg-red-500 hover:bg-red-600 active:bg-red-700 text-white rounded-2xl text-lg font-bold flex items-center justify-center gap-3 transition-all shadow-lg shadow-red-200"
+                >
+                  <Camera className="h-7 w-7" />
+                  {shiftScanMutation.isPending ? 'Scanning...' : 'SCAN QR TO END SHIFT'}
+                </button>
+
+                {/* Can also start another shift */}
+              </div>
+            ) : (
+              // All shifts completed
+              <div className="space-y-4">
+                <div className="bg-blue-50 border-2 border-blue-200 rounded-2xl p-5 text-center">
+                  <CheckCircle className="h-10 w-10 text-blue-500 mx-auto mb-2" />
+                  <p className="text-lg font-bold text-blue-700">
+                    {shiftState.shifts.length} Shift{shiftState.shifts.length > 1 ? 's' : ''} Completed
+                  </p>
+                </div>
+
+                {/* Start another shift */}
+                <button
+                  onClick={() => { setShiftScanResult(null); setShowShiftScanner(true); }}
+                  disabled={shiftScanMutation.isPending}
+                  className="w-full py-4 bg-green-100 hover:bg-green-200 text-green-700 rounded-2xl text-base font-bold flex items-center justify-center gap-3 transition-all border-2 border-green-300"
+                >
+                  <Camera className="h-6 w-6" />
+                  START ANOTHER SHIFT
+                </button>
+              </div>
+            )}
+
+            {/* GPS error */}
+            {shiftScanResult?.error === 'too_far' && (
+              <div className="bg-red-50 border-2 border-red-200 rounded-2xl p-4 text-center">
+                <XCircle className="h-10 w-10 text-red-500 mx-auto mb-2" />
+                <p className="text-base font-bold text-red-700">Too Far From Depot</p>
+                <p className="text-sm text-red-600 mt-1">
+                  You are <span className="font-bold">{shiftScanResult.distance}m</span> away
+                </p>
+                <p className="text-xs text-red-400 mt-0.5">
+                  Must be within {shiftScanResult.maxDistance}m
+                </p>
+                <button
+                  onClick={() => { setShiftScanResult(null); setShowShiftScanner(true); }}
+                  className="mt-3 px-6 py-2 bg-red-500 text-white rounded-xl text-sm font-bold"
+                >
+                  Try Again
+                </button>
+              </div>
+            )}
+
+            {/* Shift Timeline */}
+            {shiftState?.shifts?.length > 0 && (
+              <div className="mt-4">
+                <p className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-3">Today's Shifts</p>
+                <div className="space-y-2">
+                  {shiftState.shifts.map((shift: any) => (
+                    <div key={shift.shiftNumber} className="bg-white border border-gray-200 rounded-xl p-3 flex items-center justify-between">
+                      <div>
+                        <p className="text-sm font-bold text-gray-800">Shift #{shift.shiftNumber}</p>
+                        <p className="text-xs text-gray-500">
+                          {shift.startedAt
+                            ? new Date(shift.startedAt).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true })
+                            : '—'}
+                          {' → '}
+                          {shift.endedAt
+                            ? new Date(shift.endedAt).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true })
+                            : 'Active'}
+                        </p>
+                      </div>
+                      <div className="text-right">
+                        {shift.endedAt ? (
+                          <Badge className="bg-blue-100 text-blue-700 text-xs">
+                            {Math.round((new Date(shift.endedAt).getTime() - new Date(shift.startedAt).getTime()) / 60000)}m
+                          </Badge>
+                        ) : (
+                          <Badge className="bg-green-100 text-green-700 text-xs animate-pulse">Active</Badge>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Shift QR Scanner */}
+        {showShiftScanner && (
+          <div className="fixed inset-0 z-50 bg-black">
+            <QRScanner
+              onScan={handleShiftQRScan}
+              onClose={() => setShowShiftScanner(false)}
+            />
+          </div>
+        )}
+
         {activeTab === 'scan' && (
           <div className="p-4 space-y-4">
             <div className="text-center space-y-4">
@@ -1375,6 +1645,60 @@ export default function CollectorDashboard() {
               </div>
             </div>
 
+            {/* Waste Types - auto-preselected, collector can adjust */}
+            {collectionForm.wasteAccepted !== false && (
+              <div className="p-4 border-2 border-teal-200 bg-teal-50 rounded-xl">
+                <Label className="text-sm font-bold text-center block mb-3">
+                  🗑️ Waste Type Collected
+                </Label>
+                <div className="flex flex-wrap gap-2 justify-center">
+                  {[
+                    { key: 'wet', label: '🟢 Wet', color: 'green' },
+                    { key: 'dry', label: '🔵 Dry', color: 'blue' },
+                    { key: 'sanitary', label: '🟣 Sanitary', color: 'purple' },
+                    { key: 'special_care', label: '🟡 Special Care', color: 'yellow' },
+                    { key: 'mixed', label: '⚫ Mixed', color: 'gray' },
+                  ].map(({ key, label, color }) => (
+                    <button
+                      key={key}
+                      type="button"
+                      onClick={() => toggleWasteType(key)}
+                      className={`px-3 py-2 rounded-full text-sm font-bold transition-all active:scale-95 ${
+                        collectionForm.wasteTypes.includes(key)
+                          ? `bg-${color}-500 text-white shadow-md ring-2 ring-${color}-300`
+                          : `bg-white border-2 border-${color}-200 text-${color}-700 hover:bg-${color}-50`
+                      }`}
+                      style={collectionForm.wasteTypes.includes(key) ? {
+                        backgroundColor: color === 'green' ? '#22c55e' : color === 'blue' ? '#3b82f6' : color === 'purple' ? '#a855f7' : color === 'yellow' ? '#eab308' : '#6b7280',
+                        color: 'white',
+                      } : {}}
+                    >
+                      {label}
+                    </button>
+                  ))}
+                </div>
+                <p className="text-[10px] text-center text-gray-400 mt-2">Auto-selected based on segregation. Tap to change.</p>
+              </div>
+            )}
+
+            {/* Weight Input - only if village has weight configured */}
+            {collectionForm.wasteAccepted !== false && villageData?.weightRequired && (
+              <div className="p-4 border-2 border-indigo-200 bg-indigo-50 rounded-xl">
+                <Label className="text-sm font-bold text-center block mb-2">
+                  ⚖️ Estimated Weight (kg)
+                </Label>
+                <Input
+                  type="number"
+                  step="0.1"
+                  min="0"
+                  value={collectionForm.weightKg}
+                  onChange={(e) => setCollectionForm({ ...collectionForm, weightKg: e.target.value })}
+                  placeholder="Enter weight in kg"
+                  className="text-center text-lg font-bold"
+                />
+              </div>
+            )}
+
             {/* Plastic Reduced? */}
             {/* <div className="p-3 border border-gray-200 bg-gray-50 rounded-xl">
               <Label className="text-base font-bold text-center block mb-3">
@@ -1437,74 +1761,7 @@ export default function CollectorDashboard() {
               </div>
             </div> */}
 
-            {/* Cleanliness Rating */}
-            {/* <div className="p-3 border border-gray-200 bg-gray-50 rounded-xl">
-              <Label className="text-base font-bold text-center block mb-3">
-                🧹 {t('collections.howCleanArea')}
-              </Label>
-              <div className="flex justify-center space-x-2">
-                {[1, 2, 3, 4, 5].map((rating) => (
-                  <button
-                    key={rating}
-                    type="button"
-                    className={`w-10 h-10 rounded-full border transition-all hover:scale-110 ${
-                      rating <= collectionForm.cleanlinessRating 
-                        ? 'bg-blue-400 border-blue-500' 
-                        : 'bg-white border-gray-300'
-                    }`}
-                    onClick={() => handleStarClick('cleanliness', rating)}
-                  >
-                    <div className="text-lg">
-                      {rating <= collectionForm.cleanlinessRating ? '🧹' : '☐'}
-                    </div>
-                  </button>
-                ))}
-              </div>
-            </div> */}
 
-            {/* Observations */}
-            {/* <div className="p-3 border border-gray-200 bg-gray-50 rounded-xl">
-              <Label className="text-base font-bold text-center block mb-3">
-                👀 {t('collections.whatDidYouSee')}
-              </Label>
-              <div className="grid grid-cols-2 gap-2">
-                {OBSERVATION_OPTIONS.map((observation) => {
-                  const observationKeys = {
-                    "Good segregation": "observationGoodSegregation",
-                    "Mixed waste": "observationMixedWaste", 
-                    "Excessive plastic": "observationExcessivePlastic",
-                    "Clean and organized": "observationCleanOrganized",
-                    "Poor hygiene": "observationPoorHygiene",
-                    "No waste present": "observationNoWaste"
-                  };
-                  
-                  const emoji = {
-                    "Good segregation": "✅",
-                    "Mixed waste": "🔄", 
-                    "Excessive plastic": "🛍️",
-                    "Clean and organized": "✨",
-                    "Poor hygiene": "🚫",
-                    "No waste present": "🗑️"
-                  }[observation] || "📝";
-                  
-                  return (
-                    <Button
-                      key={observation}
-                      variant={collectionForm.observations.includes(observation) ? "default" : "outline"}
-                      onClick={() => handleObservationChange(observation, !collectionForm.observations.includes(observation))}
-                      className={`p-3 h-auto text-left ${
-                        collectionForm.observations.includes(observation)
-                          ? 'bg-blue-500 hover:bg-blue-600 text-white'
-                          : 'bg-white border-2 hover:bg-blue-50'
-                      }`}
-                    >
-                      <div className="text-lg">{emoji}</div>
-                      <div className="text-xs mt-1">{t(`app.${observationKeys[observation]}`)}</div>
-                    </Button>
-                  );
-                })}
-              </div>
-            </div> */}
 
             {/* Waste Accepted? */}
             <div>
@@ -2009,18 +2266,9 @@ export default function CollectorDashboard() {
                     <div className="text-gray-600">Segregation:</div>
                     <div className="font-medium">{selectedCollection.segregationRating}/5 ⭐</div>
                   </div>
-                  <div>
-                    <div className="text-gray-600">Cleanliness:</div>
-                    <div className="font-medium">{selectedCollection.plasticRating}/5 🧹</div>
-                  </div>
                 </div>
 
-                {selectedCollection.observations?.length > 0 && (
-                  <div>
-                    <div className="text-gray-600 text-sm mb-1">Observations:</div>
-                    <div className="text-sm">{selectedCollection.observations.join(', ')}</div>
-                  </div>
-                )}
+
 
                 {selectedCollection.remarks && (
                   <div>
@@ -2060,7 +2308,7 @@ export default function CollectorDashboard() {
 
       {/* Bottom Navigation */}
       <div className="fixed bottom-0 left-1/2 transform -translate-x-1/2 w-full max-w-md bg-green-100 border-t border-gray-200 z-20 rounded-lg">
-        <div className="grid grid-cols-5 gap-1 p-2">
+        <div className={`grid gap-1 p-2 ${villageData?.attendanceEnabled ? 'grid-cols-5' : 'grid-cols-4'}`}>
           <button
             className={`collector-home-tab flex flex-col items-center py-2 px-1 rounded-lg transition-colors ${activeTab === 'home'
               ? 'bg-green-200 text-green-600'
@@ -2068,7 +2316,7 @@ export default function CollectorDashboard() {
               }`}
             onClick={() => setActiveTab('home')}
           >
-            <Home size={24} strokeWidth={2.5} />
+            <Home size={22} strokeWidth={2.5} />
           </button>
           <button
             className={`collector-scan-tab flex flex-col items-center py-2 px-1 rounded-lg transition-colors ${activeTab === 'scan'
@@ -2080,8 +2328,19 @@ export default function CollectorDashboard() {
               setShowScanner(true);
             }}
           >
-            <ScanLine size={24} strokeWidth={2.5} />
+            <ScanLine size={22} strokeWidth={2.5} />
           </button>
+                    {villageData?.attendanceEnabled && (
+            <button
+              className={`flex flex-col items-center py-2 px-1 rounded-lg transition-colors ${activeTab === 'shift'
+                ? 'bg-orange-100 text-orange-600'
+                : 'text-gray-500 hover:text-orange-600 hover:bg-gray-50'
+                }`}
+              onClick={() => setActiveTab('shift')}
+            >
+              <Clock size={22} strokeWidth={2.5} />
+            </button>
+          )}
           <button
             className={`collector-announcements-tab flex flex-col items-center py-2 px-1 rounded-lg transition-colors ${activeTab === 'announcements'
               ? 'bg-blue-100 text-blue-600'
@@ -2089,16 +2348,7 @@ export default function CollectorDashboard() {
               }`}
             onClick={() => setActiveTab('announcements')}
           >
-            <Bell size={24} strokeWidth={2.5} />
-          </button>
-          <button
-            className={`collector-issues-tab flex flex-col items-center py-2 px-1 rounded-lg transition-colors ${activeTab === 'issues'
-              ? 'bg-red-100 text-red-600'
-              : 'text-gray-500 hover:text-red-600 hover:bg-gray-50'
-              }`}
-            onClick={() => setActiveTab('issues')}
-          >
-            <AlertCircle size={24} strokeWidth={2.5} />
+            <Bell size={22} strokeWidth={2.5} />
           </button>
           <button
             className={`collector-profile-tab flex flex-col items-center py-2 px-1 rounded-lg transition-colors ${activeTab === 'profile'
@@ -2107,7 +2357,7 @@ export default function CollectorDashboard() {
               }`}
             onClick={() => setActiveTab('profile')}
           >
-            <User size={24} strokeWidth={2.5} />
+            <User size={22} strokeWidth={2.5} />
           </button>
         </div>
       </div>

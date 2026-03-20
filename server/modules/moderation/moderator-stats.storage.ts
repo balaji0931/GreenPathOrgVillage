@@ -2,75 +2,15 @@ import {
     villages,
     households,
     collectors,
-    wasteCollections,
     issues,
+    type Issue,
 } from "@shared/schema";
 import { db } from "../../db";
-import { eq, count, and, sql, inArray } from "drizzle-orm";
+import { eq, desc, count, and, sql, inArray } from "drizzle-orm";
 
 // =====================================================
-// MODERATOR STATS OPERATIONS
+// MODERATOR OPERATIONAL STORAGE
 // =====================================================
-
-export async function getModeratorStats(villageIds: string[]): Promise<{
-    totalVillages: number;
-    totalHouseholds: number;
-    totalCollectors: number;
-    totalOpenIssues: number;
-    totalCollectionsToday: number;
-}> {
-    if (villageIds.length === 0) {
-        return {
-            totalVillages: 0,
-            totalHouseholds: 0,
-            totalCollectors: 0,
-            totalOpenIssues: 0,
-            totalCollectionsToday: 0,
-        };
-    }
-
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const tomorrow = new Date(today);
-    tomorrow.setDate(tomorrow.getDate() + 1);
-
-    const [householdsCount] = await db
-        .select({ count: count() })
-        .from(households)
-        .where(inArray(households.villageId, villageIds));
-
-    const [collectorsCount] = await db
-        .select({ count: count() })
-        .from(collectors)
-        .where(inArray(collectors.villageId, villageIds));
-
-    const [openIssuesCount] = await db
-        .select({ count: count() })
-        .from(issues)
-        .where(and(
-            inArray(issues.villageId, villageIds),
-            eq(issues.status, "open")
-        ));
-
-    const [collectionsToday] = await db
-        .select({ count: count() })
-        .from(wasteCollections)
-        .innerJoin(households, eq(wasteCollections.householdId, households.id))
-        .where(
-            and(
-                inArray(households.villageId, villageIds),
-                sql`${wasteCollections.collectionDate} >= ${today} AND ${wasteCollections.collectionDate} < ${tomorrow}`
-            )
-        );
-
-    return {
-        totalVillages: villageIds.length,
-        totalHouseholds: householdsCount.count,
-        totalCollectors: collectorsCount.count,
-        totalOpenIssues: openIssuesCount.count,
-        totalCollectionsToday: collectionsToday.count,
-    };
-}
 
 export async function getModeratorCollectors(villageIds: string[]): Promise<any[]> {
     if (villageIds.length === 0) {
@@ -111,4 +51,16 @@ export async function getModeratorHouseholds(villageIds: string[]): Promise<any[
         .innerJoin(villages, eq(households.villageId, villages.villageId))
         .where(inArray(households.villageId, villageIds))
         .orderBy(households.uid);
+}
+
+export async function getModeratorIssues(villageIds: string[]): Promise<Issue[]> {
+    if (villageIds.length === 0) {
+        return [];
+    }
+
+    return await db
+        .select()
+        .from(issues)
+        .where(inArray(issues.villageId, villageIds))
+        .orderBy(desc(issues.createdAt));
 }

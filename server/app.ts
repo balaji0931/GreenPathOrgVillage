@@ -99,7 +99,7 @@ export function createApp() {
     // Body parsing with size limits
     app.use(
         express.json({
-            limit: "10mb",
+            limit: "1mb",
             verify: (req, res, buf) => {
                 // Store raw body for webhook verification if needed
                 (req as any).rawBody = buf;
@@ -109,7 +109,7 @@ export function createApp() {
     app.use(
         express.urlencoded({
             extended: false,
-            limit: "10mb",
+            limit: "1mb",
         }),
     );
 

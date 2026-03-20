@@ -5,7 +5,7 @@ import {
     type InsertQRCode,
 } from "@shared/schema";
 import { db } from "../../db";
-import { eq, desc } from "drizzle-orm";
+import { eq, desc, sql } from "drizzle-orm";
 
 export async function createQRCode(insertQRCode: InsertQRCode): Promise<QRCode> {
     const [qrCode] = await db
@@ -83,39 +83,17 @@ export async function getNextBatchId(villageId: string): Promise<string> {
 }
 
 export async function getMaxHouseNumber(villageId: string): Promise<number> {
-    const existingHouseholds = await db
-        .select({ uid: households.uid })
-        .from(households)
-        .where(eq(households.villageId, villageId));
-
-    const existingQRCodes = await db
-        .select({ uid: qrCodes.uid })
-        .from(qrCodes)
-        .where(eq(qrCodes.villageId, villageId));
-
-    let maxNum = 0;
-
-    for (const h of existingHouseholds) {
-        const match = h.uid.match(/H(\d+)$/);
-        if (match) {
-            const num = parseInt(match[1], 10);
-            if (num > maxNum) {
-                maxNum = num;
-            }
-        }
-    }
-
-    for (const qr of existingQRCodes) {
-        const match = qr.uid.match(/H(\d+)$/);
-        if (match) {
-            const num = parseInt(match[1], 10);
-            if (num > maxNum) {
-                maxNum = num;
-            }
-        }
-    }
-
-    return maxNum;
+    const result = await db.execute(
+        sql`SELECT COALESCE(MAX(
+            CAST(SUBSTRING(uid FROM 'H([0-9]+)$') AS INTEGER)
+        ), 0) AS max_num
+        FROM (
+            SELECT uid FROM households WHERE village_id = ${villageId}
+            UNION ALL
+            SELECT uid FROM qr_codes WHERE village_id = ${villageId}
+        ) combined`
+    );
+    return Number(result.rows[0]?.max_num) || 0;
 }
 
 export async function getNextQRCodeUid(villageId: string, count: number): Promise<string[]> {

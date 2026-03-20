@@ -17,9 +17,7 @@ if (isCloudinaryConfigured) {
     api_key: apiKey,
     api_secret: apiSecret,
   });
-  console.log('Cloudinary configured successfully');
 } else {
-  console.warn('Cloudinary credentials not found. QR code and file upload features will be disabled.');
 }
 
 export interface UploadResult {

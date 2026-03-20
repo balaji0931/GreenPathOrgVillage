@@ -29,7 +29,7 @@ beforeAll(async () => {
     const villageRes = await adminAgent
         .post('/api/villages')
         .set('x-csrf-token', adminCsrf)
-        .send({ villageName: 'Mod Village', managerName: 'Mod Manager', managerPhone: '1111111111' });
+        .send({ villageName: 'Mod Village', managerName: 'Mod Manager', paymentsEnabled: true, managerPhone: '1111111111' });
     villageId = villageRes.body.village.villageId;
     managerId = villageRes.body.manager.credentials.userId;
 
@@ -62,17 +62,7 @@ describe('Moderator Integration', () => {
         });
     });
 
-    describe('GET /api/moderator/village/:villageId/details', () => {
-        test('returns details for assigned village', async () => {
-            const res = await moderatorAgent.get(`/api/moderator/village/${villageId}/details`);
-            expect(res.status).toBe(200);
-        });
 
-        test('returns 403 for non-assigned village', async () => {
-            const res = await moderatorAgent.get('/api/moderator/village/V999/details');
-            expect(res.status).toBe(403);
-        });
-    });
 
     describe('GET /api/moderator/village/:villageId/managers', () => {
         test('returns managers for assigned village', async () => {
@@ -102,13 +92,6 @@ describe('Moderator Integration', () => {
         });
     });
 
-    describe('GET /api/moderator/stats', () => {
-        test('returns aggregated stats', async () => {
-            const res = await moderatorAgent.get('/api/moderator/stats');
-            // May return 200 or 500 depending on implementation
-            expect([200, 404]).toContain(res.status);
-        });
-    });
 
     describe('PUT /api/moderator/managers/:managerId/reset-password', () => {
         test('resets password for manager in assigned village', async () => {
@@ -117,7 +100,7 @@ describe('Moderator Integration', () => {
                 .set('x-csrf-token', moderatorCsrf);
 
             expect(res.status).toBe(200);
-            expect(res.body.newPassword).toBe(managerId);
+            expect(res.body.message).toContain('reset');
         });
     });
 

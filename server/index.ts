@@ -1,12 +1,16 @@
 import { createApp } from "./app";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
+import { startOrderExpiryWorker, stopOrderExpiryWorker } from "./workers/order-expiry";
 import type { Request, Response, NextFunction } from "express";
 
 const { app, logger } = createApp();
 
 (async () => {
   const server = await registerRoutes(app);
+
+  // Start background workers
+  startOrderExpiryWorker();
 
   // Enhanced error handling middleware - Security hardened
   app.use((err: any, req: Request, res: Response, _next: NextFunction) => {
@@ -74,6 +78,9 @@ const { app, logger } = createApp();
   const gracefulShutdown = async (signal: string) => {
     logger.info(`Received ${signal}. Graceful shutdown initiated.`);
 
+    // Stop background workers
+    stopOrderExpiryWorker();
+
     server.close(() => {
       logger.info("HTTP server closed.");
       process.exit(0);
@@ -92,16 +99,13 @@ const { app, logger } = createApp();
     serveStatic(app);
   }
 
-  // ALWAYS serve the app on port 5000
-  // this serves both the API and the client.
-  // It is the only port that is not firewalled.
-  //testing ci
-  const port = 5000;
+  // Port configuration from environment
+  const port = parseInt(process.env.PORT || '5002', 10);
   server.listen(
     {
       port,
-      host: "0.0.0.0",
-      reusePort: true,
+      // host: "0.0.0.0",
+      // reusePort: true,
     },
     () => {
       log(`serving on port ${port}`);

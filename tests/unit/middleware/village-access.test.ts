@@ -1,5 +1,12 @@
-import { describe, test, expect, jest } from '@jest/globals';
-import { requireVillageAccess } from '../../../server/common/middleware/village-access';
+import { describe, test, expect, jest, beforeEach } from '@jest/globals';
+
+// Mock the moderator storage before importing the middleware
+const mockIsModeratorAssigned = jest.fn();
+jest.unstable_mockModule('../../../server/modules/moderation/moderator.storage', () => ({
+    isModeratorAssignedToVillage: mockIsModeratorAssigned,
+}));
+
+const { requireVillageAccess } = await import('../../../server/common/middleware/village-access');
 
 function createMockReqResNext(overrides: any = {}) {
     const req: any = {
@@ -27,12 +34,13 @@ describe('requireVillageAccess middleware', () => {
         expect(next).toHaveBeenCalled();
     });
 
-    test('moderator can access (check deferred to storage)', () => {
+    test('moderator can access (check deferred to storage)', async () => {
+        mockIsModeratorAssigned.mockResolvedValue(true as never);
         const { req, res, next } = createMockReqResNext({
-            session: { role: 'moderator', villageId: 'V001' },
+            session: { role: 'moderator', villageId: 'V001', userId: 'MOD-001' },
             params: { villageId: 'V002' },
         });
-        requireVillageAccess(req, res, next);
+        await requireVillageAccess(req, res, next);
         expect(next).toHaveBeenCalled();
     });
 

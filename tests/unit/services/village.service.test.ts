@@ -71,6 +71,7 @@ describe('village.service', () => {
             expect(mockStorage.createVillage).toHaveBeenCalledWith({
                 villageId: 'V001',
                 name: 'Test Village',
+                paymentsEnabled: false,
             });
             expect(mockStorage.createUser).toHaveBeenCalledWith(
                 expect.objectContaining({

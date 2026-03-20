@@ -5,6 +5,9 @@ const mockStorage = {
     getCollectorByUid: jest.fn(),
     checkExistingCollection: jest.fn(),
     createWasteCollection: jest.fn(),
+    getVillageByVillageId: jest.fn(),
+    getCollectorsByVillage: jest.fn(),
+    getHouseholdsByVillage: jest.fn(),
 };
 jest.unstable_mockModule('../../../server/storage', () => ({
     storage: mockStorage,
@@ -17,14 +20,19 @@ const mockCache = {
 jest.unstable_mockModule('../../../server/cache', () => ({
     getCache: () => mockCache,
     cacheKeys: {
-        adminStats: () => 'admin:stats',
         villageStats: (vid: string) => `village:${vid}:stats`,
         dailyReport: (vid: string, date: string) => `report:${vid}:${date}`,
     },
 }));
 
+const mockUpdateDailyStats = jest.fn().mockResolvedValue(undefined as never);
+jest.unstable_mockModule('../../../server/modules/analytics/daily-stats.storage', () => ({
+    updateDailyStatsAfterCollection: mockUpdateDailyStats,
+}));
+
 const { submitCollection } =
     await import('../../../server/modules/waste-collection/waste-collection.service');
+
 
 describe('waste-collection.service', () => {
     beforeEach(() => {
@@ -35,8 +43,6 @@ describe('waste-collection.service', () => {
         householdUid: 'V001-H0001',
         collectorUserId: 'V001-C1',
         segregationRating: 4,
-        plasticRating: 3,
-        observations: ['clean'],
         remarks: 'Good',
         photoUrl: '',
         voiceUrl: '',
@@ -46,12 +52,15 @@ describe('waste-collection.service', () => {
 
     describe('submitCollection', () => {
         test('creates collection when no existing collection', async () => {
-            mockStorage.getHouseholdByUid.mockResolvedValue({ id: 1, villageId: 'V001' } as never);
-            mockStorage.getCollectorByUid.mockResolvedValue({ id: 5, villageId: 'V001' } as never);
+            mockStorage.getHouseholdByUid.mockResolvedValue({ id: 1, villageId: 'V001', ward: 'Ward-1' } as never);
+            mockStorage.getCollectorByUid.mockResolvedValue({ id: 5, villageId: 'V001', name: 'Collector1', assignedVehicle: 'KA01' } as never);
             mockStorage.checkExistingCollection.mockResolvedValue(null as never);
             mockStorage.createWasteCollection.mockResolvedValue({
                 id: 10, householdId: 1, collectorId: 5,
             } as never);
+            mockStorage.getVillageByVillageId.mockResolvedValue({ villageId: 'V001', totalHouseholds: 10, vehicles: [{ registrationNumber: 'KA01', name: 'V1' }] } as never);
+            mockStorage.getCollectorsByVillage.mockResolvedValue([{ id: 5, name: 'Collector1', assignedVehicle: 'KA01' }] as never);
+            mockStorage.getHouseholdsByVillage.mockResolvedValue([{ id: 1, ward: 'Ward-1' }] as never);
 
             const result = await submitCollection(validData);
 
@@ -94,23 +103,29 @@ describe('waste-collection.service', () => {
         });
 
         test('invalidates cache on successful collection', async () => {
-            mockStorage.getHouseholdByUid.mockResolvedValue({ id: 1, villageId: 'V001' } as never);
-            mockStorage.getCollectorByUid.mockResolvedValue({ id: 5, villageId: 'V001' } as never);
+            mockStorage.getHouseholdByUid.mockResolvedValue({ id: 1, villageId: 'V001', ward: 'Ward-1' } as never);
+            mockStorage.getCollectorByUid.mockResolvedValue({ id: 5, villageId: 'V001', name: 'Collector1', assignedVehicle: 'KA01' } as never);
             mockStorage.checkExistingCollection.mockResolvedValue(null as never);
             mockStorage.createWasteCollection.mockResolvedValue({ id: 10 } as never);
+            mockStorage.getVillageByVillageId.mockResolvedValue({ villageId: 'V001', totalHouseholds: 10, vehicles: [{ registrationNumber: 'KA01', name: 'V1' }] } as never);
+            mockStorage.getCollectorsByVillage.mockResolvedValue([{ id: 5, name: 'Collector1', assignedVehicle: 'KA01' }] as never);
+            mockStorage.getHouseholdsByVillage.mockResolvedValue([{ id: 1, ward: 'Ward-1' }] as never);
 
             await submitCollection(validData);
 
-            // Admin stats, village stats, daily report, and report:* pattern
-            expect(mockCache.delete).toHaveBeenCalledTimes(3);
-            expect(mockCache.clear).toHaveBeenCalledWith('report:*');
+            // Village stats cache invalidated
+            expect(mockCache.delete).toHaveBeenCalledTimes(1);
+            expect(mockCache.delete).toHaveBeenCalledWith('village:V001:stats');
         });
 
         test('uses client-provided collectionDate', async () => {
-            mockStorage.getHouseholdByUid.mockResolvedValue({ id: 1, villageId: 'V001' } as never);
-            mockStorage.getCollectorByUid.mockResolvedValue({ id: 5, villageId: 'V001' } as never);
+            mockStorage.getHouseholdByUid.mockResolvedValue({ id: 1, villageId: 'V001', ward: 'Ward-1' } as never);
+            mockStorage.getCollectorByUid.mockResolvedValue({ id: 5, villageId: 'V001', name: 'Collector1', assignedVehicle: 'KA01' } as never);
             mockStorage.checkExistingCollection.mockResolvedValue(null as never);
             mockStorage.createWasteCollection.mockResolvedValue({ id: 10 } as never);
+            mockStorage.getVillageByVillageId.mockResolvedValue({ villageId: 'V001', totalHouseholds: 10, vehicles: [] } as never);
+            mockStorage.getCollectorsByVillage.mockResolvedValue([{ id: 5, name: 'Collector1', assignedVehicle: 'KA01' }] as never);
+            mockStorage.getHouseholdsByVillage.mockResolvedValue([{ id: 1, ward: 'Ward-1' }] as never);
 
             await submitCollection({
                 ...validData,

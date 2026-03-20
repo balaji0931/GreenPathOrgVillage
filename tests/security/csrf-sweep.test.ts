@@ -44,7 +44,7 @@ beforeAll(async () => {
     const vRes = await adminAgent
         .post('/api/villages')
         .set('x-csrf-token', adminCsrf)
-        .send({ villageName: 'CSRF Village', managerName: 'CSRF Mgr', managerPhone: '1111111111' });
+        .send({ villageName: 'CSRF Village', managerName: 'CSRF Mgr', paymentsEnabled: true, managerPhone: '1111111111' });
     villageId = vRes.body.village.villageId;
     const managerId = vRes.body.manager.credentials.userId;
 
@@ -90,7 +90,7 @@ interface CsrfEndpoint {
 
 const CSRF_ENDPOINTS: CsrfEndpoint[] = [
     // Admin POST endpoints
-    { method: 'post', getPath: () => '/api/villages', getBody: () => ({ villageName: 'TempV', managerName: 'TempM', managerPhone: '0000000000' }), agent: () => adminAgent, csrf: () => adminCsrf, label: 'POST /api/villages (admin)' },
+    { method: 'post', getPath: () => '/api/villages', getBody: () => ({ villageName: 'TempV', managerName: 'TempM', paymentsEnabled: true, managerPhone: '0000000000' }), agent: () => adminAgent, csrf: () => adminCsrf, label: 'POST /api/villages (admin)' },
     { method: 'post', getPath: () => '/api/moderators', getBody: () => ({ name: 'TempMod', phone: '0000000001', email: 't@t.com', villageIds: [] }), agent: () => adminAgent, csrf: () => adminCsrf, label: 'POST /api/moderators (admin)' },
 
     // Manager POST endpoints
@@ -104,7 +104,7 @@ const CSRF_ENDPOINTS: CsrfEndpoint[] = [
     { method: 'post', getPath: () => '/api/issues', getBody: () => ({ title: 'CSRF Issue Title Long Enough', description: 'CSRF issue description that is long enough to pass validation', category: 'waste' }), agent: () => collectorAgent, csrf: () => collectorCsrf, label: 'POST /api/issues (collector)' },
 
     // Collector POST — waste collection
-    { method: 'post', getPath: () => '/api/waste-collections', getBody: () => ({ householdUid, segregationRating: 4, plasticRating: 3, observations: [], remarks: '', photoUrl: '', voiceUrl: '', status: 'collected', missedReason: '' }), agent: () => collectorAgent, csrf: () => collectorCsrf, label: 'POST /api/waste-collections (collector)' },
+    { method: 'post', getPath: () => '/api/waste-collections', getBody: () => ({ householdUid, segregationRating: 4, remarks: '', photoUrl: '', voiceUrl: '', status: 'collected', missedReason: '' }), agent: () => collectorAgent, csrf: () => collectorCsrf, label: 'POST /api/waste-collections (collector)' },
 
     // Admin PUT
     { method: 'put', getPath: () => `/api/villages/${villageId}`, getBody: () => ({ name: 'CSRF Updated' }), agent: () => adminAgent, csrf: () => adminCsrf, label: 'PUT /api/villages/:villageId (admin)' },

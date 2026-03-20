@@ -30,7 +30,7 @@ beforeAll(async () => {
     const villageRes = await adminAgent
         .post('/api/villages')
         .set('x-csrf-token', adminCsrf)
-        .send({ villageName: 'Household Village', managerName: 'HH Manager', managerPhone: '1111111111' });
+        .send({ villageName: 'Household Village', managerName: 'HH Manager', paymentsEnabled: true, managerPhone: '1111111111' });
 
     villageId = villageRes.body.village.villageId;
     managerId = villageRes.body.manager.credentials.userId;

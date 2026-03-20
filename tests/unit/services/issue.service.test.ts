@@ -16,7 +16,7 @@ jest.unstable_mockModule('../../../server/cache', () => ({
     getCache: () => mockCache,
     cacheKeys: {
         issues: (vid: string) => `issues:${vid}`,
-        villageDetails: (vid: string) => `village:${vid}:details`,
+
     },
 }));
 

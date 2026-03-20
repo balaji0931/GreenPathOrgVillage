@@ -6,18 +6,22 @@ import {
   mapQRToHousehold,
   generateBatchPDF,
 } from "./qr-code.service";
+import { logAction } from "../audit/audit.storage";
 
-export function registerQRCodeRoutes(app: Express, requireAuth: any, requireRole: any) {
-  app.post('/api/qr-codes/batch', requireAuth, requireRole(['manager']), async (req, res) => {
+export function registerQRCodeRoutes(app: Express, requireAuth: any, requireRole: any, requireVillageAccess: any) {
+  app.post('/api/qr-codes/batch', requireAuth, requireRole(['manager']), requireVillageAccess, async (req, res) => {
     try {
       const { quantity } = req.body;
       const villageId = req.session.villageId!;
 
       const result = await createBatchQRCodes(villageId, quantity);
 
+      logAction(villageId, req.session.userId!, 'created', 'qr_batch', result.batchId, {
+        quantity,
+      });
+
       res.json(result);
     } catch (error: any) {
-      console.error("Create batch QR codes error:", error);
       if (error.message === "Quantity must be between 1 and 500") {
         return res.status(400).json({ message: error.message });
       }
@@ -25,20 +29,19 @@ export function registerQRCodeRoutes(app: Express, requireAuth: any, requireRole
     }
   });
 
-  app.get('/api/qr-codes', requireAuth, requireRole(['manager']), async (req, res) => {
+  app.get('/api/qr-codes', requireAuth, requireRole(['manager']), requireVillageAccess, async (req, res) => {
     try {
       const villageId = req.session.villageId!;
       const qrCodes = await storage.getQRCodesByVillage(villageId);
       res.json(qrCodes);
     } catch (error) {
-      console.error("Get QR codes error:", error);
       res.status(500).json({ message: "Failed to get QR codes" });
     }
   });
 
 
 
-  app.get('/api/qr-codes/batch/:batchId/pdf', requireAuth, requireRole(['manager']), async (req, res) => {
+  app.get('/api/qr-codes/batch/:batchId/pdf', requireAuth, requireRole(['manager']), requireVillageAccess, async (req, res) => {
     try {
       const { batchId } = req.params;
 
@@ -48,7 +51,6 @@ export function registerQRCodeRoutes(app: Express, requireAuth: any, requireRole
       res.setHeader('Content-Disposition', `attachment; filename="${batchId}-qr-codes.pdf"`);
       res.send(pdfBuffer);
     } catch (error: any) {
-      console.error("Generate batch PDF error:", error);
       if (error.message === "Batch not found") {
         return res.status(404).json({ message: error.message });
       }
@@ -56,8 +58,35 @@ export function registerQRCodeRoutes(app: Express, requireAuth: any, requireRole
     }
   });
 
+  // On-demand QR image generation — replaces Cloudinary URLs
+  app.get('/api/qr-codes/:uid/image', requireAuth, async (req, res) => {
+    try {
+      const { uid } = req.params;
+      const { generateQRBuffer, toFullUid } = await import('./qr-service');
+      const fullUid = toFullUid(uid);
+
+      // Verify village access — prevent cross-village QR image requests
+      const qrCode = await storage.getQRCodeByUid(fullUid);
+      if (!qrCode) {
+        // Also check households table (for directly-created households)
+        const household = await storage.getHouseholdByUid(uid.replace(/^GEN-/, ''));
+        if (!household || household.villageId !== req.session.villageId) {
+          return res.status(404).json({ message: "QR code not found" });
+        }
+      } else if (qrCode.villageId !== req.session.villageId) {
+        return res.status(403).json({ message: "Access denied" });
+      }
+
+      const buffer = await generateQRBuffer(fullUid);
+      res.setHeader('Content-Type', 'image/png');
+      res.send(buffer);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to generate QR image" });
+    }
+  });
+
   // Field worker QR code lookup route
-  app.get('/api/qr-codes/:uid', requireAuth, requireRole(['fieldworker', 'manager']), async (req, res) => {
+  app.get('/api/qr-codes/:uid', requireAuth, requireRole(['fieldworker', 'manager']), requireVillageAccess, async (req, res) => {
     try {
       const { uid } = req.params;
       const villageId = req.session.villageId!;
@@ -66,7 +95,6 @@ export function registerQRCodeRoutes(app: Express, requireAuth: any, requireRole
 
       res.json(qrCode);
     } catch (error: any) {
-      console.error("Get QR code error:", error);
       if (error.message === "QR code not found") {
         return res.status(404).json({ message: error.message });
       }
@@ -77,10 +105,10 @@ export function registerQRCodeRoutes(app: Express, requireAuth: any, requireRole
     }
   });
 
-  app.post('/api/qr-codes/:uid/map', requireAuth, requireRole(['fieldworker']), async (req, res) => {
+  app.post('/api/qr-codes/:uid/map', requireAuth, requireRole(['fieldworker']), requireVillageAccess, async (req, res) => {
     try {
       const { uid } = req.params;
-      const { headName, phone, houseNumber, ward, familySize, address, latitude, longitude } = req.body;
+      const { headName, phone, houseNumber, ward, familySize, address, latitude, longitude, householdType } = req.body;
       const villageId = req.session.villageId!;
 
       const result = await mapQRToHousehold(uid, villageId, {
@@ -92,11 +120,16 @@ export function registerQRCodeRoutes(app: Express, requireAuth: any, requireRole
         address,
         latitude,
         longitude,
+        householdType,
+      });
+
+      logAction(villageId, req.session.userId!, 'mapped', 'qr_mapping', uid, {
+        headName,
+        ward,
       });
 
       res.json(result);
     } catch (error: any) {
-      console.error("Map QR code error:", error);
       if (error.message === "QR code not found") {
         return res.status(404).json({ message: error.message });
       }
@@ -106,7 +139,7 @@ export function registerQRCodeRoutes(app: Express, requireAuth: any, requireRole
       if (error.message === "QR code is already mapped to a household") {
         return res.status(400).json({ message: error.message });
       }
-      res.status(500).json({ message: "Failed to map QR code" });
+      console.error("QR MAP ERROR:", error); res.status(500).json({ message: "Failed to map QR code" });
     }
   });
 }

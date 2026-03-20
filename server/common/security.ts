@@ -22,7 +22,10 @@ export function configureSecurityHeaders(app: Express) {
                     scriptSrc: [
                         "'self'",
                         "'unsafe-inline'", // Allow inline scripts
-                        "'unsafe-eval'" // Allow eval for development
+                        "'unsafe-eval'", // Allow eval for development
+                        "https://checkout.razorpay.com",
+                        "https://sdk.cashfree.com",
+                        "https://jssdk.payu.in",
                     ],
                     connectSrc: [
                         "'self'",
@@ -36,10 +39,27 @@ export function configureSecurityHeaders(app: Express) {
                         "blob:"
                     ],
                     workerSrc: ["'self'", "blob:"],
-                    frameSrc: ["'self'"], // Allow same-origin frames
+                    frameSrc: [
+                        "'self'",
+                        "https://api.razorpay.com",
+                        "https://checkout.razorpay.com",
+                        "https://sdk.cashfree.com",
+                        "https://sandbox.cashfree.com",
+                        "https://api.cashfree.com",
+                        "https://jssdk.payu.in",
+                        "https://secure.payu.in",
+                        "https://test.payu.in",
+                    ], // Allow gateway checkout iframes
                     objectSrc: ["'none'"],
                     baseUri: ["'self'"],
-                    formAction: ["'self'"],
+                    formAction: [
+                        "'self'",
+                        "https://sandbox.cashfree.com",
+                        "https://api.cashfree.com",
+                        "https://jssdk.payu.in",
+                        "https://secure.payu.in",
+                        "https://test.payu.in",
+                    ],
                 },
             },
             crossOriginEmbedderPolicy: false, // Required for some PWA features

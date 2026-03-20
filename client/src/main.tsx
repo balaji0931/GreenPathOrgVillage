@@ -5,7 +5,6 @@ import { queryClient } from "./lib/queryClient";
 import { I18nextProvider } from 'react-i18next';
 import i18n from './i18n';
 import { registerServiceWorker } from "./hooks/usePWA";
-import { OfflineIndicator } from "./components/OfflineIndicator";
 import App from "./App";
 import "./index.css";
 
@@ -18,7 +17,6 @@ function MainApp() {
   return (
     <QueryClientProvider client={queryClient}>
       <I18nextProvider i18n={i18n}>
-        <OfflineIndicator />
         <App />
       </I18nextProvider>
     </QueryClientProvider>

@@ -6,7 +6,7 @@ import { db } from "../../db";
 import { eq, and } from "drizzle-orm";
 
 export async function addVehicleToVillage(villageId: string, vehicle: { registrationNumber: string; name: string; collectorIds: number[] }): Promise<void> {
-    const [village] = await db.select().from(villages).where(eq(villages.villageId, villageId));
+    const [village] = await db.select({ villageId: villages.villageId, vehicles: villages.vehicles }).from(villages).where(eq(villages.villageId, villageId));
     if (!village) throw new Error("Village not found");
 
     const existingVehicles = (village.vehicles as any) || [];
@@ -29,11 +29,11 @@ export async function addVehicleToVillage(villageId: string, vehicle: { registra
     // Clear cache
     const { getCache, cacheKeys } = await import('../../cache');
     await getCache().delete(cacheKeys.village(villageId));
-    await getCache().delete(cacheKeys.villageDetails(villageId));
+
 }
 
 export async function removeVehicleFromVillage(villageId: string, registrationNumber: string): Promise<void> {
-    const [village] = await db.select().from(villages).where(eq(villages.villageId, villageId));
+    const [village] = await db.select({ villageId: villages.villageId, vehicles: villages.vehicles }).from(villages).where(eq(villages.villageId, villageId));
     if (!village) throw new Error("Village not found");
 
     const updatedVehicles = ((village.vehicles as any) || []).filter((v: any) => v.registrationNumber !== registrationNumber);
@@ -53,11 +53,11 @@ export async function removeVehicleFromVillage(villageId: string, registrationNu
     // Clear cache
     const { getCache, cacheKeys } = await import('../../cache');
     await getCache().delete(cacheKeys.village(villageId));
-    await getCache().delete(cacheKeys.villageDetails(villageId));
+
 }
 
 export async function updateVehicleInVillage(villageId: string, registrationNumber: string, updates: { name: string; collectorIds: number[] }): Promise<void> {
-    const [village] = await db.select().from(villages).where(eq(villages.villageId, villageId));
+    const [village] = await db.select({ villageId: villages.villageId, vehicles: villages.vehicles }).from(villages).where(eq(villages.villageId, villageId));
     if (!village) throw new Error("Village not found");
 
     let vehicles = (village.vehicles as any[]) || [];
@@ -78,7 +78,7 @@ export async function updateVehicleInVillage(villageId: string, registrationNumb
 
     // Ensure collectors that were previously assigned to this vehicle but are not in the updates
     // are unassigned from this vehicle in the database
-    const allVillageCollectors = await db.select().from(collectors).where(and(eq(collectors.villageId, villageId), eq(collectors.assignedVehicle, registrationNumber)));
+    const allVillageCollectors = await db.select({ id: collectors.id }).from(collectors).where(and(eq(collectors.villageId, villageId), eq(collectors.assignedVehicle, registrationNumber)));
     for (const c of allVillageCollectors) {
         if (!updates.collectorIds.includes(c.id)) {
             await updateCollectorVehicle(c.id, null);
@@ -94,16 +94,16 @@ export async function updateVehicleInVillage(villageId: string, registrationNumb
     // Clear cache
     const { getCache, cacheKeys } = await import('../../cache');
     await getCache().delete(cacheKeys.village(villageId));
-    await getCache().delete(cacheKeys.villageDetails(villageId));
+
 }
 
 export async function updateCollectorVehicle(collectorId: number, registrationNumber: string | null): Promise<void> {
-    const [collector] = await db.select().from(collectors).where(eq(collectors.id, collectorId));
+    const [collector] = await db.select({ id: collectors.id, assignedVehicle: collectors.assignedVehicle, villageId: collectors.villageId }).from(collectors).where(eq(collectors.id, collectorId));
     if (!collector) throw new Error("Collector not found");
 
     // If assigned to a new vehicle, remove from old vehicle list in village json
     if (registrationNumber && collector.assignedVehicle && collector.assignedVehicle !== registrationNumber) {
-        const [village] = await db.select().from(villages).where(eq(villages.villageId, collector.villageId as string));
+        const [village] = await db.select({ villageId: villages.villageId, vehicles: villages.vehicles }).from(villages).where(eq(villages.villageId, collector.villageId as string));
         if (village) {
             const vehicles = (village.vehicles as any[]) || [];
             const oldVehicle = vehicles.find((v: any) => v.registrationNumber === collector.assignedVehicle);

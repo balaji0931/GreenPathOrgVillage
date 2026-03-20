@@ -50,7 +50,7 @@ beforeAll(async () => {
     const vARes = await adminAgent
         .post('/api/villages')
         .set('x-csrf-token', adminCsrf)
-        .send({ villageName: 'Village Alpha', managerName: 'Mgr A', managerPhone: '1111111111' });
+        .send({ villageName: 'Village Alpha', managerName: 'Mgr A', paymentsEnabled: true, managerPhone: '1111111111' });
     villageAId = vARes.body.village.villageId;
     const mgrAId = vARes.body.manager.credentials.userId;
 
@@ -58,7 +58,7 @@ beforeAll(async () => {
     const vBRes = await adminAgent
         .post('/api/villages')
         .set('x-csrf-token', adminCsrf)
-        .send({ villageName: 'Village Beta', managerName: 'Mgr B', managerPhone: '2222222222' });
+        .send({ villageName: 'Village Beta', managerName: 'Mgr B', paymentsEnabled: true, managerPhone: '2222222222' });
     villageBId = vBRes.body.village.villageId;
     const mgrBId = vBRes.body.manager.credentials.userId;
 
@@ -161,8 +161,6 @@ describe('Village Isolation — Cross-village access denied', () => {
                 .send({
                     householdUid: householdBUid,
                     segregationRating: 4,
-                    plasticRating: 3,
-                    observations: [],
                     remarks: '',
                     photoUrl: '',
                     voiceUrl: '',
@@ -182,26 +180,20 @@ describe('Village Isolation — Cross-village access denied', () => {
     });
 
     describe('Moderator assigned to A cannot access Village B', () => {
-        test('Moderator cannot view Village B details', async () => {
-            const res = await modAgent.get(`/api/moderator/village/${villageBId}/details`);
-            expect(res.status).toBe(403);
-        });
+
 
         test('Moderator cannot view Village B managers', async () => {
             const res = await modAgent.get(`/api/moderator/village/${villageBId}/managers`);
             expect(res.status).toBe(403);
         });
 
-        test('Moderator cannot view Village B issues', async () => {
-            const res = await modAgent.get(`/api/moderator/village/${villageBId}/issues`);
-            expect(res.status).toBe(403);
-        });
+
 
         test('Moderator cannot add manager to Village B', async () => {
             const res = await modAgent
                 .post(`/api/moderator/village/${villageBId}/managers`)
                 .set('x-csrf-token', modCsrf)
-                .send({ managerName: 'Cross Mgr', managerPhone: '0000000000' });
+                .send({ managerName: 'Cross Mgr', paymentsEnabled: true, managerPhone: '0000000000' });
             expect(res.status).toBe(403);
         });
     });

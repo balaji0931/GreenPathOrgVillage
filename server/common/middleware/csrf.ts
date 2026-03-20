@@ -22,8 +22,9 @@ export const csrfProtection = (req: any, res: any, next: any) => {
         '/api/newsletter',
         '/api/auth/csrf-token'
     ];
-    // Normalize path by removing trailing slash for exact comparison
-    const normalizedPath = req.path.replace(/\/$/, '');
+    // Normalize path: use originalUrl (preserves /api prefix when mounted via app.use('/api', ...))
+    // Strip query string and trailing slash for exact comparison
+    const normalizedPath = (req.originalUrl || req.path).split('?')[0].replace(/\/$/, '');
     if (publicEndpoints.includes(normalizedPath)) {
         return next();
     }

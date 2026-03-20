@@ -7,8 +7,6 @@ export interface OfflineCollection {
   householdUid: string;
   status: string;
   segregationRating: number;
-  plasticRating: number;
-  observations: string[];
   remarks: string;
   photoFileId?: string;
   voiceFileId?: string;

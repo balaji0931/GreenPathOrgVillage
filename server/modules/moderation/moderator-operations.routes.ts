@@ -9,7 +9,6 @@ export function registerModeratorOperationsRoutes(app: Express, requireAuth: any
             const villages = await storage.getModeratorVillages(moderatorId);
             res.json(villages);
         } catch (error) {
-            console.error('Get moderator villages error:', error);
             res.status(500).json({ message: "Failed to get villages" });
         }
     });
@@ -50,7 +49,6 @@ export function registerModeratorOperationsRoutes(app: Express, requireAuth: any
                 villageCount: announcements.length
             });
         } catch (error) {
-            console.error('Create moderator announcement error:', error);
             res.status(500).json({ message: "Failed to create announcement" });
         }
     });
@@ -65,7 +63,6 @@ export function registerModeratorOperationsRoutes(app: Express, requireAuth: any
             const issues = await storage.getModeratorIssues(villageIds);
             res.json(issues);
         } catch (error) {
-            console.error('Get moderator issues error:', error);
             res.status(500).json({ message: "Failed to get issues" });
         }
     });
@@ -80,7 +77,6 @@ export function registerModeratorOperationsRoutes(app: Express, requireAuth: any
             const collectors = await storage.getModeratorCollectors(villageIds);
             res.json(collectors);
         } catch (error) {
-            console.error('Get moderator collectors error:', error);
             res.status(500).json({ message: "Failed to get collectors" });
         }
     });
@@ -95,36 +91,11 @@ export function registerModeratorOperationsRoutes(app: Express, requireAuth: any
             const households = await storage.getModeratorHouseholds(villageIds);
             res.json(households);
         } catch (error) {
-            console.error('Get moderator households error:', error);
             res.status(500).json({ message: "Failed to get households" });
         }
     });
 
-    app.get('/api/moderator/village/:villageId/details', requireAuth, requireRole(['moderator']), async (req, res) => {
-        try {
-            const { villageId } = req.params;
-            const moderatorId = req.session.userId!;
 
-            // Verify that this village is assigned to the moderator
-            const assignedVillages = await storage.getModeratorVillages(moderatorId);
-            const isAssigned = assignedVillages.some(v => v.villageId === villageId);
-
-            if (!isAssigned) {
-                return res.status(403).json({ message: "Access denied to this village" });
-            }
-
-            const details = await storage.getVillageDetails(villageId);
-
-            // Add recent collections data for village performance charts
-            const recentCollections = await storage.getRecentCollectionsByVillage(villageId, 7);
-            details.recentCollections = recentCollections;
-
-            res.json(details);
-        } catch (error) {
-            console.error("Get moderator village details error:", error);
-            res.status(500).json({ message: "Failed to get village details" });
-        }
-    });
 
     app.get('/api/moderator/village/:villageId/managers', requireAuth, requireRole(['moderator']), async (req, res) => {
         try {
@@ -142,7 +113,6 @@ export function registerModeratorOperationsRoutes(app: Express, requireAuth: any
             const managers = await storage.getManagersByVillage(villageId);
             res.json(managers);
         } catch (error) {
-            console.error("Get village managers error:", error);
             res.status(500).json({ message: "Failed to get village managers" });
         }
     });
@@ -164,7 +134,6 @@ export function registerModeratorOperationsRoutes(app: Express, requireAuth: any
 
             res.json(allManagers);
         } catch (error) {
-            console.error("Get moderator managers error:", error);
             res.status(500).json({ message: "Failed to get managers" });
         }
     });
@@ -195,12 +164,10 @@ export function registerModeratorOperationsRoutes(app: Express, requireAuth: any
                     ...manager,
                     credentials: {
                         userId: manager.userId,
-                        password: manager.userId // Password is same as userId
                     }
                 }
             });
         } catch (error) {
-            console.error("Add manager error:", error);
             res.status(500).json({ message: "Failed to add manager" });
         }
     });
@@ -229,9 +196,8 @@ export function registerModeratorOperationsRoutes(app: Express, requireAuth: any
             const hashedPassword = await bcrypt.hash(newPassword, Number(process.env.BCRYPT_ROUNDS) || 10);
             await storage.updateUserPassword(managerId, hashedPassword);
 
-            res.json({ message: "Password reset successfully", newPassword });
+            res.json({ message: "Password reset successfully" });
         } catch (error) {
-            console.error("Reset manager password error:", error);
             res.status(500).json({ message: "Failed to reset manager password" });
         }
     });
@@ -259,31 +225,11 @@ export function registerModeratorOperationsRoutes(app: Express, requireAuth: any
             await storage.deleteUser(managerId);
             res.json({ message: "Manager deleted successfully" });
         } catch (error) {
-            console.error("Delete manager error:", error);
             res.status(500).json({ message: "Failed to delete manager" });
         }
     });
 
-    app.get('/api/moderator/village/:villageId/issues', requireAuth, requireRole(['moderator']), async (req, res) => {
-        try {
-            const { villageId } = req.params;
-            const moderatorId = req.session.userId!;
 
-            // Verify that this village is assigned to the moderator
-            const assignedVillages = await storage.getModeratorVillages(moderatorId);
-            const isAssigned = assignedVillages.some(v => v.villageId === villageId);
-
-            if (!isAssigned) {
-                return res.status(403).json({ message: "Access denied to this village" });
-            }
-
-            const issues = await storage.getIssuesByVillage(villageId);
-            res.json(issues);
-        } catch (error) {
-            console.error("Get village issues error:", error);
-            res.status(500).json({ message: "Failed to get village issues" });
-        }
-    });
 
     app.patch('/api/moderator/issues/:id', requireAuth, requireRole(['moderator']), async (req, res) => {
         try {
@@ -308,7 +254,6 @@ export function registerModeratorOperationsRoutes(app: Express, requireAuth: any
             const updatedIssue = await storage.updateIssue(parseInt(id), updates);
             res.json(updatedIssue);
         } catch (error) {
-            console.error("Update issue error:", error);
             res.status(500).json({ message: "Failed to update issue" });
         }
     });
