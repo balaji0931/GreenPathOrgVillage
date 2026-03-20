@@ -35,6 +35,8 @@ import {
   Bell,
   UserPlus,
   Lock,
+  Clock,
+  CreditCard,
   FileCheck,
 } from "lucide-react";
 
@@ -73,7 +75,7 @@ const modules = [
       "Waste type recording (wet, dry, hazardous, mixed)",
       "1-5 star segregation quality rating per household",
       "Voice note and photo feedback capability",
-      "Full offline support — auto-sync when connected",
+      "Full offline support - auto-sync when connected",
       "Observation checklist and not-collected reasons",
     ],
   },
@@ -84,10 +86,10 @@ const modules = [
     bgColor: "from-cyan-50 to-blue-50/40",
     img: "/images/illustrations/module-facility.png",
     features: [
-      "Track waste from collection point to processing facility",
+      "Log incoming materials at processing facilities",
       "Material log tracking (compost, dry waste sales, disposal)",
-      "Vehicle session management with route tracking",
-      "Facility-level incoming vs processed waste reports",
+      "Vehicle session management with trip tracking",
+      "Daily waste volume and material type logging",
     ],
   },
   {
@@ -99,7 +101,7 @@ const modules = [
     features: [
       "Manager dashboard with real-time collection status",
       "Ward-wise, collector-wise, household-wise breakdowns",
-      "Segregation quality heatmaps and trend analysis",
+      "Segregation quality scores and performance tracking",
       "Exportable PDF reports for governance bodies",
       "Revenue and payment analytics",
     ],
@@ -113,7 +115,7 @@ const modules = [
     features: [
       "Citizen-reported issues with photo evidence",
       "Manager replies with proof-of-resolution photos",
-      "Priority-based escalation workflow",
+      "Category-based issue tracking across 8 types",
       "Resolution tracking with full timeline",
     ],
   },
@@ -124,13 +126,13 @@ const roles = [
   { role: "Manager", desc: "Registers households, generates QR batches, assigns collectors, monitors operations and analytics", icon: Users, img: "/images/illustrations/role-manager.png" },
   { role: "Collector", desc: "Scans QR codes, records waste type, rates segregation quality, adds photo/voice evidence", icon: Smartphone, img: "/images/illustrations/role-collector.png" },
   { role: "Fieldworker", desc: "Maps households by scanning premapped QR codes, captures GPS locations, mobile-only workflow", icon: MapPin, img: "/images/illustrations/role-fieldworker.png" },
-  { role: "Household / Generator", desc: "Views collection history, gives collector feedback, reports issues with photos, tracks segregation score", icon: QrCode, img: "/images/illustrations/role-household.png" },
+  { role: "Household / Generator", desc: "Views collection history, pays bills, gives collector feedback, reports issues with photos, tracks segregation score", icon: QrCode, img: "/images/illustrations/role-household.png" },
 ];
 
 export default function ProductPage() {
   useSEO({
-    title: "Platform — GreenPath",
-    description: "Complete waste management operating system: QR-based household tracking, offline-first collector app, vehicle sessions, analytics dashboards, multi-language support. Built for ground-level operations.",
+    title: "Platform - GreenPath",
+    description: "Complete waste management platform: QR-based household tracking, offline-first collector app, vehicle sessions, analytics dashboards, multi-language support. Built for ground-level operations.",
     path: "/product",
   });
 
@@ -138,11 +140,11 @@ export default function ProductPage() {
     <PublicLayout>
       <style>{pageStyles}</style>
 
-      {/* Hero — with floating illustration */}
-      <section className="relative bg-gradient-to-br from-slate-50 to-emerald-50/30 py-20 md:py-28 overflow-hidden">
+      {/* Hero - with floating illustration */}
+      <section className="relative bg-gradient-to-br from-slate-50 to-emerald-50/30 py-10 md:py-14 overflow-hidden">
         <div className="absolute top-10 right-0 w-80 h-80 bg-emerald-100/20 rounded-full blur-3xl" />
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid lg:grid-cols-2 gap-12 items-center">
+        <div className="max-w-7xl mx-auto px-4">
+          <div className="grid lg:grid-cols-2 gap-20 items-center">
             <AnimateOnScroll>
               <div className="max-w-xl">
                 <span className="text-sm font-semibold uppercase tracking-widest text-emerald-600 mb-4 block">
@@ -151,13 +153,13 @@ export default function ProductPage() {
                 <h1 className="text-4xl md:text-5xl lg:text-6xl font-extrabold tracking-tight text-slate-900 leading-[1.1] mb-6">
                   The complete waste management{" "}
                   <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-600 to-teal-600">
-                    operating system
+                    platform
                   </span>
                 </h1>
                 <p className="text-lg md:text-xl text-slate-600 leading-relaxed">
-                  Purpose-built for decentralized waste collection, tracking, and
-                  governance — from household to facility. Every feature designed
-                  for ground-level operations.
+                  Purpose-built for community waste collection, tracking, and
+                  oversight - from household to processing facility. Every feature
+                  is designed for the people who do the work on the ground.
                 </p>
               </div>
             </AnimateOnScroll>
@@ -167,9 +169,9 @@ export default function ProductPage() {
                 <div className="absolute -inset-4 bg-gradient-to-r from-emerald-100/30 to-teal-100/30 rounded-3xl blur-2xl" />
                 <div className="relative gentle-float">
                   <img
-                    src="/images/illustrations/platform-dashboard.png"
+                    src="/images/illustrations/product-hero.png"
                     alt="GreenPath analytics dashboard"
-                    className="w-full h-auto"
+                    className="max-w-7xl h-auto"
                     style={{ filter: "drop-shadow(0 15px 35px rgba(5,150,105,0.12))" }}
                   />
                 </div>
@@ -184,16 +186,15 @@ export default function ProductPage() {
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <AnimateOnScroll>
             <p className="text-xl md:text-2xl font-medium text-slate-700 leading-relaxed">
-              <span className="text-emerald-600 font-bold">In one line:</span>{" "}
               GreenPath digitizes every household and tracks every waste collection event in real time.
             </p>
           </AnimateOnScroll>
         </div>
       </section>
 
-      {/* Architecture — visual flow */}
-      <section className="py-20 md:py-28">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      {/* Architecture - visual flow */}
+      <section className="py-10 md:py-14">
+        <div className="max-w-7xl mx-auto px-4">
           <AnimateOnScroll>
             <SectionHeading
               label="ARCHITECTURE"
@@ -203,12 +204,32 @@ export default function ProductPage() {
           </AnimateOnScroll>
 
           <AnimateOnScroll delay={100}>
-            <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 max-w-4xl mx-auto">
+            <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-8 max-w-4xl mx-auto">
               {[
-                { label: "Data Collection", desc: "QR scan, offline entry, photo & voice", icon: Database, color: "bg-emerald-500" },
-                { label: "Operations", desc: "Route management, vehicle sessions, scheduling", icon: Server, color: "bg-teal-500" },
-                { label: "Analytics", desc: "Dashboards, reports, heatmaps", icon: BarChart3, color: "bg-cyan-500" },
-                { label: "Governance", desc: "Issues, announcements, compliance", icon: Globe, color: "bg-blue-500" },
+                {
+                  label: "Field Data",
+                  desc: "Household QR scans, offline logging, daily waste logging, photo and voice records",
+                  icon: Database,
+                  color: "bg-emerald-500"
+                },
+                {
+                  label: "Daily Operations",
+                  desc: "Vehicle trips, collection sessions and on-ground coordination",
+                  icon: Server,
+                  color: "bg-teal-500"
+                },
+                {
+                  label: "Insights",
+                  desc: "Simple dashboards and reports to track coverage and performance",
+                  icon: BarChart3,
+                  color: "bg-cyan-500"
+                },
+                {
+                  label: "Local Governance",
+                  desc: "Issue tracking, announcements and transparent activity records",
+                  icon: Globe,
+                  color: "bg-blue-500"
+                },
               ].map((layer, i) => (
                 <div key={layer.label} className="relative">
                   <div className="bg-white rounded-2xl border border-slate-100 p-6 shadow-sm hover:shadow-lg transition-all duration-300 text-center hover:-translate-y-1">
@@ -219,8 +240,8 @@ export default function ProductPage() {
                     <p className="text-sm text-slate-500">{layer.desc}</p>
                   </div>
                   {i < 3 && (
-                    <div className="hidden lg:block absolute top-1/2 -right-2 transform -translate-y-1/2 z-10">
-                      <ArrowRight className="w-4 h-4 text-slate-300" />
+                    <div className="hidden lg:block absolute top-1/2 -right-8 transform -translate-y-1/2 z-10">
+                      <ArrowRight className="w-8 h-8 text-slate-300" />
                     </div>
                   )}
                 </div>
@@ -230,47 +251,72 @@ export default function ProductPage() {
         </div>
       </section>
 
-      {/* Modules — art-book alternating layout with illustrations */}
-      <section className="bg-slate-50 py-20 md:py-28">
+      {/* Modules - art-book alternating layout with illustrations */}
+      <section className="bg-slate-50 py-12 md:py-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <AnimateOnScroll>
             <SectionHeading
               label="CORE MODULES"
-              title="Everything you need, nothing you don't"
-              subtitle="Five purpose-built modules that cover the entire waste management lifecycle."
+              title="Operational tools designed for real field workflows"
+              subtitle="Each module supports a specific stage of waste collection, monitoring and reporting."
             />
           </AnimateOnScroll>
 
-          <div className="space-y-12">
+          <div className="space-y-10 md:space-y-12">
             {modules.map((mod, i) => (
               <AnimateOnScroll key={mod.title} delay={i * 80}>
-                <div className="relative rounded-3xl overflow-hidden bg-white border border-slate-100 shadow-sm hover:shadow-xl transition-all duration-500">
-                  <div className={`absolute top-0 left-0 w-1.5 h-full bg-gradient-to-b ${mod.color}`} />
-                  <div className={`grid ${i % 2 === 0 ? 'md:grid-cols-[1fr_360px]' : 'md:grid-cols-[360px_1fr]'} gap-0`}>
-                    <div className={`p-8 md:p-10 ${i % 2 !== 0 ? 'md:order-2' : ''}`}>
-                      <div className="flex items-center gap-4 mb-6">
-                        <div className={`w-12 h-12 rounded-2xl bg-gradient-to-br ${mod.color} flex items-center justify-center shadow-lg`}>
-                          <mod.icon className="w-6 h-6 text-white" />
+                <div className="relative bg-white border border-slate-200 rounded-2xl overflow-hidden transition-all duration-300 hover:shadow-lg">
+
+                  {/* subtle vertical identity strip */}
+                  <div className={`absolute top-0 left-0 w-[3px] h-full bg-gradient-to-b ${mod.color}`} />
+
+                  <div className={`grid ${i % 2 === 0 ? 'md:grid-cols-[1fr_380px]' : 'md:grid-cols-[380px_1fr]'}`}>
+
+                    {/* CONTENT */}
+                    <div className={`p-7 md:p-9 ${i % 2 !== 0 ? 'md:order-2' : ''}`}>
+                      <div className="flex items-center gap-3 mb-5">
+                        <div className={`w-11 h-11 rounded-xl bg-gradient-to-br ${mod.color} flex items-center justify-center shadow`}>
+                          <mod.icon className="w-5 h-5 text-white" />
                         </div>
-                        <h3 className="text-xl font-semibold text-slate-900">{mod.title}</h3>
+                        <h3 className="text-lg md:text-xl font-semibold text-slate-900 tracking-tight">
+                          {mod.title}
+                        </h3>
                       </div>
-                      <div className="grid sm:grid-cols-2 gap-3">
+
+                      <div className="grid sm:grid-cols-2 gap-y-2.5 gap-x-6">
                         {mod.features.map((f) => (
                           <div key={f} className="flex items-start gap-2">
-                            <CheckCircle2 className="w-4 h-4 text-emerald-500 flex-shrink-0 mt-0.5" />
-                            <span className="text-sm text-slate-600">{f}</span>
+                            <CheckCircle2 className="w-4 h-4 text-emerald-500 mt-[3px] flex-shrink-0" />
+                            <span className="text-sm text-slate-600 leading-snug">
+                              {f}
+                            </span>
                           </div>
                         ))}
                       </div>
                     </div>
-                    <div className={`relative bg-gradient-to-br ${mod.bgColor} flex items-center justify-center p-6 ${i % 2 !== 0 ? 'md:order-1' : ''}`}>
-                      <img
-                        src={mod.img}
-                        alt={mod.title}
-                        className="w-full max-w-[200px] h-auto object-contain gentle-float"
-                        style={{ filter: "drop-shadow(0 8px 20px rgba(0,0,0,0.08))" }}
-                      />
+
+                    {/* IMAGE PANEL */}
+                    <div
+                      className={`
+                        relative flex items-center justify-center
+                        bg-gradient-to-br ${mod.bgColor}
+                        border-t md:border-t-0
+                        ${i % 2 === 0 ? 'md:border-l' : 'md:border-r'}
+                        border-slate-200
+                        p-8 md:p-10
+                        ${i % 2 !== 0 ? 'md:order-1' : ''}
+                      `}
+                    >
+                      <div className="w-full max-w-[220px] opacity-95">
+                        <img
+                          src={mod.img}
+                          alt={mod.title}
+                          className="w-full h-auto object-contain"
+                          style={{ filter: "drop-shadow(0 12px 26px rgba(0,0,0,0.10))" }}
+                        />
+                      </div>
                     </div>
+
                   </div>
                 </div>
               </AnimateOnScroll>
@@ -279,27 +325,25 @@ export default function ProductPage() {
         </div>
       </section>
 
-      {/* ═══════════════════════════════════════════════════════════════════
-          KEY PLATFORM FEATURES — Needs Attention, Vehicle Sessions, QR Batch, Announcements
-      ═══════════════════════════════════════════════════════════════════ */}
-      <section className="py-20 md:py-28">
+      {/* KEY PLATFORM FEATURES */}
+      <section className="py-10 md:py-14">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <AnimateOnScroll>
             <SectionHeading
               label="PLATFORM CAPABILITIES"
               title="Powerful features built for the field"
-              subtitle="Beyond the core modules — capabilities that make GreenPath uniquely effective for ground-level waste management."
+              subtitle="Beyond the core modules - capabilities that make GreenPath uniquely effective for ground-level waste management."
             />
           </AnimateOnScroll>
 
-          <div className="space-y-16 md:space-y-24 max-w-6xl mx-auto">
+          <div className="space-y-8 md:space-y-12 max-w-6xl mx-auto">
             {/* Needs Attention System */}
             <AnimateOnScroll>
               <div className="grid md:grid-cols-2 gap-8 md:gap-12 items-center">
                 <div className="relative rounded-3xl bg-gradient-to-br from-red-50 to-amber-50/40 p-8 md:p-10 flex items-center justify-center overflow-hidden">
                   <img
                     src="/images/illustrations/feature-attention.png"
-                    alt="Needs Attention — households flagged for poor segregation"
+                    alt="Needs Attention - households flagged for poor segregation"
                     className="w-full max-w-[400px] h-auto hover:scale-105 transition-transform duration-700"
                     style={{ filter: "drop-shadow(0 10px 25px rgba(0,0,0,0.08))" }}
                   />
@@ -312,7 +356,7 @@ export default function ProductPage() {
                     <h3 className="text-2xl font-bold text-slate-900">Needs Attention System</h3>
                   </div>
                   <p className="text-base text-slate-600 leading-relaxed mb-4">
-                    Households with consistently poor segregation or missed collections get automatically flagged. Managers see a WhatsApp-style strip of attention-required households — enabling targeted intervention instead of guesswork.
+                    Households with consistently poor segregation or missed collections get automatically flagged. Managers see a WhatsApp-style strip of attention-required households - enabling targeted intervention instead of guesswork.
                   </p>
                   <ul className="space-y-2">
                     {[
@@ -350,12 +394,12 @@ export default function ProductPage() {
                     <h3 className="text-2xl font-bold text-slate-900">Vehicle Sessions</h3>
                   </div>
                   <p className="text-base text-slate-600 leading-relaxed mb-4">
-                    Collectors start and end vehicle sessions with a tap. GPS-tracked routes show exactly where a vehicle went, when collections happened, and which areas were covered.
+                    Collectors start and end vehicle sessions with a tap. Each session logs the collector, vehicle, start and end times, and number of collections - providing clear oversight of daily operations.
                   </p>
                   <ul className="space-y-2">
                     {[
                       "One-tap session start/stop for each collection route",
-                      "GPS-based route tracking with geo-verification",
+                      "Time-stamped sessions with collection counts",
                       "Vehicle-level daily reports for managers",
                       "Time-stamped sessions with performance metrics",
                     ].map((item) => (
@@ -395,7 +439,7 @@ export default function ProductPage() {
                       "Generate QR batches of any size from the dashboard",
                       "Fieldworkers scan and map on-site with GPS capture",
                       "Instant household registration in the system",
-                      "One-time setup — then collectors just scan and collect",
+                      "One-time setup - then collectors just scan and collect",
                     ].map((item) => (
                       <li key={item} className="flex items-start gap-2 text-sm text-slate-600">
                         <CheckCircle2 className="w-4 h-4 text-emerald-500 flex-shrink-0 mt-0.5" />
@@ -430,10 +474,124 @@ export default function ProductPage() {
                   </p>
                   <ul className="space-y-2">
                     {[
-                      "Target specific audiences — all, managers, collectors, generators",
+                      "Target specific audiences - all, managers, collectors, generators",
                       "Attach photos for visual announcements",
                       "Cross-village broadcasts by moderators",
                       "Auto-display on household and collector dashboards",
+                    ].map((item) => (
+                      <li key={item} className="flex items-start gap-2 text-sm text-slate-600">
+                        <CheckCircle2 className="w-4 h-4 text-emerald-500 flex-shrink-0 mt-0.5" />
+                        <span>{item}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+            </AnimateOnScroll>
+
+            {/* Attendance & Shift Tracking */}
+            <AnimateOnScroll>
+              <div className="grid md:grid-cols-2 gap-8 md:gap-12 items-center">
+                <div className="relative rounded-3xl bg-gradient-to-br from-blue-50 to-indigo-50/40 flex items-center justify-center overflow-hidden">
+                  <img
+                    src="/images/illustrations/feature-attendance.png"
+                    alt="Attendance & Shift Tracking - QR clock-in for field staff"
+                    className="w-full max-w-[280px] sm:max-w-[320px] md:max-w-[380px] h-auto py-8 md:py-0 object-contain hover:scale-105 transition-transform duration-700 mx-auto"
+                    style={{ filter: "drop-shadow(0 10px 25px rgba(0,0,0,0.08))" }}
+                  />
+                </div>
+                <div>
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-teal-500 to-emerald-500 flex items-center justify-center shadow-lg">
+                      <Clock className="w-6 h-6 text-white" />
+                    </div>
+                    <h3 className="text-2xl font-bold text-slate-900">Attendance & Shift Tracking</h3>
+                  </div>
+                  <p className="text-base text-slate-600 leading-relaxed mb-4">
+                    Know when your team starts and finishes work - every day. Set up attendance centers with printed QR posters. Collectors scan to clock in and out. Managers mark daily attendance for all staff types.
+                  </p>
+                  <ul className="space-y-2">
+                    {[
+                      "QR-based attendance centers with printable posters",
+                      "Collectors scan to clock in and clock out of shifts",
+                      "Managers mark daily attendance for all staff types",
+                      "Shift timelines showing start time, end time, and location",
+                    ].map((item) => (
+                      <li key={item} className="flex items-start gap-2 text-sm text-slate-600">
+                        <CheckCircle2 className="w-4 h-4 text-emerald-500 flex-shrink-0 mt-0.5" />
+                        <span>{item}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+            </AnimateOnScroll>
+
+            {/* Payments & Billing */}
+            <AnimateOnScroll>
+              <div className="grid md:grid-cols-2 gap-8 md:gap-12 items-center md:[direction:rtl] md:[&>*]:![direction:ltr]">
+                <div className="relative rounded-3xl bg-gradient-to-br from-blue-50 to-indigo-50/40 flex items-center justify-center overflow-hidden">
+                  <img
+                    src="/images/illustrations/feature-billing.png"
+                    alt="Payments & Billing - Digital fee collection and household dashboards"
+                    className="w-full max-w-[280px] sm:max-w-[320px] md:max-w-[380px] h-auto py-8 md:py-0 object-contain hover:scale-105 transition-transform duration-700 mx-auto"
+                    style={{ filter: "drop-shadow(0 10px 25px rgba(0,0,0,0.08))" }}
+                  />
+                </div>
+                <div>
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-purple-500 to-violet-500 flex items-center justify-center shadow-lg">
+                      <CreditCard className="w-6 h-6 text-white" />
+                    </div>
+                    <h3 className="text-2xl font-bold text-slate-900">Payments & Billing</h3>
+                  </div>
+                  <p className="text-base text-slate-600 leading-relaxed mb-4">
+                    Collect waste management fees from households digitally. Generate bills, track who has paid, and give households a clear view of their payment history - all from within the platform.
+                  </p>
+                  <ul className="space-y-2">
+                    {[
+                      "Generate household bills with flexible billing cycles",
+                      "Track cash and online payments with receipts",
+                      "Households view and pay bills from their own dashboard",
+                      "Full payment ledger for managers with collection reports",
+                    ].map((item) => (
+                      <li key={item} className="flex items-start gap-2 text-sm text-slate-600">
+                        <CheckCircle2 className="w-4 h-4 text-emerald-500 flex-shrink-0 mt-0.5" />
+                        <span>{item}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+            </AnimateOnScroll>
+
+            {/* Staff Management */}
+            <AnimateOnScroll>
+              <div className="grid md:grid-cols-2 gap-8 md:gap-12 items-center">
+                <div className="relative rounded-3xl bg-gradient-to-br from-blue-50 to-indigo-50/40 flex items-center justify-center overflow-hidden">
+                  <img
+                    src="/images/illustrations/feature-staff.png"
+                    alt="Staff Management - Multi-role team tracking and administration"
+                    className="w-full max-w-[280px] sm:max-w-[320px] md:max-w-[380px] h-auto py-8 md:py-0 object-contain hover:scale-105 transition-transform duration-700 mx-auto"
+                    style={{ filter: "drop-shadow(0 10px 25px rgba(0,0,0,0.08))" }}
+                  />
+                </div>
+                <div>
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-amber-500 to-orange-500 flex items-center justify-center shadow-lg">
+                      <Users className="w-6 h-6 text-white" />
+                    </div>
+                    <h3 className="text-2xl font-bold text-slate-900">Staff Management</h3>
+                  </div>
+                  <p className="text-base text-slate-600 leading-relaxed mb-4">
+                    Manage your full team - not just collectors. Register and track helpers, compost workers, sweepers, drivers, and waste segregators. Everyone is part of the same system.
+                  </p>
+                  <ul className="space-y-2">
+                    {[
+                      "Register helpers - compost workers, sweepers, garden staff, drain cleaners",
+                      "Track waste segregators and their assignments",
+                      "Mark attendance across all staff types, not just collectors",
+                      "A single place to manage your team across all roles",
                     ].map((item) => (
                       <li key={item} className="flex items-start gap-2 text-sm text-slate-600">
                         <CheckCircle2 className="w-4 h-4 text-emerald-500 flex-shrink-0 mt-0.5" />
@@ -448,14 +606,14 @@ export default function ProductPage() {
         </div>
       </section>
 
-      {/* Collector Form & Generator Feedback — side by side feature cards */}
-      <section className="bg-slate-50 py-20 md:py-28">
+      {/* Collector Form & Generator Feedback - side by side feature cards */}
+      <section className="bg-slate-50 py-10 md:py-14">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <AnimateOnScroll>
             <SectionHeading
               label="GROUND-LEVEL TOOLS"
               title="Built for the people who do the work"
-              subtitle="Every interface is designed for ground-level workers and households — no training manuals needed."
+              subtitle="Every interface is designed for ground-level workers and households - no training manuals needed."
             />
           </AnimateOnScroll>
 
@@ -500,7 +658,7 @@ export default function ProductPage() {
                   <img
                     src="/images/illustrations/feature-generator-feedback.png"
                     alt="Household feedback and collection history"
-                    className="w-full max-w-[240px] h-auto group-hover:scale-105 transition-transform duration-700"
+                    className="w-full max-w-[350px] h-auto group-hover:scale-105 transition-transform duration-700"
                     style={{ filter: "drop-shadow(0 6px 16px rgba(0,0,0,0.06))" }}
                   />
                 </div>
@@ -514,7 +672,8 @@ export default function ProductPage() {
                       "Report issues with photo evidence",
                       "Track issue resolution timeline",
                       "Receive broadcast announcements",
-                      "Monthly progress reports",
+                      "View and pay household bills",
+                      /* FUTURE: "Monthly progress reports" - not yet built */
                     ].map((f) => (
                       <li key={f} className="flex items-start gap-2 text-sm text-slate-600">
                         <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 flex-shrink-0 mt-0.5" />
@@ -530,7 +689,7 @@ export default function ProductPage() {
       </section>
 
       {/* Offline & Accessibility */}
-      <section className="py-20 md:py-28">
+      <section className="py-10 md:py-14">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid md:grid-cols-2 gap-12 items-center">
             <AnimateOnScroll>
@@ -550,7 +709,7 @@ export default function ProductPage() {
                   {[
                     "Collections are recorded even without signal",
                     "Data queues locally and syncs automatically",
-                    "No data loss — every scan is timestamped and preserved",
+                    "No data loss - every scan is timestamped and preserved",
                     "Works on low-end Android devices",
                   ].map((item) => (
                     <li key={item} className="flex items-start gap-3">
@@ -568,7 +727,7 @@ export default function ProductPage() {
                 <div className="relative gentle-float">
                   <img
                     src="/images/illustrations/offline-sync.png"
-                    alt="Offline sync — works without internet"
+                    alt="Offline sync - works without internet"
                     className="w-full max-w-[420px] mx-auto h-auto"
                     style={{ filter: "drop-shadow(0 15px 30px rgba(5,150,105,0.12))" }}
                   />
@@ -579,12 +738,12 @@ export default function ProductPage() {
         </div>
       </section>
 
-      {/* Accessibility — dark section */}
-      <section className="relative py-20 md:py-28 overflow-hidden">
+      {/* Accessibility - dark section */}
+      <section className="relative py-10 md:py-14 overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-br from-slate-900 via-emerald-950 to-slate-900" />
         <div className="absolute top-0 right-0 w-96 h-96 bg-emerald-500/10 rounded-full blur-3xl" />
 
-        <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="relative z-10 max-w-7xl mx-auto px-4">
           <div className="grid lg:grid-cols-2 gap-12 items-center">
             <AnimateOnScroll>
               <div className="relative flex justify-center">
@@ -592,7 +751,7 @@ export default function ProductPage() {
                 <img
                   src="/images/illustrations/accessibility-multilang.png"
                   alt="Multi-language and accessibility features"
-                  className="relative w-72 md:w-80 h-auto gentle-float"
+                  className="relative w-100 md:w-100 h-auto gentle-float"
                   style={{ filter: "drop-shadow(0 10px 30px rgba(5,150,105,0.2))" }}
                 />
               </div>
@@ -607,7 +766,7 @@ export default function ProductPage() {
                   Works for every collector, in every community
                 </h2>
                 <p className="text-lg text-slate-300 leading-relaxed mb-8">
-                  GreenPath is designed for ground-level workers — including those
+                  GreenPath is designed for ground-level workers - including those
                   who may not read or write. One-time setup by a manager, then
                   collectors just scan and go.
                 </p>
@@ -631,14 +790,14 @@ export default function ProductPage() {
         </div>
       </section>
 
-      {/* Waste Logs & Chain of Custody — merged from Impact */}
-      <section className="py-20 md:py-28">
+      {/* Waste Logs & Chain of Custody - merged from Impact */}
+      <section className="py-10 md:py-14">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
           <AnimateOnScroll>
             <SectionHeading
               label="CHAIN OF CUSTODY"
-              title="Track every bag from doorstep to processing"
-              subtitle="A complete chain of custody — every waste item is timestamped, photographed, and logged from collection to processing."
+              title="Logging waste from doorstep to processing facility"
+              subtitle="Collection events are timestamped, photographed, and logged. Facility-level material logs track what's composted and sold."
             />
           </AnimateOnScroll>
 
@@ -659,9 +818,10 @@ export default function ProductPage() {
               {[
                 { icon: Package, title: "Pickup", desc: "Collector scans QR at household, logs waste type" },
                 { icon: Eye, title: "Photograph", desc: "Photo evidence of waste quality and quantity" },
-                { icon: BarChart3, title: "Weigh", desc: "Aggregation points log volume and weight" },
+                { icon: BarChart3, title: "Log", desc: "Facilities log material types and quantities" },
                 { icon: Recycle, title: "Process", desc: "Facility records wet/dry segregation output" },
-                { icon: CheckCircle2, title: "Report", desc: "Full audit trail for compliance reporting" },
+                /* FUTURE: original desc was "Full audit trail for compliance reporting" - compliance report templates not yet built */
+                { icon: CheckCircle2, title: "Report", desc: "Full audit trail for accountability and reporting" },
               ].map((step) => (
                 <div key={step.title} className="bg-white rounded-xl border border-slate-100 p-4 text-center shadow-sm hover:shadow-md transition-all duration-300">
                   <step.icon className="w-6 h-6 text-emerald-600 mx-auto mb-2" />
@@ -674,8 +834,8 @@ export default function ProductPage() {
         </div>
       </section>
 
-      {/* Multi-Stakeholder Roles — expanded to 5 roles */}
-      <section className="bg-slate-50 py-20 md:py-28">
+      {/* Multi-Stakeholder Roles - expanded to 5 roles */}
+      <section className="bg-slate-50 py-10 md:py-14">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <AnimateOnScroll>
             <SectionHeading
@@ -693,7 +853,7 @@ export default function ProductPage() {
                     <div className="absolute right-0 top-0 bottom-0 w-40 opacity-[0.04] group-hover:opacity-[0.08] transition-opacity duration-500">
                       <img src={r.img} alt="" className="w-full h-full object-contain object-right" />
                     </div>
-                    <div className="w-20 h-20 rounded-2xl bg-emerald-50 flex-shrink-0 overflow-hidden p-1.5">
+                    <div className="w-20 h-20 sm:w-40 sm:h-40 rounded-2xl bg-emerald-50 flex-shrink-0 overflow-hidden p-1.5">
                       <img src={r.img} alt={r.role} className="w-full h-full object-contain" />
                     </div>
                     <div className="flex-1 min-w-0 relative z-10">
@@ -712,7 +872,7 @@ export default function ProductPage() {
       </section>
 
       {/* Configurable Villages */}
-      <section className="py-20 md:py-28">
+      <section className="py-10 md:py-14">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid md:grid-cols-2 gap-12 items-center">
             <AnimateOnScroll delay={200}>
@@ -739,7 +899,7 @@ export default function ProductPage() {
                 </h2>
                 <p className="text-lg text-slate-600 leading-relaxed mb-8">
                   Each deployment can be configured to match local requirements.
-                  Toggle features on or off per village — no one-size-fits-all.
+                  Toggle features on or off per village - no one-size-fits-all.
                 </p>
                 <ul className="space-y-4">
                   {[
@@ -747,7 +907,7 @@ export default function ProductPage() {
                     "Enable or disable GPS location services",
                     "Configure ward structure (single or multi-ward)",
                     "Set collection schedules per village",
-                    "Role-based access — each stakeholder sees only what's relevant",
+                    "Role-based access - each stakeholder sees only what's relevant",
                   ].map((item) => (
                     <li key={item} className="flex items-start gap-3">
                       <CheckCircle2 className="w-5 h-5 text-emerald-500 flex-shrink-0 mt-0.5" />
@@ -761,8 +921,8 @@ export default function ProductPage() {
         </div>
       </section>
 
-      {/* Impact & Sustainability — merged from ImpactPage */}
-      <section id="impact" className="relative py-20 md:py-28 overflow-hidden">
+      {/* Impact & Sustainability - merged from ImpactPage */}
+      <section id="impact" className="relative py-10 md:py-14 overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-br from-slate-900 to-emerald-950" />
         <div className="absolute top-0 right-0 w-96 h-96 bg-emerald-500/5 rounded-full blur-3xl" />
 
@@ -777,13 +937,19 @@ export default function ProductPage() {
                 <h3 className="text-2xl font-bold text-white mb-4">62 million tonnes. 20% processed.</h3>
                 <p className="text-lg text-slate-300 leading-relaxed mb-4">
                   India generates over 62 million tonnes of solid waste annually.
-                  Only 20% is processed. GreenPath exists to change this equation — one community at a time.
+                  Only 20% is processed. GreenPath exists to change this equation - one community at a time.
                 </p>
+                {/* <p className="text-slate-300 leading-relaxed">
+                  When households see their segregation scores, receive feedback from
+                  collectors, and understand where their waste goes - behavior changes.
+                  In Billapura, source segregation went from negligible to{" "}
+                  <span className="text-emerald-400 font-bold">95%</span> in under two years.
+                </p> */}
                 <p className="text-slate-300 leading-relaxed">
                   When households see their segregation scores, receive feedback from
-                  collectors, and understand where their waste goes — behavior changes.
-                  In Billapura, source segregation went from negligible to{" "}
-                  <span className="text-emerald-400 font-bold">90%</span> in under two years.
+                  collectors, and understand where their waste goes - behavior changes.
+                  Following the introduction of digital tracking in pilot areas like Billapura Panchayat, 
+                  field teams reported significant improvements in source segregation discipline.
                 </p>
               </div>
             </AnimateOnScroll>
@@ -793,7 +959,7 @@ export default function ProductPage() {
                 <div className="absolute -inset-8 bg-emerald-500/5 rounded-full blur-3xl" />
                 <img
                   src="/images/illustrations/impact-behaviour.png"
-                  alt="Behaviour change — waste management transformation"
+                  alt="Behaviour change - waste management transformation"
                   className="relative w-full max-w-[380px] h-auto gentle-float"
                   style={{ filter: "drop-shadow(0 10px 30px rgba(5,150,105,0.2))" }}
                 />
@@ -821,7 +987,7 @@ export default function ProductPage() {
       </section>
 
       {/* Scalability */}
-      <section className="py-20 md:py-28">
+      <section className="py-10 md:py-14">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <AnimateOnScroll>
             <SectionHeading
@@ -849,22 +1015,22 @@ export default function ProductPage() {
       </section>
 
       {/* Security & Data Ownership */}
-      <section className="bg-slate-50 py-20 md:py-28">
+      <section className="bg-slate-50 py-10 md:py-14">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <AnimateOnScroll>
             <SectionHeading
               label="SECURITY & DATA OWNERSHIP"
-              title="Enterprise-grade data governance"
-              subtitle="Built for government compliance and institutional trust. Your data stays yours."
+              title="Data security and ownership"
+              subtitle="Your data stays yours. Role-based access, audit trails, and full export - no vendor lock-in."
             />
           </AnimateOnScroll>
 
           <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6 max-w-5xl mx-auto">
             {[
-              { icon: Database, title: "Isolated Storage", desc: "Each deployment's data is logically isolated — no cross-location leakage" },
+              { icon: Database, title: "Isolated Storage", desc: "Each deployment's data is logically isolated - no cross-location leakage" },
               { icon: Shield, title: "Role-Based Access", desc: "5-level hierarchy ensures each user sees only what's relevant to their role" },
-              { icon: FileCheck, title: "Audit Trails", desc: "Every scan, rating, and action is timestamped with user identity — immutable logs" },
-              { icon: Lock, title: "Export Ownership", desc: "Full data export anytime — PDF reports, CSV dumps, no vendor lock-in" },
+              { icon: FileCheck, title: "Audit Trails", desc: "Every scan, rating, and action is timestamped with user identity - immutable logs" },
+              { icon: Lock, title: "Export Ownership", desc: "Your data stays yours - full CSV export, branded PDF reports, audit logs, no vendor lock-in." },
             ].map((card, i) => (
               <AnimateOnScroll key={card.title} delay={i * 80}>
                 <div className="bg-white rounded-2xl border border-slate-100 p-6 shadow-sm hover:shadow-lg transition-all duration-300 h-full hover:-translate-y-1">

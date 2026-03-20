@@ -76,15 +76,19 @@ const allFeatures = [
   { icon: Camera, text: "Issue management with photo proof" },
   { icon: Megaphone, text: "Announcement broadcasting with photos" },
   { icon: Languages, text: "Multi-language UI (Kannada, Hindi, English)" },
-  { icon: Smartphone, text: "Icon-based interface for illiterate users" },
+  { icon: Smartphone, text: "Icon-based interface for all literacy levels" },
   { icon: FileText, text: "PDF report export" },
-  { icon: MapPin, text: "GPS route tracking & geo-verification" },
+  { icon: MapPin, text: "GPS location capture per collection" },
   { icon: QrCode, text: "QR batch generation for field mapping" },
   { icon: Settings, text: "Configurable village settings" },
   { icon: Users, text: "Multi-role hierarchy (5 roles)" },
   { icon: UserPlus, text: "Household feedback to collector" },
   { icon: Shield, text: "Moderator multi-village oversight" },
-  { icon: CreditCard, text: "Payment & revenue tracking" },
+  { icon: CreditCard, text: "Payment & billing management" },
+  { icon: ClipboardList, text: "Attendance & shift tracking" },
+  { icon: Users, text: "Helpers & segregator staff management" },
+  { icon: Shield, text: "Activity log & audit trail" },
+  { icon: FileText, text: "CSV & branded PDF data export" },
   { icon: Sparkles, text: "Dedicated onboarding & email support" },
 ];
 
@@ -92,8 +96,8 @@ export default function PricingPage() {
   const [, setLocation] = useLocation();
 
   useSEO({
-    title: "Pricing — GreenPath",
-    description: "₹4/household/month. All features included. No per-user fees. No hidden costs. Transparent pricing for waste management — from panchayats to municipalities.",
+    title: "Pricing - GreenPath",
+    description: "₹4/household/month. All features included. No per-user fees. No hidden costs. Transparent pricing for waste management - from panchayats to municipalities.",
     path: "/pricing",
   });
   const [selectedPlan, setSelectedPlan] = useState("annual");
@@ -108,7 +112,7 @@ export default function PricingPage() {
     <PublicLayout>
       <style>{css}</style>
 
-      {/* ═══════════ HERO — with floating illustration ═══════════ */}
+      {/* HERO */}
       <section className="relative bg-gradient-to-br from-slate-50 to-emerald-50/30 py-20 md:py-28 overflow-hidden">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid lg:grid-cols-2 gap-10 items-center">
@@ -130,12 +134,13 @@ export default function PricingPage() {
                 </p>
                 <p className="text-base text-slate-600 leading-relaxed mb-4">
                   We believe waste management technology should be accessible to
-                  every community — not just well-funded municipalities. That's why
+                  every community - not just well-funded municipalities. That's why
                   GreenPath is priced per household per month.
                 </p>
                 <p className="text-sm text-slate-500 bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 leading-relaxed">
-                  <strong className="text-slate-700">Important:</strong> GreenPath is software infrastructure.
-                  Collection manpower, vehicles, and on-ground operations are managed locally by your team.
+                  <strong className="text-slate-700">Important:</strong> GreenPath provides digital infrastructure.
+                  Field operations are managed locally. Subscription pricing may be revised over time;
+                  any changes apply only to new plans or renewals and are communicated in advance.
                 </p>
               </div>
             </AnimateOnScroll>
@@ -146,7 +151,7 @@ export default function PricingPage() {
                 <img
                   src="/images/illustrations/platform-household.png"
                   alt="Household with QR-based digital identity"
-                  className="w-full max-w-[400px] mx-auto h-auto"
+                  className="w-full max-w-[500px] mx-auto h-auto"
                   style={{ filter: "drop-shadow(0 20px 40px rgba(5,150,105,0.12))" }}
                 />
               </div>
@@ -155,7 +160,7 @@ export default function PricingPage() {
         </div>
       </section>
 
-      {/* ═══════════ PRICING CARD ═══════════ */}
+      {/* PRICING CARD */}
       <section className="py-16 md:py-24">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
           <AnimateOnScroll>
@@ -270,50 +275,15 @@ export default function PricingPage() {
         </div>
       </section>
 
-      {/* ═══════════ EXAMPLE TABLE ═══════════ */}
-      <section className="bg-slate-50 py-20 md:py-28">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-          <AnimateOnScroll>
-            <SectionHeading label="EXAMPLES" title="Example cost calculations" />
-          </AnimateOnScroll>
-
-          <AnimateOnScroll delay={100}>
-            <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead>
-                    <tr className="bg-slate-50 border-b border-slate-100">
-                      <th className="text-left px-6 py-4 text-sm font-semibold text-slate-600">Households</th>
-                      <th className="text-right px-6 py-4 text-sm font-semibold text-slate-600">Quarterly</th>
-                      <th className="text-right px-6 py-4 text-sm font-semibold text-slate-600">Half-Yearly (5% off)</th>
-                      <th className="text-right px-6 py-4 text-sm font-semibold text-emerald-600">Annual (10% off)</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {exampleCalcs.map((row) => (
-                      <tr key={row.hh} className="border-b border-slate-50 hover:bg-slate-50/50 transition-colors">
-                        <td className="px-6 py-4 text-sm font-semibold text-slate-900">{row.hh.toLocaleString()}</td>
-                        <td className="text-right px-6 py-4 text-sm text-slate-600">{row.q}</td>
-                        <td className="text-right px-6 py-4 text-sm text-slate-600">{row.h}</td>
-                        <td className="text-right px-6 py-4 text-sm font-semibold text-emerald-600">{row.a}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          </AnimateOnScroll>
-        </div>
-      </section>
-
-      {/* ═══════════ ALL FEATURES — with illustrations ═══════════ */}
-      <section className="py-20 md:py-28">
+      {/* ALL FEATURES */}
+      <section className="py-10 md:py-14">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <AnimateOnScroll>
+            {/* FUTURE: original subtitle was "...From QR tracking to compliance reports - it's all included." - compliance report templates not yet built */}
             <SectionHeading
               label="EVERYTHING INCLUDED"
               title="No feature gates. No surprises."
-              subtitle="Every plan includes every feature. From QR tracking to compliance reports — it's all included."
+              subtitle="Every plan includes every feature. From QR tracking to audit trails - it's all included."
             />
           </AnimateOnScroll>
 
@@ -351,7 +321,7 @@ export default function PricingPage() {
         </div>
       </section>
 
-      {/* ═══════════ ENTERPRISE ═══════════ */}
+      {/* ENTERPRISE */}
       <section className="pb-20 md:pb-28">
         <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
           <AnimateOnScroll>
@@ -363,8 +333,8 @@ export default function PricingPage() {
                   Managing 10,000+ households?
                 </h2>
                 <p className="text-slate-300 mb-8 max-w-xl mx-auto">
-                  Contact us for enterprise pricing, dedicated support, API
-                  access, and multi-location licensing.
+                  Contact us for volume pricing, dedicated onboarding support,
+                  and multi-location deployments.
                 </p>
                 <Button
                   onClick={() => setLocation("/contact")}

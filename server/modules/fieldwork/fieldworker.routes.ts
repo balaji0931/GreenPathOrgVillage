@@ -1,16 +1,16 @@
 import type { Express } from "express";
 import { storage } from "../../storage";
 import bcrypt from "bcrypt";
+import { logAction } from "../audit/audit.storage";
 
-export function registerFieldWorkerRoutes(app: Express, requireAuth: any, requireRole: any) {
+export function registerFieldWorkerRoutes(app: Express, requireAuth: any, requireRole: any, requireVillageAccess: any) {
   // Field Worker routes
-  app.get('/api/fieldworkers', requireAuth, requireRole(['manager']), async (req, res) => {
+  app.get('/api/fieldworkers', requireAuth, requireRole(['manager']), requireVillageAccess, async (req, res) => {
     try {
       const villageId = req.session.villageId!;
       const fieldworkers = await storage.getFieldWorkersByVillage(villageId);
       res.json(fieldworkers);
     } catch (error) {
-      console.error("Get fieldworkers error:", error);
       res.status(500).json({ message: "Failed to get field workers" });
     }
   });
@@ -19,6 +19,7 @@ export function registerFieldWorkerRoutes(app: Express, requireAuth: any, requir
     '/api/fieldworkers',
     requireAuth,
     requireRole(['manager']),
+    requireVillageAccess,
     async (req, res) => {
       try {
         const { name, phone } = req.body;
@@ -61,8 +62,11 @@ export function registerFieldWorkerRoutes(app: Express, requireAuth: any, requir
         });
 
         res.status(201).json(fieldworker);
+
+        logAction(villageId, req.session.userId!, 'created', 'fieldworker', uid, {
+          name,
+        });
       } catch (error: any) {
-        console.error('Create fieldworker error:', error);
 
         if (error.code === '23505') {
           return res.status(409).json({
@@ -78,7 +82,7 @@ export function registerFieldWorkerRoutes(app: Express, requireAuth: any, requir
   );
 
 
-  app.delete('/api/fieldworkers/:userId', requireAuth, requireRole(['manager']), async (req, res) => {
+  app.delete('/api/fieldworkers/:userId', requireAuth, requireRole(['manager']), requireVillageAccess, async (req, res) => {
     try {
       const { userId } = req.params;
       const villageId = req.session.villageId!;
@@ -90,9 +94,13 @@ export function registerFieldWorkerRoutes(app: Express, requireAuth: any, requir
       }
 
       await storage.deleteFieldWorker(userId);
+
+      logAction(villageId, req.session.userId!, 'deleted', 'fieldworker', userId, {
+        name: user.name,
+      });
+
       res.json({ message: "Field worker deleted successfully" });
     } catch (error) {
-      console.error("Delete fieldworker error:", error);
       res.status(500).json({ message: "Failed to delete field worker" });
     }
   });

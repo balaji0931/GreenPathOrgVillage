@@ -9,7 +9,6 @@ export function registerStatsRoutes(app: Express, requireAuth: any, requireRole:
       const stats = await storage.getVillageStats(villageId);
       res.json(stats);
     } catch (error) {
-      console.error("Get manager stats error:", error);
       res.status(500).json({ message: "Failed to get village stats" });
     }
   });
@@ -20,7 +19,6 @@ export function registerStatsRoutes(app: Express, requireAuth: any, requireRole:
       const stats = await storage.getVillageStats(villageId);
       res.json(stats);
     } catch (error) {
-      console.error("Get village stats error:", error);
       res.status(500).json({ message: "Failed to get village stats" });
     }
   });
@@ -37,7 +35,6 @@ export function registerStatsRoutes(app: Express, requireAuth: any, requireRole:
       const data = await storage.getPremiumReportData(villageId, date);
       res.json(data);
     } catch (error) {
-      console.error("Get premium analytics error:", error);
       res.status(500).json({ message: "Failed to get premium report data" });
     }
   });

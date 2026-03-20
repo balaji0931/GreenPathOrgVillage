@@ -23,6 +23,7 @@ import {
   Quote,
   ExternalLink,
   CheckCircle2,
+  BellRing,
 } from "lucide-react";
 
 const css = `
@@ -52,27 +53,29 @@ export default function HomePage() {
     <PublicLayout>
       <style>{css}</style>
 
-      {/* ═══════════════════════════════════════════════════════════════════
-          HERO — Illustration dominates the right, text on left
-      ═══════════════════════════════════════════════════════════════════ */}
+      {/* HERO */}
       <section className="relative overflow-hidden min-h-[92vh] flex items-center">
         <div className="absolute inset-0 bg-gradient-to-br from-emerald-50 via-white to-teal-50/40" />
         <div className="absolute top-0 right-0 w-[700px] h-[700px] bg-emerald-200/20 rounded-full blur-[100px]" />
         <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-teal-100/30 rounded-full blur-[80px]" />
 
-        <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 md:py-20 w-full">
+        <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-10 w-full">
           <div className="grid lg:grid-cols-2 gap-8 lg:gap-12 items-center">
             <div>
               <AnimateOnScroll>
+                {/* <div className="inline-flex items-center gap-2 bg-emerald-100/80 backdrop-blur-sm text-emerald-700 text-sm font-semibold px-4 py-2 rounded-full mb-6 border border-emerald-200/50">
+                  <BadgeCheck className="w-4 h-4" />
+                  Serving 2,000+ households across 3 communities
+                </div> */}
                 <div className="inline-flex items-center gap-2 bg-emerald-100/80 backdrop-blur-sm text-emerald-700 text-sm font-semibold px-4 py-2 rounded-full mb-6 border border-emerald-200/50">
                   <BadgeCheck className="w-4 h-4" />
-                  Trusted by 2,000+ households across 3+ communities
+                  Tracking 2,000+ households across 3 communities
                 </div>
               </AnimateOnScroll>
 
               <AnimateOnScroll delay={100}>
                 <h1 className="text-4xl sm:text-5xl md:text-6xl font-extrabold tracking-tight text-slate-900 leading-[1.08] mb-6">
-                  Operating System for{" "}
+                  The Digital Backbone for{" "}
                   <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-600 to-teal-600">
                     Door-to-Door
                   </span>{" "}
@@ -81,10 +84,13 @@ export default function HomePage() {
               </AnimateOnScroll>
 
               <AnimateOnScroll delay={200}>
+                {/* <p className="text-lg md:text-xl text-slate-600 leading-relaxed mb-8 max-w-xl">
+                  Digitize your door-to-door waste collection. Track every
+                  pickup with QR codes. Identify households that need follow-up.
+                  Build transparency across managers, collectors, and citizens.
+                </p> */}
                 <p className="text-lg md:text-xl text-slate-600 leading-relaxed mb-8 max-w-xl">
-                  Digitize door-to-door waste collection. Track every pickup.
-                  Identify households needing attention. Bring transparency
-                  between managers, collectors, and citizens.
+                  GreenPath introduced household-level digital traceability into decentralized waste workflows, enabling supervisors to identify service gaps and drive accountability-based follow-ups.
                 </p>
               </AnimateOnScroll>
 
@@ -109,12 +115,12 @@ export default function HomePage() {
               </AnimateOnScroll>
 
               <AnimateOnScroll delay={400}>
-                <div className="grid grid-cols-4 gap-4">
+                <div className="grid grid-cols-3 gap-4">
                   {[
                     { val: "2,000+", label: "Households" },
                     { val: "3+", label: "Communities" },
-                    { val: "90%", label: "Segregation" },
-                    { val: "₹4", label: "/month" },
+                    /* { val: "95%", label: "Segregation Rate" }, */
+                    { val: "Tracked", label: "Segregation Quality" },
                   ].map((s) => (
                     <div key={s.label} className="text-center">
                       <div className="text-xl md:text-2xl font-extrabold text-slate-900">{s.val}</div>
@@ -135,32 +141,17 @@ export default function HomePage() {
                   style={{ filter: "drop-shadow(0 25px 50px rgba(5,150,105,0.15))" }}
                 />
               </div>
-              <div className="absolute top-4 right-4 bg-white/95 backdrop-blur rounded-xl px-3 py-2 shadow-xl float-med">
-                <div className="flex items-center gap-2">
-                  <QrCode className="w-4 h-4 text-emerald-600" />
-                  <div>
-                    <div className="text-[9px] text-slate-400 font-medium">Daily Scans</div>
-                    <div className="text-sm font-bold text-slate-900">1,248</div>
-                  </div>
-                </div>
-              </div>
-              <div className="absolute bottom-8 left-4 bg-emerald-600 text-white rounded-xl px-3 py-2 shadow-xl float-fast">
-                <div className="flex items-center gap-1.5">
-                  <CheckCircle2 className="w-3.5 h-3.5" />
-                  <span className="text-xs font-semibold">90% Segregation</span>
-                </div>
-              </div>
             </AnimateOnScroll>
           </div>
         </div>
       </section>
 
-      {/* ═══════════ TRUST LOGOS + TAM STRIP ═══════════ */}
+      {/* TRUST LOGOS + TAM STRIP */}
       <section className="py-8 border-b border-slate-100 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <AnimateOnScroll>
+            {/* 
             <div className="flex flex-col items-center gap-6">
-              {/* Logos Row */}
               <div className="flex items-center gap-3">
                 <span className="text-xs font-medium text-slate-400 uppercase tracking-wider">Trusted by</span>
                 <div className="flex items-center gap-6">
@@ -179,29 +170,32 @@ export default function HomePage() {
                 </div>
               </div>
 
-              {/* TAM Widen Strip */}
               <div className="flex flex-wrap justify-center gap-2">
-                {["Municipalities", "Panchayats", "Apartments", "Campuses", "Townships", "Bulk Generators"].map((seg) => (
+                {["Municipalities", "Panchayats", "Apartments", "Townships", "Bulk Generators"].map((seg) => (
                   <span key={seg} className="px-3 py-1 bg-slate-50 border border-slate-200 text-slate-500 text-xs font-medium rounded-full">
                     {seg}
                   </span>
                 ))}
               </div>
             </div>
+            */}
+            <div className="flex flex-col items-center gap-6">
+              <div className="flex items-center gap-3">
+                <span className="text-xs font-medium text-slate-400 uppercase tracking-wider">Developed during field engagement within a decentralized rural sustainability initiative</span>
+              </div>
+            </div>
           </AnimateOnScroll>
         </div>
       </section>
 
-      {/* ═══════════════════════════════════════════════════════════════════
-          THE CHALLENGE — Large illustrations dominate each card
-      ═══════════════════════════════════════════════════════════════════ */}
-      <section className="py-20 md:py-28 bg-slate-50">
+      {/* THE CHALLENGE */}
+      <section className="py-10 md:py-14 bg-slate-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <AnimateOnScroll>
             <SectionHeading
               label="THE CHALLENGE"
-              title="Waste management is broken at every level"
-              subtitle="Communities struggle with visibility, accountability, and data — whether they're governments or citizens."
+              title="The gap between collection and accountability"
+              subtitle="Without digital tracking, neither governments nor citizens have visibility into how waste is actually managed."
             />
           </AnimateOnScroll>
 
@@ -228,7 +222,8 @@ export default function HomePage() {
                       "No digital tracking of daily collections",
                       "Zero visibility into collector performance",
                       "Manual monitoring with paper registers",
-                      "No data for compliance or ESG reporting",
+                      /* FUTURE: "No data for compliance or ESG reporting" — commented out, ESG not yet built */
+                      "No data for accountability or reporting",
                     ].map((item) => (
                       <li key={item} className="flex items-start gap-2 text-sm text-slate-600">
                         <X className="w-4 h-4 text-red-400 flex-shrink-0 mt-0.5" />
@@ -259,7 +254,7 @@ export default function HomePage() {
                   </div>
                   <ul className="space-y-2.5">
                     {[
-                      "No confirmation waste was actually collected",
+                      "Real-time alerts when the vehicle is nearby",
                       "Poor segregation guidance and feedback",
                       "No way to report missed pickups",
                       "No transparency in waste handling",
@@ -277,67 +272,73 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* ═══════════════════════════════════════════════════════════════════
-          HOW IT WORKS — Each step is a LARGE illustration panel
-      ═══════════════════════════════════════════════════════════════════ */}
-      <section className="py-20 md:py-28">
+      {/* HOW IT WORKS */}
+      <section className="py-10 md:py-14">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <AnimateOnScroll>
             <SectionHeading
               label="HOW IT WORKS"
-              title="From signup to insights — the complete cycle"
-              subtitle="Each step builds on the last, creating a closed-loop waste management ecosystem."
+              title="From household registration to actionable reports"
+              subtitle="A structured workflow that covers registration, collection, monitoring, and reporting."
             />
           </AnimateOnScroll>
 
-          <div className="space-y-16 md:space-y-24 max-w-6xl mx-auto">
+          <div className="space-y-8 md:space-y-12 max-w-6xl mx-auto">
             {[
               {
                 step: 1, icon: QrCode, title: "Digitize Every Household",
-                desc: "Register every household and assign a unique QR code. Each unit gets a digital identity — linked to ward, block, and collector. The QR sticker stays at the gate. No app needed for households.",
+                desc: "Map every household and assign a unique QR code. Each unit gets a digital identity - linked to ward, block, and collector. The QR Card/ticker stays at the gate. App for households is ptional not compulsory for workflow.",
                 result: "→ Every household has a scannable digital identity",
-                img: "/images/illustrations/step-1-register.png",
+                img: "/images/illustrations/feature-qr-batch.png",
                 color: "from-emerald-500 to-emerald-600", bg: "from-emerald-50 to-teal-50",
               },
               {
-                step: 2, icon: UserPlus, title: "Setup Collectors & Routes",
-                desc: "Assign collectors to routes and define schedules. One-time setup by a manager — then collectors just scan and go. Works for illiterate collectors with icon-based, multi-language UI. Voice notes replace typing.",
+                step: 2, icon: UserPlus, title: "Setup Collectors, Wards and Vehicles",
+                desc: "Assign collectors to wards and vehicles and define schedules. One-time setup by a manager - then collectors just scan and go. Designed for all literacy levels with icon-based, multi-language navigation and Voice notes replace typing for remarks.",
                 result: "→ Routes mapped, collectors ready, zero training needed",
-                img: "/images/illustrations/step-2-assign.png",
+                img: "/images/illustrations/accessibility-multilang.png",
                 color: "from-teal-500 to-teal-600", bg: "from-teal-50 to-cyan-50",
               },
               {
-                step: 3, icon: Activity, title: "Start Vehicle Session",
-                desc: "Collectors start a vehicle session before each trip. The system tracks trip duration, area covered, and number of collections per session. Sessions auto-close at end of day if forgotten.",
+                step: 3, icon: Activity, title: "Start Collection",
+                desc: "Collectors only Collects waste from the households and sessions are auto called. The system tracks trip duration, area covered, and number of collections per session. Sessions auto-close at end of day if forgotten.",
                 result: "→ Every trip is timestamped and trackable",
-                img: "/images/illustrations/step-3-collect.png",
+                img: "/images/illustrations/feature-vehicle.png",
                 color: "from-cyan-500 to-cyan-600", bg: "from-cyan-50 to-blue-50",
               },
               {
-                step: 4, icon: ScanLine, title: "Scan, Rate & Record",
-                desc: "At each doorstep, collectors scan the QR code and record waste type (wet, dry, mixed, hazardous). Rate segregation quality with star ratings. Add photo evidence or voice notes. Works fully offline — syncs when back online.",
+                step: 4, icon: BellRing, title: "Smart Proximity Alerts",
+                desc: "GreenPath automatically notifies households when the collection vehicle is within 150m of their doorstep. No more waiting outside or missing the vehicle. Multi-vehicle aware and battery-friendly.",
+                result: "→ Citizens notified exactly when to hand over waste",
+                img: "/images/illustrations/feature-alerts.png",
+                color: "from-orange-500 to-orange-600", bg: "from-orange-50 to-amber-50",
+              },
+              {
+                step: 5, icon: ScanLine, title: "Scan, Rate & Record",
+                desc: "At each doorstep, collectors scan the QR code and record waste type (wet, dry, mixed, hazardous). Rate segregation quality with star ratings. Add photo evidence or voice notes. Works fully offline - syncs when back online.",
                 result: "→ Every collection event logged with type, quality, evidence",
-                img: "/images/illustrations/step-4-monitor.png",
+                img: "/images/illustrations/step-3-collect.png",
                 color: "from-blue-500 to-blue-600", bg: "from-blue-50 to-indigo-50",
               },
               {
-                step: 5, icon: FileCheck, title: "Flag & Follow Up",
-                desc: "Households with consistently poor segregation, repeated missed pickups, or complaints are automatically flagged as 'Needs Attention'. Managers can assign follow-up actions, escalate issues, and track resolution.",
+                step: 6, icon: FileCheck, title: "Flag & Follow Up",
+                desc: "Households with consistently poor segregation, repeated missed pickups, or complaints are automatically flagged as 'Needs Attention'. Managers can view flagged households and track their improvement over time.",
                 result: "→ Problem households identified and resolved proactively",
-                img: "/images/illustrations/step-5-analyze.png",
+                img: "/images/illustrations/feature-attention.png",
                 color: "from-indigo-500 to-indigo-600", bg: "from-indigo-50 to-violet-50",
               },
               {
-                step: 6, icon: Eye, title: "Monitor in Real-Time",
-                desc: "Managers see live dashboards — which collectors are active, which routes are covered, which households were missed today. Ward-level roll-ups, collector leaderboards, and daily summaries are generated automatically.",
+                step: 7, icon: Eye, title: "Monitor in Real-Time",
+                desc: "Managers see live dashboards - which collectors are active, which routes are covered, which households were missed today. Ward-level roll-ups, collector leaderboards, and daily summaries are generated automatically.",
                 result: "→ Full operational visibility without field visits",
-                img: "/images/illustrations/platform-dashboard.png",
+                img: "/images/illustrations/step-4-monitor.png",
                 color: "from-violet-500 to-violet-600", bg: "from-violet-50 to-purple-50",
               },
               {
-                step: 7, icon: PieChart, title: "Analyze & Report",
-                desc: "Generate ward-level reports, segregation trends, collector benchmarks, and compliance data. Export for governance, ESG reporting, SBM/SLWM audits. Data-ready for carbon credit verification and climate financing.",
-                result: "→ Compliance-ready reports, audit-proof data, actionable insights",
+                step: 8, icon: PieChart, title: "Analyze & Report",
+                desc: "Generate ward-level reports, segregation trends, and collector benchmarks. Export data as CSV or branded PDF reports. Full audit trail for every collection event with timestamped, immutable logs.",
+                /* FUTURE: Original desc included 'ESG reporting, SBM/SLWM audits, carbon credit verification, climate financing' — removed until built */
+                result: "→ Audit-ready reports, actionable insights, full accountability",
                 img: "/images/illustrations/step-5-analyze.png",
                 color: "from-purple-500 to-purple-600", bg: "from-purple-50 to-fuchsia-50",
               },
@@ -375,16 +376,14 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* ═══════════════════════════════════════════════════════════════════
-          TRANSPARENCY — Full-width triangle + role flows
-      ═══════════════════════════════════════════════════════════════════ */}
-      <section className="py-20 md:py-28 bg-slate-50">
+      {/* TRANSPARENCY & ACCOUNTABILITY */}
+      <section className="py-10 md:py-14 bg-slate-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <AnimateOnScroll>
             <SectionHeading
               label="TRANSPARENCY & ACCOUNTABILITY"
-              title="Complete visibility between every stakeholder"
-              subtitle="GreenPath bridges the gap between managers, collectors, and households — creating a triangle of trust and transparency."
+              title="Clear visibility across every stakeholder"
+              subtitle="GreenPath connects managers, collectors, and households with a shared data layer - so every party sees the same picture."
             />
           </AnimateOnScroll>
 
@@ -419,7 +418,7 @@ export default function HomePage() {
               {
                 role: "Household → Manager",
                 img: "/images/illustrations/role-household.png",
-                desc: "Report missed pickups with photo evidence. View collection history. Receive feedback on segregation quality.",
+                desc: "Get real-time proximity alerts. Report issues with photo evidence. View collection history and bills. See segregation scores and provide feedback.",
                 color: "from-cyan-50 to-blue-50",
               },
             ].map((flow, i) => (
@@ -447,7 +446,8 @@ export default function HomePage() {
               {[
                 { icon: Eye, text: "Every collection tracked" },
                 { icon: ClipboardCheck, text: "Automated workforce tracking" },
-                { icon: FileCheck, text: "ESG & compliance ready" },
+                /* FUTURE: { icon: FileCheck, text: "ESG & compliance ready" }, — removed until ESG reporting is built */
+                { icon: FileCheck, text: "Audit trail & accountability" },
                 { icon: QrCode, text: "QR-based digital identity" },
               ].map((h) => (
                 <div key={h.text} className="flex items-center gap-2 bg-emerald-50 rounded-xl px-4 py-3 border border-emerald-100">
@@ -460,10 +460,8 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* ═══════════════════════════════════════════════════════════════════
-          DEPLOYMENT & SOCIAL PROOF — Stats + Billapura 1-liner
-      ═══════════════════════════════════════════════════════════════════ */}
-      <section className="relative py-20 md:py-28 overflow-hidden">
+      {/* DEPLOYMENT & SOCIAL PROOF */}
+      <section className="relative py-10 md:py-14 overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-br from-slate-900 via-emerald-950 to-slate-900" />
         <div className="absolute top-0 right-0 w-96 h-96 bg-emerald-500/10 rounded-full blur-3xl" />
 
@@ -475,7 +473,8 @@ export default function HomePage() {
           <AnimateOnScroll delay={100}>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-8 mb-16">
               <StatsCounter value={2000} suffix="+" label="Households Digitized" dark />
-              <StatsCounter value={90} suffix="%" label="Source Segregation" dark />
+              {/* <StatsCounter value={95} suffix="%" label="Source Segregation" dark /> */}
+              <div className="text-center"><div className="text-3xl font-extrabold text-white mb-2">Improved</div><div className="text-sm text-slate-400">Segregation Discipline</div></div>
               <StatsCounter value={3} suffix="+" label="Active Deployments" dark />
               <StatsCounter value={8} suffix="+" label="Panchayats Expanding" dark />
             </div>
@@ -490,10 +489,13 @@ export default function HomePage() {
               <h3 className="text-2xl md:text-3xl font-bold text-white mb-4">
                 Billapura Panchayat, Bengaluru
               </h3>
-              <p className="text-slate-300 leading-relaxed mb-6">
+              {/* <p className="text-slate-300 leading-relaxed mb-6">
                 What started as garbage burning and open dumping has transformed into a
-                90% source segregation model — with women SHG members driving collection
+                95% source segregation model - with women SHG members driving collection
                 vehicles and a Zero Waste Centre processing all organic waste locally.
+              </p> */}
+              <p className="text-slate-300 leading-relaxed mb-6">
+                GreenPath's platform supported local implementation organisations by introducing digital tracking to door-to-door operations, enabling supervisors to identify service gaps, empower community SHG members, and drive accountability-based follow-ups.
               </p>
               <button onClick={() => setLocation("/case-studies")} className="inline-flex items-center gap-2 text-emerald-400 hover:text-emerald-300 font-semibold transition-colors">
                 Read the full case study <ArrowRight className="w-4 h-4" />
@@ -512,18 +514,17 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* ═══════════════════════════════════════════════════════════════════
-          TESTIMONIALS
-      ═══════════════════════════════════════════════════════════════════ */}
-      <section className="bg-slate-50 py-20 md:py-28">
+      {/* TESTIMONIALS */}
+      {/* <section className="bg-slate-50 py-10 md:py-14">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <AnimateOnScroll>
             <SectionHeading
               label="WHAT PEOPLE SAY"
               title="Trusted by communities across Karnataka"
             />
-          </AnimateOnScroll>
+          </AnimateOnScroll> */}
 
+          {/* 
           <div className="grid md:grid-cols-3 gap-6 max-w-5xl mx-auto">
             {[
               {
@@ -531,8 +532,8 @@ export default function HomePage() {
                 name: "Anjor Bhaskar", role: "Faculty, Azim Premji University",
               },
               {
-                quote: "Earlier, we simply didn't have enough human or material resources to manage waste properly. With GreenPath tracking, we achieved nearly 90% source segregation.",
-                name: "Manjunath", role: "Executive Officer, Anekal Taluk",
+                quote: "Earlier, we simply didn't have enough human or material resources to manage waste properly. With GreenPath tracking, we achieved nearly 95% source segregation.",
+                name: "Manjunath", role: "Supervisor, Hasiru Dala",
               },
               {
                 quote: "It made me rethink my own food habits and consumption. It makes me so happy that we are not just learning for ourselves anymore, we are involving others, too.",
@@ -556,13 +557,12 @@ export default function HomePage() {
               </AnimateOnScroll>
             ))}
           </div>
-        </div>
-      </section>
+          */}
+        {/* </div>
+      </section> */}
 
-      {/* ═══════════════════════════════════════════════════════════════════
-          PRICING SNAPSHOT
-      ═══════════════════════════════════════════════════════════════════ */}
-      <section className="py-20 md:py-28">
+      {/* PRICING SNAPSHOT */}
+      <section className="py-10 md:py-14">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <AnimateOnScroll>
             <div className="bg-gradient-to-br from-emerald-50 to-teal-50 border border-emerald-100 rounded-3xl p-10 md:p-16 text-center max-w-3xl mx-auto relative overflow-hidden">
@@ -572,8 +572,8 @@ export default function HomePage() {
                 <h2 className="text-3xl md:text-4xl font-bold text-slate-900 mb-4">
                   Starting at <span className="text-emerald-600">₹4</span> per household per month
                 </h2>
-                <p className="text-lg text-slate-600 mb-4">Designed for large-scale public deployments. All features included.</p>
-                <p className="text-sm text-slate-500 mb-8">Example: 5,000 households = <span className="font-semibold text-slate-700">₹20,000/month</span> · No per-user fees · No hidden costs</p>
+                <p className="text-lg text-slate-600 mb-4">Built for community-scale deployments. Every feature included from day one.</p>
+                <p className="text-sm text-slate-500 mb-8">Example: 500 households = <span className="font-semibold text-slate-700">₹2000/month</span> · No per-user fees · No hidden costs</p>
                 <Button
                   onClick={() => setLocation("/pricing")}
                   className="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold px-8 py-6 text-base rounded-xl shadow-lg hover:scale-[1.02] active:scale-[0.98] transition-all"
@@ -586,23 +586,28 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* ═══════════ SCALING ACROSS INDIA — Vision Section ═══════════ */}
-      <section className="py-20 md:py-28 bg-slate-50">
+      {/* SCALING ACROSS INDIA */}
+      <section className="py-10 md:py-14 bg-slate-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <AnimateOnScroll>
-            <SectionHeading
+            {/* <SectionHeading
               label="SCALING ACROSS INDIA"
-              title="From one panchayat to national infrastructure"
-              subtitle="Building a standardized waste data layer for communities of every size."
+              title="From one panchayat to many"
+              subtitle="Building a standardized digital platform for communities of every size."
+            /> */}
+            <SectionHeading
+              label="SCALING JOURNEY"
+              title="Expanding across diverse community environments"
+              subtitle="From an initial rural pilot toward multi-community digital adoption. Building a standardized civic-tech platform designed to support decentralized waste management workflows across diverse local contexts."
             />
           </AnimateOnScroll>
 
           <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6 max-w-5xl mx-auto mb-12">
-            {[
-              { val: "9", label: "Panchayats Active", status: "live", color: "bg-emerald-500" },
-              { val: "3", label: "Municipal Pilots", status: "upcoming", color: "bg-amber-500" },
-              { val: "2", label: "Apartment Deployments", status: "onboarding", color: "bg-blue-500" },
-              { val: "1", label: "Standardized Data Layer", status: "building", color: "bg-purple-500" },
+            {/* {[
+              { val: "3", label: "Villages Active", status: "live", color: "bg-emerald-500" },
+              { val: "8", label: "Municipal Pilots", status: "upcoming", color: "bg-amber-500" },
+              { val: "2", label: "Apartment Deployments", status: "planned", color: "bg-blue-500" },
+              { val: "1", label: "Unified Platform", status: "live", color: "bg-purple-500" },
             ].map((item, i) => (
               <AnimateOnScroll key={item.label} delay={i * 100}>
                 <div className="bg-white rounded-2xl border border-slate-100 p-6 shadow-sm text-center hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
@@ -614,36 +619,61 @@ export default function HomePage() {
                   </span>
                 </div>
               </AnimateOnScroll>
+            ))} */}
+            {[
+              { val: "3+", label: "Village-level operational deployments", subtext: "Active use of digital household tracking and monitoring workflows" },
+              { val: "8+", label: "Emerging municipal pilot discussions", subtext: "Exploratory engagements and readiness assessments for digital workflow adoption" },
+              { val: "2", label: "Apartment community implementations in preparation", subtext: "Structured onboarding of residential waste collection monitoring systems" },
+              { val: "1", label: "Unified digital platform architecture", subtext: "Single scalable system designed to support multi-location governance and reporting" },
+            ].map((item, i) => (
+              <AnimateOnScroll key={item.label} delay={i * 100}>
+                <div className="bg-white rounded-2xl border border-slate-100 p-6 shadow-sm text-center hover:shadow-lg transition-all duration-300 hover:-translate-y-1 h-full flex flex-col justify-center">
+                  <div className="text-3xl font-extrabold text-slate-900 mb-2">{item.val}</div>
+                  <div className="text-sm font-bold text-slate-800 mb-2 leading-tight">{item.label}</div>
+                  <p className="text-xs text-slate-500 mt-auto pt-2 border-t border-slate-50">{item.subtext}</p>
+                </div>
+              </AnimateOnScroll>
             ))}
           </div>
 
           <AnimateOnScroll delay={200}>
             <div className="bg-white rounded-3xl border border-slate-100 p-8 md:p-10 max-w-3xl mx-auto text-center shadow-sm">
+              {/* <p className="text-slate-600 leading-relaxed">
+                GreenPath is building a <strong>standardized digital platform</strong> for communities across India.
+                Every household digitized. Every collection tracked. Every metric reportable -
+                enabling <strong>transparent governance and accountable waste management</strong> at community scale.
+              </p> */}
               <p className="text-slate-600 leading-relaxed">
-                GreenPath is building India's largest <strong>decentralized waste data network</strong>.
-                Every household digitized. Every collection tracked. Every metric reportable —
-                enabling <strong>climate financing, carbon reporting, and ESG compliance</strong> at community scale.
+                GreenPath provides a <strong>digital infrastructure solution</strong> for decentralized waste management systems.
+                Built from real field experience, the platform focuses on transparency, accountability, and scalable operational visibility
+                to support local bodies and ecosystem stakeholders.
               </p>
             </div>
           </AnimateOnScroll>
         </div>
       </section>
 
-      {/* ═══════════════════════════════════════════════════════════════════
-          MISSION
-      ═══════════════════════════════════════════════════════════════════ */}
-      <section className="relative py-20 md:py-28 overflow-hidden">
+      {/* MISSION */}
+      <section className="relative py-10 md:py-14 overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-br from-slate-900 to-emerald-950" />
         <div className="relative z-10 max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <AnimateOnScroll>
-            <span className="text-sm font-semibold uppercase tracking-widest text-emerald-400 mb-4 block">OUR MISSION</span>
+            <span className="text-sm font-semibold uppercase tracking-widest text-emerald-400 mb-4 block">
+              OUR MISSION
+            </span>
+
             <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold text-white tracking-tight mb-8">
-              Building accountable waste ecosystems through technology
+              Making everyday waste collection more organised, visible, and accountable
             </h2>
+
             <blockquote className="text-xl md:text-2xl text-slate-300 leading-relaxed italic mb-8 max-w-3xl mx-auto">
-              "We believe every community — whether a village panchayat or a metropolitan municipality — deserves transparent, data-driven waste management."
+              "Waste management works best when communities, field workers, and local leaders all have clear information.  
+              Our goal is to build simple digital tools that help them coordinate better and improve cleanliness outcomes over time."
             </blockquote>
-            <p className="text-base text-slate-400">— Balaji Nayak & Sreeja Gummula, Co-founders</p>
+
+            <p className="text-base text-slate-400">
+              — Balaji Nayak & Sreeja Gummula
+            </p>
           </AnimateOnScroll>
         </div>
       </section>

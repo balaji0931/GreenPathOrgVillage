@@ -40,7 +40,7 @@ beforeAll(async () => {
     const villageRes = await adminAgent
         .post('/api/villages')
         .set('x-csrf-token', adminCsrf)
-        .send({ villageName: 'Stats Village', managerName: 'Stats Manager', managerPhone: '5555555555' });
+        .send({ villageName: 'Stats Village', managerName: 'Stats Manager', paymentsEnabled: true, managerPhone: '5555555555' });
     villageId = villageRes.body.village.villageId;
     const managerId = villageRes.body.manager.credentials.userId;
 
@@ -116,8 +116,6 @@ describe('Daily Stats Integration', () => {
                 .send({
                     householdUid: householdUids[0],
                     segregationRating: 4,
-                    plasticRating: 3,
-                    observations: ['clean'],
                     remarks: '',
                     photoUrl: '',
                     voiceUrl: '',

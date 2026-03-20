@@ -31,7 +31,7 @@ export function PublicFooter() {
       <div className="border-b border-slate-800">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-5">
           <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-sm">
-            <span className="text-slate-500 font-medium">Featured in</span>
+            <span className="text-slate-500 font-medium">Decentralised waste initiative context featured in</span>
             <a
               href="https://thebetterindia.com/sustainability/azim-premji-university-college-campus-sustainability-bilapura-panchayat-waste-management-system-11074332"
               target="_blank"
@@ -66,7 +66,7 @@ export function PublicFooter() {
               />
             </button>
             <p className="text-sm text-slate-500 leading-relaxed mb-4">
-              Waste management infrastructure for communities, cities & institutions.
+              Digital waste management for communities across India.
             </p>
             <p className="text-sm text-slate-500">
               support@greenpathorg.social

@@ -23,6 +23,13 @@ function getCleanupPool(): Pool {
  * TRUNCATE ... CASCADE handles FK order, but listing explicitly for clarity.
  */
 const ALL_TABLES = [
+    // Payment tables
+    'payment_gateway_orders',
+    'household_monthly_bills',
+    'billing_cycles',
+    'village_month_fee_config',
+    'village_payment_gateway_config',
+    // Existing tables
     'dry_waste_sale_materials',
     'dry_waste_sales',
     'compost_production_log',
@@ -140,6 +147,13 @@ export async function seedHousehold(
          ON CONFLICT (user_id) DO NOTHING`,
         [generatorUserId, hashedPassword, `Generator - ${data.headName}`, data.phone, villageId]
     );
+
+    // Invalidate household cache after raw SQL insert
+    // Keys must match cacheKeys in server/cache.ts
+    const cache = getCache();
+    await cache.delete(`households:${villageId}`);           // cacheKeys.households()
+    await cache.clear(`households:${villageId}:*`);          // cacheKeys.householdsPaginated() pattern
+    await cache.delete(`stats:village:${villageId}`);        // cacheKeys.villageStats()
 
     return {
         household: hhRes.rows[0],

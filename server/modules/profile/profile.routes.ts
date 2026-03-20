@@ -1,6 +1,7 @@
 import type { Express } from "express";
 import { storage } from "../../storage";
 import bcrypt from "bcrypt";
+import { logAction } from "../audit/audit.storage";
 
 export function registerProfileRoutes(app: Express, requireAuth: any) {
 app.put('/api/profile', requireAuth, async (req, res) => {
@@ -28,8 +29,15 @@ app.put('/api/profile', requireAuth, async (req, res) => {
     }
 
     res.json({ message: "Profile updated successfully" });
+
+    // Audit log (fire-and-forget, after response)
+    if (newPassword) {
+      logAction(req.session.villageId, userId, 'reset_password', 'user', userId, { self: true });
+    }
+    if (name && name !== user.name) {
+      logAction(req.session.villageId, userId, 'updated', 'user', userId, { field: 'name' });
+    }
   } catch (error) {
-    console.error("Update profile error:", error);
     res.status(500).json({ message: "Failed to update profile" });
   }
 });

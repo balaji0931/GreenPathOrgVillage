@@ -49,8 +49,8 @@ export interface IStorage {
 
     // Household operations
     createHousehold(household: InsertHousehold): Promise<Household>;
-    getHouseholdsByVillage(villageId: string): Promise<Household[]>;
-    getHouseholdByUid(uid: string): Promise<Household | undefined>;
+    getHouseholdsByVillage(villageId: string): Promise<any[]>;
+    getHouseholdByUid(uid: string): Promise<any>;
     updateHousehold(id: number, updates: Partial<Household>): Promise<Household>;
     getWardsByVillage(villageId: string): Promise<string[]>;
     addWardToVillage(villageId: string, ward: string): Promise<string[]>;
@@ -67,7 +67,7 @@ export interface IStorage {
         stats: { avgRating: number; totalCollections: number }
     }>;
     getCollectionsByCollector(collectorId: number): Promise<WasteCollection[]>;
-    checkExistingCollection(householdId: number, collectorId: number, date: string): Promise<WasteCollection | undefined>;
+    checkExistingCollection(householdId: number, collectorId: number, date: string): Promise<any>;
 
     // Issue operations
     createIssue(issue: InsertIssue): Promise<Issue>;
@@ -112,7 +112,7 @@ export interface IStorage {
     }>;
 
     // Admin management methods
-    getManagersList(): Promise<User[]>;
+    getManagersList(): Promise<any[]>;
     updateUser(userId: string, updates: Partial<User>): Promise<User>;
     deleteUser(userId: string): Promise<void>;
     deleteVillage(villageId: string): Promise<void>;
@@ -136,7 +136,7 @@ export interface IStorage {
 
     getRecentCollectionsByVillage(villageId: string, days?: number): Promise<any[]>;
     getPremiumReportData(villageId: string, date: string): Promise<any>;
-    getHouseholdByGeneratorUserId(generatorUserId: string): Promise<Household | undefined>;
+    getHouseholdByGeneratorUserId(generatorUserId: string): Promise<any>;
 
     // Moderator operations
     createModerator(moderator: InsertModerator): Promise<Moderator>;
@@ -168,7 +168,7 @@ export interface IStorage {
     getNextQRCodeUid(villageId: string, count: number): Promise<string[]>;
 
     // Field worker operations
-    getFieldWorkersByVillage(villageId: string): Promise<User[]>;
+    getFieldWorkersByVillage(villageId: string): Promise<any[]>;
     deleteFieldWorker(userId: string): Promise<void>;
 
     // Vehicle operations

@@ -18,7 +18,6 @@ export function registerFeedbackRoutes(app: Express, requireAuth: any, requireRo
 
             res.json(feedbackData);
         } catch (error: any) {
-            console.error("Create feedback error:", error);
             if (error.message === "Collection not found" || error.message === "Collector not found") {
                 return res.status(404).json({ message: error.message });
             }
@@ -40,7 +39,6 @@ export function registerFeedbackRoutes(app: Express, requireAuth: any, requireRo
             const feedback = await storage.getFeedbackByVillageWithFilters(villageId, date as string);
             res.json(feedback);
         } catch (error) {
-            console.error("Get village feedback error:", error);
             res.status(500).json({ message: "Failed to get village feedback" });
         }
     });

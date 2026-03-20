@@ -36,12 +36,14 @@ interface DailyWasteLog {
   date: string;
   wetWasteKg: string;
   dryWasteKg: string;
-  rejectedWasteKg: string;
+  specialCareWasteKg: string;
   sanitaryWasteKg: string;
+  mixedWasteKg: string;
   wetWastePhotoUrl?: string;
   dryWastePhotoUrl?: string;
-  rejectedWastePhotoUrl?: string;
+  specialCareWastePhotoUrl?: string;
   sanitaryWastePhotoUrl?: string;
+  mixedWastePhotoUrl?: string;
   notes?: string;
   createdAt: string;
   createdBy: string;
@@ -140,8 +142,8 @@ export function MaterialLog({ defaultTab = "daily", onBack }: { defaultTab?: Log
       toast({ title: "Daily waste log created successfully" });
       setShowForm(false);
     },
-    onError: (error: any) => {
-      toast({ title: error.message || "Failed to create log", variant: "destructive" });
+    onError: (_error: unknown) => {
+      toast({ title: "Failed to create log. Please try again.", variant: "destructive" });
     },
   });
 
@@ -154,8 +156,8 @@ export function MaterialLog({ defaultTab = "daily", onBack }: { defaultTab?: Log
       setShowForm(false);
       setEditingItem(null);
     },
-    onError: (error: any) => {
-      toast({ title: error.message || "Failed to update log", variant: "destructive" });
+    onError: (_error: unknown) => {
+      toast({ title: "Failed to update log. Please try again.", variant: "destructive" });
     },
   });
 
@@ -174,8 +176,8 @@ export function MaterialLog({ defaultTab = "daily", onBack }: { defaultTab?: Log
       toast({ title: "Compost log created successfully" });
       setShowForm(false);
     },
-    onError: (error: any) => {
-      toast({ title: error.message || "Failed to create log", variant: "destructive" });
+    onError: (_error: unknown) => {
+      toast({ title: "Failed to create log. Please try again.", variant: "destructive" });
     },
   });
 
@@ -188,8 +190,8 @@ export function MaterialLog({ defaultTab = "daily", onBack }: { defaultTab?: Log
       setShowForm(false);
       setEditingItem(null);
     },
-    onError: (error: any) => {
-      toast({ title: error.message || "Failed to update log", variant: "destructive" });
+    onError: (_error: unknown) => {
+      toast({ title: "Failed to update log. Please try again.", variant: "destructive" });
     },
   });
 
@@ -208,8 +210,8 @@ export function MaterialLog({ defaultTab = "daily", onBack }: { defaultTab?: Log
       toast({ title: "Sale recorded successfully" });
       setShowForm(false);
     },
-    onError: (error: any) => {
-      toast({ title: error.message || "Failed to record sale", variant: "destructive" });
+    onError: (_error: unknown) => {
+      toast({ title: "Failed to record sale. Please try again.", variant: "destructive" });
     },
   });
 
@@ -222,8 +224,8 @@ export function MaterialLog({ defaultTab = "daily", onBack }: { defaultTab?: Log
       setShowForm(false);
       setEditingItem(null);
     },
-    onError: (error: any) => {
-      toast({ title: error.message || "Failed to update sale", variant: "destructive" });
+    onError: (_error: unknown) => {
+      toast({ title: "Failed to update sale. Please try again.", variant: "destructive" });
     },
   });
 
@@ -454,8 +456,8 @@ function PhotoUploadButton({
       if (!response.ok) throw new Error("Upload failed");
       const data = await response.json();
       onUpload(data.url);
-    } catch (error) {
-      console.error("Upload error:", error);
+    } catch (_error) {
+      // Upload failed silently — user sees no photo was set
     }
   };
 
@@ -518,12 +520,14 @@ function DailyWasteForm({
     date: editingItem?.date || new Date().toISOString().split("T")[0],
     wetWasteKg: editingItem?.wetWasteKg || "",
     dryWasteKg: editingItem?.dryWasteKg || "",
-    rejectedWasteKg: editingItem?.rejectedWasteKg || "",
+    specialCareWasteKg: editingItem?.specialCareWasteKg || "",
     sanitaryWasteKg: editingItem?.sanitaryWasteKg || "",
+    mixedWasteKg: editingItem?.mixedWasteKg || "",
     wetWastePhotoUrl: editingItem?.wetWastePhotoUrl || "",
     dryWastePhotoUrl: editingItem?.dryWastePhotoUrl || "",
-    rejectedWastePhotoUrl: editingItem?.rejectedWastePhotoUrl || "",
+    specialCareWastePhotoUrl: editingItem?.specialCareWastePhotoUrl || "",
     sanitaryWastePhotoUrl: editingItem?.sanitaryWastePhotoUrl || "",
+    mixedWastePhotoUrl: editingItem?.mixedWastePhotoUrl || "",
     notes: editingItem?.notes || "",
   });
 
@@ -592,29 +596,6 @@ function DailyWasteForm({
           />
         </div>
 
-        <div className="space-y-3 p-3 bg-red-50 rounded-xl">
-          <div>
-            <Label className="text-red-700">Rejected Waste (kg)</Label>
-            <Input
-              type="number"
-              step="0.1"
-              min="0"
-              value={formData.rejectedWasteKg}
-              onChange={(e) => setFormData({ ...formData, rejectedWasteKg: e.target.value })}
-              placeholder="0.0"
-              className="mt-1"
-            />
-          </div>
-          <PhotoUploadButton
-            label="Photo"
-            photoUrl={formData.rejectedWastePhotoUrl}
-            onUpload={(url) => setFormData({ ...formData, rejectedWastePhotoUrl: url })}
-            uploading={uploading}
-            uploadKey="rejected"
-            required={parseFloat(formData.rejectedWasteKg) > 0}
-          />
-        </div>
-
         <div className="space-y-3 p-3 bg-purple-50 rounded-xl">
           <div>
             <Label className="text-purple-700">Sanitary Waste (kg)</Label>
@@ -637,6 +618,52 @@ function DailyWasteForm({
             required={parseFloat(formData.sanitaryWasteKg) > 0}
           />
         </div>
+
+        <div className="space-y-3 p-3 bg-amber-50 rounded-xl">
+          <div>
+            <Label className="text-amber-700">Special Care Waste (kg)</Label>
+            <Input
+              type="number"
+              step="0.1"
+              min="0"
+              value={formData.specialCareWasteKg}
+              onChange={(e) => setFormData({ ...formData, specialCareWasteKg: e.target.value })}
+              placeholder="0.0"
+              className="mt-1"
+            />
+          </div>
+          <PhotoUploadButton
+            label="Photo"
+            photoUrl={formData.specialCareWastePhotoUrl}
+            onUpload={(url) => setFormData({ ...formData, specialCareWastePhotoUrl: url })}
+            uploading={uploading}
+            uploadKey="specialCare"
+            required={parseFloat(formData.specialCareWasteKg) > 0}
+          />
+        </div>
+      </div>
+
+      <div className="space-y-3 p-3 bg-gray-100 rounded-xl">
+        <div>
+          <Label className="text-gray-700">Mixed Waste / Landfill Sent (kg)</Label>
+          <Input
+            type="number"
+            step="0.1"
+            min="0"
+            value={formData.mixedWasteKg}
+            onChange={(e) => setFormData({ ...formData, mixedWasteKg: e.target.value })}
+            placeholder="0.0"
+            className="mt-1"
+          />
+        </div>
+        <PhotoUploadButton
+          label="Photo"
+          photoUrl={formData.mixedWastePhotoUrl}
+          onUpload={(url) => setFormData({ ...formData, mixedWastePhotoUrl: url })}
+          uploading={uploading}
+          uploadKey="mixed"
+          required={parseFloat(formData.mixedWasteKg) > 0}
+        />
       </div>
 
       <div>
@@ -985,8 +1012,9 @@ function DailyWasteList({
     return (
       (parseFloat(log.wetWasteKg) || 0) +
       (parseFloat(log.dryWasteKg) || 0) +
-      (parseFloat(log.rejectedWasteKg) || 0) +
-      (parseFloat(log.sanitaryWasteKg) || 0)
+      (parseFloat(log.specialCareWasteKg) || 0) +
+      (parseFloat(log.sanitaryWasteKg) || 0) +
+      (parseFloat(log.mixedWasteKg) || 0)
     ).toFixed(1);
   };
 
@@ -1022,8 +1050,9 @@ function DailyWasteList({
                   <div className="grid grid-cols-2 gap-2">
                     <WasteTypeCard label="Wet" value={log.wetWasteKg} color="green" photoUrl={log.wetWastePhotoUrl} onImageClick={onImageClick} />
                     <WasteTypeCard label="Dry" value={log.dryWasteKg} color="blue" photoUrl={log.dryWastePhotoUrl} onImageClick={onImageClick} />
-                    <WasteTypeCard label="Rejected" value={log.rejectedWasteKg} color="red" photoUrl={log.rejectedWastePhotoUrl} onImageClick={onImageClick} />
                     <WasteTypeCard label="Sanitary" value={log.sanitaryWasteKg} color="purple" photoUrl={log.sanitaryWastePhotoUrl} onImageClick={onImageClick} />
+                    <WasteTypeCard label="Special Care" value={log.specialCareWasteKg} color="amber" photoUrl={log.specialCareWastePhotoUrl} onImageClick={onImageClick} />
+                    <WasteTypeCard label="Mixed/Landfill" value={log.mixedWasteKg} color="gray" photoUrl={log.mixedWastePhotoUrl} onImageClick={onImageClick} />
                   </div>
                   {log.notes && <p className="mt-2 text-[10px] text-gray-500 italic">{log.notes}</p>}
                 </div>
@@ -1045,7 +1074,7 @@ function WasteTypeCard({
 }: {
   label: string;
   value: string;
-  color: "green" | "blue" | "red" | "purple";
+  color: "green" | "blue" | "red" | "purple" | "amber" | "gray";
   photoUrl?: string;
   onImageClick: (url: string) => void;
 }) {
@@ -1054,6 +1083,8 @@ function WasteTypeCard({
     blue: "bg-blue-50 text-blue-700 border-blue-200",
     red: "bg-red-50 text-red-700 border-red-200",
     purple: "bg-purple-50 text-purple-700 border-purple-200",
+    amber: "bg-amber-50 text-amber-700 border-amber-200",
+    gray: "bg-gray-100 text-gray-700 border-gray-200",
   };
 
   return (

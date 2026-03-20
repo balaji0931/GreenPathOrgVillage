@@ -24,7 +24,6 @@ class RedisCache implements ICache {
       socket: {
         reconnectStrategy: (retries) => {
           if (retries > 10) {
-            console.error('Redis reconnection failed after 10 attempts');
             return new Error('Redis max retries exceeded');
           }
           return Math.min(retries * 100, 3000);
@@ -34,16 +33,13 @@ class RedisCache implements ICache {
 
     this.client.on('connect', () => {
       this.connected = true;
-      console.log('✅ Redis cache connected');
     });
 
     this.client.on('error', (err) => {
-      console.error('❌ Redis cache error:', err);
       this.connected = false;
     });
 
     this.client.connect().catch((err) => {
-      console.error('Failed to connect to Redis:', err);
       this.connected = false;
     });
   }
@@ -55,7 +51,6 @@ class RedisCache implements ICache {
       if (!value) return null;
       return JSON.parse(value);
     } catch (error) {
-      console.error(`Cache get error for key ${key}:`, error);
       return null;
     }
   }
@@ -65,7 +60,6 @@ class RedisCache implements ICache {
     try {
       await this.client.setEx(key, ttl, JSON.stringify(value));
     } catch (error) {
-      console.error(`Cache set error for key ${key}:`, error);
     }
   }
 
@@ -74,7 +68,6 @@ class RedisCache implements ICache {
     try {
       await this.client.del(key);
     } catch (error) {
-      console.error(`Cache delete error for key ${key}:`, error);
     }
   }
 
@@ -90,7 +83,6 @@ class RedisCache implements ICache {
         await this.client.flushDb();
       }
     } catch (error) {
-      console.error('Cache clear error:', error);
     }
   }
 
@@ -101,6 +93,11 @@ class RedisCache implements ICache {
 
 class MemoryCache implements ICache {
   private cache: Map<string, { value: CacheValue; expiresAt: number }> = new Map();
+  private readonly maxSize: number;
+
+  constructor(maxSize: number = 1000) {
+    this.maxSize = maxSize;
+  }
 
   async get(key: string): Promise<CacheValue | null> {
     const item = this.cache.get(key);
@@ -109,10 +106,18 @@ class MemoryCache implements ICache {
       this.cache.delete(key);
       return null;
     }
+    // Move to end (most recently used) for LRU
+    this.cache.delete(key);
+    this.cache.set(key, item);
     return item.value;
   }
 
   async set(key: string, value: CacheValue, ttl: number = 3600): Promise<void> {
+    // Evict oldest entry if at capacity
+    if (this.cache.size >= this.maxSize && !this.cache.has(key)) {
+      const oldestKey = this.cache.keys().next().value;
+      if (oldestKey) this.cache.delete(oldestKey);
+    }
     this.cache.set(key, {
       value,
       expiresAt: Date.now() + ttl * 1000,
@@ -149,13 +154,10 @@ export function initializeCache(): ICache {
   if (redisUrl) {
     try {
       cacheInstance = new RedisCache(redisUrl);
-      console.log('🟢 Using Redis cache');
-    } catch (error) {
-      console.warn('⚠️ Redis unavailable, falling back to memory cache:', error);
+    } catch {
       cacheInstance = new MemoryCache();
     }
   } else {
-    console.log('🟠 Using memory cache (REDIS_URL not configured)');
     cacheInstance = new MemoryCache();
   }
 

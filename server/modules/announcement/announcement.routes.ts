@@ -1,9 +1,9 @@
 import type { Express } from "express";
 import { storage } from "../../storage";
 
-export function registerAnnouncementRoutes(app: Express, requireAuth: any, requireRole: any) {
+export function registerAnnouncementRoutes(app: Express, requireAuth: any, requireRole: any, requireVillageAccess: any) {
 // Announcements routes
-app.post('/api/announcements', requireAuth, requireRole(['admin', 'manager']), async (req, res) => {
+app.post('/api/announcements', requireAuth, requireRole(['admin', 'manager']), requireVillageAccess, async (req, res) => {
   try {
     const { message, targetAudience, villageId: requestVillageId, photoUrl } = req.body;
     const createdBy = req.session.userId!;
@@ -19,7 +19,6 @@ app.post('/api/announcements', requireAuth, requireRole(['admin', 'manager']), a
 
     res.json(announcement);
   } catch (error) {
-    console.error("Create announcement error:", error);
     res.status(500).json({ message: "Failed to create announcement" });
   }
 });
@@ -30,7 +29,6 @@ app.get('/api/admin/announcements', requireAuth, requireRole(['admin']), async (
     const announcements = await storage.getAllAnnouncements();
     res.json(announcements);
   } catch (error) {
-    console.error("Get all announcements error:", error);
     res.status(500).json({ message: "Failed to get announcements" });
   }
 });
@@ -45,13 +43,12 @@ app.get('/api/admin/announcements/paginated', requireAuth, requireRole(['admin']
     const result = await storage.getAllAnnouncementsPaginated({ page, limit, villageId });
     res.json(result);
   } catch (error) {
-    console.error("Get paginated announcements error:", error);
     res.status(500).json({ message: "Failed to get announcements" });
   }
 });
 
 // Update announcement
-app.put('/api/announcements/:id', requireAuth, requireRole(['admin', 'manager']), async (req, res) => {
+app.put('/api/announcements/:id', requireAuth, requireRole(['admin', 'manager']), requireVillageAccess, async (req, res) => {
   try {
     const { id } = req.params;
     const { message, targetAudience, photoUrl } = req.body;
@@ -66,13 +63,12 @@ app.put('/api/announcements/:id', requireAuth, requireRole(['admin', 'manager'])
 
     res.json(updatedAnnouncement);
   } catch (error) {
-    console.error("Update announcement error:", error);
     res.status(500).json({ message: "Failed to update announcement" });
   }
 });
 
 // Delete announcement
-app.delete('/api/announcements/:id', requireAuth, requireRole(['admin', 'manager']), async (req, res) => {
+app.delete('/api/announcements/:id', requireAuth, requireRole(['admin', 'manager']), requireVillageAccess, async (req, res) => {
   try {
     const { id } = req.params;
     const userId = req.session.userId!;
@@ -80,7 +76,6 @@ app.delete('/api/announcements/:id', requireAuth, requireRole(['admin', 'manager
     await storage.deleteAnnouncement(id, userId);
     res.json({ message: "Announcement deleted successfully" });
   } catch (error) {
-    console.error("Delete announcement error:", error);
     res.status(500).json({ message: "Failed to delete announcement" });
   }
 });
@@ -108,7 +103,6 @@ app.get('/api/announcements', requireAuth, async (req, res) => {
 
     res.json(filteredAnnouncements);
   } catch (error) {
-    console.error("Get announcements error:", error);
     res.status(500).json({ message: "Failed to get announcements" });
   }
 });

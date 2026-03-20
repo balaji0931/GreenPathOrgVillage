@@ -39,10 +39,10 @@ export default function Login() {
         title: t('app.success'),
         description: t('auth.loginSuccess', 'Logged in successfully'),
       });
-    } catch (error: any) {
+    } catch (_error: unknown) {
       toast({
         title: t('app.error'),
-        description: error.message || t('auth.loginError'),
+        description: t('auth.loginError', 'Invalid credentials. Please try again.'),
         variant: "destructive",
       });
     }
@@ -54,21 +54,21 @@ export default function Login() {
       style={{ fontFamily: "'Inter', system-ui, -apple-system, sans-serif" }}
     >
       {/* Left panel — illustration side (hidden on mobile) */}
-      <div className="hidden lg:flex lg:w-1/2 relative bg-gradient-to-br from-slate-900 via-emerald-950 to-slate-900 overflow-hidden">
+      <div className="md:p-5 hidden lg:flex lg:w-1/2 relative bg-gradient-to-br from-slate-900 via-emerald-950 to-slate-900 overflow-hidden">
         {/* Decorative blurs */}
         <div className="absolute top-20 left-20 w-80 h-80 bg-emerald-500/10 rounded-full blur-3xl" />
         <div className="absolute bottom-20 right-20 w-96 h-96 bg-teal-500/10 rounded-full blur-3xl" />
 
-        <div className="relative z-10 flex flex-col justify-center px-12 xl:px-16 w-full">
+        <div className="relative z-10 flex flex-col justify-center px-12 xl:px-12 w-full">
           {/* Logo */}
           <img
             src="/logos/logo-dark.svg"
             alt="GreenPath"
-            className="h-10 w-auto mb-10 self-start"
+            className="h-10 w-auto mb-6 self-start"
           />
 
           {/* Tagline */}
-          <h2 className="text-3xl xl:text-4xl font-bold text-white leading-tight mb-6">
+          <h2 className="text-3xl xl:text-4xl font-bold text-white leading-tight">
             Waste management
             <br />
             infrastructure for
@@ -80,13 +80,8 @@ export default function Login() {
             & institutions
           </h2>
 
-          <p className="text-slate-400 leading-relaxed mb-8 max-w-sm">
-            Digitize waste collection. Track every pickup. Monitor segregation
-            quality. Generate actionable insights.
-          </p>
-
           {/* Login illustration */}
-          <div className="mb-10 flex justify-center">
+          <div className="mb-2 flex justify-center">
             <style>{`
               @keyframes loginFloat {
                 0%, 100% { transform: translateY(0px); }
@@ -94,9 +89,9 @@ export default function Login() {
               }
             `}</style>
             <img
-              src="/images/illustrations/login-community.png"
+              src="/images/illustrations/step-5-analyze.png"
               alt="Connected community waste management"
-              className="w-64 h-auto drop-shadow-xl"
+              className="w-100 h-auto drop-shadow-xl"
               style={{ animation: 'loginFloat 5s ease-in-out infinite' }}
             />
           </div>
@@ -105,7 +100,7 @@ export default function Login() {
           <div className="grid grid-cols-3 gap-6">
             {[
               { icon: Users, value: "2,000+", label: "Households" },
-              { icon: Shield, value: "90%", label: "Segregation" },
+              { icon: Shield, value: "95%", label: "Segregation" },
               { icon: BarChart3, value: "3+", label: "Deployments" },
             ].map((stat) => (
               <div key={stat.label} className="text-center">
@@ -115,11 +110,6 @@ export default function Login() {
               </div>
             ))}
           </div>
-
-          {/* Trust line */}
-          <p className="text-xs text-slate-500 text-center mt-6 italic">
-            Used daily by collectors and managers across active deployments.
-          </p>
         </div>
       </div>
 
@@ -153,18 +143,19 @@ export default function Login() {
             </div>
 
             <div className="mb-8 hidden lg:block">
+              {/* Trust line */}
+              <p className="text-xs text-slate-500 text-center italic mb-8">
+                Used daily by collectors, households and managers across active deployments.
+              </p>
               <h1 className="text-2xl md:text-3xl font-bold text-slate-900 mb-2">
                 Welcome back
               </h1>
               <p className="text-slate-500">
-                Sign in to access your dashboard
+                Together we Digitize waste collection. Track every pickup. Monitor segregation quality. Generate actionable insights.
               </p>
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-5">
-              <div className="bg-emerald-50 border border-emerald-100 rounded-xl px-4 py-3 text-sm text-emerald-700">
-                💡 First-time login? Your User ID and Password are the same.
-              </div>
 
               <div>
                 <Label htmlFor="userId" className="text-sm font-medium text-slate-700">
@@ -250,17 +241,9 @@ export default function Login() {
                   t('auth.loginButton')
                 )}
               </Button>
-
-              <InstallPWA showInline={true} />
+{/* 
+              <InstallPWA showInline={true} /> */}
             </form>
-
-            <div className="mt-6 text-center">
-              <p className="text-xs text-slate-400">
-                New users are created by administrators only.
-                <br />
-                Please change your password after first login.
-              </p>
-            </div>
 
             {/* Legal footer */}
             <div className="mt-8 pt-6 border-t border-slate-100 flex flex-wrap justify-center gap-4 text-xs text-slate-400">

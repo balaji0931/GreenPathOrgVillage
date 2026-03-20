@@ -36,12 +36,27 @@ export async function getIssuesByVillage(villageId: string): Promise<Issue[]> {
     const cached = await cache.get(cacheKey);
     if (cached) return cached;
 
+    const safeIssueColumns = {
+        id: issues.id,
+        title: issues.title,
+        description: issues.description,
+        category: issues.category,
+        reportedBy: issues.reportedBy,
+        villageId: issues.villageId,
+        status: issues.status,
+        photoUrl: issues.photoUrl,
+        managerReply: issues.managerReply,
+        managerProofPhotoUrl: issues.managerProofPhotoUrl,
+        createdAt: issues.createdAt,
+        updatedAt: issues.updatedAt,
+    };
+
     const result = await db
-        .select()
+        .select(safeIssueColumns)
         .from(issues)
         .where(eq(issues.villageId, villageId))
         .orderBy(desc(issues.createdAt))
-        .limit(500); // Safety limit - use paginated method for larger datasets
+        .limit(500);
 
     await cache.set(cacheKey, result, 300); // 5 min TTL
     return result;
@@ -70,7 +85,20 @@ export async function getIssuesByVillagePaginated(villageId: string, options: {
         .where(whereClause);
 
     const data = await db
-        .select()
+        .select({
+            id: issues.id,
+            title: issues.title,
+            description: issues.description,
+            category: issues.category,
+            reportedBy: issues.reportedBy,
+            villageId: issues.villageId,
+            status: issues.status,
+            photoUrl: issues.photoUrl,
+            managerReply: issues.managerReply,
+            managerProofPhotoUrl: issues.managerProofPhotoUrl,
+            createdAt: issues.createdAt,
+            updatedAt: issues.updatedAt,
+        })
         .from(issues)
         .where(whereClause)
         .orderBy(desc(issues.createdAt))
@@ -106,6 +134,19 @@ export async function updateIssue(id: number, updates: Partial<Issue>): Promise<
 }
 
 export async function getIssueById(id: number): Promise<Issue | undefined> {
-    const [issue] = await db.select().from(issues).where(eq(issues.id, id));
+    const [issue] = await db.select({
+        id: issues.id,
+        title: issues.title,
+        description: issues.description,
+        category: issues.category,
+        reportedBy: issues.reportedBy,
+        villageId: issues.villageId,
+        status: issues.status,
+        photoUrl: issues.photoUrl,
+        managerReply: issues.managerReply,
+        managerProofPhotoUrl: issues.managerProofPhotoUrl,
+        createdAt: issues.createdAt,
+        updatedAt: issues.updatedAt,
+    }).from(issues).where(eq(issues.id, id));
     return issue || undefined;
 }

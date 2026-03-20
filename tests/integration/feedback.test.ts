@@ -30,7 +30,7 @@ beforeAll(async () => {
     const villageRes = await adminAgent
         .post('/api/villages')
         .set('x-csrf-token', adminCsrf)
-        .send({ villageName: 'Feedback Village', managerName: 'FB Manager', managerPhone: '1111111111' });
+        .send({ villageName: 'Feedback Village', managerName: 'FB Manager', paymentsEnabled: true, managerPhone: '1111111111' });
     villageId = villageRes.body.village.villageId;
     const managerId = villageRes.body.manager.credentials.userId;
 
@@ -61,20 +61,18 @@ beforeAll(async () => {
         .send({ userId: collectorUid, password: collectorUid });
     const colCsrf = colLogin.body.csrfToken;
 
-    await colAgent
-        .post('/api/waste-collections')
-        .set('x-csrf-token', colCsrf)
-        .send({
-            householdUid,
-            segregationRating: 4,
-            plasticRating: 3,
-            observations: [],
-            remarks: '',
-            photoUrl: '',
-            voiceUrl: '',
-            status: 'collected',
-            missedReason: '',
-        });
+        await colAgent
+            .post('/api/waste-collections')
+            .set('x-csrf-token', colCsrf)
+            .send({
+                householdUid,
+                segregationRating: 4,
+                remarks: '',
+                photoUrl: '',
+                voiceUrl: '',
+                status: 'collected',
+                missedReason: '',
+            });
 }, 60000);
 
 afterAll(async () => {

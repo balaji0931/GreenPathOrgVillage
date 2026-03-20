@@ -8,6 +8,27 @@ import {
     announcements,
     feedback,
     moderatorVillageAssignments,
+    paymentAuditLog,
+    paymentGatewayEvents,
+    paymentGatewayOrders,
+    villagePaymentGatewayConfig,
+    receiptCounters,
+    householdMonthlyBills,
+    billingCycles,
+    villageMonthFeeConfig,
+    householdTypes,
+    auditLogs,
+    villageStaff,
+    pushSubscriptions,
+    dailyVillageStats,
+    dailyWardStats,
+    dailyVehicleStats,
+    dailyHourlyStats,
+    attendanceCenters,
+    shiftLogs,
+    workerAttendance,
+    systemJobs,
+    householdBehaviourStats,
     type Village,
     type InsertVillage,
 } from "@shared/schema";
@@ -34,7 +55,27 @@ export async function getVillages(): Promise<Village[]> {
     const cached = await cache.get(cacheKeys.villages());
     if (cached) return cached;
 
-    const result = await db.select().from(villages).orderBy(villages.villageId).limit(500); // Safety limit
+    const safeVillageColumns = {
+        id: villages.id,
+        villageId: villages.villageId,
+        name: villages.name,
+        imageUploadRequired: villages.imageUploadRequired,
+        weightRequired: villages.weightRequired,
+        wards: villages.wards,
+        locationServicesEnabled: villages.locationServicesEnabled,
+        paymentsEnabled: villages.paymentsEnabled,
+        attendanceEnabled: villages.attendanceEnabled,
+        behaviourThresholds: villages.behaviourThresholds,
+        vehicles: villages.vehicles,
+        totalHouseholds: villages.totalHouseholds,
+        proximityAlertsEnabled: villages.proximityAlertsEnabled,
+        notificationRadiusMeters: villages.notificationRadiusMeters,
+        notificationWindowStart: villages.notificationWindowStart,
+        notificationWindowEnd: villages.notificationWindowEnd,
+        createdAt: villages.createdAt,
+        updatedAt: villages.updatedAt,
+    };
+    const result = await db.select(safeVillageColumns).from(villages).orderBy(villages.villageId).limit(500);
     await cache.set(cacheKeys.villages(), result, 3600); // 1 hour TTL
     return result;
 }
@@ -44,7 +85,26 @@ export async function getVillageByVillageId(villageId: string): Promise<Village 
     const cached = await cache.get(cacheKeys.village(villageId));
     if (cached) return cached;
 
-    const [village] = await db.select().from(villages).where(eq(villages.villageId, villageId));
+    const [village] = await db.select({
+        id: villages.id,
+        villageId: villages.villageId,
+        name: villages.name,
+        imageUploadRequired: villages.imageUploadRequired,
+        weightRequired: villages.weightRequired,
+        wards: villages.wards,
+        locationServicesEnabled: villages.locationServicesEnabled,
+        paymentsEnabled: villages.paymentsEnabled,
+        attendanceEnabled: villages.attendanceEnabled,
+        behaviourThresholds: villages.behaviourThresholds,
+        vehicles: villages.vehicles,
+        totalHouseholds: villages.totalHouseholds,
+        proximityAlertsEnabled: villages.proximityAlertsEnabled,
+        notificationRadiusMeters: villages.notificationRadiusMeters,
+        notificationWindowStart: villages.notificationWindowStart,
+        notificationWindowEnd: villages.notificationWindowEnd,
+        createdAt: villages.createdAt,
+        updatedAt: villages.updatedAt,
+    }).from(villages).where(eq(villages.villageId, villageId));
     if (village) {
         await cache.set(cacheKeys.village(villageId), village, 3600);
     }
@@ -125,6 +185,31 @@ export async function deleteVillage(villageId: string): Promise<void> {
 
     await db.delete(moderatorVillageAssignments)
         .where(sql`village_id = ${villageId}`);
+
+    // Delete Payment and Analytics Tables
+    await db.delete(paymentAuditLog).where(sql`bill_id IN (SELECT id FROM household_monthly_bills WHERE village_id = ${villageId})`);
+    await db.delete(paymentGatewayEvents).where(eq(paymentGatewayEvents.villageId, villageId));
+    await db.delete(paymentGatewayOrders).where(eq(paymentGatewayOrders.villageId, villageId));
+    await db.delete(villagePaymentGatewayConfig).where(eq(villagePaymentGatewayConfig.villageId, villageId));
+    await db.delete(receiptCounters).where(eq(receiptCounters.villageId, villageId));
+    await db.delete(householdMonthlyBills).where(eq(householdMonthlyBills.villageId, villageId));
+    await db.delete(billingCycles).where(eq(billingCycles.villageId, villageId));
+    await db.delete(villageMonthFeeConfig).where(eq(villageMonthFeeConfig.villageId, villageId));
+    await db.delete(householdTypes).where(eq(householdTypes.villageId, villageId));
+    await db.delete(householdBehaviourStats).where(sql`household_id IN (SELECT id FROM households WHERE village_id = ${villageId})`);
+    await db.delete(auditLogs).where(eq(auditLogs.villageId, villageId));
+    await db.delete(villageStaff).where(eq(villageStaff.villageId, villageId));
+    await db.delete(pushSubscriptions).where(eq(pushSubscriptions.villageId, villageId));
+
+    // Delete Analytics & Stats Tables
+    await db.delete(dailyVillageStats).where(eq(dailyVillageStats.villageId, villageId));
+    await db.delete(dailyWardStats).where(eq(dailyWardStats.villageId, villageId));
+    await db.delete(dailyVehicleStats).where(eq(dailyVehicleStats.villageId, villageId));
+    await db.delete(dailyHourlyStats).where(eq(dailyHourlyStats.villageId, villageId));
+    await db.delete(attendanceCenters).where(eq(attendanceCenters.villageId, villageId));
+    await db.delete(shiftLogs).where(eq(shiftLogs.villageId, villageId));
+    await db.delete(workerAttendance).where(eq(workerAttendance.villageId, villageId));
+
 
 
     // 3. Delete main tables

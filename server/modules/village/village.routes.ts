@@ -4,18 +4,24 @@ import {
   createVillageWithManager,
   getVillagesWithStats,
 } from "./village.service";
+import { logAction } from "../audit/audit.storage";
 
 export function registerVillageRoutes(app: Express, requireAuth: any, requireRole: any, requireVillageAccess: any) {
   // Village routes
   app.post('/api/villages', requireAuth, requireRole(['admin']), async (req, res) => {
     try {
-      const { villageName, managerName, managerPhone } = req.body;
+      const { villageName, managerName, managerPhone, paymentsEnabled } = req.body;
 
-      const result = await createVillageWithManager({ villageName, managerName, managerPhone });
+      const result = await createVillageWithManager({ villageName, managerName, managerPhone, paymentsEnabled });
+
+      logAction(result.village?.villageId, req.session.userId!, 'created', 'village', result.village?.villageId, {
+        villageName,
+        managerName,
+      });
 
       res.json(result);
     } catch (error) {
-      console.error("Create village error:", error);
+      console.error("VILLAGE CREATE ERR:", error);
       res.status(500).json({ message: "Failed to create village" });
     }
   });
@@ -25,7 +31,6 @@ export function registerVillageRoutes(app: Express, requireAuth: any, requireRol
       const villagesWithStats = await getVillagesWithStats();
       res.json(villagesWithStats);
     } catch (error) {
-      console.error("Get villages error:", error);
       res.status(500).json({ message: "Failed to get villages" });
     }
   });
@@ -41,9 +46,15 @@ export function registerVillageRoutes(app: Express, requireAuth: any, requireRol
         return res.status(404).json({ message: "Village not found" });
       }
 
+      // Strip sensitive/internal fields for non-manager roles
+      const userRole = req.session.role;
+      if (userRole !== 'admin' && userRole !== 'manager') {
+        const { vehicles, totalHouseholds, ...safeVillage } = village as any;
+        return res.json(safeVillage);
+      }
+
       res.json(village);
     } catch (error) {
-      console.error("Get village error:", error);
       res.status(500).json({ message: "Failed to get village" });
     }
   });
@@ -55,13 +66,12 @@ export function registerVillageRoutes(app: Express, requireAuth: any, requireRol
       const wards = await storage.getWardsByVillage(villageId);
       res.json(wards);
     } catch (error) {
-      console.error("Get wards error:", error);
       res.status(500).json({ message: "Failed to get wards" });
     }
   });
 
   // Add ward for a village
-  app.post('/api/villages/:villageId/wards', requireAuth, requireRole(['manager']), async (req, res) => {
+  app.post('/api/villages/:villageId/wards', requireAuth, requireRole(['manager']), requireVillageAccess, async (req, res) => {
     try {
       const { villageId } = req.params;
       const { ward } = req.body;
@@ -72,13 +82,35 @@ export function registerVillageRoutes(app: Express, requireAuth: any, requireRol
 
       const updatedWards = await storage.addWardToVillage(villageId, ward.trim());
 
+      logAction(villageId, req.session.userId!, 'created', 'ward', ward.trim(), {
+        villageId,
+      });
+
       res.json({ message: "Ward added successfully", wards: updatedWards });
     } catch (error: any) {
-      console.error("Add ward error:", error);
       if (error.message === "Ward already exists") {
         return res.status(400).json({ message: "Ward already exists" });
       }
       res.status(500).json({ message: "Failed to add ward" });
+    }
+  });
+
+  app.patch('/api/villages/:villageId', requireAuth, requireRole(['admin', 'manager']), requireVillageAccess, async (req, res) => {
+    try {
+      const { villageId } = req.params;
+      const updates = req.body;
+
+      // Security: Managers can only update specific fields if needed
+      // but for now, we'll allow all partial updates as requested by the UI
+      const village = await storage.updateVillage(villageId, updates);
+
+      logAction(villageId, req.session.userId!, 'updated', 'village_settings', villageId, {
+        updatedFields: Object.keys(updates),
+      });
+
+      res.json({ message: "Village updated successfully", village });
+    } catch (error: any) {
+      res.status(500).json({ message: "Failed to update village" });
     }
   });
 
@@ -91,8 +123,7 @@ export function registerVillageRoutes(app: Express, requireAuth: any, requireRol
 
       res.json({ message: "Village updated successfully", village });
     } catch (error: any) {
-      console.error("Update village error:", error);
-      res.status(500).json({ message: error.message || "Failed to update village" });
+      res.status(500).json({ message: "Failed to update village" });
     }
   });
 
@@ -101,10 +132,11 @@ export function registerVillageRoutes(app: Express, requireAuth: any, requireRol
       const { villageId } = req.params;
       await storage.deleteVillage(villageId);
 
+      logAction(villageId, req.session.userId!, 'deleted', 'village', villageId);
+
       res.json({ message: "Village deleted successfully" });
     } catch (error) {
-      console.error("Delete village error:", error);
-      res.status(500).json({ message: "Failed to delete village" });
+      console.error("Village Deletion Error:", error); res.status(500).json({ message: "Failed to delete village" });
     }
   });
 }

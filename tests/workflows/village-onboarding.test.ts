@@ -59,7 +59,7 @@ describe('Village Onboarding — Full QR-First Lifecycle', () => {
         const res = await adminAgent
             .post('/api/villages')
             .set('x-csrf-token', adminCsrf)
-            .send({ villageName: 'Onboard Village', managerName: 'Onboard Mgr', managerPhone: '1111111111' });
+            .send({ villageName: 'Onboard Village', managerName: 'Onboard Mgr', paymentsEnabled: true, managerPhone: '1111111111' });
 
         expect(res.status).toBe(200);
         expect(res.body.village.villageId).toBeDefined();
@@ -148,7 +148,7 @@ describe('Village Onboarding — Full QR-First Lifecycle', () => {
 
         householdUid = res.body.household.uid;
         generatorUserId = res.body.credentials.userId;
-        generatorPassword = res.body.credentials.password;
+        generatorPassword = generatorUserId; // Convention: password = userId for generated accounts
     });
 
     test('8. Generator login with auto-credentials → success', async () => {
@@ -174,8 +174,6 @@ describe('Village Onboarding — Full QR-First Lifecycle', () => {
             .send({
                 householdUid,
                 segregationRating: 4,
-                plasticRating: 3,
-                observations: ['clean'],
                 remarks: 'Good segregation',
                 photoUrl: '',
                 voiceUrl: '',
@@ -223,7 +221,7 @@ describe('Village Onboarding — Full QR-First Lifecycle', () => {
         const v2Res = await adminAgent
             .post('/api/villages')
             .set('x-csrf-token', adminCsrf)
-            .send({ villageName: 'Isolated Village', managerName: 'Iso Mgr', managerPhone: '5555555555' });
+            .send({ villageName: 'Isolated Village', managerName: 'Iso Mgr', paymentsEnabled: true, managerPhone: '5555555555' });
         village2Id = v2Res.body.village.villageId;
         const mgr2Id = v2Res.body.manager.credentials.userId;
 

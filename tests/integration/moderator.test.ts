@@ -29,7 +29,7 @@ beforeAll(async () => {
     const villageRes = await adminAgent
         .post('/api/villages')
         .set('x-csrf-token', adminCsrf)
-        .send({ villageName: 'Mod Village', managerName: 'Mod Manager', managerPhone: '1111111111' });
+        .send({ villageName: 'Mod Village', managerName: 'Mod Manager', paymentsEnabled: true, managerPhone: '1111111111' });
     villageId = villageRes.body.village.villageId;
     managerId = villageRes.body.manager.credentials.userId;
 
@@ -100,7 +100,7 @@ describe('Moderator Integration', () => {
                 .set('x-csrf-token', moderatorCsrf);
 
             expect(res.status).toBe(200);
-            expect(res.body.newPassword).toBe(managerId);
+            expect(res.body.message).toContain('reset');
         });
     });
 

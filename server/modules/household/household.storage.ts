@@ -3,13 +3,36 @@ import {
     wasteCollections,
     qrCodes,
     feedback,
+    householdMonthlyBills,
+    paymentAuditLog,
+    householdBehaviourStats,
     type Household,
     type InsertHousehold,
 } from "@shared/schema";
+import { eq, count, and, or, like, sql, ne } from "drizzle-orm";
 import { db } from "../../db";
-import { eq, count, and, or, like } from "drizzle-orm";
 import { getCache, cacheKeys } from "../../cache";
 import { incrementHouseholdCount, decrementHouseholdCount } from "../analytics/daily-stats.storage";
+
+// Columns safe to return from household queries — generatorPassword NEVER leaves the DB
+const safeHouseholdColumns = {
+    id: households.id,
+    uid: households.uid,
+    villageId: households.villageId,
+    headName: households.headName,
+    phone: households.phone,
+    houseNumber: households.houseNumber,
+    ward: households.ward,
+    familySize: households.familySize,
+    address: households.address,
+    status: households.status,
+    householdType: households.householdType,
+    qrPrinted: households.qrPrinted,
+    generatorUserId: households.generatorUserId,
+    latitude: households.latitude,
+    longitude: households.longitude,
+    createdAt: households.createdAt,
+};
 
 export async function createHousehold(insertHousehold: InsertHousehold): Promise<Household> {
     const cache = getCache();
@@ -27,24 +50,28 @@ export async function createHousehold(insertHousehold: InsertHousehold): Promise
     try {
         await incrementHouseholdCount(insertHousehold.villageId, insertHousehold.ward || "Unknown");
     } catch (err) {
-        console.error("[daily-stats] Failed to increment household count:", err);
     }
 
     return household;
 }
 
-export async function getHouseholdsByVillage(villageId: string): Promise<Household[]> {
+export async function getHouseholdsByVillage(villageId: string) {
     const cache = getCache();
     const cacheKey = cacheKeys.households(villageId);
     const cached = await cache.get(cacheKey);
     if (cached) return cached;
 
     const result = await db
-        .select()
+        .select(safeHouseholdColumns)
         .from(households)
-        .where(eq(households.villageId, villageId))
+        .where(
+            and(
+                eq(households.villageId, villageId),
+                ne(households.status, 'deleted')
+            )
+        )
         .orderBy(households.uid)
-        .limit(5000); // Safety limit - use paginated method for larger datasets
+        .limit(2000); // Safety limit - use paginated method for larger datasets
 
     await cache.set(cacheKey, result, 600); // 10 min TTL
     return result;
@@ -56,9 +83,9 @@ export async function getHouseholdsByVillagePaginated(villageId: string, options
     search?: string;
     ward?: string;
     status?: string;
-} = {}): Promise<{ data: Household[]; total: number; page: number; limit: number; totalPages: number }> {
+} = {}) {
     const page = Math.max(1, options.page || 1);
-    const limit = Math.min(2000, Math.max(1, options.limit || 2000));
+    const limit = Math.min(500, Math.max(1, options.limit || 100));
     const offset = (page - 1) * limit;
 
     let conditions = [eq(households.villageId, villageId)];
@@ -79,6 +106,8 @@ export async function getHouseholdsByVillagePaginated(villageId: string, options
 
     if (options.status && options.status !== 'all') {
         conditions.push(eq(households.status, options.status));
+    } else {
+        conditions.push(ne(households.status, 'deleted'));
     }
 
     const whereClause = conditions.length > 1 ? and(...conditions) : conditions[0];
@@ -89,7 +118,7 @@ export async function getHouseholdsByVillagePaginated(villageId: string, options
         .where(whereClause);
 
     const data = await db
-        .select()
+        .select(safeHouseholdColumns)
         .from(households)
         .where(whereClause)
         .orderBy(households.uid)
@@ -105,8 +134,8 @@ export async function getHouseholdsByVillagePaginated(villageId: string, options
     };
 }
 
-export async function getHouseholdByUid(uid: string): Promise<Household | undefined> {
-    const [household] = await db.select().from(households).where(eq(households.uid, uid));
+export async function getHouseholdByUid(uid: string) {
+    const [household] = await db.select(safeHouseholdColumns).from(households).where(eq(households.uid, uid));
     return household || undefined;
 }
 
@@ -128,26 +157,41 @@ export async function updateHousehold(id: number, updates: Partial<Household>): 
 
 export async function deleteHousehold(id: number): Promise<void> {
     const cache = getCache();
-    // Get household details before deleting (need villageId and ward)
-    const [household] = await db.select({ villageId: households.villageId, ward: households.ward })
-        .from(households)
-        .where(eq(households.id, id))
-        .limit(1);
+    
+    // Get household details before deleting (need villageId, ward, and generatorUserId)
+    const [household] = await db.select({ 
+        villageId: households.villageId, 
+        ward: households.ward,
+        generatorUserId: households.generatorUserId
+    })
+    .from(households)
+    .where(eq(households.id, id))
+    .limit(1);
 
     if (!household) return;
 
-    // Delete related entities manually to ensure consistency
-    await db.delete(wasteCollections).where(eq(wasteCollections.householdId, id));
+    // Execute a Soft-Delete:
+    // We strictly preserve householdMonthlyBills, householdBehaviourStats, paymentAuditLog, return feedback and wasteCollections
+    
+    // 1. Delete user authentication (Login capability)
+    if (household.generatorUserId) {
+        // Need to import users. Doing raw query to easily target users table since it's not imported.
+        await db.execute(sql`DELETE FROM users WHERE user_id = ${household.generatorUserId}`);
+    }
+
+    // 2. Delete QR codes as they represent physical access points that are invalid
     await db.delete(qrCodes).where(eq(qrCodes.householdId, id));
-    await db.delete(feedback).where(eq(feedback.fromHouseholdId, id));
-    await db.delete(households).where(eq(households.id, id));
+
+    // 3. Update the household status to 'deleted'
+    await db.update(households)
+        .set({ status: 'deleted' })
+        .where(eq(households.id, id));
 
     // Update pre-calculated daily stats
     if (household?.villageId) {
         try {
             await decrementHouseholdCount(household.villageId, household.ward || "Unknown");
         } catch (err) {
-            console.error("[daily-stats] Failed to decrement household count:", err);
         }
     }
 
@@ -159,7 +203,8 @@ export async function deleteHousehold(id: number): Promise<void> {
     }
 }
 
-export async function getHouseholdByGeneratorUserId(generatorUserId: string): Promise<Household | undefined> {
-    const [household] = await db.select().from(households).where(eq(households.generatorUserId, generatorUserId));
+export async function getHouseholdByGeneratorUserId(generatorUserId: string) {
+    const [household] = await db.select(safeHouseholdColumns).from(households).where(eq(households.generatorUserId, generatorUserId));
     return household || undefined;
 }
+

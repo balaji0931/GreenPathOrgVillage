@@ -256,7 +256,7 @@ export default function PublicHome({ initialSection = "home" }: PublicHomeProps 
 
       if (!response.ok) {
         const error = await response.json();
-        throw new Error(error.message || 'Failed to submit feedback');
+        throw new Error('Failed to submit feedback');
       }
 
       return response.json();
@@ -267,10 +267,10 @@ export default function PublicHome({ initialSection = "home" }: PublicHomeProps 
         description: "Thank you for your feedback! We'll review it soon.",
       });
     },
-    onError: (error: any) => {
+    onError: (_error: unknown) => {
       toast({
         title: "Error",
-        description: error.message || "Failed to submit feedback",
+        description: "Failed to submit feedback. Please try again.",
         variant: "destructive",
       });
     },
@@ -295,7 +295,7 @@ export default function PublicHome({ initialSection = "home" }: PublicHomeProps 
 
       if (!response.ok) {
         const error = await response.json();
-        throw new Error(error.message || 'Failed to send message');
+        throw new Error('Failed to send message');
       }
 
       return response.json();
@@ -306,10 +306,10 @@ export default function PublicHome({ initialSection = "home" }: PublicHomeProps 
         description: "Thank you for contacting us! We'll respond within 24 hours.",
       });
     },
-    onError: (error: any) => {
+    onError: (_error: unknown) => {
       toast({
         title: "Error",
-        description: error.message || "Failed to send message",
+        description: "Failed to send message. Please try again.",
         variant: "destructive",
       });
     },

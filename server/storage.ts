@@ -92,7 +92,7 @@ export class DatabaseStorage implements IStorage {
     return householdStorage.createHousehold(insertHousehold);
   }
 
-  async getHouseholdsByVillage(villageId: string): Promise<Household[]> {
+  async getHouseholdsByVillage(villageId: string) {
     return householdStorage.getHouseholdsByVillage(villageId);
   }
 
@@ -102,11 +102,11 @@ export class DatabaseStorage implements IStorage {
     search?: string;
     ward?: string;
     status?: string;
-  } = {}): Promise<{ data: Household[]; total: number; page: number; limit: number; totalPages: number }> {
+  } = {}) {
     return householdStorage.getHouseholdsByVillagePaginated(villageId, options);
   }
 
-  async getHouseholdByUid(uid: string): Promise<Household | undefined> {
+  async getHouseholdByUid(uid: string) {
     return householdStorage.getHouseholdByUid(uid);
   }
 
@@ -142,7 +142,7 @@ export class DatabaseStorage implements IStorage {
     return collectorStorage.getCollectorByUid(uid);
   }
 
-  async checkExistingCollection(householdId: number, collectorId: number, date: string): Promise<WasteCollection | undefined> {
+  async checkExistingCollection(householdId: number, collectorId: number, date: string) {
     return wasteCollectionStorage.checkExistingCollection(householdId, collectorId, date);
   }
 
@@ -272,7 +272,7 @@ export class DatabaseStorage implements IStorage {
     return adminStatsStorage.getVillageStats(villageId);
   }
 
-  async getManagersList(): Promise<User[]> {
+  async getManagersList(): Promise<any[]> {
     return adminStatsStorage.getManagersList();
   }
 
@@ -281,7 +281,7 @@ export class DatabaseStorage implements IStorage {
     limit?: number;
     search?: string;
     villageId?: string;
-  } = {}): Promise<{ data: User[]; total: number; page: number; limit: number; totalPages: number }> {
+  } = {}): Promise<{ data: any[]; total: number; page: number; limit: number; totalPages: number }> {
     return adminStatsStorage.getManagersListPaginated(options);
   }
 
@@ -328,7 +328,7 @@ export class DatabaseStorage implements IStorage {
     return householdStorage.deleteHousehold(id);
   }
 
-  async getHouseholdByGeneratorUserId(generatorUserId: string): Promise<Household | undefined> {
+  async getHouseholdByGeneratorUserId(generatorUserId: string) {
     return householdStorage.getHouseholdByGeneratorUserId(generatorUserId);
   }
 
@@ -373,7 +373,7 @@ export class DatabaseStorage implements IStorage {
     return issueStorage.getIssueById(id);
   }
 
-  async getManagersByVillage(villageId: string): Promise<User[]> {
+  async getManagersByVillage(villageId: string): Promise<any[]> {
     return moderatorStorage.getManagersByVillage(villageId);
   }
 
@@ -448,7 +448,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Field worker operations
-  async getFieldWorkersByVillage(villageId: string): Promise<User[]> {
+  async getFieldWorkersByVillage(villageId: string): Promise<any[]> {
     return fieldworkerStorage.getFieldWorkersByVillage(villageId);
   }
 

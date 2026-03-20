@@ -43,14 +43,6 @@ export async function createIssue(data: {
         throw new Error("Description must be at least 10 characters long");
     }
 
-    console.log('Creating issue:', {
-        title: trimmedTitle,
-        description: trimmedDescription,
-        category,
-        reportedBy,
-        villageId,
-        photoUrl: photoUrl || 'none'
-    });
 
     const issue = await storage.createIssue({
         title: trimmedTitle,
@@ -62,7 +54,6 @@ export async function createIssue(data: {
         status: 'open',
     });
 
-    console.log('Issue created successfully with ID:', issue.id);
 
     return issue;
 }

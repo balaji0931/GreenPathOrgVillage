@@ -31,11 +31,19 @@ export async function getCollectorsByVillage(villageId: string): Promise<Collect
     if (cached) return cached;
 
     const result = await db
-        .select()
+        .select({
+            id: collectors.id,
+            uid: collectors.uid,
+            villageId: collectors.villageId,
+            name: collectors.name,
+            phone: collectors.phone,
+            assignedVehicle: collectors.assignedVehicle,
+            createdAt: collectors.createdAt,
+        })
         .from(collectors)
         .where(eq(collectors.villageId, villageId))
         .orderBy(collectors.uid)
-        .limit(500); // Safety limit
+        .limit(500);
 
     await cache.set(cacheKeys.collectors(villageId), result, 1800); // 30 min TTL
     return result;
@@ -74,7 +82,15 @@ export async function getCollectorsByVillagePaginated(villageId: string, options
         .where(whereClause);
 
     const data = await db
-        .select()
+        .select({
+            id: collectors.id,
+            uid: collectors.uid,
+            villageId: collectors.villageId,
+            name: collectors.name,
+            phone: collectors.phone,
+            assignedVehicle: collectors.assignedVehicle,
+            createdAt: collectors.createdAt,
+        })
         .from(collectors)
         .where(whereClause)
         .orderBy(collectors.uid)
@@ -96,7 +112,15 @@ export async function getCollectorsByVillagePaginated(villageId: string, options
 }
 
 export async function getCollectorByUid(uid: string): Promise<Collector | undefined> {
-    const [collector] = await db.select().from(collectors).where(eq(collectors.uid, uid));
+    const [collector] = await db.select({
+        id: collectors.id,
+        uid: collectors.uid,
+        villageId: collectors.villageId,
+        name: collectors.name,
+        phone: collectors.phone,
+        assignedVehicle: collectors.assignedVehicle,
+        createdAt: collectors.createdAt,
+    }).from(collectors).where(eq(collectors.uid, uid));
     return collector || undefined;
 }
 
@@ -130,7 +154,7 @@ export async function getCollectorStats(collectorId: number): Promise<{
         .where(eq(wasteCollections.collectorId, collectorId));
 
 
-    const feedbackResults = await db.select()
+    const feedbackResults = await db.select({ rating: feedback.rating })
         .from(feedback)
         .where(eq(feedback.toCollectorId, collectorId));
 

@@ -9,7 +9,7 @@ import {
     collectors,
 } from "@shared/schema";
 import { db } from "../../db";
-import { eq, and, sql, count } from "drizzle-orm";
+import { eq, and, sql, count, ne } from "drizzle-orm";
 
 // ═══════════════════════════════════════════════════════════════
 // Helper: Convert a Date to IST date string (YYYY-MM-DD)
@@ -203,7 +203,7 @@ export async function incrementHouseholdCount(
     const [wardCount] = await db
         .select({ total: count() })
         .from(households)
-        .where(and(eq(households.villageId, villageId), eq(households.ward, wardName)));
+        .where(and(eq(households.villageId, villageId), eq(households.ward, wardName), ne(households.status, 'deleted')));
 
     // Upsert today's ward stats with new total
     await db
@@ -255,7 +255,7 @@ export async function decrementHouseholdCount(
     const [wardCount] = await db
         .select({ total: count() })
         .from(households)
-        .where(and(eq(households.villageId, villageId), eq(households.ward, wardName)));
+        .where(and(eq(households.villageId, villageId), eq(households.ward, wardName), ne(households.status, 'deleted')));
 
     // Upsert today's ward stats
     await db

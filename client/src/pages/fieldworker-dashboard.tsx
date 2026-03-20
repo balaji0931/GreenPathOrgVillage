@@ -36,6 +36,7 @@ interface HouseholdForm {
   phone: string;
   houseNumber: string;
   ward: string;
+  householdType: string;
   familySize: number;
   address: string;
   latitude?: string;
@@ -73,6 +74,14 @@ export default function FieldWorkerDashboard() {
       fetch(`/api/villages/${user?.villageId}`).then((res) => res.json()),
   });
 
+  // Fetch household types for the village
+  const { data: householdTypeOptions } = useQuery<{ typeCode: string; displayName: string }[]>({
+    queryKey: ['household-types', user?.villageId],
+    enabled: !!user?.villageId,
+    queryFn: () =>
+      fetch('/api/household-types', { credentials: 'include' }).then((res) => res.json()),
+  });
+
 
   const wardOptions = village?.wards && village.wards.length > 0
     ? village.wards
@@ -83,6 +92,7 @@ export default function FieldWorkerDashboard() {
     phone: "",
     houseNumber: "",
     ward: "",
+    householdType: "residential_small",
     familySize: 0,
     address: ""
   });
@@ -115,10 +125,10 @@ export default function FieldWorkerDashboard() {
         });
       }
     },
-    onError: (error: any) => {
+    onError: (_error: unknown) => {
       toast({
         title: "QR Code Not Found",
-        description: error.message || "This QR code does not exist or doesn't belong to your village.",
+        description: "This QR code does not exist or doesn't belong to your village.",
         variant: "destructive",
       });
     }
@@ -136,10 +146,10 @@ export default function FieldWorkerDashboard() {
       queryClient.invalidateQueries({ queryKey: ["/api/qr-codes"] });
       setTimeout(() => setMappingSuccess(false), 3000);
     },
-    onError: (error: any) => {
+    onError: (_error: unknown) => {
       toast({
         title: "Mapping Failed",
-        description: error.message || "Failed to map household to QR code.",
+        description: "Failed to map household to QR code. Please try again.",
         variant: "destructive",
       });
     }
@@ -154,6 +164,7 @@ export default function FieldWorkerDashboard() {
       phone: "",
       houseNumber: "",
       ward: "",
+      householdType: "residential_small",
       familySize: 0,
       address: "",
       latitude: undefined,
@@ -179,10 +190,10 @@ export default function FieldWorkerDashboard() {
           lng: position.coords.longitude,
         });
       },
-      (error) => {
+      (_error) => {
         toast({
           title: "Error",
-          description: "Failed to fetch location: " + error.message,
+          description: "Could not get your location. Please enable GPS and try again.",
           variant: "destructive",
         });
       }
@@ -315,10 +326,10 @@ export default function FieldWorkerDashboard() {
       setShowPasswordModal(false);
       setNewPassword("");
       setConfirmPassword("");
-    } catch (error: any) {
+    } catch (_error: unknown) {
       toast({
         title: "Error",
-        description: error.message || "Failed to change password.",
+        description: "Failed to change password. Please try again.",
         variant: "destructive",
       });
     }
@@ -647,6 +658,33 @@ export default function FieldWorkerDashboard() {
                 </div>
 
                 <div className="space-y-1">
+                  <Label htmlFor="householdType" className="flex items-center gap-1">
+                    <Home className="h-4 w-4" />
+                    Household Type <span className="text-red-500">*</span>
+                  </Label>
+                  <Select
+                    value={householdForm.householdType}
+                    onValueChange={(value) => setHouseholdForm({ ...householdForm, householdType: value })}
+                  >
+                    <SelectTrigger data-testid="select-household-type">
+                      <SelectValue placeholder="Select type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {(householdTypeOptions || [
+                        { typeCode: 'residential_small', displayName: 'Residential (Small)' },
+                        { typeCode: 'residential_large', displayName: 'Residential (Large)' },
+                        { typeCode: 'commercial_shop', displayName: 'Commercial (Shop)' },
+                        { typeCode: 'bulk_generator', displayName: 'Bulk Generator' },
+                        { typeCode: 'institutional', displayName: 'Institutional' },
+                        { typeCode: 'slum_supported', displayName: 'Subsidized' },
+                      ]).map((type) => (
+                        <SelectItem key={type.typeCode} value={type.typeCode}>{type.displayName}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-1">
                   <Label htmlFor="familySize" className="flex items-center gap-1">
                     <Users className="h-4 w-4" />
                     Family Size
@@ -757,6 +795,12 @@ export default function FieldWorkerDashboard() {
                 <div className="flex justify-between py-2 border-b">
                   <span className="text-gray-500">Ward</span>
                   <span className="font-medium">{householdForm.ward}</span>
+                </div>
+                <div className="flex justify-between py-2 border-b">
+                  <span className="text-gray-500">Household Type</span>
+                  <span className="font-medium">
+                    {householdTypeOptions?.find(t => t.typeCode === householdForm.householdType)?.displayName || householdForm.householdType}
+                  </span>
                 </div>
                 <div className="flex justify-between py-2 border-b">
                   <span className="text-gray-500">Family Size</span>

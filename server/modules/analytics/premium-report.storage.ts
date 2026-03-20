@@ -24,7 +24,13 @@ export async function getPremiumReportData(villageId: string, date: string): Pro
     const yesterdayStr = format(subDays(targetDate, 1), 'yyyy-MM-dd');
 
     // ── Query 1: Village stats for last 7 days (includes today + yesterday) ──
-    const villageStats = await db.select().from(dailyVillageStats)
+    const villageStats = await db.select({
+        villageId: dailyVillageStats.villageId,
+        reportDate: dailyVillageStats.reportDate,
+        totalHouseholds: dailyVillageStats.totalHouseholds,
+        collectedCount: dailyVillageStats.collectedCount,
+        segregationSum: dailyVillageStats.segregationSum,
+    }).from(dailyVillageStats)
         .where(and(
             eq(dailyVillageStats.villageId, villageId),
             sql`${dailyVillageStats.reportDate} >= ${sevenDaysAgo}`,
@@ -36,21 +42,42 @@ export async function getPremiumReportData(villageId: string, date: string): Pro
     const yesterdayStats = villageStats.find(s => s.reportDate === yesterdayStr);
 
     // ── Query 2: Ward stats for today ──
-    const wardStats = await db.select().from(dailyWardStats)
+    const wardStats = await db.select({
+        villageId: dailyWardStats.villageId,
+        reportDate: dailyWardStats.reportDate,
+        wardName: dailyWardStats.wardName,
+        totalHouseholds: dailyWardStats.totalHouseholds,
+        collectedCount: dailyWardStats.collectedCount,
+    }).from(dailyWardStats)
         .where(and(
             eq(dailyWardStats.villageId, villageId),
             eq(dailyWardStats.reportDate, date)
         ));
 
     // ── Query 3: Vehicle stats for today ──
-    const vehicleStatsRows = await db.select().from(dailyVehicleStats)
+    const vehicleStatsRows = await db.select({
+        villageId: dailyVehicleStats.villageId,
+        reportDate: dailyVehicleStats.reportDate,
+        registrationNumber: dailyVehicleStats.registrationNumber,
+        vehicleName: dailyVehicleStats.vehicleName,
+        collectorNames: dailyVehicleStats.collectorNames,
+        collectedCount: dailyVehicleStats.collectedCount,
+        firstCollectionAt: dailyVehicleStats.firstCollectionAt,
+        lastCollectionAt: dailyVehicleStats.lastCollectionAt,
+    }).from(dailyVehicleStats)
         .where(and(
             eq(dailyVehicleStats.villageId, villageId),
             eq(dailyVehicleStats.reportDate, date)
         ));
 
     // ── Query 4: Hourly stats for today ──
-    const hourlyRows = await db.select().from(dailyHourlyStats)
+    const hourlyRows = await db.select({
+        villageId: dailyHourlyStats.villageId,
+        reportDate: dailyHourlyStats.reportDate,
+        hour: dailyHourlyStats.hour,
+        vehicleName: dailyHourlyStats.vehicleName,
+        collectionCount: dailyHourlyStats.collectionCount,
+    }).from(dailyHourlyStats)
         .where(and(
             eq(dailyHourlyStats.villageId, villageId),
             eq(dailyHourlyStats.reportDate, date)
@@ -142,12 +169,13 @@ export async function getPremiumReportData(villageId: string, date: string): Pro
         };
     });
 
-    // ── Material Data (unchanged) ──
+    // ── Material Data (5 categories) ──
     const materialData = {
         wet: parseFloat(materialLog?.wetWasteKg || "0"),
         dry: parseFloat(materialLog?.dryWasteKg || "0"),
-        rejected: parseFloat(materialLog?.rejectedWasteKg || "0"),
+        specialCare: parseFloat(materialLog?.specialCareWasteKg || "0"),
         sanitary: parseFloat(materialLog?.sanitaryWasteKg || "0"),
+        mixed: parseFloat(materialLog?.mixedWasteKg || "0"),
         isLogged: !!materialLog,
     };
 

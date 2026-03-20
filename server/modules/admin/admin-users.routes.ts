@@ -14,7 +14,6 @@ export function registerAdminUsersRoutes(app: Express, requireAuth: any, require
       const managers = await storage.getManagersList();
       res.json(managers);
     } catch (error) {
-      console.error("Get managers error:", error);
       res.status(500).json({ message: "Failed to get managers" });
     }
   });
@@ -26,9 +25,8 @@ export function registerAdminUsersRoutes(app: Express, requireAuth: any, require
       const { managerId } = req.params;
       const newPassword = await resetPasswordToUserId(managerId);
 
-      res.json({ message: "Password reset successfully", newPassword });
+      res.json({ message: "Password reset successfully" });
     } catch (error) {
-      console.error("Reset password error:", error);
       res.status(500).json({ message: "Failed to reset password" });
     }
   });
@@ -44,7 +42,6 @@ export function registerAdminUsersRoutes(app: Express, requireAuth: any, require
 
       res.json(result);
     } catch (error) {
-      console.error("Add manager error:", error);
       res.status(500).json({ message: "Failed to add manager" });
     }
   });
@@ -55,7 +52,6 @@ export function registerAdminUsersRoutes(app: Express, requireAuth: any, require
       await storage.deleteUser(managerId);
       res.json({ message: "Manager deleted successfully" });
     } catch (error) {
-      console.error("Delete manager error:", error);
       res.status(500).json({ message: "Failed to delete manager" });
     }
   });
@@ -69,7 +65,6 @@ export function registerAdminUsersRoutes(app: Express, requireAuth: any, require
 
       res.json(result);
     } catch (error) {
-      console.error("Create moderator error:", error);
       res.status(500).json({ message: "Failed to create moderator" });
     }
   });
@@ -80,7 +75,6 @@ export function registerAdminUsersRoutes(app: Express, requireAuth: any, require
 
       res.json(moderatorsWithVillages);
     } catch (error) {
-      console.error("Get moderators error:", error);
       res.status(500).json({ message: "Failed to get moderators" });
     }
   });
@@ -95,7 +89,6 @@ export function registerAdminUsersRoutes(app: Express, requireAuth: any, require
       const moderator = await storage.updateModerator(moderatorId, updates);
       res.json(moderator);
     } catch (error) {
-      console.error("Update moderator error:", error);
       res.status(500).json({ message: "Failed to update moderator" });
     }
   });
@@ -106,7 +99,6 @@ export function registerAdminUsersRoutes(app: Express, requireAuth: any, require
       await storage.deleteModerator(moderatorId);
       res.json({ message: "Moderator deleted successfully" });
     } catch (error) {
-      console.error("Delete moderator error:", error);
       res.status(500).json({ message: "Failed to delete moderator" });
     }
   });
@@ -125,7 +117,6 @@ export function registerAdminUsersRoutes(app: Express, requireAuth: any, require
 
       res.json(assignment);
     } catch (error) {
-      console.error("Assign village to moderator error:", error);
       res.status(500).json({ message: "Failed to assign village to moderator" });
     }
   });
@@ -136,7 +127,6 @@ export function registerAdminUsersRoutes(app: Express, requireAuth: any, require
       await storage.removeVillageFromModerator(moderatorId, villageId);
       res.json({ message: "Village removed from moderator successfully" });
     } catch (error) {
-      console.error("Remove village from moderator error:", error);
       res.status(500).json({ message: "Failed to remove village from moderator" });
     }
   });
@@ -147,7 +137,6 @@ export function registerAdminUsersRoutes(app: Express, requireAuth: any, require
       const villages = await storage.getModeratorVillages(moderatorId);
       res.json(villages);
     } catch (error) {
-      console.error("Get moderator villages error:", error);
       res.status(500).json({ message: "Failed to get moderator villages" });
     }
   });
@@ -157,9 +146,8 @@ export function registerAdminUsersRoutes(app: Express, requireAuth: any, require
       const { moderatorId } = req.params;
       const newPassword = await resetPasswordToUserId(moderatorId);
 
-      res.json({ newPassword });
+      res.json({ message: "Password reset successfully" });
     } catch (error) {
-      console.error("Reset moderator password error:", error);
       res.status(500).json({ message: "Failed to reset moderator password" });
     }
   });

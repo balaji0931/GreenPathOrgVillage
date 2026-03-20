@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
+import { MyBillsTab } from "@/components/my-bills-tab";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -27,6 +28,8 @@ import { useAuth } from "@/hooks/useAuth";
 import { apiRequest, queryClient, fetchWithCsrf } from "@/lib/queryClient";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import { TourButton } from "@/components/tours/TourButton";
+import { Checkbox } from "@/components/ui/checkbox";
+import { subscribeToPush, unsubscribeFromPush, isPushSubscribed } from "@/hooks/usePWA";
 import {
   Home,
   FileText,
@@ -51,6 +54,7 @@ import {
   History,
   Search,
   QrCode,
+  IndianRupee,
 } from "lucide-react";
 
 const ISSUE_CATEGORIES = [
@@ -95,10 +99,11 @@ export default function GeneratorDashboard() {
   });
 
   // Fetch household collection history
-  const { data: collectionHistory, isLoading: historyLoading } = useQuery<any[]>({
+  const { data: collectionHistoryRaw, isLoading: historyLoading } = useQuery<any[]>({
     queryKey: ["/api/waste-collections/household"],
     refetchInterval: 30000, // Refetch every 30 seconds for real-time updates
   });
+  const collectionHistory = Array.isArray(collectionHistoryRaw) ? collectionHistoryRaw : [];
 
   // Fetch village issues
   const { data: issues, isLoading: issuesLoading } = useQuery<any[]>({
@@ -123,6 +128,45 @@ export default function GeneratorDashboard() {
     },
     retry: 3,
     retryDelay: 1000,
+  });
+
+  // Fetch village settings to check if proximity alerts are enabled
+  const { data: villageDetails } = useQuery<any>({
+    queryKey: [`/api/villages/${user?.villageId}`],
+    enabled: !!user?.villageId,
+  });
+
+  // Fetch push subscription status
+  const { data: pushSubscribed, refetch: refetchPushStatus } = useQuery({
+    queryKey: ["push-subscription-status"],
+    queryFn: isPushSubscribed,
+    enabled: !!user?.userId,
+  });
+
+  // Toggle push subscription mutation
+  const togglePushMutation = useMutation({
+    mutationFn: async (checked: boolean) => {
+      if (checked) {
+        return await subscribeToPush();
+      } else {
+        return await unsubscribeFromPush();
+      }
+    },
+    onSuccess: (success) => {
+      if (success) {
+        refetchPushStatus();
+        toast({
+          title: "Success",
+          description: "Notification settings updated",
+        });
+      } else {
+        toast({
+          title: "Error",
+          description: "Failed to update notification settings. Check browser permissions.",
+          variant: "destructive",
+        });
+      }
+    },
   });
 
   // Auto-slide announcements every 5 seconds
@@ -209,11 +253,10 @@ export default function GeneratorDashboard() {
           "Your issue has been reported successfully. The manager will review it soon.",
       });
     },
-    onError: (error: any) => {
+    onError: (_error: unknown) => {
       toast({
         title: "Error",
-        description:
-          error?.message || "Failed to report issue. Please try again.",
+        description: "Failed to report issue. Please try again.",
         variant: "destructive",
       });
     },
@@ -251,10 +294,10 @@ export default function GeneratorDashboard() {
         description: "Feedback submitted successfully",
       });
     },
-    onError: (error: any) => {
+    onError: (_error: unknown) => {
       toast({
         title: "Error",
-        description: error?.message || "Failed to submit feedback",
+        description: "Failed to submit feedback. Please try again.",
         variant: "destructive",
       });
     },
@@ -275,10 +318,10 @@ export default function GeneratorDashboard() {
       setNewPassword("");
       setConfirmPassword("");
     },
-    onError: (error: any) => {
+    onError: (_error: unknown) => {
       toast({
         title: "Error",
-        description: error.message || "Failed to change password",
+        description: "Failed to change password. Please try again.",
         variant: "destructive",
       });
     },
@@ -522,15 +565,15 @@ export default function GeneratorDashboard() {
                 <CardTitle className="text-lg">{t('app.quickActions')}</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="grid grid-cols-2 gap-3">
-                  <Button
+                <div className="grid grid-cols-1 gap-3">
+                  {/* <Button
                     onClick={() => setActiveTab("reports")}
                     className="h-16 flex-col space-y-1 bg-green-50 text-green-700 hover:bg-green-100"
                     variant="outline"
                   >
                     <BarChart3 className="w-6 h-6" />
                     <span className="text-xs">{t('reports.title')}</span>
-                  </Button>
+                  </Button> */}
 
                   <Button
                     onClick={() => setShowIssueModal(true)}
@@ -757,18 +800,6 @@ export default function GeneratorDashboard() {
                                 ? `${collection.segregationRating}/5 ⭐`
                                 : "Not rated"}
                             </p>
-                            <p>
-                              Cleanliness:{" "}
-                              {collection.plasticRating
-                                ? `${collection.plasticRating}/5 ⭐`
-                                : "Not rated"}
-                            </p>
-                            {collection.observations &&
-                              collection.observations.length > 0 && (
-                                <p>
-                                  Notes: {collection.observations.join(", ")}
-                                </p>
-                              )}
                             {collection.remarks && (
                               <p>Collector Notes: {collection.remarks}</p>
                             )}
@@ -1260,6 +1291,13 @@ export default function GeneratorDashboard() {
           </div>
         )}
 
+        {/* BILLS TAB */}
+        {activeTab === "bills" && (
+          <div className="p-4 pb-24">
+            <MyBillsTab />
+          </div>
+        )}
+
         {/* PROFILE TAB */}
         {activeTab === "profile" && (
           <div className="space-y-4 p-4">
@@ -1309,6 +1347,32 @@ export default function GeneratorDashboard() {
                   {t('auth.changePassword')}
                 </Button>
 
+                {(villageDetails as any)?.proximityAlertsEnabled && (
+                  <>
+                    <Separator />
+                    <div className="flex items-center space-x-3 p-1">
+                      <Checkbox
+                        id="push-notifications"
+                        checked={pushSubscribed}
+                        onCheckedChange={(checked) => togglePushMutation.mutate(!!checked)}
+                        disabled={togglePushMutation.isPending}
+                      />
+                      <div className="grid gap-1.5 leading-none">
+                        <Label
+                          htmlFor="push-notifications"
+                          className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 flex items-center"
+                        >
+                          <Bell className="w-4 h-4 mr-2 text-blue-600" />
+                          Collection Vehicle Alerts
+                        </Label>
+                        <p className="text-xs text-muted-foreground">
+                          Get notified when the waste collection vehicle is near your home.
+                        </p>
+                      </div>
+                    </div>
+                  </>
+                )}
+
                 <Separator />
 
                 <Button
@@ -1330,7 +1394,8 @@ export default function GeneratorDashboard() {
         <div className="flex justify-around">
           {[
             { id: "home", icon: Home, class: "generator-home-tab", label: "Home" },
-            { id: "reports", icon: BarChart3, class: "generator-collection-stats", label: "Reports" },
+            { id: "bills", icon: IndianRupee, class: "generator-bills-tab", label: "Bills" },
+            // { id: "reports", icon: BarChart3, class: "generator-collection-stats", label: "Reports" },
             { id: "collections", icon: FileText, class: "generator-collections-tab", label: "History" },
             { id: "qr-code", icon: QrCode, class: "generator-qr-tab", label: "QR Code" },
             { id: "issues", icon: AlertTriangle, class: "generator-issues-tab", label: "Issues" },
@@ -1345,7 +1410,6 @@ export default function GeneratorDashboard() {
                 }`}
             >
               <tab.icon className="w-6 h-6 mb-1" strokeWidth={2.5} />
-              <span className="text-xs font-medium">{tab.label}</span>
             </button>
           ))}
         </div>

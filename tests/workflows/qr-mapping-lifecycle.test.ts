@@ -37,7 +37,7 @@ beforeAll(async () => {
     const v1Res = await adminAgent
         .post('/api/villages')
         .set('x-csrf-token', adminCsrf)
-        .send({ villageName: 'QR Village', managerName: 'QR Mgr', managerPhone: '1111111111' });
+        .send({ villageName: 'QR Village', managerName: 'QR Mgr', paymentsEnabled: true, managerPhone: '1111111111' });
     villageId = v1Res.body.village.villageId;
     const mgrId = v1Res.body.manager.credentials.userId;
 
@@ -45,7 +45,7 @@ beforeAll(async () => {
     const v2Res = await adminAgent
         .post('/api/villages')
         .set('x-csrf-token', adminCsrf)
-        .send({ villageName: 'Other Village', managerName: 'Other Mgr', managerPhone: '6666666666' });
+        .send({ villageName: 'Other Village', managerName: 'Other Mgr', paymentsEnabled: true, managerPhone: '6666666666' });
     village2Id = v2Res.body.village.villageId;
 
     // Manager login
@@ -121,7 +121,7 @@ describe('QR Mapping Lifecycle', () => {
 
         mappedHouseholdUid = res.body.household.uid;
         genUserId = res.body.credentials.userId;
-        genPassword = res.body.credentials.password;
+        genPassword = genUserId; // Convention: password = userId for generated accounts
     });
 
     test('4. QR status persisted as mapped', async () => {
@@ -174,8 +174,6 @@ describe('QR Mapping Lifecycle', () => {
             .send({
                 householdUid: mappedHouseholdUid,
                 segregationRating: 4,
-                plasticRating: 3,
-                observations: [],
                 remarks: '',
                 photoUrl: '',
                 voiceUrl: '',
@@ -206,7 +204,7 @@ describe('QR Mapping Lifecycle', () => {
         const mgr2Id = (await adminAgent
             .post('/api/villages')
             .set('x-csrf-token', adminCsrf)
-            .send({ villageName: 'FW Cross Village', managerName: 'Cross Mgr', managerPhone: '9191919191' }))
+            .send({ villageName: 'FW Cross Village', managerName: 'Cross Mgr', paymentsEnabled: true, managerPhone: '9191919191' }))
             .body.manager.credentials.userId;
 
         const mgr2Agent = request.agent(app);

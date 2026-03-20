@@ -10,7 +10,7 @@ export function PublicLayout({ children }: PublicLayoutProps) {
   return (
     <div className="min-h-screen bg-white" style={{ fontFamily: "'Inter', system-ui, -apple-system, sans-serif" }}>
       <Navbar />
-      <main>{children}</main>
+      <main className="overflow-x-hidden">{children}</main>
       <PublicFooter />
     </div>
   );

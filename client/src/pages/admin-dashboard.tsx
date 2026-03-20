@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { ConfirmDialog } from "@/components/confirm-dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -14,12 +15,14 @@ import { useAuth } from "@/hooks/useAuth";
 import { apiRequest, queryClient, fetchWithCsrf } from "@/lib/queryClient";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
-  Users, AlertTriangle, Plus, Megaphone,
-  LogOut, Settings, Copy, Download, Eye, Trash2, RotateCcw, Building2, UserPlus, X, MessageSquare,
-  User, FileText, Bell, Star, Award, Package,
-  Leaf
+  Users, User, Building2, Bell, Settings, LogOut, Plus,
+  MessageSquare, Eye, Trash2, ClipboardList, RotateCcw,
+  UserPlus, X, FileText, FileDown, Copy, Download,
+  AlertTriangle, Megaphone, Star, Award, Package, Leaf,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import ActivityLog from "@/components/ActivityLog";
+import { DataExportWizard } from "@/components/DataExportWizard";
 
 export default function AdminDashboard() {
   const { user, logout } = useAuth();
@@ -52,6 +55,7 @@ export default function AdminDashboard() {
   });
 
   const [editingAnnouncement, setEditingAnnouncement] = useState<any>(null);
+  const [deleteAnnouncementId, setDeleteAnnouncementId] = useState<string | null>(null);
 
   const [profileData, setProfileData] = useState({
     name: user?.name || "",
@@ -293,10 +297,10 @@ export default function AdminDashboard() {
       });
       setProfileData(prev => ({ ...prev, currentPassword: "", newPassword: "", confirmPassword: "" }));
     },
-    onError: (error: any) => {
+    onError: (_error: unknown) => {
       toast({
         title: "Error",
-        description: error.message || "Failed to update profile",
+        description: "Failed to update profile. Please try again.",
         variant: "destructive",
       });
     },
@@ -478,6 +482,69 @@ export default function AdminDashboard() {
     },
   });
 
+  const toggleProximityAlertsMutation = useMutation({
+    mutationFn: async ({ villageId, proximityAlertsEnabled }: { villageId: string; proximityAlertsEnabled: boolean }) => {
+      const response = await apiRequest("PUT", `/api/villages/${villageId}`, { proximityAlertsEnabled });
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Success",
+        description: "Village proximity alerts settings updated successfully",
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/villages"] });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to update proximity alerts settings",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const togglePaymentsEnabledMutation = useMutation({
+    mutationFn: async ({ villageId, paymentsEnabled }: { villageId: string; paymentsEnabled: boolean }) => {
+      const response = await apiRequest("PUT", `/api/villages/${villageId}`, { paymentsEnabled });
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Success",
+        description: "Village payments settings updated successfully",
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/villages"] });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to update village payments settings",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const toggleAttendanceEnabledMutation = useMutation({
+    mutationFn: async ({ villageId, attendanceEnabled }: { villageId: string; attendanceEnabled: boolean }) => {
+      const response = await apiRequest("PUT", `/api/villages/${villageId}`, { attendanceEnabled });
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Success",
+        description: "Village attendance settings updated successfully",
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/villages"] });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to update village attendance settings",
+        variant: "destructive",
+      });
+    },
+  });
+
   // Assign village to moderator mutation
   const assignVillageToModeratorMutation = useMutation({
     mutationFn: async ({ moderatorId, villageId }: { moderatorId: string; villageId: string }) => {
@@ -621,6 +688,8 @@ export default function AdminDashboard() {
     { id: "website-feedback", label: "Website Feedback", icon: MessageSquare },
     { id: "contact-submissions", label: "Contact Us", icon: FileText },
     { id: "profile", label: "Profile", icon: User },
+    { id: "activity-log", label: "Activity Log", icon: ClipboardList },
+    { id: "data-export", label: "Data Export", icon: FileDown },
   ];
 
 
@@ -766,6 +835,9 @@ export default function AdminDashboard() {
                   <TableHead className="text-xs sm:text-sm hidden sm:table-cell">Collectors</TableHead>
                   <TableHead className="text-xs sm:text-sm">Image Upload</TableHead>
                   <TableHead className="text-xs sm:text-sm">Location Services</TableHead>
+                  <TableHead className="text-xs sm:text-sm">Proximity Alerts</TableHead>
+                  <TableHead className="text-xs sm:text-sm">Payments</TableHead>
+                  <TableHead className="text-xs sm:text-sm">Attendance</TableHead>
                   <TableHead className="text-xs sm:text-sm">Actions</TableHead>
                 </TableRow>
               </TableHeader>
@@ -800,6 +872,45 @@ export default function AdminDashboard() {
                         className="text-xs"
                       >
                         {village.locationServicesEnabled ? "Enabled" : "Disabled"}
+                      </Button>
+                    </TableCell>
+                    <TableCell className="text-xs sm:text-sm">
+                      <Button
+                        size="sm"
+                        variant={village.proximityAlertsEnabled ? "default" : "outline"}
+                        onClick={() => toggleProximityAlertsMutation.mutate({
+                          villageId: village.villageId,
+                          proximityAlertsEnabled: !village.proximityAlertsEnabled
+                        })}
+                        className="text-xs"
+                      >
+                        {village.proximityAlertsEnabled ? "Enabled" : "Disabled"}
+                      </Button>
+                    </TableCell>
+                    <TableCell className="text-xs sm:text-sm">
+                      <Button
+                        size="sm"
+                        variant={village.paymentsEnabled ? "default" : "outline"}
+                        onClick={() => togglePaymentsEnabledMutation.mutate({
+                          villageId: village.villageId,
+                          paymentsEnabled: !village.paymentsEnabled
+                        })}
+                        className="text-xs"
+                      >
+                        {village.paymentsEnabled ? "Enabled" : "Disabled"}
+                      </Button>
+                    </TableCell>
+                    <TableCell className="text-xs sm:text-sm">
+                      <Button
+                        size="sm"
+                        variant={village.attendanceEnabled ? "default" : "outline"}
+                        onClick={() => toggleAttendanceEnabledMutation.mutate({
+                          villageId: village.villageId,
+                          attendanceEnabled: !village.attendanceEnabled
+                        })}
+                        className="text-xs"
+                      >
+                        {village.attendanceEnabled ? "Enabled" : "Disabled"}
                       </Button>
                     </TableCell>
                     <TableCell>
@@ -1470,9 +1581,7 @@ export default function AdminDashboard() {
                                 size="sm"
                                 variant="destructive"
                                 onClick={() => {
-                                  if (confirm("Are you sure you want to delete this announcement?")) {
-                                    deleteAnnouncementMutation.mutate(announcement.id);
-                                  }
+                                  setDeleteAnnouncementId(announcement.id);
                                 }}
                                 className="p-1 sm:p-2"
                               >
@@ -1720,6 +1829,20 @@ export default function AdminDashboard() {
       case "website-feedback": return renderWebsiteFeedback();
       case "contact-submissions": return renderContactSubmissions();
       case "profile": return renderProfile();
+      case "activity-log": return (
+        <ActivityLog
+          onBack={() => setActiveTab("villages")}
+          apiUrl="/api/admin/audit-logs"
+          showVillageFilter={true}
+        />
+      );
+      case "data-export": return (
+        <DataExportWizard
+          role="admin"
+          userId={user?.userId}
+          onBack={() => setActiveTab("villages")}
+        />
+      );
       default: return renderVillages();
     }
   };
@@ -1817,7 +1940,7 @@ export default function AdminDashboard() {
 
         {/* Mobile Bottom Navigation */}
         <div className="fixed bottom-0 left-0 right-0 bg-green-100 border-t z-50 md:hidden px-3 py-1">
-          <div className="grid grid-cols-7 gap-1">
+          <div className="grid grid-cols-8 gap-1">
             {navigationItems.map((item) => {
               const Icon = item.icon;
               return (
@@ -1845,6 +1968,19 @@ export default function AdminDashboard() {
           </div>
         </div>
       </div>
+
+      <ConfirmDialog
+        open={deleteAnnouncementId !== null}
+        onOpenChange={(open) => { if (!open) setDeleteAnnouncementId(null); }}
+        title="Delete Announcement?"
+        description="This announcement will be permanently removed."
+        confirmLabel="Delete"
+        variant="danger"
+        onConfirm={() => {
+          if (deleteAnnouncementId !== null) deleteAnnouncementMutation.mutate(deleteAnnouncementId);
+          setDeleteAnnouncementId(null);
+        }}
+      />
     </div>
   );
 }

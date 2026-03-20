@@ -44,7 +44,7 @@ beforeAll(async () => {
     const vRes = await agents.admin
         .post('/api/villages')
         .set('x-csrf-token', csrfTokens.admin)
-        .send({ villageName: 'Matrix Village', managerName: 'Matrix Mgr', managerPhone: '1111111111' });
+        .send({ villageName: 'Matrix Village', managerName: 'Matrix Mgr', paymentsEnabled: true, managerPhone: '1111111111' });
     villageId = vRes.body.village.villageId;
     managerId = vRes.body.manager.credentials.userId;
 
@@ -211,6 +211,22 @@ const ENDPOINTS: EndpointSpec[] = [
     { method: 'get', pathTemplate: '/api/material-log/daily-waste', label: 'GET /api/material-log/daily-waste', roles: allow('manager') },
     { method: 'get', pathTemplate: '/api/material-log/compost', label: 'GET /api/material-log/compost', roles: allow('manager') },
     { method: 'get', pathTemplate: '/api/material-log/dry-waste-sales', label: 'GET /api/material-log/dry-waste-sales', roles: allow('manager') },
+
+    // ─── Payment / Billing (manager + generator where applicable) ───
+    { method: 'get', pathTemplate: '/api/household-types', label: 'GET /api/household-types', roles: allow('manager', 'fieldworker', 'collector') },
+    { method: 'get', pathTemplate: '/api/payments/fee-config', label: 'GET /api/payments/fee-config', roles: allow('manager') },
+    { method: 'get', pathTemplate: '/api/payments/cycles', label: 'GET /api/payments/cycles', roles: allow('manager') },
+    { method: 'get', pathTemplate: '/api/payments/bills', label: 'GET /api/payments/bills', roles: allow('manager') },
+    { method: 'get', pathTemplate: '/api/payments/summary', label: 'GET /api/payments/summary', roles: allow('manager') },
+    { method: 'get', pathTemplate: '/api/payments/gateway/status', label: 'GET /api/payments/gateway/status', roles: allow('manager') },
+    { method: 'get', pathTemplate: '/api/payments/gateway/config/razorpay', label: 'GET /api/payments/gateway/config/:provider', roles: allow('manager') },
+    { method: 'get', pathTemplate: '/api/payments/my-bills', label: 'GET /api/payments/my-bills', roles: allow('admin', 'moderator', 'manager', 'fieldworker', 'collector', 'generator') },
+    { method: 'get', pathTemplate: '/api/payments/my-history', label: 'GET /api/payments/my-history', roles: allow('admin', 'moderator', 'manager', 'fieldworker', 'collector', 'generator') },
+    { method: 'get', pathTemplate: '/api/payments/my-gateway-status', label: 'GET /api/payments/my-gateway-status', roles: allow('admin', 'moderator', 'manager', 'fieldworker', 'collector', 'generator') },
+
+    // ─── Generator household ───
+    { method: 'get', pathTemplate: '/api/generator/household', label: 'GET /api/generator/household', roles: allow('generator') },
+    { method: 'get', pathTemplate: '/api/waste-collections/household', label: 'GET /api/waste-collections/household (generator)', roles: allow('generator') },
 ];
 
 // ─── Programmatic test generation ───

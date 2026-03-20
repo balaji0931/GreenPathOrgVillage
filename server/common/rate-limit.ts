@@ -62,6 +62,28 @@ export function configureRateLimiting(app: Express, logger: Logger) {
         ),
     );
 
+    // Attendance scan rate limiting (prevent QR abuse)
+    app.use(
+        "/api/attendance/scan-shift",
+        createRateLimit(
+            5 * 60 * 1000,
+            20,
+            "Too many scan attempts, please wait before trying again",
+            logger,
+        ),
+    );
+
+    // Change password rate limiting
+    app.use(
+        "/api/auth/change-password",
+        createRateLimit(
+            15 * 60 * 1000,
+            5,
+            "Too many password change attempts, please try again later",
+            logger,
+        ),
+    );
+
     // Slow down repeated requests - configured for express-slow-down v2
     app.use(
         "/api/",

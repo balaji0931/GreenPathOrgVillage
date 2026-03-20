@@ -44,15 +44,17 @@ const solutions = [
     capabilities: [
       { icon: QrCode, text: "Digitize every ward with QR-based household tracking" },
       { icon: BarChart3, text: "Ward-wise performance dashboards with real-time data" },
-      { icon: Shield, text: "Auto-generate compliance reports for SBM/SLWM guidelines" },
+      { icon: Shield, text: "Operational reports for ward-level performance and collection coverage" },
       { icon: AlertTriangle, text: "Flag underperforming wards and households needing attention" },
-      { icon: Users, text: "Scale progressively — add wards without system overhaul" },
+      { icon: Users, text: "Scale progressively - add wards without system overhaul" },
     ],
     outcomes: [
-      "80-90% collection visibility within 30 days",
-      "Ward-wise segregation benchmarks",
-      "Digital citizen complaint resolution",
-      "Data-ready for SBM/SLWM audits",
+      "Real-time visibility of daily waste collection across wards",
+      "Ward-wise segregation performance benchmarking",
+      "Faster identification of service gaps and missed households",
+      "Digitized citizen issue tracking and resolution workflow",
+      "Audit trail of every household collection event",
+      "Data-backed planning for route optimization and resource allocation",
     ],
   },
   {
@@ -62,21 +64,23 @@ const solutions = [
     scale: "1,000–5,000 households per deployment",
     color: "from-emerald-500 to-teal-500",
     bgScene: "from-emerald-50 via-teal-50/30 to-white",
-    img: "/images/illustrations/solution-panchayat.png",
+    img: "/images/illustrations/solution-panchayat-2.png",
     problem:
       "Rural and peri-urban panchayats operate with minimal budgets, volunteer-based collectors, and no digital tracking. Open dumping and burning remain the default disposal methods.",
     capabilities: [
-      { icon: Smartphone, text: "Low-cost per-household model — just ₹4/household/month" },
+      { icon: Smartphone, text: "Low-cost per-household model - just ₹4/household/month" },
       { icon: WifiOff, text: "Offline-capable app for areas with poor connectivity" },
       { icon: Users, text: "Women SHG members trained and employed as collectors" },
       { icon: Leaf, text: "Zero Waste Centre integration for composting and dry waste" },
-      { icon: Languages, text: "Multi-language UI — Kannada, Hindi, English and more" },
+      { icon: Languages, text: "Multi-language UI - Kannada, Hindi, English and more" },
     ],
     outcomes: [
-      "Transition from open dumping to tracked collection",
-      "90%+ source segregation (proven in Billapura)",
-      "Revenue from compost and dry waste sales",
-      "Panchayat-level performance visibility",
+      "Transition from untracked dumping to structured waste collection",
+      "Improved source segregation through continuous monitoring",
+      "Local employment generation through organized collection systems",
+      "Operational visibility for panchayat leaders and field supervisors",
+      "Revenue opportunities from composting and dry waste recovery",
+      "Digital record of village-level waste management performance",
     ],
   },
   {
@@ -92,15 +96,17 @@ const solutions = [
     capabilities: [
       { icon: QrCode, text: "Flat-wise QR codes for individual tracking per unit" },
       { icon: BarChart3, text: "Daily collection status visible to all residents" },
-      { icon: Leaf, text: "In-building composting monitoring and output tracking" },
-      { icon: Shield, text: "BBMP bulk generator compliance reporting" },
+      { icon: Leaf, text: "Material logging for composting and dry waste output" },
+      { icon: Shield, text: "Waste generation tracking with verifiable data" },
       { icon: AlertTriangle, text: "Automatic flags for non-compliant flats" },
     ],
     outcomes: [
-      "Flat-level segregation accountability",
-      "Reduced waste sent to landfill",
-      "BBMP bulk generator compliance met",
-      "Transparent reporting for RWAs",
+      "Flat-level accountability for segregation practices",
+      "Daily visibility of collection completion status for residents",
+      "Reduced waste sent to landfill through better monitoring",
+      "Structured tracking of composting and recyclable material output",
+      "Transparent waste records for resident welfare associations",
+      "Improved participation in internal sustainability initiatives",
     ],
   },
   {
@@ -115,15 +121,17 @@ const solutions = [
       "Hotels, restaurants, markets, and campuses generate large volumes of waste and face regulatory mandates to process waste on-site. Most lack digital proof of compliance for audits.",
     capabilities: [
       { icon: BarChart3, text: "Daily waste volume logging with photo evidence" },
-      { icon: Shield, text: "Digital audit trail for CPCB/SPCB compliance" },
+      { icon: Shield, text: "Digital audit trail for waste handling verification" },
       { icon: Leaf, text: "Integration with waste processing facility tracking" },
-      { icon: CheckCircle2, text: "Automated reporting for pollution control audits" },
+      { icon: CheckCircle2, text: "Digital records for operational audits" },
     ],
     outcomes: [
-      "Regulatory compliance with verifiable data",
-      "Reduced waste processing costs",
-      "Digital record for CPCB/SPCB audits",
-      "Optimized waste handling workflows",
+      "Clear tracking of daily waste generation volumes",
+      "Documented proof of internal waste handling processes",
+      "Improved operational control over multiple waste points",
+      "Reduced processing and transportation inefficiencies",
+      "Structured digital records for internal audits and reviews",
+      "Better coordination between housekeeping and waste vendors",
     ],
   },
   {
@@ -140,21 +148,23 @@ const solutions = [
       { icon: BarChart3, text: "Real-time deployment dashboards for program monitoring" },
       { icon: Users, text: "Household-level behavior change tracking (segregation scores)" },
       { icon: CheckCircle2, text: "Community engagement and participation metrics" },
-      { icon: Shield, text: "Grant-ready impact documentation with data visualizations" },
+      { icon: Shield, text: "Exportable data for grant applications and impact reports" },
     ],
     outcomes: [
-      "Measurable waste diversion data",
-      "Behavior change evidence at household level",
-      "Scalable deployment model for replication",
-      "Grant-ready impact documentation",
+      "Measurable waste diversion and segregation improvement data",
+      "Household-level behavior change tracking across program areas",
+      "Real-time visibility into field implementation progress",
+      "Evidence-based reporting for donors and stakeholders",
+      "Replication-ready operational model for scaling interventions",
+      "Structured datasets for impact documentation and research",
     ],
   },
 ];
 
 export default function SolutionsPage() {
   useSEO({
-    title: "Solutions — GreenPath",
-    description: "Tailored waste management for municipalities, panchayats, apartments, campuses, and NGOs. Offline-first, multi-language, QR-based tracking for every community type.",
+    title: "Solutions - GreenPath",
+    description: "Tailored waste management for municipalities, panchayats, apartments, townships, and NGOs. Offline-first, multi-language, QR-based tracking for every community type.",
     path: "/solutions",
   });
 
@@ -162,7 +172,7 @@ export default function SolutionsPage() {
     <PublicLayout>
       <style>{css}</style>
 
-      {/* ═══════════ HERO ═══════════ */}
+      {/* HERO */}
       <section className="relative bg-gradient-to-br from-slate-50 to-teal-50/30 py-20 md:py-28 overflow-hidden">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid lg:grid-cols-2 gap-10 items-center">
@@ -178,14 +188,14 @@ export default function SolutionsPage() {
                   </span>
                 </h1>
                 <p className="text-lg md:text-xl text-slate-600 leading-relaxed">
-                  Whether you're a village panchayat or a metro municipality,
-                  GreenPath adapts to your waste management workflow — with
-                  features built for every scale and context.
+                  Whether you're a gated-community, village panchayat or a city municipality,
+                  GreenPath fits your waste management workflow - with features
+                  that work at every scale.
                 </p>
               </div>
             </AnimateOnScroll>
 
-            {/* Hero illustration — panchayat scene */}
+            {/* Hero illustration - panchayat scene */}
             <AnimateOnScroll delay={200} className="hidden lg:block">
               <div className="relative float-gentle">
                 <img
@@ -200,16 +210,16 @@ export default function SolutionsPage() {
         </div>
       </section>
 
-      {/* ═══════════ SOLUTION BLOCKS ═══════════ */}
+      {/* SOLUTION BLOCKS */}
       <div className="divide-y divide-slate-100">
         {solutions.map((sol, i) => (
-          <section key={sol.title} className="py-16 md:py-24">
+          <section key={sol.title} className="py-8 md:py-12">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
               <AnimateOnScroll>
-                {/* Scene illustration — FULL WIDTH at top, like a story panel */}
+                {/* Scene illustration - FULL WIDTH at top, like a story panel */}
                 <div className={`relative rounded-3xl bg-gradient-to-br ${sol.bgScene} p-8 md:p-12 mb-10 overflow-hidden`}>
                   <div className="flex flex-col md:flex-row items-center gap-8">
-                    {/* Illustration — LARGE, at designed 500×350 size */}
+                    {/* Illustration - LARGE, at designed 500×350 size */}
                     <div className={`flex-shrink-0 ${i % 2 !== 0 ? 'md:order-2' : ''}`}>
                       <img
                         src={sol.img}
@@ -228,9 +238,6 @@ export default function SolutionsPage() {
                         <div>
                           <h2 className="text-2xl md:text-3xl font-bold text-slate-900">{sol.title}</h2>
                           <p className="text-sm text-slate-500 mt-1">{sol.subtitle}</p>
-                          <span className="inline-block mt-2 px-3 py-1 bg-white/80 border border-slate-200 text-xs font-semibold text-slate-600 rounded-full">
-                            📏 Typical: {sol.scale}
-                          </span>
                         </div>
                       </div>
                       <p className="text-slate-600 leading-relaxed">{sol.problem}</p>

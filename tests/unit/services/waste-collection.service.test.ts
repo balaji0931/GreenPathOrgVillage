@@ -43,8 +43,6 @@ describe('waste-collection.service', () => {
         householdUid: 'V001-H0001',
         collectorUserId: 'V001-C1',
         segregationRating: 4,
-        plasticRating: 3,
-        observations: ['clean'],
         remarks: 'Good',
         photoUrl: '',
         voiceUrl: '',

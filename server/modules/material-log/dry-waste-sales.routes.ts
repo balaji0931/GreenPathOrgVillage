@@ -18,7 +18,6 @@ export function registerDryWasteSalesRoutes(app: Express, requireAuth: any, requ
 
             res.json(sales);
         } catch (error) {
-            console.error('Get dry waste sales error:', error);
             res.status(500).json({ message: 'Failed to fetch dry waste sales' });
         }
     });
@@ -34,7 +33,6 @@ export function registerDryWasteSalesRoutes(app: Express, requireAuth: any, requ
 
             res.json(sale);
         } catch (error) {
-            console.error('Get dry waste sale error:', error);
             res.status(500).json({ message: 'Failed to fetch dry waste sale' });
         }
     });
@@ -78,7 +76,6 @@ export function registerDryWasteSalesRoutes(app: Express, requireAuth: any, requ
             const sale = await storage.createDryWasteSale(validatedSaleData, validatedMaterials);
             res.status(201).json(sale);
         } catch (error) {
-            console.error('Create dry waste sale error:', error);
             if (error instanceof z.ZodError) {
                 return res.status(400).json({ message: 'Validation error', errors: error.errors });
             }
@@ -117,7 +114,6 @@ export function registerDryWasteSalesRoutes(app: Express, requireAuth: any, requ
             const sale = await storage.updateDryWasteSale(parseInt(id), saleData, validatedMaterials);
             res.json(sale);
         } catch (error) {
-            console.error('Update dry waste sale error:', error);
             res.status(500).json({ message: 'Failed to update dry waste sale' });
         }
     });
@@ -128,7 +124,6 @@ export function registerDryWasteSalesRoutes(app: Express, requireAuth: any, requ
             await storage.deleteDryWasteSale(parseInt(id));
             res.json({ message: 'Dry waste sale deleted successfully' });
         } catch (error) {
-            console.error('Delete dry waste sale error:', error);
             res.status(500).json({ message: 'Failed to delete dry waste sale' });
         }
     });
@@ -164,7 +159,6 @@ export function registerDryWasteSalesRoutes(app: Express, requireAuth: any, requ
                 publicId: result.public_id
             });
         } catch (error) {
-            console.error('Material log photo upload error:', error);
             res.status(500).json({ message: 'Failed to upload photo' });
         }
     });

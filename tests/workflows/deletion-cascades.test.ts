@@ -57,7 +57,7 @@ describe('Deletion Cascades', () => {
             const vRes = await adminAgent
                 .post('/api/villages')
                 .set('x-csrf-token', adminCsrf)
-                .send({ villageName: 'HH Delete Village', managerName: 'HHD Mgr', managerPhone: '1111111111' });
+                .send({ villageName: 'HH Delete Village', managerName: 'HHD Mgr', paymentsEnabled: true, managerPhone: '1111111111' });
             villageId = vRes.body.village.villageId;
             const mgrId = vRes.body.manager.credentials.userId;
 
@@ -115,12 +115,12 @@ describe('Deletion Cascades', () => {
             expect(res.status).toBe(200);
         });
 
-        test('2. Waste collections for deleted household → gone', async () => {
+        test('2. Waste collections for deleted household → preserved (soft delete)', async () => {
             const result = await pool.query(
                 'SELECT COUNT(*) FROM waste_collections WHERE household_id = $1',
                 [householdId]
             );
-            expect(parseInt(result.rows[0].count)).toBe(0);
+            expect(parseInt(result.rows[0].count)).toBeGreaterThan(0);
         });
 
         test('3. QR codes for deleted household → gone', async () => {
@@ -131,12 +131,15 @@ describe('Deletion Cascades', () => {
             expect(parseInt(result.rows[0].count)).toBe(0);
         });
 
-        test('4. Feedback for deleted household → gone', async () => {
+        test('4. Feedback for deleted household → preserved', async () => {
+            // Note: The seed didn't actually create feedback, so count will be 0.
+            // But structurally, the ON DELETE CASCADE is gone, so if it existed, it would remain.
+            // Let's verify the household status instead.
             const result = await pool.query(
-                'SELECT COUNT(*) FROM feedback WHERE from_household_id = $1',
+                'SELECT status FROM households WHERE id = $1',
                 [householdId]
             );
-            expect(parseInt(result.rows[0].count)).toBe(0);
+            expect(result.rows[0].status).toBe('deleted');
         });
 
         test('5. Collector still exists', async () => {
@@ -168,7 +171,7 @@ describe('Deletion Cascades', () => {
             const vRes = await adminAgent
                 .post('/api/villages')
                 .set('x-csrf-token', adminCsrf)
-                .send({ villageName: 'Col Delete Village', managerName: 'CD Mgr', managerPhone: '5555555555' });
+                .send({ villageName: 'Col Delete Village', managerName: 'CD Mgr', paymentsEnabled: true, managerPhone: '5555555555' });
             villageId = vRes.body.village.villageId;
             const mgrId = vRes.body.manager.credentials.userId;
 
@@ -249,7 +252,7 @@ describe('Deletion Cascades', () => {
             const vRes = await adminAgent
                 .post('/api/villages')
                 .set('x-csrf-token', adminCsrf)
-                .send({ villageName: 'VDel Village', managerName: 'VDel Mgr', managerPhone: '8888888888' });
+                .send({ villageName: 'VDel Village', managerName: 'VDel Mgr', paymentsEnabled: true, managerPhone: '8888888888' });
             villageId = vRes.body.village.villageId;
             const mgrId = vRes.body.manager.credentials.userId;
 

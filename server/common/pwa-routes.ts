@@ -14,11 +14,9 @@ export function registerPwaRoutes(app: Express) {
             if (fs.existsSync(swPath)) {
                 res.sendFile(swPath);
             } else {
-                console.error("Service worker not found at:", swPath);
                 res.status(404).send("// Service worker not found");
             }
         } catch (error) {
-            console.error("SW route error:", error);
             res.status(500).send("// Service worker error");
         }
     });
@@ -38,11 +36,9 @@ export function registerPwaRoutes(app: Express) {
             if (fs.existsSync(assetLinksPath)) {
                 res.sendFile(assetLinksPath);
             } else {
-                console.error("assetlinks.json not found at:", assetLinksPath);
                 res.status(404).json({ error: "assetlinks.json not found" });
             }
         } catch (error) {
-            console.error("assetlinks.json route error:", error);
             res.status(500).json({ error: "assetlinks.json error" });
         }
     });
@@ -60,11 +56,9 @@ export function registerPwaRoutes(app: Express) {
                 res.setHeader("Content-Length", manifestBuffer.length.toString());
                 res.send(manifestBuffer);
             } else {
-                console.error("Manifest not found at:", manifestPath);
                 res.status(404).json({ error: "Manifest not found" });
             }
         } catch (error) {
-            console.error("Manifest route error:", error);
             res.status(500).json({ error: "Manifest error" });
         }
     });
@@ -96,7 +90,6 @@ export function registerPwaRoutes(app: Express) {
 
             res.send(iconBuffer);
         } catch (error) {
-            console.error("Icon route error:", error);
             res.status(500).json({ error: "Icon error" });
         }
     });
@@ -118,7 +111,6 @@ export function registerPwaRoutes(app: Express) {
                 res.status(204).end(); // No content
             }
         } catch (error) {
-            console.error("Favicon error:", error);
             res.status(204).end();
         }
     });

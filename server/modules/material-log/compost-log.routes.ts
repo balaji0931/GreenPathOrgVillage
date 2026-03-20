@@ -18,7 +18,6 @@ export function registerCompostLogRoutes(app: Express, requireAuth: any, require
 
             res.json(logs);
         } catch (error) {
-            console.error('Get compost logs error:', error);
             res.status(500).json({ message: 'Failed to fetch compost production logs' });
         }
     });
@@ -34,7 +33,6 @@ export function registerCompostLogRoutes(app: Express, requireAuth: any, require
 
             res.json(log);
         } catch (error) {
-            console.error('Get compost log error:', error);
             res.status(500).json({ message: 'Failed to fetch compost production log' });
         }
     });
@@ -65,7 +63,6 @@ export function registerCompostLogRoutes(app: Express, requireAuth: any, require
             const log = await storage.createCompostProductionLog(validatedData);
             res.status(201).json(log);
         } catch (error) {
-            console.error('Create compost log error:', error);
             if (error instanceof z.ZodError) {
                 return res.status(400).json({ message: 'Validation error', errors: error.errors });
             }
@@ -94,7 +91,6 @@ export function registerCompostLogRoutes(app: Express, requireAuth: any, require
             const log = await storage.updateCompostProductionLog(parseInt(id), req.body);
             res.json(log);
         } catch (error) {
-            console.error('Update compost log error:', error);
             res.status(500).json({ message: 'Failed to update compost production log' });
         }
     });
@@ -105,7 +101,6 @@ export function registerCompostLogRoutes(app: Express, requireAuth: any, require
             await storage.deleteCompostProductionLog(parseInt(id));
             res.json({ message: 'Compost production log deleted successfully' });
         } catch (error) {
-            console.error('Delete compost log error:', error);
             res.status(500).json({ message: 'Failed to delete compost production log' });
         }
     });

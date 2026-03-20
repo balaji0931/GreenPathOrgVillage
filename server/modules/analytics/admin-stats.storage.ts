@@ -69,18 +69,27 @@ export async function getVillageStats(villageId: string): Promise<{
 }
 
 
-export async function getManagersList(): Promise<User[]> {
+export async function getManagersList() {
     const cache = getCache();
     const cacheKey = cacheKeys.managers();
     const cached = await cache.get(cacheKey);
     if (cached) return cached;
 
-    const result = await db.select()
+    const result = await db.select({
+        id: users.id,
+        userId: users.userId,
+        role: users.role,
+        villageId: users.villageId,
+        name: users.name,
+        phone: users.phone,
+        isFirstLogin: users.isFirstLogin,
+        createdAt: users.createdAt,
+    })
         .from(users)
         .where(eq(users.role, 'manager'))
-        .limit(500); // Safety limit
+        .limit(500);
 
-    await cache.set(cacheKey, result, 600); // 10 min TTL
+    await cache.set(cacheKey, result, 600);
     return result;
 }
 
@@ -89,7 +98,7 @@ export async function getManagersListPaginated(options: {
     limit?: number;
     search?: string;
     villageId?: string;
-} = {}): Promise<{ data: User[]; total: number; page: number; limit: number; totalPages: number }> {
+} = {}) {
     const cache = getCache();
     const page = Math.max(1, options.page || 1);
     const limit = Math.min(100, Math.max(1, options.limit || 50));
@@ -122,7 +131,16 @@ export async function getManagersListPaginated(options: {
         .where(whereClause);
 
     const data = await db
-        .select()
+        .select({
+            id: users.id,
+            userId: users.userId,
+            role: users.role,
+            villageId: users.villageId,
+            name: users.name,
+            phone: users.phone,
+            isFirstLogin: users.isFirstLogin,
+            createdAt: users.createdAt,
+        })
         .from(users)
         .where(whereClause)
         .orderBy(users.userId)

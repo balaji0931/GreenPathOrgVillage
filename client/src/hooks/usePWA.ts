@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { fetchWithCsrf } from '@/lib/queryClient';
 
 interface BeforeInstallPromptEvent extends Event {
   readonly platforms: string[];
@@ -80,8 +81,8 @@ export function usePWA() {
         message += '1. Look for an install icon in your browser address bar\n2. Or check your browser menu for "Install" option';
       }
       
-      alert(message);
-      return false;
+      // Return instructions string — caller can display via toast/dialog
+      return message;
     }
 
     try {
@@ -109,52 +110,44 @@ export function usePWA() {
 
 // Service Worker registration
 export function registerServiceWorker() {
-  if ('serviceWorker' in navigator) {
-    window.addEventListener('load', async () => {
-      try {
-        // Unregister any existing service workers first
-        const registrations = await navigator.serviceWorker.getRegistrations();
-        for (const registration of registrations) {
-          await registration.unregister();
-        }
+  if (!('serviceWorker' in navigator)) return;
 
-        const registration = await navigator.serviceWorker.register('/sw.js', {
-          scope: '/',
-          updateViaCache: 'none'
+  window.addEventListener('load', async () => {
+    try {
+      const registration = await navigator.serviceWorker.register('/sw.js', {
+        scope: '/',
+        updateViaCache: 'none'
+      });
+
+      // Check for updates periodically (every 60 min)
+      setInterval(() => registration.update(), 60 * 60 * 1000);
+
+      // When a new SW is installed, auto-reload to pick it up
+      registration.addEventListener('updatefound', () => {
+        const newWorker = registration.installing;
+        if (!newWorker) return;
+        newWorker.addEventListener('statechange', () => {
+          if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+            window.location.reload();
+          }
         });
+      });
+    } catch (_error) {
+      // SW registration failed — app continues without offline support
+    }
+  });
+}
 
-        // Handle updates
-        registration.addEventListener('updatefound', () => {
-          const newWorker = registration.installing;
-          if (!newWorker) return;
-
-          newWorker.addEventListener('statechange', () => {
-            if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-              // New content available, refresh to update
-              if (confirm('New version available! Refresh to update?')) {
-                window.location.reload();
-              }
-            }
-          });
-        });
-
-        // Handle controller change
-        navigator.serviceWorker.addEventListener('controllerchange', () => {
-          window.location.reload();
-        });
-
-      } catch (error) {
-        // Try to register from different path as fallback
-        try {
-          const fallbackRegistration = await navigator.serviceWorker.register('./sw.js', {
-            scope: './',
-            updateViaCache: 'none'
-          });
-        } catch (fallbackError) {
-        }
-      }
-    });
+// Clear all caches + IndexedDB (called on logout)
+export async function clearAllCaches() {
+  // Tell SW to clear its caches + IndexedDB
+  if (navigator.serviceWorker?.controller) {
+    const mc = new MessageChannel();
+    navigator.serviceWorker.controller.postMessage({ type: 'CLEAR_ALL_CACHES' }, [mc.port2]);
   }
+  // Also clear from main thread (in case SW is not active)
+  const names = await caches.keys();
+  await Promise.all(names.map(n => caches.delete(n)));
 }
 
 // Push notification helpers
@@ -178,4 +171,98 @@ export function showNotification(title: string, options?: NotificationOptions) {
       ...options
     });
   }
+}
+
+/** Subscribe to proximity push notifications (for generators/households) */
+export async function subscribeToPush(): Promise<boolean> {
+  try {
+    // 1. Request notification permission
+    const permission = await requestNotificationPermission();
+    if (permission !== 'granted') return false;
+
+    // 2. Get VAPID public key from server
+    const keyResp = await fetch('/api/push/vapid-key');
+    if (!keyResp.ok) return false;
+    const { vapidPublicKey } = await keyResp.json();
+    if (!vapidPublicKey) return false;
+
+    // 3. Get service worker registration
+    const registration = await navigator.serviceWorker.ready;
+
+    // 4. Subscribe via pushManager
+    const subscription = await registration.pushManager.subscribe({
+      userVisibleOnly: true,
+      applicationServerKey: urlBase64ToUint8Array(vapidPublicKey),
+    });
+
+    // 5. Send subscription to server
+    const subJson = subscription.toJSON();
+    const resp = await fetchWithCsrf('/api/push/subscribe', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({
+        endpoint: subJson.endpoint,
+        keys: {
+          p256dh: subJson.keys?.p256dh,
+          auth: subJson.keys?.auth,
+        },
+      }),
+    });
+
+    return resp.ok;
+  } catch (err) {
+    console.error('[Push] Subscribe failed:', err);
+    return false;
+  }
+}
+
+/** Unsubscribe from proximity push notifications */
+export async function unsubscribeFromPush(): Promise<boolean> {
+  try {
+    const registration = await navigator.serviceWorker.ready;
+    const subscription = await registration.pushManager.getSubscription();
+
+    if (subscription) {
+      // Tell server to remove
+      await fetchWithCsrf('/api/push/subscribe', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ endpoint: subscription.endpoint }),
+      });
+
+      // Unsubscribe locally
+      await subscription.unsubscribe();
+    }
+
+    return true;
+  } catch (err) {
+    console.error('[Push] Unsubscribe failed:', err);
+    return false;
+  }
+}
+
+/** Check if currently subscribed to push notifications */
+export async function isPushSubscribed(): Promise<boolean> {
+  try {
+    const registration = await navigator.serviceWorker.ready;
+    const subscription = await registration.pushManager.getSubscription();
+    return !!subscription;
+  } catch {
+    return false;
+  }
+}
+
+/** Convert a VAPID base64url key to a Uint8Array for applicationServerKey */
+function urlBase64ToUint8Array(base64String: string): Uint8Array<ArrayBuffer> {
+  const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
+  const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+  const raw = atob(base64);
+  const buffer = new ArrayBuffer(raw.length);
+  const output = new Uint8Array(buffer);
+  for (let i = 0; i < raw.length; i++) {
+    output[i] = raw.charCodeAt(i);
+  }
+  return output;
 }

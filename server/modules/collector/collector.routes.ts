@@ -4,36 +4,39 @@ import {
   createCollectorWithAccount,
   getCollectorStatsForVillage,
 } from "./collector.service";
+import { logAction } from "../audit/audit.storage";
 
 export function registerCollectorRoutes(app: Express, requireAuth: any, requireRole: any, requireVillageAccess: any) {
   // Collector routes
-  app.post('/api/collectors', requireAuth, requireRole(['manager']), async (req, res) => {
+  app.post('/api/collectors', requireAuth, requireRole(['manager']), requireVillageAccess, async (req, res) => {
     try {
       const { name, phone } = req.body;
       const villageId = req.session.villageId!;
 
       const collector = await createCollectorWithAccount({ name, phone, villageId });
 
+      logAction(villageId, req.session.userId!, 'created', 'collector', collector.uid, {
+        name,
+      });
+
       res.json(collector);
     } catch (error) {
-      console.error("Create collector error:", error);
       res.status(500).json({ message: "Failed to create collector" });
     }
   });
 
-  app.get('/api/collectors', requireAuth, requireRole(['manager']), async (req, res) => {
+  app.get('/api/collectors', requireAuth, requireRole(['manager']), requireVillageAccess, async (req, res) => {
     try {
       const villageId = req.session.villageId!;
       const collectors = await storage.getCollectorsByVillage(villageId);
       res.json(collectors);
     } catch (error) {
-      console.error("Get collectors error:", error);
       res.status(500).json({ message: "Failed to get collectors" });
     }
   });
 
   // Paginated collectors endpoint
-  app.get('/api/collectors/paginated', requireAuth, requireRole(['manager', 'admin']), async (req, res) => {
+  app.get('/api/collectors/paginated', requireAuth, requireRole(['manager', 'admin']), requireVillageAccess, async (req, res) => {
     try {
       const villageId = req.session.villageId || req.query.villageId as string;
       if (!villageId) {
@@ -47,7 +50,6 @@ export function registerCollectorRoutes(app: Express, requireAuth: any, requireR
       const result = await storage.getCollectorsByVillagePaginated(villageId, { page, limit, search });
       res.json(result);
     } catch (error) {
-      console.error("Get paginated collectors error:", error);
       res.status(500).json({ message: "Failed to get collectors" });
     }
   });
@@ -61,7 +63,6 @@ export function registerCollectorRoutes(app: Express, requireAuth: any, requireR
 
       res.json(collectorStats);
     } catch (error) {
-      console.error("Get collector stats error:", error);
       res.status(500).json({ message: "Failed to get collector stats" });
     }
   });

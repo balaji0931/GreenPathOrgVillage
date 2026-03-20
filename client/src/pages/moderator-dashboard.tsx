@@ -46,6 +46,8 @@ import {
   UserPlus,
   User,
   Bell,
+  ClipboardList,
+  FileDown,
 } from "lucide-react";
 import {
   BarChart,
@@ -60,6 +62,8 @@ import {
   Pie,
 } from "recharts";
 import { cn } from "@/lib/utils";
+import ActivityLog from "@/components/ActivityLog";
+import { DataExportWizard } from "@/components/DataExportWizard";
 
 export default function ModeratorDashboard() {
   const { user, logout } = useAuth();
@@ -167,10 +171,10 @@ export default function ModeratorDashboard() {
       });
       setAnnouncement({ message: "", targetAudience: "all", photoFile: null });
     },
-    onError: (error: any) => {
+    onError: (_error: unknown) => {
       toast({
         title: "Error",
-        description: error.message || "Failed to send announcement",
+        description: "Failed to send announcement. Please try again.",
         variant: "destructive",
       });
     },
@@ -194,10 +198,10 @@ export default function ModeratorDashboard() {
         confirmPassword: "",
       }));
     },
-    onError: (error: any) => {
+    onError: (_error: unknown) => {
       toast({
         title: "Error",
-        description: error.message || "Failed to update profile",
+        description: "Failed to update profile. Please try again.",
         variant: "destructive",
       });
     },
@@ -290,6 +294,8 @@ export default function ModeratorDashboard() {
     { id: "managers", label: "Managers", icon: Users },
     { id: "announcements", label: "Announcements", icon: Bell },
     { id: "profile", label: "Profile", icon: User },
+    { id: "activity-log", label: "Activity Log", icon: ClipboardList },
+    { id: "data-export", label: "Data Export", icon: FileDown },
   ];
 
 
@@ -772,6 +778,21 @@ export default function ModeratorDashboard() {
         return renderAnnouncements();
       case "profile":
         return renderProfile();
+      case "activity-log":
+        return (
+          <ActivityLog
+            onBack={() => setActiveTab("villages")}
+            apiUrl="/api/moderator/audit-logs"
+          />
+        );
+      case "data-export":
+        return (
+          <DataExportWizard
+            role="moderator"
+            userId={user?.userId}
+            onBack={() => setActiveTab("villages")}
+          />
+        );
       default:
         return renderVillages();
     }

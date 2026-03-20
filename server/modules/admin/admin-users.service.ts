@@ -68,7 +68,6 @@ export async function createModerator(data: {
         moderator,
         credentials: {
             userId: moderatorId,
-            password: moderatorId,
         },
     };
 }
@@ -99,7 +98,6 @@ export async function resetPasswordToUserId(userId: string) {
     const newPassword = userId; // Reset to user ID
     const hashedPassword = await bcrypt.hash(newPassword, Number(process.env.BCRYPT_ROUNDS) || 10);
     await storage.updateUserPassword(userId, hashedPassword);
-    return newPassword;
 }
 
 /**
@@ -123,7 +121,6 @@ export async function addManagerToVillage(villageId: string, data: {
             ...manager,
             credentials: {
                 userId: manager.userId,
-                password: manager.userId // Password is same as userId
             }
         }
     };

@@ -78,7 +78,6 @@ describe('admin-users.service', () => {
             );
             expect(mockStorage.assignVillageToModerator).toHaveBeenCalledTimes(2);
             expect(result.credentials.userId).toBe('MOD-001');
-            expect(result.credentials.password).toBe('MOD-001');
         });
 
         test('creates moderator without villages', async () => {
@@ -118,8 +117,7 @@ describe('admin-users.service', () => {
         test('resets password to the user ID', async () => {
             mockStorage.updateUserPassword.mockResolvedValue(undefined as never);
 
-            const newPassword = await resetPasswordToUserId('V001-M1');
-            expect(newPassword).toBe('V001-M1');
+            await resetPasswordToUserId('V001-M1');
             expect(mockStorage.updateUserPassword).toHaveBeenCalledWith('V001-M1', 'hashed-password');
         });
     });
@@ -136,7 +134,6 @@ describe('admin-users.service', () => {
             });
 
             expect(result.manager.credentials.userId).toBe('V001-M2');
-            expect(result.manager.credentials.password).toBe('V001-M2');
         });
     });
 });

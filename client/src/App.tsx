@@ -2,6 +2,7 @@ import { Switch, Route, Redirect } from "wouter";
 import { Toaster } from "@/components/ui/toaster";
 import { useAuth } from "@/hooks/useAuth";
 import { InstallPWA } from "@/components/InstallPWA";
+import { OfflineIndicator } from "@/components/OfflineIndicator";
 import Login from "@/pages/login";
 import AdminDashboard from "@/pages/admin-dashboard";
 import ManagerDashboard from "@/pages/manager-dashboard";
@@ -23,12 +24,16 @@ import PricingPage from "@/pages/public/PricingPage";
 import AboutPage from "@/pages/public/AboutPage";
 import ContactPage from "@/pages/public/ContactPage";
 import CaseStudiesPage from "@/pages/public/CaseStudiesPage";
+import { ScrollToTop } from "@/components/ScrollToTop";
+
 
 function App() {
   return (
     <div className="min-h-screen bg-gray-50">
+      <ScrollToTop />
       <Router />
       <InstallPWA />
+
       <Toaster />
     </div>
   );
@@ -94,7 +99,9 @@ function Router() {
   }
 
   return (
-    <Switch>
+    <>
+      <OfflineIndicator userRole={user.role} />
+      <Switch>
       {/* Logged-in user visiting /login → redirect to dashboard */}
       <Route path="/login">
         {() => <Redirect to="/" />}
@@ -149,6 +156,7 @@ function Router() {
 
       <Route component={NotFound} />
     </Switch>
+    </>
   );
 }
 

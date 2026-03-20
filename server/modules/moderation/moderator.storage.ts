@@ -40,7 +40,16 @@ export async function createModerator(insertModerator: InsertModerator): Promise
 }
 
 export async function getModeratorsList(): Promise<Moderator[]> {
-    return await db.select().from(moderators);
+    return await db.select({
+        id: moderators.id,
+        moderatorId: moderators.moderatorId,
+        name: moderators.name,
+        phone: moderators.phone,
+        email: moderators.email,
+        createdBy: moderators.createdBy,
+        createdAt: moderators.createdAt,
+        updatedAt: moderators.updatedAt,
+    }).from(moderators);
 }
 
 export async function updateModerator(moderatorId: string, updates: Partial<Moderator>): Promise<Moderator> {
@@ -92,7 +101,28 @@ export async function getModeratorVillages(moderatorId: string): Promise<any[]> 
         .where(eq(moderatorVillageAssignments.moderatorId, moderatorId));
 }
 
-export async function getManagersByVillage(villageId: string): Promise<User[]> {
-    return await db.select().from(users)
+export async function isModeratorAssignedToVillage(moderatorId: string, villageId: string): Promise<boolean> {
+    const result = await db
+        .select({ count: moderatorVillageAssignments.id })
+        .from(moderatorVillageAssignments)
+        .where(and(
+            eq(moderatorVillageAssignments.moderatorId, moderatorId),
+            eq(moderatorVillageAssignments.villageId, villageId)
+        ))
+        .limit(1);
+    return result.length > 0;
+}
+
+export async function getManagersByVillage(villageId: string) {
+    return await db.select({
+        id: users.id,
+        userId: users.userId,
+        role: users.role,
+        villageId: users.villageId,
+        name: users.name,
+        phone: users.phone,
+        isFirstLogin: users.isFirstLogin,
+        createdAt: users.createdAt,
+    }).from(users)
         .where(and(eq(users.villageId, villageId), eq(users.role, 'manager')));
 }

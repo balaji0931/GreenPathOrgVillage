@@ -54,7 +54,7 @@ describe('Race Conditions', () => {
             const vRes = await adminAgent
                 .post('/api/villages')
                 .set('x-csrf-token', adminCsrf)
-                .send({ villageName: 'Race Village', managerName: 'Race Mgr', managerPhone: '1111111111' });
+                .send({ villageName: 'Race Village', managerName: 'Race Mgr', paymentsEnabled: true, managerPhone: '1111111111' });
             const villageId = vRes.body.village.villageId;
             const mgrId = vRes.body.manager.credentials.userId;
 
@@ -86,8 +86,6 @@ describe('Race Conditions', () => {
             const payload = {
                 householdUid,
                 segregationRating: 4,
-                plasticRating: 3,
-                observations: [],
                 remarks: '',
                 photoUrl: '',
                 voiceUrl: '',
@@ -133,7 +131,7 @@ describe('Race Conditions', () => {
             const vRes = await adminAgent
                 .post('/api/villages')
                 .set('x-csrf-token', adminCsrf)
-                .send({ villageName: 'QR Race Village', managerName: 'QRR Mgr', managerPhone: '4444444444' });
+                .send({ villageName: 'QR Race Village', managerName: 'QRR Mgr', paymentsEnabled: true, managerPhone: '4444444444' });
             villageId = vRes.body.village.villageId;
             const mgrId = vRes.body.manager.credentials.userId;
 
@@ -187,7 +185,7 @@ describe('Race Conditions', () => {
             const vRes = await adminAgent
                 .post('/api/villages')
                 .set('x-csrf-token', adminCsrf)
-                .send({ villageName: 'Seed Race Village', managerName: 'SR Mgr', managerPhone: '8888888888' });
+                .send({ villageName: 'Seed Race Village', managerName: 'SR Mgr', paymentsEnabled: true, managerPhone: '8888888888' });
             const villageId = vRes.body.village.villageId;
 
             // Sequential to avoid UID generation race (DB has unique constraint)

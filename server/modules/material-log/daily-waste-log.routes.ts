@@ -17,7 +17,6 @@ export function registerDailyWasteLogRoutes(app: Express, requireAuth: any, requ
 
             res.json(logs);
         } catch (error) {
-            console.error('Get daily waste logs error:', error);
             res.status(500).json({ message: 'Failed to fetch daily waste logs' });
         }
     });
@@ -35,7 +34,6 @@ export function registerDailyWasteLogRoutes(app: Express, requireAuth: any, requ
 
             res.json(log);
         } catch (error) {
-            console.error('Get daily waste log error:', error);
             res.status(500).json({ message: 'Failed to fetch daily waste log' });
         }
     });
@@ -77,7 +75,6 @@ export function registerDailyWasteLogRoutes(app: Express, requireAuth: any, requ
             const log = await storage.createDailyWasteLog(validatedData);
             res.status(201).json(log);
         } catch (error) {
-            console.error('Create daily waste log error:', error);
             if (error instanceof z.ZodError) {
                 return res.status(400).json({ message: 'Validation error', errors: error.errors });
             }
@@ -109,7 +106,6 @@ export function registerDailyWasteLogRoutes(app: Express, requireAuth: any, requ
             const log = await storage.updateDailyWasteLog(parseInt(id), req.body);
             res.json(log);
         } catch (error) {
-            console.error('Update daily waste log error:', error);
             res.status(500).json({ message: 'Failed to update daily waste log' });
         }
     });
@@ -120,7 +116,6 @@ export function registerDailyWasteLogRoutes(app: Express, requireAuth: any, requ
             await storage.deleteDailyWasteLog(parseInt(id));
             res.json({ message: 'Daily waste log deleted successfully' });
         } catch (error) {
-            console.error('Delete daily waste log error:', error);
             res.status(500).json({ message: 'Failed to delete daily waste log' });
         }
     });

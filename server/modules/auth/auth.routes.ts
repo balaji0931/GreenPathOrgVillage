@@ -34,7 +34,6 @@ export function registerAuthRoutes(app: Express, requireAuth: any, generateCsrfT
       const regenerateSession = () => new Promise<void>((resolve, reject) => {
         req.session.regenerate((err) => {
           if (err) {
-            console.error('Session regeneration failed:', err);
             reject(err);
           } else {
             resolve();
@@ -46,7 +45,6 @@ export function registerAuthRoutes(app: Express, requireAuth: any, generateCsrfT
       const saveSession = () => new Promise<void>((resolve, reject) => {
         req.session.save((err) => {
           if (err) {
-            console.error('Session save failed:', err);
             reject(err);
           } else {
             resolve();
@@ -80,7 +78,6 @@ export function registerAuthRoutes(app: Express, requireAuth: any, generateCsrfT
         csrfToken
       });
     } catch (error) {
-      console.error('Login error:', error);
       res.status(500).json({ message: "Login failed" });
     }
   });
@@ -116,7 +113,6 @@ export function registerAuthRoutes(app: Express, requireAuth: any, generateCsrfT
         });
       })
       .catch(error => {
-        console.error("Get user error:", error);
         res.status(500).json({ message: "Failed to get user" });
       });
   });
@@ -124,13 +120,21 @@ export function registerAuthRoutes(app: Express, requireAuth: any, generateCsrfT
   app.post('/api/auth/change-password', requireAuth, async (req, res) => {
     try {
       const { newPassword } = req.body;
+
+      // Server-side password validation
+      if (!newPassword || typeof newPassword !== 'string') {
+        return res.status(400).json({ message: "New password is required" });
+      }
+      if (newPassword.length < 6) {
+        return res.status(400).json({ message: "Password must be at least 6 characters" });
+      }
+
       const hashedPassword = await bcrypt.hash(newPassword, Number(process.env.BCRYPT_ROUNDS) || 10);
 
       await storage.updateUserPassword(req.session.userId!, hashedPassword);
 
       res.json({ message: "Password changed successfully" });
     } catch (error) {
-      console.error("Change password error:", error);
       res.status(500).json({ message: "Failed to change password" });
     }
   });

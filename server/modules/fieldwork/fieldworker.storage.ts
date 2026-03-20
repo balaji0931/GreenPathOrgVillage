@@ -6,9 +6,18 @@ import { db } from "../../db";
 import { eq, and } from "drizzle-orm";
 
 // Field worker operations
-export async function getFieldWorkersByVillage(villageId: string): Promise<User[]> {
+export async function getFieldWorkersByVillage(villageId: string) {
     return await db
-        .select()
+        .select({
+            id: users.id,
+            userId: users.userId,
+            role: users.role,
+            villageId: users.villageId,
+            name: users.name,
+            phone: users.phone,
+            isFirstLogin: users.isFirstLogin,
+            createdAt: users.createdAt,
+        })
         .from(users)
         .where(
             and(

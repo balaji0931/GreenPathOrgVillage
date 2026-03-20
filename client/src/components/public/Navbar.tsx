@@ -66,7 +66,7 @@ export function Navbar() {
             </button>
 
             {/* Desktop nav links */}
-            <div className="hidden lg:flex items-center gap-1">
+            <div className="hidden lg:flex items-center gap-2">
               {navLinks.map((link) => (
                 <button
                   key={link.href}
@@ -78,9 +78,6 @@ export function Navbar() {
                   }`}
                 >
                   {link.label}
-                  {isActive(link.href) && (
-                    <span className="absolute bottom-0 left-1/2 -translate-x-1/2 w-1 h-1 bg-emerald-600 rounded-full" />
-                  )}
                 </button>
               ))}
             </div>

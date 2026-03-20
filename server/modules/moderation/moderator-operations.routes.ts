@@ -9,7 +9,6 @@ export function registerModeratorOperationsRoutes(app: Express, requireAuth: any
             const villages = await storage.getModeratorVillages(moderatorId);
             res.json(villages);
         } catch (error) {
-            console.error('Get moderator villages error:', error);
             res.status(500).json({ message: "Failed to get villages" });
         }
     });
@@ -50,7 +49,6 @@ export function registerModeratorOperationsRoutes(app: Express, requireAuth: any
                 villageCount: announcements.length
             });
         } catch (error) {
-            console.error('Create moderator announcement error:', error);
             res.status(500).json({ message: "Failed to create announcement" });
         }
     });
@@ -65,7 +63,6 @@ export function registerModeratorOperationsRoutes(app: Express, requireAuth: any
             const issues = await storage.getModeratorIssues(villageIds);
             res.json(issues);
         } catch (error) {
-            console.error('Get moderator issues error:', error);
             res.status(500).json({ message: "Failed to get issues" });
         }
     });
@@ -80,7 +77,6 @@ export function registerModeratorOperationsRoutes(app: Express, requireAuth: any
             const collectors = await storage.getModeratorCollectors(villageIds);
             res.json(collectors);
         } catch (error) {
-            console.error('Get moderator collectors error:', error);
             res.status(500).json({ message: "Failed to get collectors" });
         }
     });
@@ -95,7 +91,6 @@ export function registerModeratorOperationsRoutes(app: Express, requireAuth: any
             const households = await storage.getModeratorHouseholds(villageIds);
             res.json(households);
         } catch (error) {
-            console.error('Get moderator households error:', error);
             res.status(500).json({ message: "Failed to get households" });
         }
     });
@@ -118,7 +113,6 @@ export function registerModeratorOperationsRoutes(app: Express, requireAuth: any
             const managers = await storage.getManagersByVillage(villageId);
             res.json(managers);
         } catch (error) {
-            console.error("Get village managers error:", error);
             res.status(500).json({ message: "Failed to get village managers" });
         }
     });
@@ -140,7 +134,6 @@ export function registerModeratorOperationsRoutes(app: Express, requireAuth: any
 
             res.json(allManagers);
         } catch (error) {
-            console.error("Get moderator managers error:", error);
             res.status(500).json({ message: "Failed to get managers" });
         }
     });
@@ -171,12 +164,10 @@ export function registerModeratorOperationsRoutes(app: Express, requireAuth: any
                     ...manager,
                     credentials: {
                         userId: manager.userId,
-                        password: manager.userId // Password is same as userId
                     }
                 }
             });
         } catch (error) {
-            console.error("Add manager error:", error);
             res.status(500).json({ message: "Failed to add manager" });
         }
     });
@@ -205,9 +196,8 @@ export function registerModeratorOperationsRoutes(app: Express, requireAuth: any
             const hashedPassword = await bcrypt.hash(newPassword, Number(process.env.BCRYPT_ROUNDS) || 10);
             await storage.updateUserPassword(managerId, hashedPassword);
 
-            res.json({ message: "Password reset successfully", newPassword });
+            res.json({ message: "Password reset successfully" });
         } catch (error) {
-            console.error("Reset manager password error:", error);
             res.status(500).json({ message: "Failed to reset manager password" });
         }
     });
@@ -235,7 +225,6 @@ export function registerModeratorOperationsRoutes(app: Express, requireAuth: any
             await storage.deleteUser(managerId);
             res.json({ message: "Manager deleted successfully" });
         } catch (error) {
-            console.error("Delete manager error:", error);
             res.status(500).json({ message: "Failed to delete manager" });
         }
     });
@@ -265,7 +254,6 @@ export function registerModeratorOperationsRoutes(app: Express, requireAuth: any
             const updatedIssue = await storage.updateIssue(parseInt(id), updates);
             res.json(updatedIssue);
         } catch (error) {
-            console.error("Update issue error:", error);
             res.status(500).json({ message: "Failed to update issue" });
         }
     });

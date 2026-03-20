@@ -26,7 +26,7 @@ const SEO_META: Record<string, { title: string; description: string; image?: str
   },
   "/case-studies": {
     title: "Case Studies — GreenPath",
-    description: "Real deployments with measurable outcomes. Billapura panchayat achieved 90% source segregation. 8+ panchayats now replicating across 1.5 lakh people.",
+    description: "Real deployments with measurable outcomes. Billapura panchayat achieved 95% source segregation. 8+ panchayats now replicating across 1.5 lakh people.",
   },
   "/pricing": {
     title: "Pricing — GreenPath",
