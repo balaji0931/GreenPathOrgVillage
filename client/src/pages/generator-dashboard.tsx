@@ -55,6 +55,7 @@ import {
   Search,
   QrCode,
   IndianRupee,
+  Download,
 } from "lucide-react";
 
 const ISSUE_CATEGORIES = [
@@ -84,6 +85,9 @@ export default function GeneratorDashboard() {
   const [searchQuery, setSearchQuery] = useState("");
   const [showAllCollections, setShowAllCollections] = useState(false);
   const [currentAnnouncementIndex, setCurrentAnnouncementIndex] = useState(0);
+  const [pushBannerDismissed, setPushBannerDismissed] = useState(() => {
+    return localStorage.getItem('greenpath-push-banner-dismissed') === 'true';
+  });
 
   const [newIssue, setNewIssue] = useState({
     title: "",
@@ -470,6 +474,49 @@ export default function GeneratorDashboard() {
         {/* HOME TAB */}
         {activeTab === "home" && (
           <div className="space-y-4 p-4">
+            {/* Push Notification Opt-in Banner */}
+            {!pushBannerDismissed && !pushSubscribed && (villageDetails as any)?.proximityAlertsEnabled && (
+              <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-xl p-4 relative">
+                <button
+                  onClick={() => {
+                    setPushBannerDismissed(true);
+                    localStorage.setItem('greenpath-push-banner-dismissed', 'true');
+                  }}
+                  className="absolute top-2 right-2 text-gray-400 hover:text-gray-600 p-1"
+                  aria-label="Dismiss"
+                >
+                  ✕
+                </button>
+                <div className="flex items-start space-x-3">
+                  <div className="bg-blue-100 rounded-full p-2 mt-0.5">
+                    <Bell className="w-5 h-5 text-blue-600" />
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-sm font-semibold text-gray-800">🚛 Get Vehicle Alerts</p>
+                    <p className="text-xs text-gray-500 mt-0.5 mb-2">
+                      We'll notify you when the waste collection vehicle reaches your street so you can keep your waste ready.
+                    </p>
+                    <Button
+                      size="sm"
+                      className="bg-blue-600 hover:bg-blue-700 text-white text-xs px-4"
+                      disabled={togglePushMutation.isPending}
+                      onClick={() => {
+                        togglePushMutation.mutate(true, {
+                          onSuccess: (success) => {
+                            if (success) {
+                              setPushBannerDismissed(true);
+                              localStorage.setItem('greenpath-push-banner-dismissed', 'true');
+                            }
+                          }
+                        });
+                      }}
+                    >
+                      {togglePushMutation.isPending ? 'Enabling...' : '🔔 Enable Notifications'}
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            )}
             {/* Sliding Announcements */}
             <Card>
               <CardHeader className="pb-3">
@@ -1186,6 +1233,89 @@ export default function GeneratorDashboard() {
                         />
                       </div>
 
+                      <Button
+                        variant="outline"
+                        className="w-full"
+                        onClick={async () => {
+                          try {
+                            const html2canvas = (await import('html2canvas')).default;
+                            const { jsPDF } = await import('jspdf');
+
+                            const cardElement = document.createElement("div");
+                            cardElement.style.width = "70mm";
+                            cardElement.style.height = "99mm";
+                            cardElement.style.backgroundColor = "white";
+                            cardElement.style.display = "flex";
+                            cardElement.style.flexDirection = "column";
+                            cardElement.style.alignItems = "center";
+                            cardElement.style.justifyContent = "center";
+                            cardElement.style.boxSizing = "border-box";
+                            cardElement.style.padding = "8mm";
+                            cardElement.style.fontFamily = "sans-serif";
+                            cardElement.style.textAlign = "center";
+                            cardElement.style.position = "fixed";
+                            cardElement.style.left = "-9999px";
+                            cardElement.style.top = "-9999px";
+
+                            cardElement.innerHTML = `
+                              <img 
+                                src="/logos/png/logo-full-1024x256.png"
+                                style="width:40mm; margin-bottom:-2mm;"
+                              />
+                              <div style="font-size:10pt; color:#555; margin-bottom:4mm;">
+                                Waste Management System
+                              </div>
+                              <div style="width:45mm; height:45mm; display:flex; align-items:center; justify-content:center;">
+                                <img 
+                                  src="/api/qr-codes/${householdData.uid}/image" 
+                                  style="width:100%; height:100%; object-fit:contain;"
+                                />
+                              </div>
+                              <div style="font-size:11pt; font-weight:400; margin-bottom:2mm;">
+                                House UID: GEN-${householdData.uid}
+                              </div>
+                              <div style="font-size:11pt; margin-bottom:3mm;">
+                                Head: ${householdData.headName}
+                              </div>
+                              <div style="font-size:9pt; color:#555;">
+                                Login &amp; manage at:
+                              </div>
+                              <div style="font-size:12pt; color:#008000;">
+                                www.greenpathindia.in
+                              </div>
+                            `;
+
+                            document.body.appendChild(cardElement);
+
+                            const canvas = await html2canvas(cardElement, {
+                              scale: 3,
+                              useCORS: true,
+                              backgroundColor: "#ffffff",
+                            });
+
+                            const imgData = canvas.toDataURL("image/png");
+
+                            const pdf = new jsPDF({
+                              orientation: "portrait",
+                              unit: "mm",
+                              format: [70, 99],
+                            });
+
+                            pdf.addImage(imgData, "PNG", 0, 0, 70, 99);
+                            pdf.save(`QR_Card_${householdData.uid}.pdf`);
+
+                            document.body.removeChild(cardElement);
+
+                            toast({ title: 'Downloaded!', description: 'QR card saved to your device' });
+                          } catch {
+                            toast({ title: 'Error', description: 'Failed to download QR card', variant: 'destructive' });
+                          }
+                        }}
+                      >
+                        <Download className="w-4 h-4 mr-2" />
+                        Download QR Card
+                      </Button>
+
                       <div className="space-y-2 text-center">
                         <div className="p-3 bg-green-50 rounded-lg border-l-4 border-green-400">
                           <p className="text-sm text-green-800 font-medium">
@@ -1394,13 +1524,13 @@ export default function GeneratorDashboard() {
         <div className="flex justify-around">
           {[
             { id: "home", icon: Home, class: "generator-home-tab", label: "Home" },
-            { id: "bills", icon: IndianRupee, class: "generator-bills-tab", label: "Bills" },
+            (villageDetails as any)?.paymentsEnabled && { id: "bills", icon: IndianRupee, class: "generator-bills-tab", label: "Bills" },
             // { id: "reports", icon: BarChart3, class: "generator-collection-stats", label: "Reports" },
             { id: "collections", icon: FileText, class: "generator-collections-tab", label: "History" },
             { id: "qr-code", icon: QrCode, class: "generator-qr-tab", label: "QR Code" },
             { id: "issues", icon: AlertTriangle, class: "generator-issues-tab", label: "Issues" },
             { id: "profile", icon: User, class: "generator-profile-tab", label: "Profile" },
-          ].map((tab) => (
+          ].filter(Boolean).map((tab: any) => (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}

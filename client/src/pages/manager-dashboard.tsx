@@ -1708,12 +1708,21 @@ const ReportsTabContent = ({
           )}
         </section>
 
-        {/* Section 3.5: Waste Diversion Rate — only when material data logged */}
-        {materialData.isLogged && (
-          <section>
+        {/* Section 3.5: Waste Diversion Rate */}
+        <section>
+          {materialData.isLogged ? (
             <WasteDiversionGauge materialData={materialData} />
-          </section>
-        )}
+          ) : (
+            <PremiumReportCard title="Waste Diversion Rate">
+              <div className="text-center py-8">
+                <div className="flex justify-center items-center gap-2 mb-4">
+                  <TrendingUp className="h-8 w-8 text-gray-300" />
+                </div>
+                <div className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Diversion rate will appear once daily waste type entries are logged</div>
+              </div>
+            </PremiumReportCard>
+          )}
+        </section>
 
         {/* Section 4: Wards */}
         <section>
@@ -1821,6 +1830,7 @@ function HouseholdPerformance({ onBack, villageId }: { onBack: () => void; villa
   const [wardFilter, setWardFilter] = useState<string>('all');
   const [showSettings, setShowSettings] = useState(false);
   const [thresholdForm, setThresholdForm] = useState(DEFAULT_THRESHOLDS);
+  const [selectedHousehold, setSelectedHousehold] = useState<any>(null);
 
   // Fetch stats + thresholds
   const { data, isLoading } = useQuery<any>({
@@ -1966,7 +1976,7 @@ function HouseholdPerformance({ onBack, villageId }: { onBack: () => void; villa
           </div>
         ) : (
           filtered.map((h: any) => (
-            <div key={h.householdId} className="bg-white border border-gray-200 rounded-xl p-3">
+            <div key={h.householdId} className="bg-white border border-gray-200 rounded-xl p-3 cursor-pointer hover:border-gray-400 transition-colors" onClick={() => setSelectedHousehold(h)}>
               <div className="flex items-start justify-between mb-1">
                 <div>
                   <p className="text-sm font-bold text-gray-800">{h.headName}</p>
@@ -2013,6 +2023,109 @@ function HouseholdPerformance({ onBack, villageId }: { onBack: () => void; villa
           ))
         )}
       </div>
+
+      {/* Household Detail Dialog */}
+      <Dialog open={!!selectedHousehold} onOpenChange={() => setSelectedHousehold(null)}>
+        <DialogContent className="max-w-[95vw] sm:max-w-sm">
+          {selectedHousehold && (
+            <div className="space-y-4">
+              {/* Header: Name + UID */}
+              <div className="text-center border-b pb-3">
+                <h3 className="text-lg font-bold text-gray-900">{selectedHousehold.headName}</h3>
+                <p className="text-xs text-gray-500 mt-1">
+                  UID: {selectedHousehold.uid}
+                  {selectedHousehold.houseNumber && ` · House #${selectedHousehold.houseNumber}`}
+                  {selectedHousehold.ward && ` · ${selectedHousehold.ward}`}
+                </p>
+                {selectedHousehold.address && (
+                  <p className="text-xs text-gray-400 mt-1">{selectedHousehold.address}</p>
+                )}
+              </div>
+
+              {/* Stats */}
+              <div className="grid grid-cols-2 gap-2">
+                <div className="bg-gray-50 rounded-lg p-2 text-center">
+                  <div className="text-lg font-bold text-gray-800">{selectedHousehold.totalCollections}</div>
+                  <div className="text-[10px] text-gray-500 font-semibold uppercase">Total Collections</div>
+                </div>
+                <div className="bg-gray-50 rounded-lg p-2 text-center">
+                  <div className="text-lg font-bold text-gray-800">⭐ {selectedHousehold.avgRatingLast10 ? parseFloat(selectedHousehold.avgRatingLast10).toFixed(1) : '—'}</div>
+                  <div className="text-[10px] text-gray-500 font-semibold uppercase">Avg Rating</div>
+                </div>
+                <div className="bg-gray-50 rounded-lg p-2 text-center">
+                  <div className="text-lg font-bold text-gray-800">{selectedHousehold.collectionsLast7}</div>
+                  <div className="text-[10px] text-gray-500 font-semibold uppercase">Last 7 Days</div>
+                </div>
+                <div className="bg-gray-50 rounded-lg p-2 text-center">
+                  <div className="text-lg font-bold text-gray-800">{selectedHousehold.collectionsLast30}</div>
+                  <div className="text-[10px] text-gray-500 font-semibold uppercase">Last 30 Days</div>
+                </div>
+              </div>
+
+              {/* Reasons (why flagged) */}
+              {selectedHousehold.flag === 'needs_attention' && selectedHousehold.reasons.length > 0 && (
+                <div className="bg-red-50 border border-red-200 rounded-lg p-3">
+                  <p className="text-xs font-bold text-red-700 uppercase mb-2">⚠ Needs Attention</p>
+                  {selectedHousehold.reasons.map((r: string, i: number) => (
+                    <p key={i} className="text-sm text-red-600 mb-1">• {r}</p>
+                  ))}
+                </div>
+              )}
+              {selectedHousehold.flag === 'good' && (
+                <div className="bg-green-50 border border-green-200 rounded-lg p-3 text-center">
+                  <p className="text-sm font-bold text-green-700">🟢 Good Standing</p>
+                  <p className="text-xs text-green-600 mt-1">This household is meeting all thresholds</p>
+                </div>
+              )}
+              {selectedHousehold.flag === 'no_data' && (
+                <div className="bg-gray-50 border border-gray-200 rounded-lg p-3 text-center">
+                  <p className="text-sm font-bold text-gray-600">⚪ No Collection Data</p>
+                  <p className="text-xs text-gray-500 mt-1">This household has not had any recorded collections</p>
+                </div>
+              )}
+
+              {/* Action Buttons */}
+              <div className="flex gap-3 pt-2 border-t">
+                <Button
+                  className="flex-1"
+                  variant="outline"
+                  onClick={() => {
+                    if (selectedHousehold.latitude && selectedHousehold.longitude) {
+                      window.open(
+                        `https://www.google.com/maps/dir/?api=1&destination=${selectedHousehold.latitude},${selectedHousehold.longitude}`,
+                        '_blank'
+                      );
+                    } else if (selectedHousehold.address) {
+                      window.open(
+                        `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(selectedHousehold.address)}`,
+                        '_blank'
+                      );
+                    } else {
+                      toast({ title: 'No location data', description: 'This household has no address or coordinates', variant: 'destructive' });
+                    }
+                  }}
+                >
+                  <MapPin className="w-4 h-4 mr-2" />
+                  Visit
+                </Button>
+                <Button
+                  className="flex-1"
+                  onClick={() => {
+                    if (selectedHousehold.phone) {
+                      window.open(`tel:${selectedHousehold.phone}`);
+                    } else {
+                      toast({ title: 'No phone number', description: 'This household has no phone number on file', variant: 'destructive' });
+                    }
+                  }}
+                >
+                  <Phone className="w-4 h-4 mr-2" />
+                  Call
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
 
       {/* Threshold settings dialog */}
       {showSettings && (

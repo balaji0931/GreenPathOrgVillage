@@ -322,9 +322,9 @@ function buildFullReport(d: PDFReportData): string {
         ${sec("Vehicle Session Report")}
       </div>
       ${activeV.length > 0 ? vCards : `<div class="avoid-break">${noData(
-        "No Vehicle Sessions",
-        "No collection sessions were recorded for this date. Sessions appear here when collectors start and end their routes."
-      )}</div>`}
+    "No Vehicle Sessions",
+    "No collection sessions were recorded for this date. Sessions appear here when collectors start and end their routes."
+  )}</div>`}
 
       <!-- HOURLY DISTRIBUTION -->
       <div class="avoid-break">
@@ -348,9 +348,9 @@ function buildFullReport(d: PDFReportData): string {
         ` : `
           ${sec("Hourly Collection Distribution")}
           ${noData(
-            "No Collection Activity",
-            "No hourly collection data is available for this date. This table populates when collectors perform collections during their routes."
-          )}
+    "No Collection Activity",
+    "No hourly collection data is available for this date. This table populates when collectors perform collections during their routes."
+  )}
         `}
       </div>
 

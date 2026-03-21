@@ -142,6 +142,17 @@ export async function refreshAllBehaviourStats(): Promise<void> {
   console.log("[BehaviourStats] Starting nightly refresh...");
   const startTime = Date.now();
 
+  // Step 0: Ensure ALL active households have a stats row (inserts missing ones)
+  await db.execute(sql`
+    INSERT INTO household_behaviour_stats (village_id, household_id, ward)
+    SELECT h.village_id, h.id, h.ward
+    FROM households h
+    WHERE h.status = 'active'
+      AND h.id NOT IN (
+        SELECT household_id FROM household_behaviour_stats
+      )
+  `);
+
   // Step 1: Update collections_last_7 for households WITH recent collections
   await db.execute(sql`
     UPDATE household_behaviour_stats hbs
@@ -238,6 +249,50 @@ export async function refreshAllBehaviourStats(): Promise<void> {
       AND h.ward != hbs.ward
   `);
 
+  // Step 6: Update total_collections
+  await db.execute(sql`
+    UPDATE household_behaviour_stats hbs
+    SET total_collections = sub.cnt
+    FROM (
+      SELECT household_id, COUNT(*) as cnt
+      FROM waste_collections
+      WHERE status = 'collected'
+      GROUP BY household_id
+    ) sub
+    WHERE hbs.household_id = sub.household_id
+  `);
+
+  // Step 7: Update last_collection_date for all households
+  await db.execute(sql`
+    UPDATE household_behaviour_stats hbs
+    SET last_collection_date = sub.last_date
+    FROM (
+      SELECT household_id, MAX(collection_date) as last_date
+      FROM waste_collections
+      WHERE status = 'collected'
+      GROUP BY household_id
+    ) sub
+    WHERE hbs.household_id = sub.household_id
+  `);
+
+  // Step 8: Update avg_rating_last_10 (avg of last 10 rated collections per household)
+  await db.execute(sql`
+    UPDATE household_behaviour_stats hbs
+    SET avg_rating_last_10 = sub.avg_rating::numeric(3,1)
+    FROM (
+      SELECT household_id, AVG(segregation_rating) as avg_rating
+      FROM (
+        SELECT household_id, segregation_rating,
+               ROW_NUMBER() OVER (PARTITION BY household_id ORDER BY collection_date DESC) as rn
+        FROM waste_collections
+        WHERE segregation_rating IS NOT NULL
+      ) ranked
+      WHERE rn <= 10
+      GROUP BY household_id
+    ) sub
+    WHERE hbs.household_id = sub.household_id
+  `);
+
   const elapsed = Date.now() - startTime;
   console.log(`[BehaviourStats] Nightly refresh completed in ${elapsed}ms`);
 }
@@ -304,6 +359,10 @@ export async function getHouseholdStats(villageId: string, ward?: string) {
       headName: households.headName,
       houseNumber: households.houseNumber,
       uid: households.uid,
+      phone: households.phone,
+      address: households.address,
+      latitude: households.latitude,
+      longitude: households.longitude,
     })
     .from(householdBehaviourStats)
     .innerJoin(households, eq(households.id, householdBehaviourStats.householdId))

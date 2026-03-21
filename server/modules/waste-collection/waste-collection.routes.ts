@@ -93,11 +93,11 @@ export function registerWasteCollectionRoutes(app: Express, requireAuth: any, re
         return res.status(404).json({ message: "Household not found" });
       }
 
-      const result = await storage.getCollectionsByHousehold(household.id, { limit: 50 });
+      const result = await storage.getCollectionsByHousehold(household.id, { limit: 1000 });
+      // result is { data: [...], stats: {...} } — extract the data array
+      const collections = Array.isArray(result.data) ? result.data : [];
       // Strip internal IDs from collection data for generators
-      const sanitized = Array.isArray(result)
-        ? result.map(({ collectorId, ...rest }: any) => rest)
-        : result;
+      const sanitized = collections.map(({ collectorId, ...rest }: any) => rest);
       res.json(sanitized);
     } catch (error) {
       res.status(500).json({ message: "Failed to get collections" });

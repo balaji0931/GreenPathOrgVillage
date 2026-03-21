@@ -39,9 +39,8 @@ export function useAuth() {
       return data;
     },
     onSuccess: () => {
-      // Clear ALL cached data from previous user before fetching new user's data
-      queryClient.removeQueries();
-      refetch();
+      // Full page reload to guarantee fresh auth state (avoids SW cached stale user)
+      window.location.href = '/';
     },
   });
 
@@ -52,11 +51,10 @@ export function useAuth() {
       setCsrfToken(null);
     },
     onSuccess: async () => {
-      // Clear ALL cached data so next user doesn't see previous user's bills/payments
-      queryClient.clear();
       // Clear service worker caches + IndexedDB
       await clearAllCaches();
-      refetch();
+      // Full page reload to guarantee fresh auth state
+      window.location.href = '/';
     },
   });
 
