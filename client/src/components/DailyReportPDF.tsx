@@ -29,6 +29,11 @@ export interface PDFReportData {
     vehicles: Array<{ name: string; color: string }>;
     hourly: Array<Record<string, any>>;
   };
+  attendance?: {
+    collectors: Array<{ workerName: string; attendance: string | null }>;
+    helpers: Array<{ workerName: string; attendance: string | null }>;
+    segregators: Array<{ workerName: string; attendance: string | null }>;
+  };
 }
 
 // ── Helpers ─────────────────────────────────────────────────────
@@ -353,6 +358,48 @@ function buildFullReport(d: PDFReportData): string {
   )}
         `}
       </div>
+
+      <!-- WORKFORCE ATTENDANCE LOG -->
+      <div class="avoid-break">
+        ${sec("Workforce Attendance Log")}
+      </div>
+      ${(() => {
+        const att = d.attendance;
+        if (!att) return `<div class="avoid-break">${noData("Attendance Not Available", "Attendance feature may not be enabled for this village.")}</div>`;
+
+        const statusBadge = (s: string | null) => {
+          if (s === 'present') return `<span style="background:#dcfce7;color:#166534;padding:4px 10px;border-radius:6px;font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:0.05em;">Present</span>`;
+          if (s === 'half_day') return `<span style="background:#fef3c7;color:#92400e;padding:4px 10px;border-radius:6px;font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:0.05em;">Half Day</span>`;
+          if (s === 'absent') return `<span style="background:#fce4ec;color:#b71c1c;padding:4px 10px;border-radius:6px;font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:0.05em;">Absent</span>`;
+          return `<span style="background:${C.s100};color:${C.s400};padding:4px 10px;border-radius:6px;font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:0.05em;">Not Marked</span>`;
+        };
+
+        const workerTable = (title: string, workers: Array<{ workerName: string; attendance: string | null }>) => {
+          if (workers.length === 0) return `<div class="avoid-break" style="margin-bottom:12px;">
+            <div style="font-size:11px;font-weight:800;color:${C.s500};text-transform:uppercase;letter-spacing:0.1em;margin-bottom:8px;">${title}</div>
+            <div style="background:${C.s50};border:1.5px dashed ${C.s200};border-radius:10px;padding:16px;text-align:center;font-size:10px;color:${C.s400};font-weight:600;">No ${title.toLowerCase()} registered</div>
+          </div>`;
+          const rows = workers.map((w, i) => `
+            <tr style="background:${i % 2 === 0 ? C.white : C.s50};">
+              ${td(String(i + 1), { a: 'center' })}
+              ${td(w.workerName, { b: true })}
+              <td style="padding:10px 14px;text-align:center;">${statusBadge(w.attendance)}</td>
+            </tr>`).join('');
+          return `<div class="avoid-break" style="margin-bottom:16px;">
+            <div style="font-size:11px;font-weight:800;color:${C.s500};text-transform:uppercase;letter-spacing:0.1em;margin-bottom:8px;">${title}</div>
+            <table style="width:100%;border-collapse:collapse;border:1.5px solid ${C.s200};border-radius:10px;overflow:hidden;">
+              <thead><tr style="background:linear-gradient(135deg,${C.brandDark},${C.brand});">
+                ${th('#', 'center')}${th('Name')}${th('Status', 'center')}
+              </tr></thead>
+              <tbody>${rows}</tbody>
+            </table>
+          </div>`;
+        };
+
+        return workerTable('Collectors', att.collectors)
+             + workerTable('Helpers', att.helpers)
+             + workerTable('Segregators', att.segregators);
+      })()}
 
       <!-- REPORT FOOTER -->
       <div style="text-align:center;padding-top:24px;margin-top:40px;padding-bottom:20px;border-top:2.5px solid ${C.brand};">

@@ -1578,6 +1578,26 @@ const ReportsTabContent = ({
     setPdfGenerating(true);
     setPdfProgress("Preparing...");
     try {
+      // Fetch attendance for all worker types in parallel
+      let attendance: PDFReportData['attendance'] | undefined;
+      try {
+        const [colRes, helpRes, segRes] = await Promise.all([
+          fetch(`/api/attendance/daily?date=${targetDate}&workerType=collector`, { credentials: 'include' }),
+          fetch(`/api/attendance/daily?date=${targetDate}&workerType=helper`, { credentials: 'include' }),
+          fetch(`/api/attendance/daily?date=${targetDate}&workerType=segregator`, { credentials: 'include' }),
+        ]);
+        const [colData, helpData, segData] = await Promise.all([
+          colRes.ok ? colRes.json() : { workers: [] },
+          helpRes.ok ? helpRes.json() : { workers: [] },
+          segRes.ok ? segRes.json() : { workers: [] },
+        ]);
+        attendance = {
+          collectors: (colData.workers || []).map((w: any) => ({ workerName: w.workerName, attendance: w.attendance })),
+          helpers: (helpData.workers || []).map((w: any) => ({ workerName: w.workerName, attendance: w.attendance })),
+          segregators: (segData.workers || []).map((w: any) => ({ workerName: w.workerName, attendance: w.attendance })),
+        };
+      } catch { /* attendance not available — PDF will show fallback */ }
+
       const pdfData: PDFReportData = {
         villageName,
         villageId,
@@ -1589,6 +1609,7 @@ const ReportsTabContent = ({
         materialData: reportData.materialData,
         vehicleStats: reportData.vehicleStats,
         collectionTimeline: reportData.collectionTimeline,
+        attendance,
       };
       await generateDailyReportPDF(pdfData, setPdfProgress);
       toast({ title: "✅ Daily report PDF downloaded!" });
