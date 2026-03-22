@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -16,10 +16,17 @@ export default function Login() {
   const [password, setPassword] = useState("");
   const [agreedToTerms, setAgreedToTerms] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [showInstallPrompt, setShowInstallPrompt] = useState(false);
   const { login, isLoginPending } = useAuth();
   const { toast } = useToast();
   const { t } = useTranslation();
   const [, setLocation] = useLocation();
+
+  // Show install prompt only after login page has fully loaded
+  useEffect(() => {
+    const timer = setTimeout(() => setShowInstallPrompt(true), 2000);
+    return () => clearTimeout(timer);
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -241,9 +248,14 @@ export default function Login() {
                   t('auth.loginButton')
                 )}
               </Button>
-{/* 
-              <InstallPWA showInline={true} /> */}
+
             </form>
+
+            {showInstallPrompt && (
+              <div data-nosnippet className="mt-4">
+                <InstallPWA showInline={true} />
+              </div>
+            )}
 
             {/* Legal footer */}
             <div className="mt-8 pt-6 border-t border-slate-100 flex flex-wrap justify-center gap-4 text-xs text-slate-400">
@@ -263,7 +275,14 @@ export default function Login() {
             </div>
           </div>
         </div>
-      </div>
+    </div>
+
+      {/* Floating install popup (bottom-right card) */}
+      {showInstallPrompt && (
+        <div data-nosnippet>
+          <InstallPWA />
+        </div>
+      )}
     </div>
   );
 }

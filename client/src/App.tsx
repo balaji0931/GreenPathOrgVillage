@@ -1,7 +1,7 @@
 import { Switch, Route, Redirect } from "wouter";
 import { Toaster } from "@/components/ui/toaster";
 import { useAuth } from "@/hooks/useAuth";
-import { InstallPWA } from "@/components/InstallPWA";
+
 import { OfflineIndicator } from "@/components/OfflineIndicator";
 import Login from "@/pages/login";
 import AdminDashboard from "@/pages/admin-dashboard";
@@ -32,7 +32,8 @@ function App() {
     <div className="min-h-screen bg-gray-50">
       <ScrollToTop />
       <Router />
-      <InstallPWA />
+
+
 
       <Toaster />
     </div>

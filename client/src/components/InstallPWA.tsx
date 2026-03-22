@@ -18,10 +18,13 @@ export function InstallPWA({ showInline = false, onInstallComplete }: InstallPWA
 
   const handleInstall = async () => {
     setIsInstalling(true);
-    const success = await installApp();
+    const result = await installApp();
     setIsInstalling(false);
     
-    if (success) {
+    if (typeof result === 'string') {
+      // No native install prompt available — show manual instructions
+      alert(result);
+    } else if (result === true) {
       onInstallComplete?.();
     }
   };
@@ -35,6 +38,7 @@ export function InstallPWA({ showInline = false, onInstallComplete }: InstallPWA
     // Always show the install button, don't disable it
     return (
       <Button
+        type="button"
         onClick={handleInstall}
         disabled={isInstalling}
         variant="outline"
