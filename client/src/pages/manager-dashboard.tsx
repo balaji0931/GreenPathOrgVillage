@@ -5040,6 +5040,35 @@ export default function ManagerDashboard() {
                           )} />
                         </button>
                       </div>
+
+                      {/* Collector Waste Logging Toggle */}
+                      <div className="px-4 py-4 border-t border-gray-100 flex items-center justify-between">
+                        <div className="flex-1 min-w-0 pr-4">
+                          <p className="font-semibold text-gray-900 text-sm">🗒️ Collector Waste Logging</p>
+                          <p className="text-xs text-gray-400 mt-0.5">When enabled, collectors can enter daily waste logs from their dashboard. Your (manager) entry takes priority in reports</p>
+                        </div>
+                        <button
+                          onClick={async () => {
+                            try {
+                              const newVal = !villageData?.collectorWasteLogEnabled;
+                              await apiRequest('PATCH', `/api/villages/${user?.villageId}`, { collectorWasteLogEnabled: newVal });
+                              queryClient.invalidateQueries({ queryKey: ["/api/villages", user?.villageId] });
+                              toast({ title: newVal ? 'Collector waste logging enabled' : 'Collector waste logging disabled' });
+                            } catch (_err: unknown) {
+                              toast({ title: 'Failed to update. Please try again.', variant: 'destructive' });
+                            }
+                          }}
+                          className={cn(
+                            "relative inline-flex h-7 w-12 items-center rounded-full transition-colors flex-shrink-0",
+                            villageData?.collectorWasteLogEnabled ? "bg-green-500" : "bg-gray-300"
+                          )}
+                        >
+                          <span className={cn(
+                            "inline-block h-5 w-5 rounded-full bg-white shadow-md transition-transform",
+                            villageData?.collectorWasteLogEnabled ? "translate-x-6" : "translate-x-1"
+                          )} />
+                        </button>
+                      </div>
                     </div>
 
                     {/* Vehicle Notification Settings — only if proximity alerts enabled */}

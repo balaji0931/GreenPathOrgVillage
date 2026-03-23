@@ -29,6 +29,7 @@ import {
     workerAttendance,
     systemJobs,
     householdBehaviourStats,
+    collectorDailyWasteLog,
     type Village,
     type InsertVillage,
 } from "@shared/schema";
@@ -72,6 +73,7 @@ export async function getVillages(): Promise<Village[]> {
         notificationRadiusMeters: villages.notificationRadiusMeters,
         notificationWindowStart: villages.notificationWindowStart,
         notificationWindowEnd: villages.notificationWindowEnd,
+        collectorWasteLogEnabled: villages.collectorWasteLogEnabled,
         createdAt: villages.createdAt,
         updatedAt: villages.updatedAt,
     };
@@ -102,6 +104,7 @@ export async function getVillageByVillageId(villageId: string): Promise<Village 
         notificationRadiusMeters: villages.notificationRadiusMeters,
         notificationWindowStart: villages.notificationWindowStart,
         notificationWindowEnd: villages.notificationWindowEnd,
+        collectorWasteLogEnabled: villages.collectorWasteLogEnabled,
         createdAt: villages.createdAt,
         updatedAt: villages.updatedAt,
     }).from(villages).where(eq(villages.villageId, villageId));
@@ -209,6 +212,7 @@ export async function deleteVillage(villageId: string): Promise<void> {
     await db.delete(attendanceCenters).where(eq(attendanceCenters.villageId, villageId));
     await db.delete(shiftLogs).where(eq(shiftLogs.villageId, villageId));
     await db.delete(workerAttendance).where(eq(workerAttendance.villageId, villageId));
+    await db.delete(collectorDailyWasteLog).where(eq(collectorDailyWasteLog.villageId, villageId));
 
 
 

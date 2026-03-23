@@ -12,6 +12,7 @@ import { db } from "../../db";
 import { eq, and, sql } from "drizzle-orm";
 import * as villageStorage from "../village/village.storage";
 import * as dailyWasteLogStorage from "../material-log/daily-waste-log.storage";
+import * as collectorWasteLogStorage from "../material-log/collector-waste-log.storage";
 import * as dryWasteSalesStorage from "../material-log/dry-waste-sales.storage";
 import { deriveVehicleSessions } from "./daily-stats.storage";
 
@@ -169,15 +170,44 @@ export async function getPremiumReportData(villageId: string, date: string): Pro
         };
     });
 
-    // ── Material Data (5 categories) ──
-    const materialData = {
-        wet: parseFloat(materialLog?.wetWasteKg || "0"),
-        dry: parseFloat(materialLog?.dryWasteKg || "0"),
-        specialCare: parseFloat(materialLog?.specialCareWasteKg || "0"),
-        sanitary: parseFloat(materialLog?.sanitaryWasteKg || "0"),
-        mixed: parseFloat(materialLog?.mixedWasteKg || "0"),
-        isLogged: !!materialLog,
-    };
+    // ── Material Data (5 categories) — Manager entry takes priority, fall back to collector summary ──
+    let materialData;
+    if (materialLog) {
+        // Manager entry exists — use it
+        materialData = {
+            wet: parseFloat(materialLog.wetWasteKg || "0"),
+            dry: parseFloat(materialLog.dryWasteKg || "0"),
+            specialCare: parseFloat(materialLog.specialCareWasteKg || "0"),
+            sanitary: parseFloat(materialLog.sanitaryWasteKg || "0"),
+            mixed: parseFloat(materialLog.mixedWasteKg || "0"),
+            isLogged: true,
+            source: 'manager' as const,
+        };
+    } else {
+        // No manager entry — check for collector entries
+        const collectorSummary = await collectorWasteLogStorage.getCollectorWasteLogSummaryByVillageAndDate(villageId, date);
+        if (collectorSummary) {
+            materialData = {
+                wet: collectorSummary.wetWasteKg,
+                dry: collectorSummary.dryWasteKg,
+                specialCare: collectorSummary.specialCareWasteKg,
+                sanitary: collectorSummary.sanitaryWasteKg,
+                mixed: collectorSummary.mixedWasteKg,
+                isLogged: true,
+                source: 'collectors' as const,
+            };
+        } else {
+            materialData = {
+                wet: 0,
+                dry: 0,
+                specialCare: 0,
+                sanitary: 0,
+                mixed: 0,
+                isLogged: false,
+                source: 'none' as const,
+            };
+        }
+    }
 
     // ── Vehicle Stats with Sessions ──
     const vehicleStats = villageVehicles.map(v => {

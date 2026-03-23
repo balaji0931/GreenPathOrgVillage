@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest, fetchWithCsrf } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -531,6 +531,43 @@ function DailyWasteForm({
     notes: editingItem?.notes || "",
   });
 
+  // Pre-load collector summary when creating (not editing) and date changes
+  const [collectorSummary, setCollectorSummary] = useState<{
+    wetWasteKg: number; dryWasteKg: number; specialCareWasteKg: number;
+    sanitaryWasteKg: number; mixedWasteKg: number; entryCount: number;
+  } | null>(null);
+
+  useEffect(() => {
+    if (editingItem) return; // Skip when editing an existing manager entry
+    const fetchSummary = async () => {
+      try {
+        const res = await fetch(`/api/collector-waste-log/village/${formData.date}/summary`, { credentials: 'include' });
+        if (!res.ok) return;
+        const data = await res.json();
+        if (data && data.entryCount > 0) {
+          setCollectorSummary(data);
+          // Pre-fill only if all fields are empty/zero
+          const allEmpty = !formData.wetWasteKg && !formData.dryWasteKg && !formData.specialCareWasteKg && !formData.sanitaryWasteKg && !formData.mixedWasteKg;
+          if (allEmpty) {
+            setFormData(prev => ({
+              ...prev,
+              wetWasteKg: data.wetWasteKg > 0 ? String(data.wetWasteKg) : "",
+              dryWasteKg: data.dryWasteKg > 0 ? String(data.dryWasteKg) : "",
+              specialCareWasteKg: data.specialCareWasteKg > 0 ? String(data.specialCareWasteKg) : "",
+              sanitaryWasteKg: data.sanitaryWasteKg > 0 ? String(data.sanitaryWasteKg) : "",
+              mixedWasteKg: data.mixedWasteKg > 0 ? String(data.mixedWasteKg) : "",
+            }));
+          }
+        } else {
+          setCollectorSummary(null);
+        }
+      } catch {
+        setCollectorSummary(null);
+      }
+    };
+    fetchSummary();
+  }, [formData.date, editingItem]);
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     onSubmit(formData);
@@ -548,6 +585,21 @@ function DailyWasteForm({
           required
         />
       </div>
+
+      {/* Collector summary banner */}
+      {collectorSummary && !editingItem && (
+        <div className="bg-blue-50 border border-blue-200 rounded-xl p-3">
+          <p className="text-xs font-bold text-blue-800 mb-1">📋 Collectors logged {collectorSummary.entryCount} entr{collectorSummary.entryCount === 1 ? 'y' : 'ies'} for this date:</p>
+          <div className="flex flex-wrap gap-2 text-[10px] font-semibold text-blue-700">
+            {collectorSummary.wetWasteKg > 0 && <span className="bg-green-100 px-2 py-0.5 rounded-full">Wet: {collectorSummary.wetWasteKg}kg</span>}
+            {collectorSummary.dryWasteKg > 0 && <span className="bg-blue-100 px-2 py-0.5 rounded-full">Dry: {collectorSummary.dryWasteKg}kg</span>}
+            {collectorSummary.specialCareWasteKg > 0 && <span className="bg-purple-100 px-2 py-0.5 rounded-full">Special: {collectorSummary.specialCareWasteKg}kg</span>}
+            {collectorSummary.sanitaryWasteKg > 0 && <span className="bg-red-100 px-2 py-0.5 rounded-full">Sanitary: {collectorSummary.sanitaryWasteKg}kg</span>}
+            {collectorSummary.mixedWasteKg > 0 && <span className="bg-yellow-100 px-2 py-0.5 rounded-full">Mixed: {collectorSummary.mixedWasteKg}kg</span>}
+          </div>
+          <p className="text-[10px] text-blue-500 mt-1">Values pre-filled below. Review and save — your entry takes priority.</p>
+        </div>
+      )}
 
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-3 p-3 bg-green-50 rounded-xl">

@@ -17,6 +17,7 @@ import { QRScanner } from "@/components/qr-scanner";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import { useOfflineStorage, offlineStorage } from "@/lib/offline-storage";
 import { TourButton } from "@/components/tours/TourButton";
+import CollectorWasteLog from "@/components/collector/CollectorWasteLog";
 import {
   Home,
   QrCode,
@@ -36,6 +37,9 @@ import {
   Bell,
   MapPin,
   Upload,
+  Leaf,
+  Globe,
+  Trash2,
 } from "lucide-react";
 
 interface CollectionForm {
@@ -83,6 +87,7 @@ export default function CollectorDashboard() {
 
   const [showScanner, setShowScanner] = useState(false);
   const [showCollectionModal, setShowCollectionModal] = useState(false);
+  const [submitOverlayState, setSubmitOverlayState] = useState<'hidden' | 'submitting' | 'success'>('hidden');
   const [scannedHousehold, setScannedHousehold] = useState<any>(null);
   const [activeTab, setActiveTab] = useState('home');
   const [showPasswordModal, setShowPasswordModal] = useState(false);
@@ -322,27 +327,45 @@ export default function CollectorDashboard() {
       return response.json();
     },
     onSuccess: async (newCollection) => {
-      toast({
-        title: "Success",
-        description: "Collection recorded successfully",
-      });
-      setShowCollectionModal(false);
+      // Play success sound — 3-note ascending chime
+      try {
+        const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
+        const playTone = (freq: number, start: number, dur: number, vol = 0.25) => {
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          osc.frequency.value = freq;
+          osc.type = 'sine';
+          gain.gain.setValueAtTime(vol, ctx.currentTime + start);
+          gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + start + dur);
+          osc.start(ctx.currentTime + start);
+          osc.stop(ctx.currentTime + start + dur);
+        };
+        playTone(659, 0, 0.18);     // E5
+        playTone(880, 0.15, 0.18);  // A5
+        playTone(1318, 0.30, 0.35); // E6 — held slightly longer
+      } catch (_) {}
+
+      setSubmitOverlayState('success');
       resetForm();
+
+      setTimeout(() => {
+        setSubmitOverlayState('hidden');
+        setShowCollectionModal(false);
+      }, 10000);
 
       // Invalidate all related queries
       await queryClient.invalidateQueries({ queryKey: ["/api/waste-collections"] });
       await queryClient.invalidateQueries({ queryKey: ["/api/households"] });
-
-      // Refetch data to ensure UI updates immediately
       await Promise.all([
         collectionsQuery.refetch(),
         householdsQuery.refetch()
       ]);
-
-      // Force component re-render with updated data
       setRefreshTrigger(prev => prev + 1);
     },
     onError: (error: any) => {
+      setSubmitOverlayState('hidden');
       // Handle duplicate collection error specifically
       if (error.status === 409) {
         toast({
@@ -583,7 +606,8 @@ export default function CollectorDashboard() {
   };
 
   const handleStarClick = (_type: 'segregation', rating: number) => {
-    setCollectionForm({ ...collectionForm, segregationRating: rating });
+    const maxRating = collectionForm.wasteSegregated === false ? 3 : 5;
+    setCollectionForm({ ...collectionForm, segregationRating: Math.min(rating, maxRating) });
   };
 
 
@@ -806,13 +830,33 @@ export default function CollectorDashboard() {
       const result = await storeCollectionOffline(offlineCollectionData);
 
       if (result.success) {
-        toast({
-          title: "✅ Saved Offline",
-          description: "Collection saved offline. Will sync when online.",
-          variant: "default",
-        });
+        // Play success sound
+        try {
+          const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
+          const playTone = (freq: number, start: number, dur: number, vol = 0.25) => {
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+            osc.frequency.value = freq;
+            osc.type = 'sine';
+            gain.gain.setValueAtTime(vol, ctx.currentTime + start);
+            gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + start + dur);
+            osc.start(ctx.currentTime + start);
+            osc.stop(ctx.currentTime + start + dur);
+          };
+          playTone(659, 0, 0.18);
+          playTone(880, 0.15, 0.18);
+          playTone(1318, 0.30, 0.35);
+        } catch (_) {}
+
+        setSubmitOverlayState('success');
         resetForm();
         setRefreshTrigger(prev => prev + 1);
+        setTimeout(() => {
+          setSubmitOverlayState('hidden');
+          setShowCollectionModal(false);
+        }, 10000);
       } else {
         throw new Error(result.error || 'Failed to store offline');
       }
@@ -934,38 +978,46 @@ export default function CollectorDashboard() {
         shouldShowWelcome={user?.isFirstLogin}
       /> */}
 
-      {/* Mobile Header */}
-      <div className="bg-green-600 text-white p-3 sticky top-0 z-10 ">
+      {/* Header */}
+      <div className="bg-white px-4 pt-3 pb-3 sticky top-0 z-10 shadow-sm border-b border-gray-100">
         <div className="flex items-center justify-between">
-          <div className="flex items-center">
-            <img src="/logos/logo-dark.svg" alt="GreenPath" className="w-auto h-9" />
-          </div>
-          <div className="flex items-center space-x-2">
-            <TourButton className="text-black hover:bg-white bg-white" />
-            <LanguageSwitcher />
+          <img src="/logos/logo-full.svg" alt="GreenPath" className="w-auto h-10" />
+          <div className="flex items-center gap-2">
+            {/* Show Me in header when odd nav tabs for even distribution */}
+            {((villageData?.attendanceEnabled ? 1 : 0) + 1 + (villageData?.collectorWasteLogEnabled ? 1 : 0) + 1) % 2 !== 0 && (
+              <button
+                onClick={() => setActiveTab('profile')}
+                className={`w-8 h-8 rounded-full flex items-center justify-center transition-all ${activeTab === 'profile'
+                  ? 'bg-green-100 text-green-700'
+                  : 'bg-gray-100 text-gray-500'
+                  }`}
+              >
+                <User size={18} strokeWidth={2.5} />
+              </button>
+            )}
           </div>
         </div>
       </div>
 
       {/* Tab Content */}
-      <div className="pb-20"> {/* Bottom padding for nav */}
+      <div className="pb-28">
 
         {/* HOME TAB */}
         {activeTab === 'home' && (
-          <div className="space-y-3 p-4">
-            {/* Stats Cards - 3 KPI Cards */}
-            <div className="collector-daily-stats grid grid-cols-3 gap-2" key={`stats-${collectionsToday.length}`}>
-              <div className="bg-blue-50 p-3 rounded-lg border border-blue-100">
-                <div className="text-xl font-bold text-blue-600">{households?.length || 0}</div>
-                <div className="text-[10px] text-blue-700 font-medium leading-tight">Total Households</div>
+          <div className="space-y-4 p-4">
+            {/* Stats Cards - Premium Glassmorphic */}
+            <div className="collector-daily-stats grid grid-cols-3 gap-2.5" key={`stats-${collectionsToday.length}`}>
+              <div className="bg-gradient-to-br from-blue-500 to-blue-600 p-3 rounded-2xl shadow-md shadow-blue-200/50">
+                <div className="text-2xl font-black text-white">{households?.length || 0}</div>
+                <div className="text-[9px] text-blue-100 font-semibold uppercase tracking-wider mt-0.5">Total</div>
               </div>
-              <div className="bg-green-50 p-3 rounded-lg border border-green-100">
-                <div className="text-xl font-bold text-green-600">{collectionsToday.length}</div>
-                <div className="text-[10px] text-green-700 font-medium leading-tight">Collected by You</div>
+              <div className="bg-gradient-to-br from-emerald-500 to-green-700 p-3 rounded-2xl shadow-md shadow-green-200/50">
+                <div className="text-2xl font-black text-white">{collectionsToday.length}</div>
+                <div className="text-[9px] text-green-100 font-semibold uppercase tracking-wider mt-0.5">Collected</div>
               </div>
-              <div className="bg-purple-50 p-3 rounded-lg border border-purple-100">
-                <div className="text-xl font-bold text-purple-600">{villageTodayData?.collectedToday ?? '—'}</div>
-                <div className="text-[10px] text-purple-700 font-medium leading-tight">Village Total Colected</div>
+              <div className="bg-gradient-to-br from-violet-500 to-purple-600 p-3 rounded-2xl shadow-md shadow-purple-200/50">
+                <div className="text-2xl font-black text-white">{villageTodayData?.collectedToday ?? '—'}</div>
+                <div className="text-[9px] text-purple-100 font-semibold uppercase tracking-wider mt-0.5">Village</div>
               </div>
             </div>
 
@@ -1027,21 +1079,21 @@ export default function CollectorDashboard() {
               </div>
             )}
 
-            {/* Search Bar */}
+            {/* Search Bar - Premium */}
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={16} />
+              <Search className="absolute left-3.5 top-1/2 transform -translate-y-1/2 text-gray-300" size={18} />
               <Input
-                placeholder="Search household by name, ID, or house number..."
+                placeholder="Search by name, ID, or house no..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10 text-sm"
+                className="pl-11 text-sm rounded-2xl border-gray-200 bg-white shadow-sm h-11 focus:ring-2 focus:ring-green-200 focus:border-green-400"
               />
             </div>
 
             {/* Household List */}
             <div className="collector-recent-collections" key={`household-list-${refreshTrigger}-${collectionsToday.length}`}>
-              <h3 className="text-base font-semibold mb-2">
-                {searchQuery ? `Search Results (${filteredHouseholds.length})` : 'All Households'}
+              <h3 className="text-xs font-black text-gray-400 uppercase tracking-widest mb-2 px-1">
+                {searchQuery ? `Results (${filteredHouseholds.length})` : 'Households'}
               </h3>
               {(searchQuery ? filteredHouseholds : households || []).length > 0 ? (
                 <div className="space-y-2">
@@ -1052,46 +1104,53 @@ export default function CollectorDashboard() {
                     return (
                       <div
                         key={`household-${household.id}-${status}-${collectionsToday.length}-${refreshTrigger}`}
-                        className="bg-white p-3 rounded-lg border border-gray-200 cursor-pointer hover:bg-gray-50 transition-colors"
+                        className={`bg-white p-3.5 rounded-2xl border transition-all active:scale-[0.98] ${status === 'completed'
+                          ? 'border-green-200 shadow-sm'
+                          : 'border-gray-100 shadow-sm'
+                          }`}
                         onClick={() => handleHouseholdSelect(household)}
                       >
-                        <div className="flex justify-between items-center">
-                          <div className="flex-1">
-                            <div className="font-medium text-sm">{household.headName}</div>
-                            <div className="text-xs text-gray-600">{household.uid} • House: {household.houseNumber}</div>
+                        <div className="flex items-center gap-3">
+                          {/* Status indicator */}
+                          <div className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 ${status === 'completed'
+                            ? 'bg-green-100'
+                            : 'bg-orange-50'
+                            }`}>
+                            {status === 'completed' ? (
+                              <CheckCircle size={20} className="text-green-500" />
+                            ) : (
+                              <Plus size={18} className="text-orange-400" />
+                            )}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="font-semibold text-sm text-gray-900 truncate">{household.headName}</div>
+                            <div className="text-[10px] text-gray-400 font-medium">#{household.houseNumber} · {household.uid}</div>
                             {todaysCollection && (
-                              <div className="text-xs text-gray-500 mt-1">
-                                Collected at {new Date(todaysCollection.collectionDate || todaysCollection.createdAt).toLocaleTimeString()}
+                              <div className="text-[9px] text-green-500 font-semibold mt-0.5">
+                                ✓ {new Date(todaysCollection.collectionDate || todaysCollection.createdAt).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true })}
                               </div>
                             )}
                           </div>
-                          <div className="flex items-center space-x-2">
-                            <div className={`px-2 py-1 rounded-full text-xs ${status === 'completed'
-                              ? 'bg-green-100 text-green-800'
-                              : 'bg-orange-100 text-orange-800'
-                              }`}>
-                              {status === 'completed' ? '✅ Done' : '⏳ Pending'}
-                            </div>
-                            {status === 'completed' ? (
-                              <Eye size={16} className="text-blue-600" />
-                            ) : (
-                              <Plus size={16} className="text-green-600" />
-                            )}
-                          </div>
+                          <div className={`w-2 h-2 rounded-full flex-shrink-0 ${status === 'completed' ? 'bg-green-400' : 'bg-orange-300'
+                            }`} />
                         </div>
                       </div>
                     );
                   })}
                 </div>
               ) : (
-                <div className="text-center py-6 text-gray-500">
-                  <Home className="mx-auto mb-2" size={24} />
-                  <p className="text-sm">
-                    {searchQuery ? 'No households found' : 'No households assigned'}
+                <div className="text-center py-10">
+                  <div className="w-16 h-16 mx-auto bg-gray-100 rounded-full flex items-center justify-center mb-3">
+                    <Home className="text-gray-300" size={28} />
+                  </div>
+                  <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">
+                    {searchQuery ? 'No results' : 'No households assigned'}
                   </p>
                 </div>
               )}
             </div>
+            {/* spacer so list doesn't hide behind floating button */}
+            <div className="h-16" />
           </div>
         )}
 
@@ -1108,27 +1167,24 @@ export default function CollectorDashboard() {
 
             {/* Attendance status (marked by manager) */}
             {shiftState?.attendanceStatus && (
-              <div className={`rounded-xl p-3 flex items-center gap-3 ${
-                shiftState.attendanceStatus === 'present' ? 'bg-green-50 border border-green-200' :
+              <div className={`rounded-xl p-3 flex items-center gap-3 ${shiftState.attendanceStatus === 'present' ? 'bg-green-50 border border-green-200' :
                 shiftState.attendanceStatus === 'half_day' ? 'bg-yellow-50 border border-yellow-200' :
-                'bg-red-50 border border-red-200'
-              }`}>
-                <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white ${
-                  shiftState.attendanceStatus === 'present' ? 'bg-green-500' :
-                  shiftState.attendanceStatus === 'half_day' ? 'bg-yellow-500' :
-                  'bg-red-500'
+                  'bg-red-50 border border-red-200'
                 }`}>
+                <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white ${shiftState.attendanceStatus === 'present' ? 'bg-green-500' :
+                  shiftState.attendanceStatus === 'half_day' ? 'bg-yellow-500' :
+                    'bg-red-500'
+                  }`}>
                   {shiftState.attendanceStatus === 'present' ? '✓' :
-                   shiftState.attendanceStatus === 'half_day' ? '½' : '✗'}
+                    shiftState.attendanceStatus === 'half_day' ? '½' : '✗'}
                 </div>
                 <div>
-                  <p className={`text-sm font-bold ${
-                    shiftState.attendanceStatus === 'present' ? 'text-green-700' :
+                  <p className={`text-sm font-bold ${shiftState.attendanceStatus === 'present' ? 'text-green-700' :
                     shiftState.attendanceStatus === 'half_day' ? 'text-yellow-700' :
-                    'text-red-700'
-                  }`}>
+                      'text-red-700'
+                    }`}>
                     {shiftState.attendanceStatus === 'present' ? 'Marked Present' :
-                     shiftState.attendanceStatus === 'half_day' ? 'Marked Half Day' : 'Marked Absent'}
+                      shiftState.attendanceStatus === 'half_day' ? 'Marked Half Day' : 'Marked Absent'}
                   </p>
                   <p className="text-[10px] text-gray-400">By Manager</p>
                 </div>
@@ -1148,7 +1204,7 @@ export default function CollectorDashboard() {
                 <button
                   onClick={() => { setShiftScanResult(null); setShowShiftScanner(true); }}
                   disabled={shiftScanMutation.isPending}
-                  className="w-full py-5 bg-green-500 hover:bg-green-600 active:bg-green-700 text-white rounded-2xl text-lg font-bold flex items-center justify-center gap-3 transition-all shadow-lg shadow-green-200"
+                  className="w-full py-5 bg-green-500 hover:bg-green-700 active:bg-green-700 text-white rounded-2xl text-lg font-bold flex items-center justify-center gap-3 transition-all shadow-lg shadow-green-200"
                 >
                   <Camera className="h-7 w-7" />
                   {shiftScanMutation.isPending ? 'Scanning...' : 'SCAN QR TO START SHIFT'}
@@ -1158,7 +1214,7 @@ export default function CollectorDashboard() {
               // Shift active — show status + end button
               <div className="space-y-4">
                 <div className="bg-green-50 border-2 border-green-200 rounded-2xl p-5 text-center">
-                  <div className="text-xs font-bold text-green-600 uppercase tracking-widest mb-1">On Shift</div>
+                  <div className="text-xs font-bold text-green-700 uppercase tracking-widest mb-1">On Shift</div>
                   <p className="text-lg font-bold text-green-700">
                     Shift #{shiftState.currentShiftNumber} · Started at{' '}
                     {new Date(shiftState.shifts[shiftState.shifts.length - 1]?.startedAt).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true })}
@@ -1264,45 +1320,7 @@ export default function CollectorDashboard() {
           </div>
         )}
 
-        {activeTab === 'scan' && (
-          <div className="p-4 space-y-4">
-            <div className="text-center space-y-4">
-              <div className="w-32 h-32 mx-auto bg-gray-100 rounded-lg flex items-center justify-center">
-                <QrCode size={64} className="text-gray-400" />
-              </div>
-              <div>
-                <p className="text-gray-600 mb-4">Point your camera at the household QR code</p>
-                <Button
-                  className="w-full bg-blue-600 hover:bg-blue-700 py-4"
-                  onClick={() => setShowScanner(true)}
-                >
-                  <QrCode className="mr-2" size={20} />
-                  Start Scanning
-                </Button>
-              </div>
-            </div>
 
-            {/* Recent Collections */}
-            <div className="space-y-2">
-              <div className="collector-recent-collections">
-                <h3 className="font-semibold">Recent Collections</h3>
-              </div>
-              {collections?.slice(0, 5).map((collection: any) => (
-                <div key={collection.id} className="flex items-center justify-between p-3 border rounded-lg bg-white">
-                  <div>
-                    <div className="font-medium">{collection.householdUid}</div>
-                    <div className="text-sm text-gray-500">
-                      {new Date(collection.createdAt).toLocaleTimeString()}
-                    </div>
-                  </div>
-                  <Badge variant={collection.status === 'collected' ? 'default' : 'destructive'}>
-                    {collection.status}
-                  </Badge>
-                </div>
-              )) || <p className="text-gray-500 text-center py-4">{t('app.noData')}</p>}
-            </div>
-          </div>
-        )}
 
         {/* ANNOUNCEMENTS TAB */}
         {activeTab === 'announcements' && (
@@ -1313,7 +1331,7 @@ export default function CollectorDashboard() {
 
             {announcementsLoading ? (
               <div className="text-center py-8">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600 mx-auto"></div>
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-700 mx-auto"></div>
                 <p className="text-sm text-gray-500 mt-2">{t('app.loading')}...</p>
               </div>
             ) : announcements && announcements.length > 0 ? (
@@ -1391,7 +1409,7 @@ export default function CollectorDashboard() {
 
             {issuesLoading ? (
               <div className="text-center py-8">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600 mx-auto"></div>
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-700 mx-auto"></div>
                 <p className="text-sm text-gray-500 mt-2">Loading issues...</p>
               </div>
             ) : issues && issues.length > 0 ? (
@@ -1452,7 +1470,7 @@ export default function CollectorDashboard() {
                         {issue.managerReply && (
                           <div className="mt-3 p-3 bg-green-50 rounded-lg border-l-4 border-green-400">
                             <div className="flex items-center space-x-2 mb-1">
-                              <CheckCircle className="w-4 h-4 text-green-600" />
+                              <CheckCircle className="w-4 h-4 text-green-700" />
                               <p className="text-xs font-semibold text-green-800">Manager Response:</p>
                             </div>
                             <p className="text-xs text-green-700 leading-relaxed">{issue.managerReply}</p>
@@ -1469,7 +1487,7 @@ export default function CollectorDashboard() {
                               </div>
                             )}
                             {issue.updatedAt && (
-                              <p className="text-xs text-green-600 mt-1">
+                              <p className="text-xs text-green-700 mt-1">
                                 Updated: {new Date(issue.updatedAt).toLocaleDateString()}
                               </p>
                             )}
@@ -1511,6 +1529,11 @@ export default function CollectorDashboard() {
           </div>
         )}
 
+        {/* WASTE LOG TAB — only if enabled */}
+        {activeTab === 'wastelog' && villageData?.collectorWasteLogEnabled && (
+          <CollectorWasteLog />
+        )}
+
         {/* PROFILE TAB */}
         {activeTab === 'profile' && (
           <div className="p-4 space-y-4">
@@ -1521,7 +1544,7 @@ export default function CollectorDashboard() {
               <CardContent className="space-y-4">
                 <div className="text-center">
                   <div className="w-20 h-20 mx-auto bg-green-100 rounded-full flex items-center justify-center mb-4">
-                    <User size={32} className="text-green-600" />
+                    <User size={32} className="text-green-700" />
                   </div>
                   <h3 className="font-semibold text-lg">{user?.name}</h3>
                   <p className="text-gray-500">{user?.userId}</p>
@@ -1543,6 +1566,14 @@ export default function CollectorDashboard() {
                   <Settings className="mr-3" size={20} />
                   {t('auth.changePassword')}
                 </Button>
+
+                <div className="flex items-center justify-between w-full px-1">
+                  <div className="flex items-center gap-3 text-sm font-medium text-gray-700">
+                    <Globe size={20} className="text-gray-500" />
+                    Language
+                  </div>
+                  <LanguageSwitcher />
+                </div>
 
                 <Button
                   variant="outline"
@@ -1568,233 +1599,122 @@ export default function CollectorDashboard() {
         </DialogContent>
       </Dialog>
 
-      {/* Collection Form Modal */}
-      <Dialog open={showCollectionModal} onOpenChange={setShowCollectionModal}>
-        <DialogContent className="max-w-sm max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle className="text-center">📋 {t('collections.collectionForm')}</DialogTitle>
-          </DialogHeader>
+      {/* Submit / Success Page */}
+      {submitOverlayState !== 'hidden' && (
+        <div className="fixed left-0 right-0 bottom-0 top-[48px] z-[55] flex flex-col items-center justify-center bg-gradient-to-b from-green-500 to-emerald-600"
+          style={{ animation: 'fadeIn 0.25s ease-out' }}>
 
-          <div className="space-y-6">
-            {/* Household Info */}
-            <div className="text-center p-4 bg-blue-50 rounded-xl border-2 border-blue-200">
-              <div className="text-2xl mb-2">🏠</div>
-              <p className="font-bold text-lg">{scannedHousehold?.headName}</p>
-              <p className="text-sm text-gray-600">{scannedHousehold?.uid}</p>
-              <p className="text-xs text-gray-500">{scannedHousehold?.houseNumber}</p>
+          {/* X close button */}
+          <button
+            onClick={() => {
+              setSubmitOverlayState('hidden');
+              setShowCollectionModal(false);
+            }}
+            className="absolute top-4 right-4 w-9 h-9 rounded-full bg-white/20 flex items-center justify-center active:scale-90 transition-all"
+          >
+            <XCircle className="h-5 w-5 text-white" />
+          </button>
+
+          {submitOverlayState === 'submitting' ? (
+            /* Processing — upload icon with transaction animation */
+            <div className="text-center">
+              <div className="w-24 h-24 rounded-full bg-white/90 mx-auto mb-5 flex items-center justify-center shadow-xl">
+                <Upload className="h-12 w-12 text-green-700" style={{ animation: 'uploadBounce 1s ease-in-out infinite' }} />
+              </div>
+              <p className="text-white text-2xl font-black" style={{ animation: 'pulseOpacity 1.5s ease-in-out infinite' }}>
+                Submitting...
+              </p>
             </div>
+          ) : (
+            /* Success — checkmark bounces in + text */
+            <>
+              <div className="w-24 h-24 rounded-full bg-white mx-auto mb-5 flex items-center justify-center shadow-xl"
+                style={{ animation: 'bounceIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275)' }}>
+                <CheckCircle className="h-14 w-14 text-green-500" />
+              </div>
+              <p className="text-white text-2xl font-black" style={{ animation: 'fadeIn 0.4s ease-out 0.3s both' }}>
+                Collection Recorded!
+              </p>
+              <p className="text-center text-white/70 text-sm mt-1" style={{ animation: 'fadeIn 0.4s ease-out 0.5s both' }}>
+                Thank you for keeping our community clean and green!
+              </p>
+            </>
+          )}
 
-            {/* Waste Segregated? - REQUIRED */}
-            <div className="p-4 border-2 border-orange-200 bg-orange-50 rounded-xl">
-              <Label className="text-lg font-bold text-center block mb-3">
-                🗂️ {t('collections.wasteProperlySegregated')} *
-              </Label>
-              <div className="flex space-x-3">
-                <Button
-                  variant={collectionForm.wasteSegregated === true ? "default" : "outline"}
-                  onClick={() => setCollectionForm({ ...collectionForm, wasteSegregated: true })}
-                  className={`flex-1 py-4 text-lg font-bold ${collectionForm.wasteSegregated === true
-                    ? 'bg-green-600 hover:bg-green-700 text-white'
-                    : 'bg-white border-2 border-green-300 text-green-700 hover:bg-green-50'
+          <style>{`
+            @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+            @keyframes uploadBounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
+            @keyframes pulseOpacity { 0%, 100% { opacity: 0.7; } 50% { opacity: 1; } }
+            @keyframes bounceIn { 0% { transform: scale(0.3); opacity: 0; } 50% { transform: scale(1.1); } 70% { transform: scale(0.95); } 100% { transform: scale(1); opacity: 1; } }
+          `}</style>
+        </div>
+      )}
+
+      {/* Collection Form — Full Screen Premium Overlay */}
+      {showCollectionModal && (
+        <div className="fixed inset-0 z-50 bg-gray-50 flex flex-col max-w-md mx-auto">
+          {/* Header */}
+          <div className="bg-gradient-to-r from-green-700 to-emerald-600 text-white px-4 pt-4 pb-5 flex items-center gap-3 shadow-lg flex-shrink-0">
+            <div className="flex-1 min-w-0">
+              <h2 className="text-lg font-bold truncate">{scannedHousehold?.headName}</h2>
+              <p className="text-xs text-white/70 font-medium">#{scannedHousehold?.houseNumber} · {scannedHousehold?.uid}</p>
+            </div>
+            <button
+              onClick={() => { setShowCollectionModal(false); resetForm(); }}
+              className="w-9 h-9 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center active:scale-90 transition-all"
+            >
+              <XCircle className="h-5 w-5 text-white" />
+            </button>
+          </div>
+
+          {/* Scrollable Form Body */}
+          <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4">
+
+            {/* 1. Collection Status — FIRST QUESTION */}
+            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4">
+              <p className="text-xs font-black text-gray-500 uppercase tracking-widest mb-3 text-center">
+                {t('collections.wasteCollectionStatus')}
+              </p>
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setCollectionForm({ ...collectionForm, wasteAccepted: true, notCollectedReason: '' })}
+                  className={`flex-1 py-3.5 rounded-2xl text-sm font-bold flex items-center justify-center gap-2 transition-all active:scale-95 ${collectionForm.wasteAccepted === true
+                    ? 'bg-green-500 text-white shadow-md shadow-green-200'
+                    : 'bg-green-50 text-green-700 border-2 border-green-200'
                     }`}
                 >
-                  ✅ {t('app.yes')}
-                </Button>
-                <Button
-                  variant={collectionForm.wasteSegregated === false ? "destructive" : "outline"}
-                  onClick={() => setCollectionForm({ ...collectionForm, wasteSegregated: false })}
-                  className={`flex-1 py-4 text-lg font-bold ${collectionForm.wasteSegregated === false
-                    ? 'bg-red-600 hover:bg-red-700 text-white'
-                    : 'bg-white border-2 border-red-300 text-red-700 hover:bg-red-50'
-                    }`}
-                >
-                  ❌ {t('app.no')}
-                </Button>
-              </div>
-            </div>
-
-            {/* Segregation Rating - REQUIRED */}
-            <div className="p-4 border-2 border-yellow-200 bg-yellow-50 rounded-xl">
-              <Label className="text-lg font-bold text-center block mb-3">
-                ⭐ {t('collections.howGoodSegregation')} *
-              </Label>
-              <div className="flex justify-center space-x-2">
-                {[1, 2, 3, 4, 5].map((rating) => (
-                  <button
-                    key={rating}
-                    type="button"
-                    className={`w-12 h-12 rounded-full border-2 transition-all hover:scale-110 ${rating <= collectionForm.segregationRating
-                      ? 'bg-yellow-400 border-yellow-500 shadow-lg'
-                      : 'bg-white border-gray-300'
-                      }`}
-                    onClick={() => handleStarClick('segregation', rating)}
-                  >
-                    <div className="text-2xl">
-                      {rating <= collectionForm.segregationRating ? '⭐' : '☆'}
-                    </div>
-                  </button>
-                ))}
-              </div>
-              <div className="text-center mt-2 text-sm text-gray-600">
-                {collectionForm.segregationRating === 0 && t('collections.selectRating')}
-                {collectionForm.segregationRating === 1 && `😞 ${t('collections.veryPoor')}`}
-                {collectionForm.segregationRating === 2 && `😐 ${t('collections.poor')}`}
-                {collectionForm.segregationRating === 3 && `🙂 ${t('collections.good')}`}
-                {collectionForm.segregationRating === 4 && `😊 ${t('collections.veryGood')}`}
-                {collectionForm.segregationRating === 5 && `🤩 ${t('collections.excellent')}`}
-              </div>
-            </div>
-
-            {/* Waste Types - auto-preselected, collector can adjust */}
-            {collectionForm.wasteAccepted !== false && (
-              <div className="p-4 border-2 border-teal-200 bg-teal-50 rounded-xl">
-                <Label className="text-sm font-bold text-center block mb-3">
-                  🗑️ Waste Type Collected
-                </Label>
-                <div className="flex flex-wrap gap-2 justify-center">
-                  {[
-                    { key: 'wet', label: '🟢 Wet', color: 'green' },
-                    { key: 'dry', label: '🔵 Dry', color: 'blue' },
-                    { key: 'sanitary', label: '🟣 Sanitary', color: 'purple' },
-                    { key: 'special_care', label: '🟡 Special Care', color: 'yellow' },
-                    { key: 'mixed', label: '⚫ Mixed', color: 'gray' },
-                  ].map(({ key, label, color }) => (
-                    <button
-                      key={key}
-                      type="button"
-                      onClick={() => toggleWasteType(key)}
-                      className={`px-3 py-2 rounded-full text-sm font-bold transition-all active:scale-95 ${
-                        collectionForm.wasteTypes.includes(key)
-                          ? `bg-${color}-500 text-white shadow-md ring-2 ring-${color}-300`
-                          : `bg-white border-2 border-${color}-200 text-${color}-700 hover:bg-${color}-50`
-                      }`}
-                      style={collectionForm.wasteTypes.includes(key) ? {
-                        backgroundColor: color === 'green' ? '#22c55e' : color === 'blue' ? '#3b82f6' : color === 'purple' ? '#a855f7' : color === 'yellow' ? '#eab308' : '#6b7280',
-                        color: 'white',
-                      } : {}}
-                    >
-                      {label}
-                    </button>
-                  ))}
-                </div>
-                <p className="text-[10px] text-center text-gray-400 mt-2">Auto-selected based on segregation. Tap to change.</p>
-              </div>
-            )}
-
-            {/* Weight Input - only if village has weight configured */}
-            {collectionForm.wasteAccepted !== false && villageData?.weightRequired && (
-              <div className="p-4 border-2 border-indigo-200 bg-indigo-50 rounded-xl">
-                <Label className="text-sm font-bold text-center block mb-2">
-                  ⚖️ Estimated Weight (kg)
-                </Label>
-                <Input
-                  type="number"
-                  step="0.1"
-                  min="0"
-                  value={collectionForm.weightKg}
-                  onChange={(e) => setCollectionForm({ ...collectionForm, weightKg: e.target.value })}
-                  placeholder="Enter weight in kg"
-                  className="text-center text-lg font-bold"
-                />
-              </div>
-            )}
-
-            {/* Plastic Reduced? */}
-            {/* <div className="p-3 border border-gray-200 bg-gray-50 rounded-xl">
-              <Label className="text-base font-bold text-center block mb-3">
-                ♻️ {t('collections.isPlasticReduced')}
-              </Label>
-              <div className="flex space-x-3">
-                <Button
-                  variant={collectionForm.plasticReduced === true ? "default" : "outline"}
-                  onClick={() => setCollectionForm({...collectionForm, plasticReduced: true})}
-                  className={`flex-1 py-3 text-base font-bold ${
-                    collectionForm.plasticReduced === true 
-                      ? 'bg-green-500 hover:bg-green-600' 
-                      : 'border-green-300 text-green-700 hover:bg-green-50'
-                  }`}
-                >
-                  ✅ {t('app.yes')}
-                </Button>
-                <Button
-                  variant={collectionForm.plasticReduced === false ? "destructive" : "outline"}
-                  onClick={() => setCollectionForm({...collectionForm, plasticReduced: false})}
-                  className={`flex-1 py-3 text-base font-bold ${
-                    collectionForm.plasticReduced === false 
-                      ? 'bg-red-500 hover:bg-red-600' 
-                      : 'border-red-300 text-red-700 hover:bg-red-50'
-                  }`}
-                >
-                  ❌ {t('app.no')}
-                </Button>
-              </div>
-            </div> */}
-
-            {/* Wet Waste Composting */}
-            {/* <div className="p-3 border border-gray-200 bg-gray-50 rounded-xl">
-              <Label className="text-base font-bold text-center block mb-3">
-                🌱 {t('collections.isWetWasteComposting')}
-              </Label>
-              <div className="flex space-x-3">
-                <Button
-                  variant={collectionForm.wetWasteComposting === true ? "default" : "outline"}
-                  onClick={() => setCollectionForm({...collectionForm, wetWasteComposting: true})}
-                  className={`flex-1 py-3 text-base font-bold ${
-                    collectionForm.wetWasteComposting === true 
-                      ? 'bg-green-500 hover:bg-green-600' 
-                      : 'border-green-300 text-green-700 hover:bg-green-50'
-                  }`}
-                >
-                  ✅ {t('app.yes')}
-                </Button>
-                <Button
-                  variant={collectionForm.wetWasteComposting === false ? "destructive" : "outline"}
-                  onClick={() => setCollectionForm({...collectionForm, wetWasteComposting: false})}
-                  className={`flex-1 py-3 text-base font-bold ${
-                    collectionForm.wetWasteComposting === false 
-                      ? 'bg-red-500 hover:bg-red-600' 
-                      : 'border-red-300 text-red-700 hover:bg-red-50'
-                  }`}
-                >
-                  ❌ {t('app.no')}
-                </Button>
-              </div>
-            </div> */}
-
-
-
-            {/* Waste Accepted? */}
-            <div>
-              <Label className="text-sm font-medium">{t('collections.wasteCollectionStatus')}</Label>
-              <div className="flex space-x-4 mt-2">
-                <Button
-                  variant={collectionForm.wasteAccepted === true ? "default" : "outline"}
-                  onClick={() => setCollectionForm({ ...collectionForm, wasteAccepted: true })}
-                  className="flex-1"
-                >
-                  <CheckCircle className="mr-2" size={16} />
-                  {t('collections.collected')}
-                </Button>
-                <Button
-                  variant={collectionForm.wasteAccepted === false ? "destructive" : "outline"}
+                  <CheckCircle size={18} /> {t('collections.collected')}
+                </button>
+                <button
                   onClick={() => setCollectionForm({ ...collectionForm, wasteAccepted: false })}
-                  className="flex-1"
+                  className={`flex-1 py-3.5 rounded-2xl text-sm font-bold flex items-center justify-center gap-2 transition-all active:scale-95 ${collectionForm.wasteAccepted === false
+                    ? 'bg-red-500 text-white shadow-md shadow-red-200'
+                    : 'bg-red-50 text-red-700 border-2 border-red-200'
+                    }`}
                 >
-                  <XCircle className="mr-2" size={16} />
-                  {t('collections.notCollected')}
-                </Button>
+                  <XCircle size={18} /> {t('collections.notCollected')}
+                </button>
               </div>
             </div>
 
-            {/* If not collected, show reason */}
+            {/* 1b. Reason if not collected */}
             {collectionForm.wasteAccepted === false && (
-              <div>
-                <Label className="text-sm font-medium">{t('collections.reasonNotCollecting')}</Label>
+              <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4">
+                <p className="text-xs font-black text-gray-500 uppercase tracking-widest mb-2 text-center">
+                  {t('collections.reasonNotCollecting')}
+                </p>
                 <Select
                   value={collectionForm.notCollectedReason}
-                  onValueChange={(value) => setCollectionForm({ ...collectionForm, notCollectedReason: value })}
+                  onValueChange={(value) => {
+                    const updates: any = { notCollectedReason: value };
+                    if (value === 'Waste Not segregated') {
+                      updates.wasteSegregated = false;
+                      updates.segregationRating = 2;
+                    }
+                    setCollectionForm({ ...collectionForm, ...updates });
+                  }}
                 >
-                  <SelectTrigger className="mt-2">
+                  <SelectTrigger className="rounded-2xl h-12 text-sm font-semibold">
                     <SelectValue placeholder={t('collections.selectReason')} />
                   </SelectTrigger>
                   <SelectContent>
@@ -1806,110 +1726,187 @@ export default function CollectorDashboard() {
               </div>
             )}
 
-            {/* Photo Upload - Conditional Requirement */}
-            <div className={`p-4 border-2 rounded-xl ${isPhotoRequired
-              ? 'border-red-200 bg-red-50'
-              : 'border-blue-200 bg-blue-50'
-              }`}>
-              <Label className="text-lg font-bold text-center block mb-3">
-                📸 Take Photo of Waste {isPhotoRequired ? '*' : '(Optional)'}
-              </Label>
+            {/* Show segregation sections: when collected OR when not-collected reason is 'Waste Not segregated' */}
+            {(collectionForm.wasteAccepted === true || (collectionForm.wasteAccepted === false && collectionForm.notCollectedReason === 'Waste Not segregated')) && (
+              <>
+                {/* Waste Segregated? */}
+                <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4">
+                  <p className="text-xs font-black text-gray-500 uppercase tracking-widest mb-3 text-center">
+                    {t('collections.wasteProperlySegregated')}
+                  </p>
+                  <div className="flex gap-3">
+                    <button
+                      onClick={() => setCollectionForm({ ...collectionForm, wasteSegregated: true, segregationRating: 4 })}
+                      className={`flex-1 py-4 rounded-2xl text-base font-bold transition-all active:scale-95 ${collectionForm.wasteSegregated === true
+                        ? 'bg-green-500 text-white shadow-md shadow-green-200'
+                        : 'bg-green-50 text-green-700 border-2 border-green-200'
+                        }`}
+                    >
+                      ✅ {t('app.yes')}
+                    </button>
+                    <button
+                      onClick={() => setCollectionForm({ ...collectionForm, wasteSegregated: false, segregationRating: 2 })}
+                      className={`flex-1 py-4 rounded-2xl text-base font-bold transition-all active:scale-95 ${collectionForm.wasteSegregated === false
+                        ? 'bg-red-500 text-white shadow-md shadow-red-200'
+                        : 'bg-red-50 text-red-700 border-2 border-red-200'
+                        }`}
+                    >
+                      ❌ {t('app.no')}
+                    </button>
+                  </div>
+                </div>
+
+                {/* Star Rating */}
+                <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4">
+                  <p className="text-xs font-black text-gray-500 uppercase tracking-widest mb-3 text-center">
+                    {t('collections.howGoodSegregation')}
+                  </p>
+                  <div className="flex justify-center gap-2.5">
+                    {[1, 2, 3, 4, 5].map((rating) => (
+                      <button
+                        key={rating}
+                        type="button"
+                        className={`w-12 h-12 rounded-full transition-all active:scale-90 ${rating <= collectionForm.segregationRating
+                          ? 'bg-amber-400 shadow-lg shadow-amber-200 scale-110'
+                          : 'bg-gray-100'
+                          }`}
+                        onClick={() => handleStarClick('segregation', rating)}
+                      >
+                        <span className="text-xl">{rating <= collectionForm.segregationRating ? '⭐' : '☆'}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </>
+            )}
+
+            {/* Sections only when collected */}
+            {collectionForm.wasteAccepted === true && (
+              <>
+                {/* Waste Types */}
+                <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4">
+                  <p className="text-xs font-black text-gray-500 uppercase tracking-widest mb-3 text-center">
+                    Type Of Waste Recieved
+                  </p>
+                  <div className="flex flex-wrap gap-2 justify-center">
+                    {[
+                      { key: 'wet', label: 'Wet', emoji: '🟢', bg: '#22c55e' },
+                      { key: 'dry', label: 'Dry', emoji: '🔵', bg: '#3b82f6' },
+                      { key: 'sanitary', label: 'Sanitary', emoji: '🟣', bg: '#a855f7' },
+                      { key: 'special_care', label: 'Special', emoji: '🟡', bg: '#eab308' },
+                      { key: 'mixed', label: 'Mixed', emoji: '⚫', bg: '#6b7280' },
+                    ].map(({ key, label, emoji, bg }) => (
+                      <button
+                        key={key}
+                        type="button"
+                        onClick={() => toggleWasteType(key)}
+                        className={`px-4 py-2.5 rounded-2xl text-sm font-bold transition-all active:scale-95 ${collectionForm.wasteTypes.includes(key)
+                          ? 'text-white shadow-md'
+                          : 'bg-gray-50 text-gray-600 border-2 border-gray-200'
+                          }`}
+                        style={collectionForm.wasteTypes.includes(key) ? { backgroundColor: bg } : {}}
+                      >
+                        {emoji} {label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Weight */}
+                {villageData?.weightRequired && (
+                  <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4">
+                    <p className="text-xs font-black text-gray-500 uppercase tracking-widest mb-2 text-center">
+                      Weight of Waste Recieved (kg)
+                    </p>
+                    <Input
+                      type="number"
+                      step="0.1"
+                      min="0"
+                      value={collectionForm.weightKg}
+                      onChange={(e) => setCollectionForm({ ...collectionForm, weightKg: e.target.value })}
+                      placeholder="0.0"
+                      className="text-center text-2xl font-black h-14 rounded-2xl border-2 border-gray-200 bg-gray-50"
+                    />
+                  </div>
+                )}
+              </>
+            )}
+
+            {/* 6. Photo */}
+            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4">
+              <p className="text-xs font-black text-gray-500 uppercase tracking-widest mb-3 text-center">
+                📸 Photo {isPhotoRequired ? '(Required)' : '(Optional)'}
+              </p>
               {isPhotoRequired && collectionForm.segregationRating <= 3 && collectionForm.segregationRating > 0 && (
-                <p className="text-sm text-red-600 text-center mb-3">
-                  📋 Photo required for low rating (≤ 3 stars)
-                </p>
+                <p className="text-[10px] text-red-500 text-center mb-2 font-semibold">Required for low rating</p>
               )}
               <div className="relative">
                 <input
                   type="file"
                   accept="image/*"
                   capture="environment"
-                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
                   onChange={(e) => {
                     const file = e.target.files?.[0] || null;
                     setCollectionForm({ ...collectionForm, photoFile: file });
                   }}
                 />
-                <div className={`border-4 border-dashed rounded-xl p-6 text-center transition-all ${collectionForm.photoFile
+                <div className={`rounded-2xl py-6 text-center transition-all border-2 border-dashed ${collectionForm.photoFile
                   ? 'border-green-400 bg-green-50'
                   : isPhotoRequired
-                    ? 'border-red-300 bg-white hover:bg-red-50'
-                    : 'border-blue-300 bg-white hover:bg-blue-50'
+                    ? 'border-red-300 bg-red-50/30'
+                    : 'border-gray-200 bg-gray-50'
                   }`}>
                   {collectionForm.photoFile ? (
                     <>
-                      <div className="text-4xl mb-2">✅</div>
-                      <p className="text-lg font-bold text-green-700">Photo Taken!</p>
-                      <p className="text-sm text-gray-600">{collectionForm.photoFile.name}</p>
+                      <CheckCircle className="h-10 w-10 text-green-500 mx-auto mb-1" />
+                      <p className="text-sm font-bold text-green-700">Photo Taken ✓</p>
                     </>
                   ) : (
                     <>
-                      <div className="text-4xl mb-2">📸</div>
-                      <p className={`text-lg font-bold ${isPhotoRequired ? 'text-red-700' : 'text-blue-700'
-                        }`}>Tap to Take Photo</p>
-                      <p className="text-sm text-gray-600">
-                        {isPhotoRequired ? 'Required for collection' : 'Optional - tap if needed'}
-                      </p>
+                      <Camera className="h-10 w-10 text-gray-300 mx-auto mb-1" />
+                      <p className="text-sm font-bold text-gray-500">Tap to Capture</p>
                     </>
                   )}
                 </div>
               </div>
             </div>
 
-
-            {/* Voice Recording or Text Comments */}
-            <div className="p-3 border border-gray-200 bg-gray-50 rounded-xl">
-              <Label className="text-base font-bold text-center block mb-3">
+            {/* 7. Voice / Remarks */}
+            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4">
+              <p className="text-xs font-black text-gray-500 uppercase tracking-widest mb-3 text-center">
                 💬 {t('collections.remarks')} ({t('app.optional')})
-              </Label>
-
-              {/* Voice Recording */}
-              <div className="mb-3">
-                <Button
-                  onClick={isRecording ? stopVoiceRecording : startVoiceRecording}
-                  className={`w-full py-4 text-lg font-bold ${isRecording
-                    ? 'bg-red-500 hover:bg-red-600 animate-pulse'
-                    : collectionForm.voiceRecording
-                      ? 'bg-green-500 hover:bg-green-600'
-                      : 'bg-blue-500 hover:bg-blue-600'
-                    }`}
-                  disabled={createCollectionMutation.isPending}
-                >
-                  {isRecording ? (
-                    <>🔴 {t('collections.stopRecording')}</>
-                  ) : collectionForm.voiceRecording ? (
-                    <>✅ {t('collections.voiceRecorded')}</>
-                  ) : (
-                    <>🎤 {t('collections.recordVoice')}</>
-                  )}
-                </Button>
-              </div>
-
-              {/* Text Input */}
-              <div className="text-center text-sm text-gray-600 mb-2">{t('app.or')}</div>
+              </p>
+              <button
+                onClick={isRecording ? stopVoiceRecording : startVoiceRecording}
+                disabled={createCollectionMutation.isPending}
+                className={`w-full py-3.5 rounded-2xl text-sm font-bold flex items-center justify-center gap-2 mb-3 transition-all active:scale-95 ${isRecording
+                  ? 'bg-red-500 text-white animate-pulse shadow-md shadow-red-200'
+                  : collectionForm.voiceRecording
+                    ? 'bg-green-500 text-white shadow-md shadow-green-200'
+                    : 'bg-blue-50 text-blue-600 border-2 border-blue-200'
+                  }`}
+              >
+                {isRecording ? '🔴 ' + t('collections.stopRecording')
+                  : collectionForm.voiceRecording ? '✅ ' + t('collections.voiceRecorded')
+                    : '🎤 ' + t('collections.recordVoice')}
+              </button>
               <Textarea
                 placeholder={t('collections.typeComments')}
                 rows={2}
                 value={collectionForm.remarks}
                 onChange={(e) => setCollectionForm({ ...collectionForm, remarks: e.target.value })}
-                className="text-base"
+                className="rounded-2xl border-gray-200 text-sm"
               />
             </div>
 
-            {/* Submit Button */}
-            <Button
-              className={`w-full py-6 text-xl font-bold ${
-                // Check if required fields are filled (including conditional photo requirement)
-                collectionForm.wasteSegregated !== null &&
-                  collectionForm.segregationRating > 0 &&
-                  (isPhotoRequired ? collectionForm.photoFile : true) &&
-                  collectionForm.wasteAccepted !== null &&
-                  (collectionForm.wasteAccepted || collectionForm.notCollectedReason)
-                  ? isOnline
-                    ? 'bg-green-600 hover:bg-green-700 text-white'
-                    : 'bg-blue-600 hover:bg-blue-700 text-white'
-                  : 'bg-gray-400 text-gray-600 cursor-not-allowed'
-                }`}
+            {/* Bottom spacer */}
+            <div className="h-20" />
+          </div>
+
+          {/* Sticky Bottom Submit */}
+          <div className="flex-shrink-0 bg-white/95 backdrop-blur-sm border-t border-gray-100 px-4 py-3 shadow-[0_-4px_12px_rgba(0,0,0,0.05)]">
+            <button
               onClick={() => setShowConfirmSubmit(true)}
               disabled={
                 createCollectionMutation.isPending ||
@@ -1919,21 +1916,29 @@ export default function CollectorDashboard() {
                 collectionForm.wasteAccepted === null ||
                 (collectionForm.wasteAccepted === false && !collectionForm.notCollectedReason)
               }
+              className={`w-full py-4 rounded-2xl text-base font-black uppercase tracking-wider flex items-center justify-center gap-2 transition-all active:scale-[0.97] ${collectionForm.wasteSegregated !== null &&
+                collectionForm.segregationRating > 0 &&
+                (isPhotoRequired ? collectionForm.photoFile : true) &&
+                collectionForm.wasteAccepted !== null &&
+                (collectionForm.wasteAccepted || collectionForm.notCollectedReason)
+                ? isOnline
+                  ? 'bg-gradient-to-r from-green-500 to-emerald-600 text-white shadow-lg shadow-green-200'
+                  : 'bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-lg shadow-blue-200'
+                : 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                }`}
             >
               {createCollectionMutation.isPending ? (
                 <>
-                  <div className="animate-spin rounded-full h-6 w-6 border-2 border-white border-t-transparent mr-3" />
-                  {isOnline ? 'Submitting...' : 'Saving Offline...'}
+                  <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent" />
+                  {isOnline ? 'Submitting...' : 'Saving...'}
                 </>
               ) : (
-                <>
-                  {isOnline ? '✅ SUBMIT COLLECTION' : '💾 SAVE OFFLINE'}
-                </>
+                isOnline ? '✅ Submit Collection' : '💾 Save Offline'
               )}
-            </Button>
+            </button>
           </div>
-        </DialogContent>
-      </Dialog>
+        </div>
+      )}
 
       {/* Issue Report Modal - Enhanced Mobile-First Design */}
       <Dialog open={showIssueModal} onOpenChange={setShowIssueModal}>
@@ -2070,7 +2075,7 @@ export default function CollectorDashboard() {
                   {newIssue.photoFile ? (
                     <div className="text-center">
                       <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-2">
-                        <Camera className="w-8 h-8 text-green-600" />
+                        <Camera className="w-8 h-8 text-green-700" />
                       </div>
                       <p className="text-sm font-medium text-green-700">
                         📷 {newIssue.photoFile.name}
@@ -2211,21 +2216,17 @@ export default function CollectorDashboard() {
               </Button>
               <Button
                 onClick={() => {
-                  if (isSubmitLocked || createCollectionMutation.isPending) return; // 💥 Stop if already clicked
-                  setIsSubmitLocked(true); // 🔒 Lock after first click
+                  if (isSubmitLocked || createCollectionMutation.isPending) return;
+                  setIsSubmitLocked(true);
+                  setShowConfirmSubmit(false);
+                  setShowCollectionModal(false);
+                  setSubmitOverlayState('submitting');
                   handleSubmitCollection();
                 }}
-                className="flex-1 py-3 text-lg bg-green-600 hover:bg-green-700 text-white disabled:opacity-60 disabled:cursor-not-allowed"
+                className="flex-1 py-3 text-lg bg-green-700 hover:bg-green-700 text-white disabled:opacity-60 disabled:cursor-not-allowed"
                 disabled={isSubmitLocked || createCollectionMutation.isPending}
               >
-                {(isSubmitLocked || createCollectionMutation.isPending) ? (
-                  <>
-                    <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent mr-2" />
-                    Submitting...
-                  </>
-                ) : (
-                  <>✅ OK, SUBMIT</>
-                )}
+                ✅ OK, SUBMIT
               </Button>
 
 
@@ -2248,7 +2249,7 @@ export default function CollectorDashboard() {
                 <div className="text-2xl mb-2">✅</div>
                 <p className="font-bold text-lg">{scannedHousehold?.headName}</p>
                 <p className="text-sm text-gray-600">{scannedHousehold?.uid}</p>
-                <p className="text-xs text-green-600 font-medium">Already collected today!</p>
+                <p className="text-xs text-green-700 font-medium">Already collected today!</p>
               </div>
 
               {/* Collection Info */}
@@ -2306,59 +2307,106 @@ export default function CollectorDashboard() {
         </DialogContent>
       </Dialog>
 
-      {/* Bottom Navigation */}
-      <div className="fixed bottom-0 left-1/2 transform -translate-x-1/2 w-full max-w-md bg-green-100 border-t border-gray-200 z-20 rounded-lg">
-        <div className={`grid gap-1 p-2 ${villageData?.attendanceEnabled ? 'grid-cols-5' : 'grid-cols-4'}`}>
+      {/* Premium Bottom Navigation with Elliptical Notch */}
+      <div className="fixed bottom-0 left-1/2 transform -translate-x-1/2 w-full max-w-md z-30">
+        {/* Center FAB — raised circle */}
+        <div className="absolute left-1/2 transform -translate-x-1/2 -top-6 z-10">
           <button
-            className={`collector-home-tab flex flex-col items-center py-2 px-1 rounded-lg transition-colors ${activeTab === 'home'
-              ? 'bg-green-200 text-green-600'
-              : 'text-gray-500 hover:text-green-600 hover:bg-gray-50'
-              }`}
-            onClick={() => setActiveTab('home')}
-          >
-            <Home size={22} strokeWidth={2.5} />
-          </button>
-          <button
-            className={`collector-scan-tab flex flex-col items-center py-2 px-1 rounded-lg transition-colors ${activeTab === 'scan'
-              ? 'bg-blue-100 text-blue-600'
-              : 'text-gray-500 hover:text-blue-600 hover:bg-gray-50'
-              }`}
             onClick={() => {
-              setActiveTab('scan');
-              setShowScanner(true);
+              if (activeTab === 'home') {
+                setShowScanner(true);
+              } else {
+                setActiveTab('home');
+              }
             }}
+            className={`w-[58px] h-[58px] rounded-full bg-gradient-to-br ${activeTab === 'home'
+              ? 'from-blue-500 via-blue-600 to-blue-700 shadow-blue-500/40'
+              : 'from-green-500 via-emerald-500 to-green-700 shadow-green-500/40'
+              } shadow-xl flex items-center justify-center active:scale-90 transition-all ring-[5px] ring-white`}
           >
-            <ScanLine size={22} strokeWidth={2.5} />
+            {activeTab === 'home' ? (
+              <ScanLine className="h-7 w-7 text-white" strokeWidth={2.5} />
+            ) : (
+              <Home className="h-7 w-7 text-white" strokeWidth={2.5} />
+            )}
           </button>
-                    {villageData?.attendanceEnabled && (
+        </div>
+
+        {/* Nav bar with SVG elliptical notch background */}
+        <div className="relative pt-3">
+          {/* SVG background — draws the nav shape with curved notch */}
+          <svg
+            className="absolute top-0 left-0 w-full h-full"
+            viewBox="0 0 400 68"
+            preserveAspectRatio="none"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <defs>
+              <filter id="navShadow">
+                <feDropShadow dx="0" dy="-3" stdDeviation="5" floodColor="rgba(0,0,0,0.07)" />
+              </filter>
+            </defs>
+            <path
+              d="M 0 68 L 0 18 Q 0 2, 16 2 L 148 2 C 162 2, 170 32, 200 32 C 230 32, 238 2, 252 2 L 384 2 Q 400 2, 400 18 L 400 68 Z"
+              fill="white"
+              filter="url(#navShadow)"
+            />
+          </svg>
+
+          {/* Tab buttons — 2 left + spacer + 2 right */}
+          <div className="relative flex items-end justify-around px-3 pt-1 pb-3">
+            {/* Left group */}
+            {villageData?.attendanceEnabled && (
+              <button
+                className={`flex flex-col items-center gap-0.5 py-1 px-3 rounded-xl transition-all ${activeTab === 'shift'
+                  ? 'text-orange-500'
+                  : 'text-gray-400'
+                  }`}
+                onClick={() => setActiveTab('shift')}
+              >
+                <Clock size={25} strokeWidth={activeTab === 'shift' ? 2.5 : 2} />
+              </button>
+            )}
+
             <button
-              className={`flex flex-col items-center py-2 px-1 rounded-lg transition-colors ${activeTab === 'shift'
-                ? 'bg-orange-100 text-orange-600'
-                : 'text-gray-500 hover:text-orange-600 hover:bg-gray-50'
+              className={`flex flex-col items-center gap-0.5 py-1 px-3 rounded-xl transition-all ${activeTab === 'announcements'
+                ? 'text-blue-600'
+                : 'text-gray-400'
                 }`}
-              onClick={() => setActiveTab('shift')}
+              onClick={() => setActiveTab('announcements')}
             >
-              <Clock size={22} strokeWidth={2.5} />
+              <Bell size={25} strokeWidth={activeTab === 'announcements' ? 2.5 : 2} />
             </button>
-          )}
-          <button
-            className={`collector-announcements-tab flex flex-col items-center py-2 px-1 rounded-lg transition-colors ${activeTab === 'announcements'
-              ? 'bg-blue-100 text-blue-600'
-              : 'text-gray-500 hover:text-blue-600 hover:bg-gray-50'
-              }`}
-            onClick={() => setActiveTab('announcements')}
-          >
-            <Bell size={22} strokeWidth={2.5} />
-          </button>
-          <button
-            className={`collector-profile-tab flex flex-col items-center py-2 px-1 rounded-lg transition-colors ${activeTab === 'profile'
-              ? 'bg-gray-100 text-gray-600'
-              : 'text-gray-500 hover:text-gray-600 hover:bg-gray-50'
-              }`}
-            onClick={() => setActiveTab('profile')}
-          >
-            <User size={22} strokeWidth={2.5} />
-          </button>
+
+            {/* Center spacer for FAB notch */}
+            <div className="w-20 flex-shrink-0" />
+
+            {/* Right group */}
+            {villageData?.collectorWasteLogEnabled && (
+              <button
+                className={`flex flex-col items-center gap-0.5 py-1 px-3 rounded-xl transition-all ${activeTab === 'wastelog'
+                  ? 'text-emerald-600'
+                  : 'text-gray-400'
+                  }`}
+                onClick={() => setActiveTab('wastelog')}
+              >
+                <Trash2 size={25} strokeWidth={activeTab === 'wastelog' ? 2.5 : 2} />
+              </button>
+            )}
+
+            {/* Me button — only in nav when even total tabs */}
+            {((villageData?.attendanceEnabled ? 1 : 0) + 1 + (villageData?.collectorWasteLogEnabled ? 1 : 0) + 1) % 2 === 0 && (
+              <button
+                className={`flex flex-col items-center gap-0.5 py-1 px-3 rounded-xl transition-all ${activeTab === 'profile'
+                  ? 'text-gray-700'
+                  : 'text-gray-400'
+                  }`}
+                onClick={() => setActiveTab('profile')}
+              >
+                <User size={25} strokeWidth={activeTab === 'profile' ? 2.5 : 2} />
+              </button>
+            )}
+          </div>
         </div>
       </div>
     </div>

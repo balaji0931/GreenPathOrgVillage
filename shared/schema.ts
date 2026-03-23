@@ -21,6 +21,7 @@ export const villages = pgTable("villages", {
   notificationRadiusMeters: integer("notification_radius_meters").default(150), // Radius for proximity alerts (120-300m)
   notificationWindowStart: text("notification_window_start").default("05:30"), // HH:MM IST — earliest push time
   notificationWindowEnd: text("notification_window_end").default("13:00"), // HH:MM IST — latest push time
+  collectorWasteLogEnabled: boolean("collector_waste_log_enabled").default(false), // Manager toggle: let collectors enter daily waste logs
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
@@ -536,6 +537,51 @@ export type DailyWasteLog = typeof dailyWasteLog.$inferSelect;
 export type CompostProductionLog = typeof compostProductionLog.$inferSelect;
 export type DryWasteSale = typeof dryWasteSales.$inferSelect;
 export type DryWasteSaleMaterial = typeof dryWasteSaleMaterials.$inferSelect;
+
+// Collector Daily Waste Log — multiple entries per collector per day, summed for reports
+export const collectorDailyWasteLog = pgTable("collector_daily_waste_log", {
+  id: serial("id").primaryKey(),
+  collectorId: integer("collector_id").notNull().references(() => collectors.id),
+  villageId: text("village_id").notNull().references(() => villages.villageId),
+  date: date("date").notNull(),
+  wetWasteKg: decimal("wet_waste_kg", { precision: 10, scale: 2 }).default("0"),
+  wetWastePhotoUrl: text("wet_waste_photo_url"),
+  dryWasteKg: decimal("dry_waste_kg", { precision: 10, scale: 2 }).default("0"),
+  dryWastePhotoUrl: text("dry_waste_photo_url"),
+  specialCareWasteKg: decimal("special_care_waste_kg", { precision: 10, scale: 2 }).default("0"),
+  specialCareWastePhotoUrl: text("special_care_waste_photo_url"),
+  sanitaryWasteKg: decimal("sanitary_waste_kg", { precision: 10, scale: 2 }).default("0"),
+  sanitaryWastePhotoUrl: text("sanitary_waste_photo_url"),
+  mixedWasteKg: decimal("mixed_waste_kg", { precision: 10, scale: 2 }).default("0"),
+  mixedWastePhotoUrl: text("mixed_waste_photo_url"),
+  remarks: text("remarks"),
+  createdBy: text("created_by").notNull(), // Collector user ID
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => [
+  index("idx_collector_waste_log_collector_date").on(table.collectorId, table.date),
+  index("idx_collector_waste_log_village_date").on(table.villageId, table.date),
+]);
+
+export const collectorDailyWasteLogRelations = relations(collectorDailyWasteLog, ({ one }) => ({
+  collector: one(collectors, {
+    fields: [collectorDailyWasteLog.collectorId],
+    references: [collectors.id],
+  }),
+  village: one(villages, {
+    fields: [collectorDailyWasteLog.villageId],
+    references: [villages.villageId],
+  }),
+}));
+
+export const insertCollectorDailyWasteLogSchema = createInsertSchema(collectorDailyWasteLog).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type InsertCollectorDailyWasteLog = z.infer<typeof insertCollectorDailyWasteLogSchema>;
+export type CollectorDailyWasteLog = typeof collectorDailyWasteLog.$inferSelect;
 
 // ═══════════════════════════════════════════════════════════════════
 // Pre-Calculated Daily Analytics Tables
