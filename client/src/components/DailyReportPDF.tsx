@@ -199,7 +199,7 @@ function buildFullReport(d: PDFReportData): string {
 
   // ── Build the full report ──
   return `
-    <div style="width:${PW}px;padding:${M}px;background:#fff;font-family:'Segoe UI',Roboto,-apple-system,sans-serif;color:${C.s900};box-sizing:border-box;">
+    <div style="width:${PW}px;padding:${M}px;background:#fff;font-family:'Inter','Segoe UI',Roboto,-apple-system,sans-serif;color:${C.s900};box-sizing:border-box;">
 
       <!-- COVER HEADER: Logo left | Heading center | Village+Date right -->
       <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 0 14px;margin-bottom:14px;border-bottom:2.5px solid ${C.brand};">
