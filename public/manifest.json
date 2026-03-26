@@ -2,7 +2,7 @@
 {
   "name": "GreenPath",
   "short_name": "GreenPath",
-  "description": "Comprehensive waste management system for Organizations",
+  "description": "Comprehensive waste management system for Muncipalities, Panchayath, Communities and Organizations",
   "start_url": "/login",
   "display": "standalone",
   "background_color": "#ffffff",
@@ -11,7 +11,7 @@
   "scope": "/",
   "prefer_related_applications": false,
   "id": "GreenPath-pwa",
-  "categories": ["productivity", "utilities", "environmental"],
+  "categories": ["Waste Management", "productivity", "utilities", "environmental", "social", "community", "government"],
   "lang": "en",
   "dir": "ltr",
   "display_override": ["window-controls-overlay", "standalone"],
