@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest, fetchWithCsrf } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { useTranslation } from 'react-i18next';
 import { useAuth } from "@/hooks/useAuth";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -26,6 +27,7 @@ interface CollectorWasteLogProps {
 
 export default function CollectorWasteLog({ onBack }: CollectorWasteLogProps) {
   const { user } = useAuth();
+  const { t } = useTranslation();
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -68,12 +70,12 @@ export default function CollectorWasteLog({ onBack }: CollectorWasteLogProps) {
       return res.json();
     },
     onSuccess: () => {
-      toast({ title: "Waste log saved ✓" });
+      toast({ title: t('wasteLog.saved') });
       queryClient.invalidateQueries({ queryKey: ["/api/collector-waste-log"] });
       resetForm();
     },
     onError: (err: any) => {
-      toast({ title: err.message || "Failed to save", variant: "destructive" });
+      toast({ title: err.message || t('wasteLog.failedToSave'), variant: "destructive" });
     },
   });
 
@@ -85,12 +87,12 @@ export default function CollectorWasteLog({ onBack }: CollectorWasteLogProps) {
       return res.json();
     },
     onSuccess: () => {
-      toast({ title: "Waste log updated ✓" });
+      toast({ title: t('wasteLog.updated') });
       queryClient.invalidateQueries({ queryKey: ["/api/collector-waste-log"] });
       resetForm();
     },
     onError: () => {
-      toast({ title: "Failed to update", variant: "destructive" });
+      toast({ title: t('wasteLog.failedToUpdate'), variant: "destructive" });
     },
   });
 
@@ -102,11 +104,11 @@ export default function CollectorWasteLog({ onBack }: CollectorWasteLogProps) {
       return res.json();
     },
     onSuccess: () => {
-      toast({ title: "Entry deleted" });
+      toast({ title: t('wasteLog.deleted') });
       queryClient.invalidateQueries({ queryKey: ["/api/collector-waste-log"] });
     },
     onError: () => {
-      toast({ title: "Failed to delete", variant: "destructive" });
+      toast({ title: t('wasteLog.failedToDelete'), variant: "destructive" });
     },
   });
 
@@ -180,7 +182,7 @@ export default function CollectorWasteLog({ onBack }: CollectorWasteLogProps) {
       const result = await res.json();
       setFormData(prev => ({ ...prev, [`${key}PhotoUrl`]: result.url }));
     } catch {
-      toast({ title: "Photo upload failed", variant: "destructive" });
+      toast({ title: t('wasteLog.photoUploadFailed'), variant: "destructive" });
     } finally {
       setUploading(null);
     }
@@ -196,11 +198,11 @@ export default function CollectorWasteLog({ onBack }: CollectorWasteLogProps) {
   const sortedDates = Object.keys(logsByDate).sort((a, b) => b.localeCompare(a));
 
   const wasteFields = [
-    { key: "wetWaste", label: "Wet Waste", color: "green", bgColor: "bg-green-50", textColor: "text-green-700" },
-    { key: "dryWaste", label: "Dry Waste", color: "blue", bgColor: "bg-blue-50", textColor: "text-blue-700" },
-    { key: "specialCareWaste", label: "Special Care", color: "purple", bgColor: "bg-purple-50", textColor: "text-purple-700" },
-    { key: "sanitaryWaste", label: "Sanitary", color: "red", bgColor: "bg-red-50", textColor: "text-red-700" },
-    { key: "mixedWaste", label: "Mixed", color: "yellow", bgColor: "bg-yellow-50", textColor: "text-yellow-700" },
+    { key: "wetWaste", label: t('enums.wetWaste'), color: "green", bgColor: "bg-green-50", textColor: "text-green-700" },
+    { key: "dryWaste", label: t('enums.dryWaste'), color: "blue", bgColor: "bg-blue-50", textColor: "text-blue-700" },
+    { key: "specialCareWaste", label: t('enums.specialCare'), color: "purple", bgColor: "bg-purple-50", textColor: "text-purple-700" },
+    { key: "sanitaryWaste", label: t('enums.sanitary'), color: "red", bgColor: "bg-red-50", textColor: "text-red-700" },
+    { key: "mixedWaste", label: t('enums.mixed'), color: "yellow", bgColor: "bg-yellow-50", textColor: "text-yellow-700" },
   ];
 
   const isPending = createMutation.isPending || updateMutation.isPending;
@@ -215,7 +217,7 @@ export default function CollectorWasteLog({ onBack }: CollectorWasteLogProps) {
               <ArrowLeft className="h-5 w-5 text-gray-600" />
             </button>
           )}
-          <h2 className="text-sm font-black uppercase tracking-tight text-gray-900">Daily Waste Log</h2>
+          <h2 className="text-sm font-black uppercase tracking-tight text-gray-900">{t('wasteLog.title')}</h2>
         </div>
         <button
           onClick={() => { resetForm(); setShowForm(true); }}
@@ -232,7 +234,7 @@ export default function CollectorWasteLog({ onBack }: CollectorWasteLogProps) {
           <form onSubmit={handleSubmit} className="space-y-4">
             {/* Date */}
             <div className="flex items-center justify-between">
-              <Label className="font-bold text-sm">Date</Label>
+              <Label className="font-bold text-sm">{t('wasteLog.date')}</Label>
               <Input
                 type="date"
                 value={formData.date}
@@ -275,7 +277,7 @@ export default function CollectorWasteLog({ onBack }: CollectorWasteLogProps) {
                     ) : (
                       <label className="flex items-center gap-1 text-[10px] text-gray-500 cursor-pointer hover:text-gray-700">
                         <Camera className="h-3 w-3" />
-                        {uploading === field.key ? "Uploading..." : "Photo"}
+                        {uploading === field.key ? t('wasteLog.uploading') : t('wasteLog.photo')}
                         <input
                           type="file"
                           accept="image/*"
@@ -295,11 +297,11 @@ export default function CollectorWasteLog({ onBack }: CollectorWasteLogProps) {
 
             {/* Notes */}
             <div>
-              <Label className="text-xs font-bold text-gray-600">Notes (optional)</Label>
+              <Label className="text-xs font-bold text-gray-600">{t('wasteLog.notes')}</Label>
               <Textarea
                 value={formData.remarks}
                 onChange={(e) => setFormData({ ...formData, remarks: e.target.value })}
-                placeholder="Any observations..."
+                placeholder={t('wasteLog.notesPlaceholder')}
                 className="min-h-[60px] mt-1 text-sm"
               />
             </div>
@@ -323,7 +325,7 @@ export default function CollectorWasteLog({ onBack }: CollectorWasteLogProps) {
                     <Loader2 className="h-3.5 w-3.5 animate-spin" />
                     Saving...
                   </span>
-                ) : editingItem ? "Update" : "Save"}
+                ) : editingItem ? t('wasteLog.update') : t('wasteLog.save')}
               </button>
             </div>
           </form>
@@ -338,8 +340,8 @@ export default function CollectorWasteLog({ onBack }: CollectorWasteLogProps) {
       ) : sortedDates.length === 0 ? (
         <div className="text-center py-16">
           <Leaf className="h-10 w-10 text-gray-200 mx-auto mb-3" />
-          <p className="text-[11px] font-bold text-gray-400 uppercase tracking-widest">No waste logs yet</p>
-          <p className="text-[9px] text-gray-300 mt-1">Tap "Add" to create your first entry</p>
+          <p className="text-[11px] font-bold text-gray-400 uppercase tracking-widest">{t('wasteLog.noLogs')}</p>
+          <p className="text-[9px] text-gray-300 mt-1">{t('wasteLog.tapAdd')}</p>
         </div>
       ) : (
         <div className="space-y-4">
@@ -360,7 +362,7 @@ export default function CollectorWasteLog({ onBack }: CollectorWasteLogProps) {
                     {new Date(date + 'T00:00:00').toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
                   </span>
                   <span className="text-[10px] font-bold text-green-600 bg-green-50 px-2 py-0.5 rounded-full">
-                    {totalKg.toFixed(1)} kg total · {entries.length} entr{entries.length === 1 ? 'y' : 'ies'}
+                    {totalKg.toFixed(1)} kg total · {entries.length} 
                   </span>
                 </div>
 
@@ -397,19 +399,19 @@ export default function CollectorWasteLog({ onBack }: CollectorWasteLogProps) {
                         </div>
                         <div className="flex flex-wrap gap-1">
                           {parseFloat(entry.wetWasteKg || "0") > 0 && (
-                            <span className="text-[8px] font-bold text-green-700 bg-green-50 px-1.5 py-0.5 rounded-full">Wet: {entry.wetWasteKg}kg</span>
+                            <span className="text-[8px] font-bold text-green-700 bg-green-50 px-1.5 py-0.5 rounded-full">{t('enums.wet')}: {entry.wetWasteKg}kg</span>
                           )}
                           {parseFloat(entry.dryWasteKg || "0") > 0 && (
-                            <span className="text-[8px] font-bold text-blue-700 bg-blue-50 px-1.5 py-0.5 rounded-full">Dry: {entry.dryWasteKg}kg</span>
+                            <span className="text-[8px] font-bold text-blue-700 bg-blue-50 px-1.5 py-0.5 rounded-full">{t('enums.dry')}: {entry.dryWasteKg}kg</span>
                           )}
                           {parseFloat(entry.specialCareWasteKg || "0") > 0 && (
-                            <span className="text-[8px] font-bold text-purple-700 bg-purple-50 px-1.5 py-0.5 rounded-full">Special: {entry.specialCareWasteKg}kg</span>
+                            <span className="text-[8px] font-bold text-purple-700 bg-purple-50 px-1.5 py-0.5 rounded-full">{t('enums.specialCare')}: {entry.specialCareWasteKg}kg</span>
                           )}
                           {parseFloat(entry.sanitaryWasteKg || "0") > 0 && (
-                            <span className="text-[8px] font-bold text-red-700 bg-red-50 px-1.5 py-0.5 rounded-full">Sanitary: {entry.sanitaryWasteKg}kg</span>
+                            <span className="text-[8px] font-bold text-red-700 bg-red-50 px-1.5 py-0.5 rounded-full">{t('enums.sanitary')}: {entry.sanitaryWasteKg}kg</span>
                           )}
                           {parseFloat(entry.mixedWasteKg || "0") > 0 && (
-                            <span className="text-[8px] font-bold text-yellow-700 bg-yellow-50 px-1.5 py-0.5 rounded-full">Mixed: {entry.mixedWasteKg}kg</span>
+                            <span className="text-[8px] font-bold text-yellow-700 bg-yellow-50 px-1.5 py-0.5 rounded-full">{t('enums.mixed')}: {entry.mixedWasteKg}kg</span>
                           )}
                         </div>
                         {entry.remarks && (

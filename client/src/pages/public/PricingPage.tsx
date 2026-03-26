@@ -75,7 +75,7 @@ const allFeatures = [
   { icon: Leaf, text: "Waste chain of custody tracking" },
   { icon: Camera, text: "Issue management with photo proof" },
   { icon: Megaphone, text: "Announcement broadcasting with photos" },
-  { icon: Languages, text: "Multi-language UI (Kannada, Hindi, English)" },
+  { icon: Languages, text: "Multi-language UI (Kannada, Telugu, Tamil, Hindi, English)" },
   { icon: Smartphone, text: "Icon-based interface for all literacy levels" },
   { icon: FileText, text: "PDF report export" },
   { icon: MapPin, text: "GPS location capture per collection" },
@@ -185,11 +185,10 @@ export default function PricingPage() {
                   <button
                     key={key}
                     onClick={() => setSelectedPlan(key)}
-                    className={`relative p-5 rounded-2xl border-2 transition-all duration-200 ${
-                      selectedPlan === key
-                        ? "border-emerald-500 bg-emerald-50 shadow-lg shadow-emerald-100"
-                        : "border-slate-100 bg-white hover:border-slate-200"
-                    }`}
+                    className={`relative p-5 rounded-2xl border-2 transition-all duration-200 ${selectedPlan === key
+                      ? "border-emerald-500 bg-emerald-50 shadow-lg shadow-emerald-100"
+                      : "border-slate-100 bg-white hover:border-slate-200"
+                      }`}
                   >
                     {p.badge && (
                       <span className="absolute -top-3 left-1/2 -translate-x-1/2 bg-emerald-600 text-white text-[10px] font-bold px-3 py-1 rounded-full shadow-lg">

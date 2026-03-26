@@ -6,14 +6,14 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import {Check, Languages } from 'lucide-react';
+import { Check, Languages } from 'lucide-react';
 
 const languages = [
   { code: 'en', name: 'English', nativeName: 'English' },
-  { code: 'hi', name: 'Hindi', nativeName: 'हिन्दी' },
+  { code: 'kn', name: 'Kannada', nativeName: 'ಕನ್ನಡ' },
   { code: 'te', name: 'Telugu', nativeName: 'తెలుగు' },
   { code: 'ta', name: 'Tamil', nativeName: 'தமிழ்' },
-  { code: 'kn', name: 'Kannada', nativeName: 'ಕನ್ನಡ' },
+  { code: 'hi', name: 'Hindi', nativeName: 'हिन्दी' },
 ];
 
 export function LanguageSwitcher() {

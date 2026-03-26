@@ -287,7 +287,7 @@ export default function HomePage() {
             {[
               {
                 step: 1, icon: QrCode, title: "Digitize Every Household",
-                desc: "Map every household and assign a unique QR code. Each unit gets a digital identity - linked to ward, block, and collector. The QR Card/ticker stays at the gate. App for households is ptional not compulsory for workflow.",
+                desc: "Map every household and assign a unique QR code. Each unit gets a digital identity - linked to ward, block, and collector. The QR Card/Sticker stays at the gate. App for households is optional not compulsory for workflow.",
                 result: "→ Every household has a scannable digital identity",
                 img: "/images/illustrations/feature-qr-batch.png",
                 color: "from-emerald-500 to-emerald-600", bg: "from-emerald-50 to-teal-50",
@@ -308,14 +308,14 @@ export default function HomePage() {
               },
               {
                 step: 4, icon: BellRing, title: "Smart Proximity Alerts",
-                desc: "GreenPath automatically notifies households when the collection vehicle is within 150m of their doorstep. No more waiting outside or missing the vehicle. Multi-vehicle aware and battery-friendly.",
+                desc: "GreenPath automatically notifies households when the collection vehicle is nearby your doorstep. No more waiting outside or missing the vehicle. Multi-vehicle aware and battery-friendly.",
                 result: "→ Citizens notified exactly when to hand over waste",
                 img: "/images/illustrations/feature-alerts.png",
                 color: "from-orange-500 to-orange-600", bg: "from-orange-50 to-amber-50",
               },
               {
                 step: 5, icon: ScanLine, title: "Scan, Rate & Record",
-                desc: "At each doorstep, collectors scan the QR code and record waste type (wet, dry, mixed, hazardous). Rate segregation quality with star ratings. Add photo evidence or voice notes. Works fully offline - syncs when back online.",
+                desc: "At each doorstep, collectors scan the QR code and record waste type (wet, dry, mixed, sanitary and special care). Rate segregation quality with star ratings. Add photo evidence or voice notes. Works fully offline - syncs when back online.",
                 result: "→ Every collection event logged with type, quality, evidence",
                 img: "/images/illustrations/step-3-collect.png",
                 color: "from-blue-500 to-blue-600", bg: "from-blue-50 to-indigo-50",

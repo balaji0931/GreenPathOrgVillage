@@ -773,7 +773,7 @@ export default function ProductPage() {
 
                 <div className="grid sm:grid-cols-3 gap-4">
                   {[
-                    { icon: Languages, title: "Multi-Language", desc: "Kannada, Hindi, English and more" },
+                    { icon: Languages, title: "Multi-Language", desc: "Kannada, Telugu, Tamil, Hindi, English and more" },
                     { icon: Accessibility, title: "Icon-Based UI", desc: "No reading or typing needed after setup" },
                     { icon: Settings, title: "One-Time Setup", desc: "Manager sets up once, collectors just scan" },
                   ].map((feature) => (
@@ -948,7 +948,7 @@ export default function ProductPage() {
                 <p className="text-slate-300 leading-relaxed">
                   When households see their segregation scores, receive feedback from
                   collectors, and understand where their waste goes - behavior changes.
-                  Following the introduction of digital tracking in pilot areas like Billapura Panchayat, 
+                  Following the introduction of digital tracking in pilot areas like Billapura Panchayat,
                   field teams reported significant improvements in source segregation discipline.
                 </p>
               </div>

@@ -27,7 +27,7 @@ async function requirePaymentsEnabled(req: Request, res: Response, next: NextFun
 export function registerPaymentRoutes(app: Express, requireAuth: any, requireRole: any, requireVillageAccess: any) {
   // Apply payments guard to all payment routes (except public webhook)
   // This runs before individual route handlers — if payments is disabled, returns 403
-  app.use(['/api/payments', '/api/household-types'], async (req: Request, res: Response, next: NextFunction) => {
+  app.use(['/api/payments'], async (req: Request, res: Response, next: NextFunction) => {
     // Skip webhook — it's gateway-initiated and doesn't have a session
     if (req.path.includes('/gateway/webhook')) return next();
     // Skip if no session (let requireAuth handle)

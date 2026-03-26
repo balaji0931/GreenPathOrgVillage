@@ -79,7 +79,10 @@ export default function FieldWorkerDashboard() {
     queryKey: ['household-types', user?.villageId],
     enabled: !!user?.villageId,
     queryFn: () =>
-      fetch('/api/household-types', { credentials: 'include' }).then((res) => res.json()),
+      fetch('/api/household-types', { credentials: 'include' }).then((res) => {
+        if (!res.ok) return [];
+        return res.json();
+      }),
   });
 
 

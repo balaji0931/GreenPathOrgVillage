@@ -72,7 +72,7 @@ const solutions = [
       { icon: WifiOff, text: "Offline-capable app for areas with poor connectivity" },
       { icon: Users, text: "Women SHG members trained and employed as collectors" },
       { icon: Leaf, text: "Zero Waste Centre integration for composting and dry waste" },
-      { icon: Languages, text: "Multi-language UI - Kannada, Hindi, English and more" },
+      { icon: Languages, text: "Multi-language UI - Kannada, Telugu, Tamil, Hindi, English and more" },
     ],
     outcomes: [
       "Transition from untracked dumping to structured waste collection",

@@ -230,7 +230,10 @@ export default function PaymentsTab({ initialScreen = "overview" }: { initialScr
   const { data: householdTypes } = useQuery<any[]>({
     queryKey: ["household-types", villageId],
     enabled: !!villageId && paymentScreen === "settings",
-    queryFn: () => fetch("/api/household-types", { credentials: "include" }).then(r => r.json()),
+    queryFn: () => fetch("/api/household-types", { credentials: "include" }).then(r => {
+      if (!r.ok) return [];
+      return r.json();
+    }),
   });
 
   // Unpaid bills for selected household (for multi-select dialog)

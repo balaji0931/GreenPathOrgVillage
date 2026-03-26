@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
+import { translateEnum } from '../i18n/enumTranslations';
 import { MyBillsTab } from "@/components/my-bills-tab";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -59,14 +60,14 @@ import {
 } from "lucide-react";
 
 const ISSUE_CATEGORIES = [
-  "Illegal Dumping",
-  "Collection Delay",
-  "Missed Pickup",
-  "Road Cleanliness",
-  "Plastic Usage",
-  "Collector Behavior",
-  "Infrastructure",
-  "Other",
+  'Illegal Dumping',
+  'Collection Delay',
+  'Missed Pickup',
+  'Road Cleanliness',
+  'Plastic Usage',
+  'Collector Behavior',
+  'Infrastructure',
+  'Other',
 ];
 
 export default function GeneratorDashboard() {
@@ -160,13 +161,13 @@ export default function GeneratorDashboard() {
       if (success) {
         refetchPushStatus();
         toast({
-          title: "Success",
-          description: "Notification settings updated",
+          title: t('app.success'),
+          description: t('app.success'),
         });
       } else {
         toast({
-          title: "Error",
-          description: "Failed to update notification settings. Check browser permissions.",
+          title: t('app.error'),
+          description: t('app.error'),
           variant: "destructive",
         });
       }
@@ -213,8 +214,8 @@ export default function GeneratorDashboard() {
           photoUrl = uploadResult.url;
         } catch (uploadError) {
           toast({
-            title: "Warning",
-            description: "Photo upload failed, continuing without photo",
+            title: t('app.error'),
+            description: t('app.error'),
             variant: "destructive",
           });
           photoUrl = null;
@@ -252,15 +253,14 @@ export default function GeneratorDashboard() {
         photoFile: null,
       });
       toast({
-        title: "Success! 🎉",
-        description:
-          "Your issue has been reported successfully. The manager will review it soon.",
+        title: t('app.success'),
+        description: t('generator.issueReportedSuccess'),
       });
     },
     onError: (_error: unknown) => {
       toast({
-        title: "Error",
-        description: "Failed to report issue. Please try again.",
+        title: t('app.error'),
+        description: t('app.error'),
         variant: "destructive",
       });
     },
@@ -294,14 +294,14 @@ export default function GeneratorDashboard() {
       setShowFeedbackModal(false);
       setCollectorFeedback({ collectionId: null, rating: 0, remarks: "" });
       toast({
-        title: "Success",
-        description: "Feedback submitted successfully",
+        title: t('app.success'),
+        description: t('app.success'),
       });
     },
     onError: (_error: unknown) => {
       toast({
-        title: "Error",
-        description: "Failed to submit feedback. Please try again.",
+        title: t('app.error'),
+        description: t('app.error'),
         variant: "destructive",
       });
     },
@@ -315,8 +315,8 @@ export default function GeneratorDashboard() {
     },
     onSuccess: () => {
       toast({
-        title: "Success",
-        description: "Password changed successfully",
+        title: t('app.success'),
+        description: t('app.success'),
       });
       setShowPasswordModal(false);
       setNewPassword("");
@@ -324,8 +324,8 @@ export default function GeneratorDashboard() {
     },
     onError: (_error: unknown) => {
       toast({
-        title: "Error",
-        description: "Failed to change password. Please try again.",
+        title: t('app.error'),
+        description: t('app.error'),
         variant: "destructive",
       });
     },
@@ -339,9 +339,8 @@ export default function GeneratorDashboard() {
     // Validation
     if (!trimmedTitle || !newIssue.category || !trimmedDescription) {
       toast({
-        title: "Validation Error",
-        description:
-          "Please fill in all required fields (Title, Category, Description)",
+        title: t('app.error'),
+        description: t('app.error'),
         variant: "destructive",
       });
       return;
@@ -349,8 +348,8 @@ export default function GeneratorDashboard() {
 
     if (trimmedTitle.length < 3) {
       toast({
-        title: "Title Too Short",
-        description: "Title must be at least 3 characters long",
+        title: t('app.error'),
+        description: t('app.minimumChars'),
         variant: "destructive",
       });
       return;
@@ -358,8 +357,8 @@ export default function GeneratorDashboard() {
 
     if (trimmedDescription.length < 10) {
       toast({
-        title: "Description Too Short",
-        description: "Description must be at least 10 characters long",
+        title: t('app.error'),
+        description: t('app.minimum10Chars'),
         variant: "destructive",
       });
       return;
@@ -370,8 +369,8 @@ export default function GeneratorDashboard() {
       const maxSize = 5 * 1024 * 1024; // 5MB
       if (newIssue.photoFile.size > maxSize) {
         toast({
-          title: "File Too Large",
-          description: "Photo must be smaller than 5MB",
+          title: t('app.error'),
+          description: t('app.error'),
           variant: "destructive",
         });
         return;
@@ -388,8 +387,8 @@ export default function GeneratorDashboard() {
   const handleSubmitFeedback = () => {
     if (!collectorFeedback.rating || !collectorFeedback.collectionId) {
       toast({
-        title: "Error",
-        description: "Please provide a rating",
+        title: t('app.error'),
+        description: t('app.error'),
         variant: "destructive",
       });
       return;
@@ -405,8 +404,8 @@ export default function GeneratorDashboard() {
   const handleChangePassword = () => {
     if (newPassword !== confirmPassword) {
       toast({
-        title: "Error",
-        description: "Passwords do not match",
+        title: t('app.error'),
+        description: t('app.error'),
         variant: "destructive",
       });
       return;
@@ -414,8 +413,8 @@ export default function GeneratorDashboard() {
 
     if (newPassword.length < 6) {
       toast({
-        title: "Error",
-        description: "Password must be at least 6 characters",
+        title: t('app.error'),
+        description: t('app.error'),
         variant: "destructive",
       });
       return;
@@ -483,7 +482,7 @@ export default function GeneratorDashboard() {
                     localStorage.setItem('greenpath-push-banner-dismissed', 'true');
                   }}
                   className="absolute top-2 right-2 text-gray-400 hover:text-gray-600 p-1"
-                  aria-label="Dismiss"
+                  aria-label={t('app.close')}
                 >
                   ✕
                 </button>
@@ -492,9 +491,9 @@ export default function GeneratorDashboard() {
                     <Bell className="w-5 h-5 text-blue-600" />
                   </div>
                   <div className="flex-1">
-                    <p className="text-sm font-semibold text-gray-800">🚛 Get Vehicle Alerts</p>
+                    <p className="text-sm font-semibold text-gray-800">{t('generator.pushNotifications')}</p>
                     <p className="text-xs text-gray-500 mt-0.5 mb-2">
-                      We'll notify you when the waste collection vehicle reaches your street so you can keep your waste ready.
+                      {t('generator.notificationsDesc')}
                     </p>
                     <Button
                       size="sm"
@@ -511,7 +510,7 @@ export default function GeneratorDashboard() {
                         });
                       }}
                     >
-                      {togglePushMutation.isPending ? 'Enabling...' : '🔔 Enable Notifications'}
+                      {togglePushMutation.isPending ? t('app.loading') : '🔔 ' + t('generator.enableNotifications')}
                     </Button>
                   </div>
                 </div>
@@ -566,7 +565,7 @@ export default function GeneratorDashboard() {
                                 <div className="mt-2">
                                   <img
                                     src={announcement.photoUrl}
-                                    alt="Announcement"
+                                    alt={t('announcements.title')}
                                     className="max-w-full h-24 object-cover rounded border"
                                   />
                                 </div>
@@ -662,7 +661,7 @@ export default function GeneratorDashboard() {
                               ).toLocaleDateString()}
                             </p>
                             <p className="text-xs text-gray-600">
-                              Rating:{" "}
+                              {t('app.rating')}:{" "}
                               {collection.segregationRating
                                 ? `${collection.segregationRating}/5`
                                 : "N/A"}
@@ -676,7 +675,7 @@ export default function GeneratorDashboard() {
                               : "destructive"
                           }
                         >
-                          {collection.status}
+                          {translateEnum('collectionStatus', collection.status)}
                         </Badge>
                       </div>
                     ))}
@@ -699,14 +698,14 @@ export default function GeneratorDashboard() {
               <CardHeader className="pb-3">
                 <CardTitle className="flex items-center text-lg">
                   <TrendingUp className="w-5 h-5 mr-2 text-green-600" />
-                  Monthly Progress
+                  {t('generator.collectionHistory')}
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
                   <div>
                     <div className="flex justify-between text-sm mb-2">
-                      <span>Collections Completed</span>
+                      <span>{t('generator.collectionHistory')}</span>
                       <span>{monthlyStats.thisMonthCollections}/30</span>
                     </div>
                     <Progress
@@ -717,7 +716,7 @@ export default function GeneratorDashboard() {
 
                   <div>
                     <div className="flex justify-between text-sm mb-2">
-                      <span>Segregation Quality</span>
+                      <span>{t('generator.segregationRating')}</span>
                       <span>{monthlyStats.avgSegregationRating}/5.0</span>
                     </div>
                     <Progress
@@ -737,19 +736,19 @@ export default function GeneratorDashboard() {
               <CardHeader className="pb-3">
                 <CardTitle className="flex items-center text-lg">
                   <TrendingUp className="w-5 h-5 mr-2 text-blue-600" />
-                  Collection Statistics
+                  {t('generator.collectionHistory')}
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <p className="text-sm text-gray-600">Total Collections</p>
+                    <p className="text-sm text-gray-600">{t('generator.collectionHistory')}</p>
                     <p className="text-2xl font-bold text-gray-900">
                       {monthlyStats.totalCollections}
                     </p>
                   </div>
                   <div>
-                    <p className="text-sm text-gray-600">Average Rating</p>
+                    <p className="text-sm text-gray-600">{t('generator.segregationRating')}</p>
                     <p className="text-2xl font-bold text-gray-900">
                       {monthlyStats.avgSegregationRating}
                     </p>
@@ -763,14 +762,14 @@ export default function GeneratorDashboard() {
               <CardHeader className="pb-3">
                 <CardTitle className="flex items-center text-lg">
                   <BarChart3 className="w-5 h-5 mr-2 text-blue-600" />
-                  Weekly Overview
+                  {t('generator.collectionHistory')}
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="h-32 bg-gray-100 rounded-lg flex items-center justify-center">
                   <div className="text-center">
                     <PieChart className="w-8 h-8 text-gray-400 mx-auto mb-2" />
-                    <p className="text-sm text-gray-500">Chart visualization</p>
+                    <p className="text-sm text-gray-500">{t('app.noData')}</p>
                   </div>
                 </div>
               </CardContent>
@@ -781,11 +780,11 @@ export default function GeneratorDashboard() {
         {activeTab === "collections" && (
           <div className="space-y-4 p-4">
             <div className="flex items-center justify-between">
-              <h2 className="text-lg font-bold">Collection History</h2>
+              <h2 className="text-lg font-bold">{t('generator.collectionHistory')}</h2>
               <div className="relative">
                 <Search className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
                 <Input
-                  placeholder="Search..."
+                  placeholder={t("app.search") + "..."}
                   className="pl-9 h-8 w-32"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
@@ -836,19 +835,19 @@ export default function GeneratorDashboard() {
                               }
                               className="text-xs"
                             >
-                              {collection.status}
+                              {translateEnum('collectionStatus', collection.status)}
                             </Badge>
                           </div>
 
                           <div className="space-y-1 text-xs text-gray-600">
                             <p>
-                              Segregation:{" "}
+                              {t('generator.segregationRating')}:{" "}
                               {collection.segregationRating
                                 ? `${collection.segregationRating}/5 ⭐`
-                                : "Not rated"}
+                                : t('app.noData')}
                             </p>
                             {collection.remarks && (
-                              <p>Collector Notes: {collection.remarks}</p>
+                              <p>{t('generator.collectorRemarks')}: {collection.remarks}</p>
                             )}
                           </div>
                         </div>
@@ -869,7 +868,7 @@ export default function GeneratorDashboard() {
                             className="text-xs h-7"
                           >
                             <Star className="w-3 h-3 mr-1" />
-                            Feedback
+                            {t('feedback.title')}
                           </Button>
 
                           {collection.photoUrl && (
@@ -882,7 +881,7 @@ export default function GeneratorDashboard() {
                               className="text-xs h-7"
                             >
                               <Eye className="w-3 h-3 mr-1" />
-                              Photo
+                              {t('generator.collectionPhoto')}
                             </Button>
                           )}
                         </div>
@@ -901,7 +900,7 @@ export default function GeneratorDashboard() {
                         className="w-full"
                       >
                         <Eye className="w-4 h-4 mr-2" />
-                        View All Collections ({collectionHistory.length} total)
+                        {t('app.viewAll')} ({collectionHistory.length} {t('app.total')})
                       </Button>
                     </div>
                   )}
@@ -917,7 +916,7 @@ export default function GeneratorDashboard() {
                         className="w-full"
                       >
                         <History className="w-4 h-4 mr-2" />
-                        Show Recent Only (Last 10)
+                        {t('generator.viewMore')}
                       </Button>
                     </div>
                   )}
@@ -925,7 +924,7 @@ export default function GeneratorDashboard() {
             ) : (
               <div className="text-center py-8">
                 <History className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-                <p className="text-gray-500">No collection history available</p>
+                <p className="text-gray-500">{t('generator.noCollectionsYet')}</p>
               </div>
             )}
           </div>
@@ -934,14 +933,14 @@ export default function GeneratorDashboard() {
         {activeTab === "announcements" && (
           <div className="space-y-4 p-4">
             <div className="flex items-center justify-between">
-              <h2 className="text-lg font-bold">All Announcements</h2>
+              <h2 className="text-lg font-bold">{t('announcements.title')}</h2>
             </div>
 
             {announcementsLoading ? (
               <div className="text-center py-8">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600 mx-auto"></div>
                 <p className="text-sm text-gray-500 mt-2">
-                  Loading announcements...
+                  {t('app.loading')}...
                 </p>
               </div>
             ) : announcements && announcements.length > 0 ? (
@@ -960,7 +959,7 @@ export default function GeneratorDashboard() {
                           variant="secondary"
                           className="text-xs whitespace-nowrap"
                         >
-                          New
+                          {t('app.new')}
                         </Badge>
                       </div>
 
@@ -968,7 +967,7 @@ export default function GeneratorDashboard() {
                         <div className="flex items-center space-x-2">
                           <Bell className="w-3 h-3" />
                           <span className="font-medium">
-                            Official Announcement
+                            {t('announcements.title')}
                           </span>
                         </div>
                         <div className="flex items-center space-x-2">
@@ -988,10 +987,10 @@ export default function GeneratorDashboard() {
               <div className="text-center py-12">
                 <Bell className="w-16 h-16 text-gray-300 mx-auto mb-4" />
                 <h3 className="text-lg font-medium text-gray-900 mb-2">
-                  No Announcements
+                  {t('generator.noAnnouncements')}
                 </h3>
                 <p className="text-gray-500 mb-4">
-                  Check back later for important updates and news
+                  {t('generator.checkLater')}
                 </p>
               </div>
             )}
@@ -1001,28 +1000,28 @@ export default function GeneratorDashboard() {
         {activeTab === "issues" && (
           <div className="space-y-4 p-4">
             <div className="flex items-center justify-between">
-              <h2 className="text-lg font-bold">Village Issues</h2>
+              <h2 className="text-lg font-bold">{t('navigation.issues')}</h2>
               <Button
                 size="sm"
                 onClick={() => setShowIssueModal(true)}
                 className="bg-red-600 hover:bg-red-700"
               >
                 <Plus className="w-4 h-4 mr-1" />
-                Report
+                {t('generator.reportIssue')}
               </Button>
             </div>
 
             {/* Filter Tabs */}
             <div className="flex space-x-2 overflow-x-auto pb-2">
-              {["All", "Open", "In Progress", "Resolved"].map((filter) => (
+              {[{key:"All",label:t("app.all")},{key:"Open",label:t("issues.open")},{key:t('issues.inProgress'),label:t("issues.inProgress")},{key:t('issues.resolved'),label:t("issues.resolved")}].map((filter) => (
                 <Button
-                  key={filter}
-                  variant={issueFilter === filter ? "default" : "outline"}
+                  key={filter.key}
+                  variant={issueFilter === filter.key ? "default" : "outline"}
                   size="sm"
                   className="whitespace-nowrap text-xs"
-                  onClick={() => setIssueFilter(filter)}
+                  onClick={() => setIssueFilter(filter.key)}
                 >
-                  {filter}
+                  {filter.label}
                 </Button>
               ))}
             </div>
@@ -1030,7 +1029,7 @@ export default function GeneratorDashboard() {
             {issuesLoading ? (
               <div className="text-center py-8">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600 mx-auto"></div>
-                <p className="text-sm text-gray-500 mt-2">Loading issues...</p>
+                <p className="text-sm text-gray-500 mt-2">{t('app.loading')}...</p>
               </div>
             ) : issues && issues.length > 0 ? (
               <div className="space-y-3">
@@ -1038,9 +1037,9 @@ export default function GeneratorDashboard() {
                   .filter((issue: any) => {
                     if (issueFilter === "All") return true;
                     if (issueFilter === "Open") return issue.status === "open";
-                    if (issueFilter === "In Progress")
+                    if (issueFilter === t('issues.inProgress'))
                       return issue.status === "in_progress";
-                    if (issueFilter === "Resolved")
+                    if (issueFilter === t('issues.resolved'))
                       return issue.status === "resolved";
                     return true;
                   })
@@ -1069,11 +1068,7 @@ export default function GeneratorDashboard() {
                             }
                             className="text-xs whitespace-nowrap"
                           >
-                            {issue.status === "open"
-                              ? "Open"
-                              : issue.status === "in_progress"
-                                ? "In Progress"
-                                : "Resolved"}
+                            {issue.status === 'open' ? t('issues.open') : issue.status === 'in_progress' ? t('issues.inProgress') : t('issues.resolved')}
                           </Badge>
                         </div>
 
@@ -1081,7 +1076,7 @@ export default function GeneratorDashboard() {
                           <div className="flex items-center space-x-2">
                             <MapPin className="w-3 h-3" />
                             <span className="font-medium">
-                              {issue.category}
+                              {translateEnum('issueCategory', issue.category)}
                             </span>
                           </div>
                           <div className="flex items-center space-x-2">
@@ -1096,7 +1091,7 @@ export default function GeneratorDashboard() {
                           <div className="mt-2">
                             <img
                               src={issue.photoUrl}
-                              alt="Issue photo"
+                              alt={t('generator.issuePhoto')}
                               className="w-full h-32 object-cover rounded-lg"
                               onClick={() =>
                                 window.open(issue.photoUrl, "_blank")
@@ -1110,7 +1105,7 @@ export default function GeneratorDashboard() {
                             <div className="flex items-center space-x-2 mb-1">
                               <CheckCircle className="w-4 h-4 text-green-600" />
                               <p className="text-xs font-semibold text-green-800">
-                                Manager Response:
+                                {t('generator.managerResponse')}:
                               </p>
                             </div>
                             <p className="text-xs text-green-700 leading-relaxed">
@@ -1119,10 +1114,10 @@ export default function GeneratorDashboard() {
                             {/* Show manager's proof photo if available */}
                             {issue.managerProofPhotoUrl && (
                               <div className="mt-2">
-                                <p className="text-xs font-medium text-green-800 mb-1">Manager proof photo:</p>
+                                <p className="text-xs font-medium text-green-800 mb-1">{t('generator.managerResponseProof')}:</p>
                                 <img
                                   src={issue.managerProofPhotoUrl}
-                                  alt="Manager proof photo"
+                                  alt={t('generator.managerResponseProof')}
                                   className="w-16 h-16 object-cover rounded cursor-pointer"
                                   onClick={() => window.open(issue.managerProofPhotoUrl, "_blank")}
                                 />
@@ -1146,26 +1141,26 @@ export default function GeneratorDashboard() {
                 {issueFilter === "All" ? (
                   <>
                     <h3 className="text-lg font-medium text-gray-900 mb-2">
-                      No Issues Reported
+                      {t('generator.noIssuesYet')}
                     </h3>
                     <p className="text-gray-500 mb-4">
-                      Help improve your village by reporting issues
+                      {t('generator.noIssuesYetDesc')}
                     </p>
                     <Button
                       onClick={() => setShowIssueModal(true)}
                       className="bg-red-600 hover:bg-red-700"
                     >
                       <Plus className="w-4 h-4 mr-2" />
-                      Report Your First Issue
+                      {t('generator.reportIssue')}
                     </Button>
                   </>
                 ) : (
                   <>
                     <h3 className="text-lg font-medium text-gray-900 mb-2">
-                      No {issueFilter} Issues
+                      {t('generator.noIssuesYet')}
                     </h3>
                     <p className="text-gray-500 mb-4">
-                      No issues found with {issueFilter.toLowerCase()} status
+                      {t('generator.noIssuesYetDesc')}
                     </p>
                     <Button
                       onClick={() => setIssueFilter("All")}
@@ -1183,27 +1178,27 @@ export default function GeneratorDashboard() {
         {activeTab === "qr-code" && (
           <div className="space-y-4 p-4">
             <div className="flex items-center justify-between">
-              <h2 className="text-lg font-bold">My QR Code</h2>
+              <h2 className="text-lg font-bold">{t('generator.yourQrCode')}</h2>
             </div>
 
             {householdLoading ? (
               <div className="text-center py-12">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600 mx-auto mb-4"></div>
                 <h3 className="text-lg font-medium text-gray-900 mb-2">
-                  Loading Household Data
+                  {t('app.loading')}
                 </h3>
                 <p className="text-gray-500">
-                  Please wait while we fetch your household information...
+                  {t('app.loading')}
                 </p>
               </div>
             ) : householdError ? (
               <div className="text-center py-12">
                 <XCircle className="w-16 h-16 text-red-300 mx-auto mb-4" />
                 <h3 className="text-lg font-medium text-gray-900 mb-2">
-                  Error Loading Data
+                  {t('app.error')}
                 </h3>
                 <p className="text-gray-500 mb-4">
-                  Unable to load your household information. Please try refreshing the page.
+                  {t('app.error')}
                 </p>
                 <Button
                   onClick={() => queryClient.invalidateQueries({ queryKey: ["/api/generator/household"] })}
@@ -1220,7 +1215,7 @@ export default function GeneratorDashboard() {
                   <CardHeader className="pb-3">
                     <CardTitle className="flex items-center text-lg">
                       <QrCode className="w-5 h-5 mr-2 text-green-600" />
-                      Household QR Code
+                      {t('generator.yourQrCode')}
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="text-center space-y-4">
@@ -1228,7 +1223,7 @@ export default function GeneratorDashboard() {
                       <div className="p-4 bg-white border-2 border-gray-200 rounded-lg shadow-sm">
                         <img
                           src={`/api/qr-codes/${householdData.uid}/image`}
-                          alt="Household QR Code"
+                          alt={t('generator.yourQrCode')}
                           className="w-48 h-48 mx-auto"
                         />
                       </div>
@@ -1306,20 +1301,20 @@ export default function GeneratorDashboard() {
 
                             document.body.removeChild(cardElement);
 
-                            toast({ title: 'Downloaded!', description: 'QR card saved to your device' });
+                            toast({ title: t('app.success'), description: t('generator.downloadQrCode') });
                           } catch {
-                            toast({ title: 'Error', description: 'Failed to download QR card', variant: 'destructive' });
+                            toast({ title: 'Error', description: t('app.error'), variant: 'destructive' });
                           }
                         }}
                       >
                         <Download className="w-4 h-4 mr-2" />
-                        Download QR Card
+                        {t('generator.downloadQrCode')}
                       </Button>
 
                       <div className="space-y-2 text-center">
                         <div className="p-3 bg-green-50 rounded-lg border-l-4 border-green-400">
                           <p className="text-sm text-green-800 font-medium">
-                            📱 Show this QR code to the waste collector during pickup
+                            📱 {t('generator.qrCodeDesc')}
                           </p>
                         </div>
                       </div>
@@ -1332,43 +1327,43 @@ export default function GeneratorDashboard() {
                   <CardHeader className="pb-3">
                     <CardTitle className="flex items-center text-lg">
                       <Home className="w-5 h-5 mr-2 text-blue-600" />
-                      Household Information
+                      {t('generator.householdInfo')}
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-3">
                     <div className="grid grid-cols-1 gap-3">
                       <div className="p-3 bg-gray-50 rounded-lg">
-                        <Label className="text-xs text-gray-600">Household Head</Label>
+                        <Label className="text-xs text-gray-600">{t('generator.headOfHousehold')}</Label>
                         <p className="font-medium text-gray-900">{householdData.headName}</p>
                       </div>
 
                       <div className="p-3 bg-gray-50 rounded-lg">
-                        <Label className="text-xs text-gray-600">House ID</Label>
+                        <Label className="text-xs text-gray-600">{t('generator.uid')}</Label>
                         <p className="font-medium text-gray-900">{householdData.uid}</p>
                       </div>
 
                       <div className="p-3 bg-gray-50 rounded-lg">
-                        <Label className="text-xs text-gray-600">House Number</Label>
-                        <p className="font-medium text-gray-900">{householdData.houseNumber || 'Not specified'}</p>
+                        <Label className="text-xs text-gray-600">{t('generator.houseNumber')}</Label>
+                        <p className="font-medium text-gray-900">{householdData.houseNumber || t('app.noData')}</p>
                       </div>
 
                       {householdData.phone && (
                         <div className="p-3 bg-gray-50 rounded-lg">
-                          <Label className="text-xs text-gray-600">Phone</Label>
+                          <Label className="text-xs text-gray-600">{t('generator.phone')}</Label>
                           <p className="font-medium text-gray-900">{householdData.phone}</p>
                         </div>
                       )}
 
                       {householdData.address && (
                         <div className="p-3 bg-gray-50 rounded-lg">
-                          <Label className="text-xs text-gray-600">Address</Label>
+                          <Label className="text-xs text-gray-600">{t('generator.address')}</Label>
                           <p className="font-medium text-gray-900">{householdData.address}</p>
                         </div>
                       )}
 
                       <div className="p-3 bg-gray-50 rounded-lg">
-                        <Label className="text-xs text-gray-600">Family Size</Label>
-                        <p className="font-medium text-gray-900">{householdData.familySize || 1} members</p>
+                        <Label className="text-xs text-gray-600">{t('generator.householdInfo')}</Label>
+                        <p className="font-medium text-gray-900">{householdData.familySize || 1} {t('generator.members')}</p>
                       </div>
                     </div>
                   </CardContent>
@@ -1379,29 +1374,29 @@ export default function GeneratorDashboard() {
                   <CardHeader className="pb-3">
                     <CardTitle className="flex items-center text-lg">
                       <Bell className="w-5 h-5 mr-2 text-orange-600" />
-                      How to Use
+                      {t('generator.qrCodeDesc')}
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
                     <div className="space-y-3 text-sm">
                       <div className="flex items-start space-x-3">
                         <div className="w-6 h-6 bg-green-100 text-green-600 rounded-full flex items-center justify-center text-xs font-bold">1</div>
-                        <p className="text-gray-700">Show your QR code to the waste collector when they arrive for pickup</p>
+                        <p className="text-gray-700">{t('generator.qrCodeDesc')}</p>
                       </div>
 
                       <div className="flex items-start space-x-3">
                         <div className="w-6 h-6 bg-green-100 text-green-600 rounded-full flex items-center justify-center text-xs font-bold">2</div>
-                        <p className="text-gray-700">The collector will scan it to record your waste collection</p>
+                        <p className="text-gray-700">{t('generator.qrCodeDesc')}</p>
                       </div>
 
                       <div className="flex items-start space-x-3">
                         <div className="w-6 h-6 bg-green-100 text-green-600 rounded-full flex items-center justify-center text-xs font-bold">3</div>
-                        <p className="text-gray-700">You'll receive a rating based on waste segregation quality</p>
+                        <p className="text-gray-700">{t('generator.segregationRating')}</p>
                       </div>
 
                       <div className="flex items-start space-x-3">
                         <div className="w-6 h-6 bg-green-100 text-green-600 rounded-full flex items-center justify-center text-xs font-bold">4</div>
-                        <p className="text-gray-700">Track your collection history in the Collections tab</p>
+                        <p className="text-gray-700">{t('generator.collectionHistory')}</p>
                       </div>
                     </div>
                   </CardContent>
@@ -1411,10 +1406,10 @@ export default function GeneratorDashboard() {
               <div className="text-center py-12">
                 <Home className="w-16 h-16 text-gray-300 mx-auto mb-4" />
                 <h3 className="text-lg font-medium text-gray-900 mb-2">
-                  No Household Data
+                  {t('app.noData')}
                 </h3>
                 <p className="text-gray-500">
-                  Your household information is not available. Please contact your village manager.
+                  {t('generator.contactManager')}
                 </p>
               </div>
             )}
@@ -1436,24 +1431,24 @@ export default function GeneratorDashboard() {
               <CardHeader className="pb-3">
                 <CardTitle className="flex items-center text-lg">
                   <User className="w-5 h-5 mr-2" />
-                  Profile Information
+                  {t('generator.profile')}
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
                 <div>
-                  <Label className="text-xs text-gray-600">Name</Label>
+                  <Label className="text-xs text-gray-600">{t('generator.profile')}</Label>
                   <p className="font-medium">{user?.name}</p>
                 </div>
                 <div>
-                  <Label className="text-xs text-gray-600">User ID</Label>
+                  <Label className="text-xs text-gray-600">{t('auth.userId')}</Label>
                   <p className="font-medium">{user?.userId}</p>
                 </div>
                 <div>
-                  <Label className="text-xs text-gray-600">Village</Label>
+                  <Label className="text-xs text-gray-600">{t('navigation.villages')}</Label>
                   <p className="font-medium">{user?.villageId}</p>
                 </div>
                 <div>
-                  <Label className="text-xs text-gray-600">Role</Label>
+                  <Label className="text-xs text-gray-600">{t('generator.profile')}</Label>
                   <Badge variant="secondary">{user?.role}</Badge>
                 </div>
               </CardContent>
@@ -1464,7 +1459,7 @@ export default function GeneratorDashboard() {
               <CardHeader className="pb-3">
                 <CardTitle className="flex items-center text-lg">
                   <Settings className="w-5 h-5 mr-2" />
-                  Settings
+                  {t('navigation.settings')}
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
@@ -1511,7 +1506,7 @@ export default function GeneratorDashboard() {
                   onClick={() => logout()}
                 >
                   <LogOut className="w-4 h-4 mr-2" />
-                  Logout
+                  {t('auth.logout')}
                 </Button>
               </CardContent>
             </Card>
@@ -1523,13 +1518,13 @@ export default function GeneratorDashboard() {
       <div className="fixed bottom-0 left-1/2 transform -translate-x-1/2 w-full max-w-md bg-white border-t border-gray-200 px-2 py-2 rounded-lg">
         <div className="flex justify-around">
           {[
-            { id: "home", icon: Home, class: "generator-home-tab", label: "Home" },
-            (villageDetails as any)?.paymentsEnabled && { id: "bills", icon: IndianRupee, class: "generator-bills-tab", label: "Bills" },
+            { id: "home", icon: Home, class: "generator-home-tab", label: t('generator.home') },
+            (villageDetails as any)?.paymentsEnabled && { id: "bills", icon: IndianRupee, class: "generator-bills-tab", label: t('generator.bills') },
             // { id: "reports", icon: BarChart3, class: "generator-collection-stats", label: "Reports" },
-            { id: "collections", icon: FileText, class: "generator-collections-tab", label: "History" },
-            { id: "qr-code", icon: QrCode, class: "generator-qr-tab", label: "QR Code" },
-            { id: "issues", icon: AlertTriangle, class: "generator-issues-tab", label: "Issues" },
-            { id: "profile", icon: User, class: "generator-profile-tab", label: "Profile" },
+            { id: "collections", icon: FileText, class: "generator-collections-tab", label: t('generator.collections') },
+            { id: "qr-code", icon: QrCode, class: "generator-qr-tab", label: t('generator.qrCode') },
+            { id: "issues", icon: AlertTriangle, class: "generator-issues-tab", label: t('generator.issues') },
+            { id: "profile", icon: User, class: "generator-profile-tab", label: t('generator.profile') },
           ].filter(Boolean).map((tab: any) => (
             <button
               key={tab.id}
@@ -1550,10 +1545,10 @@ export default function GeneratorDashboard() {
         <DialogContent className="w-[96vw] max-w-lg max-h-[90vh] overflow-y-auto p-4 mx-auto">
           <DialogHeader className="pb-4">
             <DialogTitle className="text-xl font-bold text-center text-gray-900">
-              🚨 Report Village Issue
+              🚨 {t('generator.reportIssue')}
             </DialogTitle>
             <p className="text-sm text-gray-600 text-center mt-1">
-              Help improve your community by reporting issues
+              {t('generator.noIssuesYetDesc')}
             </p>
           </DialogHeader>
 
@@ -1564,7 +1559,7 @@ export default function GeneratorDashboard() {
                 htmlFor="title"
                 className="text-sm font-semibold text-gray-800 flex items-center"
               >
-                📝 Issue Title <span className="text-red-500 ml-1">*</span>
+                📝 {t('generator.issueTitle')} <span className="text-red-500 ml-1">*</span>
               </Label>
               <Input
                 id="title"
@@ -1572,7 +1567,7 @@ export default function GeneratorDashboard() {
                 onChange={(e) =>
                   setNewIssue({ ...newIssue, title: e.target.value })
                 }
-                placeholder="e.g., Garbage not collected for 3 days"
+                placeholder={t("generator.issueTitlePlaceholder")}
                 className="h-12 text-base border-2 focus:border-red-400"
                 maxLength={100}
               />
@@ -1583,7 +1578,7 @@ export default function GeneratorDashboard() {
                 {newIssue.title.trim().length < 3 &&
                   newIssue.title.length > 0 && (
                     <p className="text-xs text-red-500">
-                      Minimum 3 characters required
+                      {t('app.minimumChars')}
                     </p>
                   )}
               </div>
@@ -1595,7 +1590,7 @@ export default function GeneratorDashboard() {
                 htmlFor="category"
                 className="text-sm font-semibold text-gray-800 flex items-center"
               >
-                🏷️ Category <span className="text-red-500 ml-1">*</span>
+                🏷️ {t('generator.category')} <span className="text-red-500 ml-1">*</span>
               </Label>
               <Select
                 value={newIssue.category}
@@ -1604,7 +1599,7 @@ export default function GeneratorDashboard() {
                 }
               >
                 <SelectTrigger className="h-12 text-base border-2 focus:border-red-400">
-                  <SelectValue placeholder="Choose the most relevant category" />
+                  <SelectValue placeholder={t("generator.category")} />
                 </SelectTrigger>
                 <SelectContent>
                   {ISSUE_CATEGORIES.map((category) => (
@@ -1613,7 +1608,7 @@ export default function GeneratorDashboard() {
                       value={category}
                       className="text-base py-3"
                     >
-                      {category}
+                      {translateEnum('issueCategory', category)}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -1626,7 +1621,7 @@ export default function GeneratorDashboard() {
                 htmlFor="description"
                 className="text-sm font-semibold text-gray-800 flex items-center"
               >
-                📄 Description <span className="text-red-500 ml-1">*</span>
+                📄 {t('generator.description')} <span className="text-red-500 ml-1">*</span>
               </Label>
               <Textarea
                 id="description"
@@ -1634,7 +1629,7 @@ export default function GeneratorDashboard() {
                 onChange={(e) =>
                   setNewIssue({ ...newIssue, description: e.target.value })
                 }
-                placeholder="Provide detailed information about the issue, location, and when it started..."
+                placeholder={t("generator.descriptionPlaceholder")}
                 rows={5}
                 className="text-base border-2 focus:border-red-400 resize-none"
                 maxLength={500}
@@ -1646,7 +1641,7 @@ export default function GeneratorDashboard() {
                 {newIssue.description.trim().length < 10 &&
                   newIssue.description.length > 0 && (
                     <p className="text-xs text-red-500">
-                      Minimum 10 characters required
+                      {t('app.minimum10Chars')}
                     </p>
                   )}
               </div>
@@ -1658,7 +1653,7 @@ export default function GeneratorDashboard() {
                 htmlFor="photo"
                 className="text-sm font-semibold text-gray-800 flex items-center"
               >
-                📸 Photo Evidence (Optional)
+                📸 {t('generator.photoEvidence')} ({t('app.optional')})
               </Label>
               <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center">
                 <Input
@@ -1686,7 +1681,7 @@ export default function GeneratorDashboard() {
                         📷 {newIssue.photoFile.name}
                       </p>
                       <p className="text-xs text-gray-500">
-                        Tap to change photo
+                        {t('app.tapToChange')}
                       </p>
                     </div>
                   ) : (
@@ -1695,10 +1690,10 @@ export default function GeneratorDashboard() {
                         <Upload className="w-8 h-8 text-gray-400" />
                       </div>
                       <p className="text-sm font-medium text-gray-700">
-                        Tap to upload photo
+                        {t('app.tapToUpload')}
                       </p>
                       <p className="text-xs text-gray-500">
-                        Photos help resolve issues faster
+                        {t('app.photosHelp')}
                       </p>
                     </div>
                   )}
@@ -1723,12 +1718,12 @@ export default function GeneratorDashboard() {
                 {createIssueMutation.isPending ? (
                   <div className="flex items-center space-x-2">
                     <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
-                    <span>Submitting Issue...</span>
+                    <span>{t('generator.submittingIssue')}...</span>
                   </div>
                 ) : (
                   <div className="flex items-center space-x-2">
                     <AlertTriangle className="w-5 h-5" />
-                    <span>Submit Issue Report</span>
+                    <span>{t('generator.submitIssue')}</span>
                   </div>
                 )}
               </Button>
@@ -1746,7 +1741,7 @@ export default function GeneratorDashboard() {
                 className="w-full h-12 border-2 text-base font-medium"
                 disabled={createIssueMutation.isPending}
               >
-                Cancel
+                {t('app.cancel')}
               </Button>
             </div>
           </div>
@@ -1758,10 +1753,10 @@ export default function GeneratorDashboard() {
         <DialogContent className="w-[96vw] max-w-lg max-h-[90vh] overflow-y-auto p-4 mx-auto">
           <DialogHeader className="pb-4">
             <DialogTitle className="text-xl font-bold text-center text-gray-900">
-              ⭐ Rate Collection Service
+              ⭐ {t('feedback.title')}
             </DialogTitle>
             <p className="text-sm text-gray-600 text-center mt-1">
-              Help us improve by rating the collection service
+              {t('feedback.title')}
             </p>
           </DialogHeader>
 
@@ -1770,13 +1765,13 @@ export default function GeneratorDashboard() {
             {selectedCollection && (
               <div className="p-3 bg-gray-50 rounded-lg">
                 <p className="text-sm font-medium text-gray-800">
-                  Collection Date:{" "}
+                  {t('generator.collectionDate')}:{" "}
                   {new Date(
                     selectedCollection.collectionDate,
                   ).toLocaleDateString()}
                 </p>
                 <p className="text-xs text-gray-600">
-                  Status: {selectedCollection.status} | Segregation Rating:{" "}
+                  {t('generator.status')}: {translateEnum('collectionStatus', selectedCollection.status)} | {t('generator.segregationRating')}:{" "}
                   {selectedCollection.segregationRating || "N/A"}/5
                 </p>
               </div>
@@ -1785,7 +1780,7 @@ export default function GeneratorDashboard() {
             {/* Star Rating */}
             <div className="space-y-2">
               <Label className="text-sm font-semibold text-gray-800 flex items-center">
-                ⭐ Service Rating <span className="text-red-500 ml-1">*</span>
+                ⭐ {t('app.rating')} <span className="text-red-500 ml-1">*</span>
               </Label>
               <div className="flex justify-center space-x-2 mt-2 p-4 bg-gray-50 rounded-lg">
                 {[1, 2, 3, 4, 5].map((star) => (
@@ -1808,12 +1803,12 @@ export default function GeneratorDashboard() {
               </div>
               <div className="text-center">
                 <p className="text-sm text-gray-600">
-                  {collectorFeedback.rating === 0 && "Tap a star to rate"}
-                  {collectorFeedback.rating === 1 && "😞 Very Poor"}
-                  {collectorFeedback.rating === 2 && "😐 Poor"}
-                  {collectorFeedback.rating === 3 && "😊 Average"}
-                  {collectorFeedback.rating === 4 && "😄 Good"}
-                  {collectorFeedback.rating === 5 && "🤩 Excellent"}
+                  {collectorFeedback.rating === 0 && t('generator.tapStarToRate')}
+                  {collectorFeedback.rating === 1 && '😞 ' + t('collections.veryPoor')}
+                  {collectorFeedback.rating === 2 && '😐 ' + t('collections.poor')}
+                  {collectorFeedback.rating === 3 && '😊 ' + t('collections.average')}
+                  {collectorFeedback.rating === 4 && '😄 ' + t('collections.good')}
+                  {collectorFeedback.rating === 5 && '🤩 ' + t('collections.excellent')}
                 </p>
               </div>
             </div>
@@ -1824,7 +1819,7 @@ export default function GeneratorDashboard() {
                 htmlFor="remarks"
                 className="text-sm font-semibold text-gray-800 flex items-center"
               >
-                💬 Additional Comments (Optional)
+                💬 {t('collector.remarks')} ({t('app.optional')})
               </Label>
               <Textarea
                 id="remarks"
@@ -1835,7 +1830,7 @@ export default function GeneratorDashboard() {
                     remarks: e.target.value,
                   })
                 }
-                placeholder="Share your experience, suggestions for improvement, or any specific comments about the collection service..."
+                placeholder={t("collector.typeComments")}
                 rows={4}
                 className="text-base border-2 focus:border-blue-400 resize-none"
                 maxLength={300}
@@ -1858,12 +1853,12 @@ export default function GeneratorDashboard() {
                 {createFeedbackMutation.isPending ? (
                   <div className="flex items-center space-x-2">
                     <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
-                    <span>Submitting Feedback...</span>
+                    <span>{t('app.submitting')}...</span>
                   </div>
                 ) : (
                   <div className="flex items-center space-x-2">
                     <Star className="w-5 h-5" />
-                    <span>Submit Feedback</span>
+                    <span>{t('app.submit')}</span>
                   </div>
                 )}
               </Button>
@@ -1880,7 +1875,7 @@ export default function GeneratorDashboard() {
                 className="w-full h-12 border-2 text-base font-medium"
                 disabled={createFeedbackMutation.isPending}
               >
-                Cancel
+                {t('app.cancel')}
               </Button>
             </div>
           </div>
@@ -1891,25 +1886,25 @@ export default function GeneratorDashboard() {
       <Dialog open={showPasswordModal} onOpenChange={setShowPasswordModal}>
         <DialogContent className="max-w-sm">
           <DialogHeader>
-            <DialogTitle>Change Password</DialogTitle>
+            <DialogTitle>{t('app.changePassword')}</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
             <div>
-              <Label>New Password</Label>
+              <Label>{t('app.newPassword')}</Label>
               <Input
                 type="password"
                 value={newPassword}
                 onChange={(e) => setNewPassword(e.target.value)}
-                placeholder="Enter new password"
+                placeholder={t("app.newPassword")}
               />
             </div>
             <div>
-              <Label>Confirm Password</Label>
+              <Label>{t('app.confirmPassword')}</Label>
               <Input
                 type="password"
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
-                placeholder="Confirm new password"
+                placeholder={t("app.confirmPassword")}
               />
             </div>
             <Button
@@ -1920,10 +1915,10 @@ export default function GeneratorDashboard() {
               {changePasswordMutation.isPending ? (
                 <>
                   <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent mr-2" />
-                  Changing...
+                  {t('app.changing')}...
                 </>
               ) : (
-                "Change Password"
+                t('app.changePassword')
               )}
             </Button>
           </div>
