@@ -9,7 +9,7 @@ import {
     dailyHourlyStats,
 } from "@shared/schema";
 import { db } from "../../db";
-import { eq, and, sql } from "drizzle-orm";
+import { eq, and, sql, count, ne } from "drizzle-orm";
 import * as villageStorage from "../village/village.storage";
 import * as dailyWasteLogStorage from "../material-log/daily-waste-log.storage";
 import * as collectorWasteLogStorage from "../material-log/collector-waste-log.storage";
@@ -158,6 +158,43 @@ export async function getPremiumReportData(villageId: string, date: string): Pro
 
     // ── Ward Performance ──
     const wardsList = (village.wards as string[]) || [];
+
+    // Lazy-seed: for wards missing from dailyWardStats today,
+    // query live count once and insert the row so future accesses are preaggregated
+    const missingWards = wardsList.filter(w => !wardStats.find(s => s.wardName === w));
+    if (missingWards.length > 0) {
+        const seedRows = await Promise.all(missingWards.map(async wardName => {
+            const [liveCount] = await db.select({ total: count() })
+                .from(households)
+                .where(and(
+                    eq(households.villageId, villageId),
+                    eq(households.ward, wardName),
+                    ne(households.status, 'deleted')
+                ));
+            return { wardName, totalHouseholds: liveCount?.total ?? 0 };
+        }));
+
+        for (const seed of seedRows) {
+            await db.insert(dailyWardStats)
+                .values({
+                    villageId,
+                    reportDate: date,
+                    wardName: seed.wardName,
+                    totalHouseholds: seed.totalHouseholds,
+                    collectedCount: 0,
+                })
+                .onConflictDoNothing();
+            // Add to in-memory wardStats so the mapping below picks it up
+            wardStats.push({
+                villageId,
+                reportDate: date,
+                wardName: seed.wardName,
+                totalHouseholds: seed.totalHouseholds,
+                collectedCount: 0,
+            });
+        }
+    }
+
     const wardPerformance = wardsList.map(wardName => {
         const wRow = wardStats.find(w => w.wardName === wardName);
         const total = wRow?.totalHouseholds ?? 0;
