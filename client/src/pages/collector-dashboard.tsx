@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState } from "react";
 import * as React from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
@@ -88,8 +88,6 @@ export default function CollectorDashboard() {
 
   const [showScanner, setShowScanner] = useState(false);
   const [showCollectionModal, setShowCollectionModal] = useState(false);
-  const [submitOverlayState, setSubmitOverlayState] = useState<'hidden' | 'submitting' | 'success'>('hidden');
-  const overlayAutoCloseTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [scannedHousehold, setScannedHousehold] = useState<any>(null);
   const [activeTab, setActiveTab] = useState('home');
   const [showPasswordModal, setShowPasswordModal] = useState(false);
@@ -328,7 +326,7 @@ export default function CollectorDashboard() {
       const response = await apiRequest("POST", "/api/waste-collections", data);
       return response.json();
     },
-    onSuccess: async (newCollection) => {
+    onSuccess: (newCollection) => {
       // Play success sound — 3-note ascending chime
       try {
         const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
@@ -349,27 +347,14 @@ export default function CollectorDashboard() {
         playTone(1318, 0.30, 0.35); // E6 — held slightly longer
       } catch (_) { }
 
-      setSubmitOverlayState('success');
-      resetForm();
+      toast({ title: '✅', description: t('collector.collectionRecorded') });
 
-      if (overlayAutoCloseTimer.current) clearTimeout(overlayAutoCloseTimer.current);
-      overlayAutoCloseTimer.current = setTimeout(() => {
-        overlayAutoCloseTimer.current = null;
-        setSubmitOverlayState('hidden');
-        setShowCollectionModal(false);
-      }, 10000);
-
-      // Invalidate all related queries
-      await queryClient.invalidateQueries({ queryKey: ["/api/waste-collections"] });
-      await queryClient.invalidateQueries({ queryKey: ["/api/households"] });
-      await Promise.all([
-        collectionsQuery.refetch(),
-        householdsQuery.refetch()
-      ]);
+      // Invalidate queries (triggers automatic refetch)
+      queryClient.invalidateQueries({ queryKey: ["/api/waste-collections"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/households"] });
       setRefreshTrigger(prev => prev + 1);
     },
     onError: (error: any) => {
-      setSubmitOverlayState('hidden');
       // Handle duplicate collection error specifically
       if (error.status === 409) {
         toast({
@@ -505,6 +490,7 @@ export default function CollectorDashboard() {
     });
     setScannedHousehold(null);
     setShowConfirmSubmit(false);
+    setIsSubmitLocked(false);
   };
 
   const handleQRScan = async (qrData: string) => {
@@ -713,6 +699,7 @@ export default function CollectorDashboard() {
     setIsSubmitLocked(true);
 
     try {
+      // Snapshot form data before resetting
       const collectionData = {
         householdUid: scannedHousehold.uid,
         status: collectionForm.wasteAccepted ? 'collected' : 'missed',
@@ -725,6 +712,11 @@ export default function CollectorDashboard() {
         wasteTypes: collectionForm.wasteAccepted ? collectionForm.wasteTypes : [],
         weightKg: collectionForm.wasteAccepted && collectionForm.weightKg ? collectionForm.weightKg : null,
       };
+      const snapshotPhotoFile = collectionForm.photoFile;
+      const snapshotVoiceFile = collectionForm.voiceRecording;
+
+      // Reset form immediately so collector can scan next household
+      resetForm();
 
       if (isOnline) {
         // Online mode - try to upload files and submit immediately
@@ -733,9 +725,9 @@ export default function CollectorDashboard() {
           let voiceUrl = null;
 
           // Upload photo to Cloudinary if present
-          if (collectionForm.photoFile) {
+          if (snapshotPhotoFile) {
             const photoFormData = new FormData();
-            photoFormData.append('file', collectionForm.photoFile);
+            photoFormData.append('file', snapshotPhotoFile);
 
             const photoResponse = await fetchWithCsrf('/api/upload/photo', {
               method: 'POST',
@@ -752,9 +744,9 @@ export default function CollectorDashboard() {
           }
 
           // Upload voice recording to Cloudinary if present
-          if (collectionForm.voiceRecording) {
+          if (snapshotVoiceFile) {
             const voiceFormData = new FormData();
-            voiceFormData.append('file', collectionForm.voiceRecording);
+            voiceFormData.append('file', snapshotVoiceFile);
 
             const voiceResponse = await fetchWithCsrf('/api/upload/voice', {
               method: 'POST',
@@ -784,11 +776,11 @@ export default function CollectorDashboard() {
             description: t('collector.collectionSavedOffline'),
             variant: "default",
           });
-          await handleOfflineSubmission(collectionData);
+          await handleOfflineSubmission(collectionData, snapshotPhotoFile, snapshotVoiceFile);
         }
       } else {
         // Offline mode - store data locally
-        await handleOfflineSubmission(collectionData);
+        await handleOfflineSubmission(collectionData, snapshotPhotoFile, snapshotVoiceFile);
       }
 
       setShowConfirmSubmit(false);
@@ -803,21 +795,21 @@ export default function CollectorDashboard() {
     }
   };
 
-  const handleOfflineSubmission = async (collectionData: any) => {
+  const handleOfflineSubmission = async (collectionData: any, photoFile?: File | null, voiceFile?: File | null) => {
     try {
       let photoFileId = null;
       let voiceFileId = null;
 
       // Store files offline if present
-      if (collectionForm.photoFile) {
-        const photoResult = await storeFileOffline(collectionForm.photoFile, 'photo');
+      if (photoFile) {
+        const photoResult = await storeFileOffline(photoFile, 'photo');
         if (photoResult.success) {
           photoFileId = photoResult.fileId;
         }
       }
 
-      if (collectionForm.voiceRecording) {
-        const voiceResult = await storeFileOffline(collectionForm.voiceRecording, 'voice');
+      if (voiceFile) {
+        const voiceResult = await storeFileOffline(voiceFile, 'voice');
         if (voiceResult.success) {
           voiceFileId = voiceResult.fileId;
         }
@@ -853,15 +845,8 @@ export default function CollectorDashboard() {
           playTone(1318, 0.30, 0.35);
         } catch (_) { }
 
-        setSubmitOverlayState('success');
-        resetForm();
+        toast({ title: '✅', description: t('collector.collectionSavedOffline') });
         setRefreshTrigger(prev => prev + 1);
-        if (overlayAutoCloseTimer.current) clearTimeout(overlayAutoCloseTimer.current);
-        overlayAutoCloseTimer.current = setTimeout(() => {
-          overlayAutoCloseTimer.current = null;
-          setSubmitOverlayState('hidden');
-          setShowCollectionModal(false);
-        }, 10000);
       } else {
         throw new Error(result.error || 'Failed to store offline');
       }
@@ -1604,60 +1589,6 @@ export default function CollectorDashboard() {
         </DialogContent>
       </Dialog>
 
-      {/* Submit / Success Page */}
-      {submitOverlayState !== 'hidden' && (
-        <div className="fixed left-0 right-0 bottom-0 top-[48px] z-[55] flex flex-col items-center justify-center bg-gradient-to-b from-green-500 to-emerald-600"
-          style={{ animation: 'fadeIn 0.25s ease-out' }}>
-
-          {/* X close button */}
-          <button
-            onClick={() => {
-              if (overlayAutoCloseTimer.current) {
-                clearTimeout(overlayAutoCloseTimer.current);
-                overlayAutoCloseTimer.current = null;
-              }
-              setSubmitOverlayState('hidden');
-              setShowCollectionModal(false);
-            }}
-            className="absolute top-4 right-4 w-9 h-9 rounded-full bg-white/20 flex items-center justify-center active:scale-90 transition-all"
-          >
-            <XCircle className="h-5 w-5 text-white" />
-          </button>
-
-          {submitOverlayState === 'submitting' ? (
-            /* Processing — upload icon with transaction animation */
-            <div className="text-center">
-              <div className="w-24 h-24 rounded-full bg-white/90 mx-auto mb-5 flex items-center justify-center shadow-xl">
-                <Upload className="h-12 w-12 text-green-700" style={{ animation: 'uploadBounce 1s ease-in-out infinite' }} />
-              </div>
-              <p className="text-white text-2xl font-black" style={{ animation: 'pulseOpacity 1.5s ease-in-out infinite' }}>
-                Submitting...
-              </p>
-            </div>
-          ) : (
-            /* Success — checkmark bounces in + text */
-            <>
-              <div className="w-24 h-24 rounded-full bg-white mx-auto mb-5 flex items-center justify-center shadow-xl"
-                style={{ animation: 'bounceIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275)' }}>
-                <CheckCircle className="h-14 w-14 text-green-500" />
-              </div>
-              <p className="text-white text-2xl font-black" style={{ animation: 'fadeIn 0.4s ease-out 0.3s both' }}>
-                Collection Recorded!
-              </p>
-              <p className="text-center text-white/70 text-sm mt-1" style={{ animation: 'fadeIn 0.4s ease-out 0.5s both' }}>
-                Thank you for keeping our community clean and green!
-              </p>
-            </>
-          )}
-
-          <style>{`
-            @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-            @keyframes uploadBounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
-            @keyframes pulseOpacity { 0%, 100% { opacity: 0.7; } 50% { opacity: 1; } }
-            @keyframes bounceIn { 0% { transform: scale(0.3); opacity: 0; } 50% { transform: scale(1.1); } 70% { transform: scale(0.95); } 100% { transform: scale(1); opacity: 1; } }
-          `}</style>
-        </div>
-      )}
 
       {/* Collection Form — Full Screen Premium Overlay */}
       {showCollectionModal && (
@@ -1745,7 +1676,7 @@ export default function CollectorDashboard() {
                   </p>
                   <div className="flex gap-3">
                     <button
-                      onClick={() => setCollectionForm({ ...collectionForm, wasteSegregated: true, segregationRating: 4 })}
+                      onClick={() => setCollectionForm({ ...collectionForm, wasteSegregated: true })}
                       className={`flex-1 py-4 rounded-2xl text-base font-bold transition-all active:scale-95 ${collectionForm.wasteSegregated === true
                         ? 'bg-green-500 text-white shadow-md shadow-green-200'
                         : 'bg-green-50 text-green-700 border-2 border-green-200'
@@ -1888,7 +1819,7 @@ export default function CollectorDashboard() {
               </p>
               <button
                 onClick={isRecording ? stopVoiceRecording : startVoiceRecording}
-                disabled={createCollectionMutation.isPending}
+                disabled={isRecording}
                 className={`w-full py-3.5 rounded-2xl text-sm font-bold flex items-center justify-center gap-2 mb-3 transition-all active:scale-95 ${isRecording
                   ? 'bg-red-500 text-white animate-pulse shadow-md shadow-red-200'
                   : collectionForm.voiceRecording
@@ -1918,7 +1849,6 @@ export default function CollectorDashboard() {
             <button
               onClick={() => setShowConfirmSubmit(true)}
               disabled={
-                createCollectionMutation.isPending ||
                 collectionForm.wasteSegregated === null ||
                 collectionForm.segregationRating === 0 ||
                 (isPhotoRequired && !collectionForm.photoFile) ||
@@ -1936,7 +1866,7 @@ export default function CollectorDashboard() {
                 : 'bg-gray-200 text-gray-400 cursor-not-allowed'
                 }`}
             >
-              {createCollectionMutation.isPending ? (
+              {false ? (
                 <>
                   <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent" />
                   {isOnline ? t('collector.submittingForm') : t('app.saving')}
@@ -2229,11 +2159,10 @@ export default function CollectorDashboard() {
                   setIsSubmitLocked(true);
                   setShowConfirmSubmit(false);
                   setShowCollectionModal(false);
-                  setSubmitOverlayState('submitting');
                   handleSubmitCollection();
                 }}
                 className="flex-1 py-3 text-lg bg-green-700 hover:bg-green-700 text-white disabled:opacity-60 disabled:cursor-not-allowed"
-                disabled={isSubmitLocked || createCollectionMutation.isPending}
+                disabled={isSubmitLocked}
               >
                 ✅ {t('collector.okSubmit')}
               </Button>

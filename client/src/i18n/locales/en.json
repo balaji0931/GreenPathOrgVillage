@@ -169,6 +169,7 @@
     "confirmSubmissionText": "Are you sure you want to submit this collection for:",
     "okSubmit": "OK, SUBMIT",
     "collectionSuccess": "Collection recorded successfully!",
+    "collectionRecorded": "Collection recorded ✅",
     "collectionSavedOffline": "Collection saved! Will sync when online.",
     "willSyncWhenOnline": "Will sync when back online",
     "collectionFailed": "Collection failed",
