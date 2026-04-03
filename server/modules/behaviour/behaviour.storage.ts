@@ -387,7 +387,13 @@ export async function getBehaviourThresholds(villageId: string) {
 // Update thresholds
 export async function updateBehaviourThresholds(
   villageId: string,
-  thresholds: { minAvgRating: number; maxMixed7Days: number; maxInactiveDays: number }
+  thresholds: {
+    minAvgRating: number;
+    maxMixed7Days: number;
+    maxInactiveDays: number;
+    minCollections7Days: number;
+    minCollections30Days: number;
+  }
 ) {
   await db
     .update(villages)

@@ -34,7 +34,7 @@ export function registerBehaviourRoutes(app: Express, requireAuth: any, requireR
   // Update thresholds (manager only)
   app.put("/api/behaviour/thresholds", requireAuth, requireRole(["manager"]), requireVillageAccess, async (req, res) => {
     try {
-      const { minAvgRating, maxMixed7Days, maxInactiveDays } = req.body;
+      const { minAvgRating, maxMixed7Days, maxInactiveDays, minCollections7Days, minCollections30Days } = req.body;
       if (minAvgRating == null || maxMixed7Days == null || maxInactiveDays == null) {
         return res.status(400).json({ message: "All threshold values required" });
       }
@@ -43,6 +43,8 @@ export function registerBehaviourRoutes(app: Express, requireAuth: any, requireR
         minAvgRating: Number(minAvgRating),
         maxMixed7Days: Number(maxMixed7Days),
         maxInactiveDays: Number(maxInactiveDays),
+        minCollections7Days: Number(minCollections7Days || 0),
+        minCollections30Days: Number(minCollections30Days || 0),
       });
 
       res.json(thresholds);
