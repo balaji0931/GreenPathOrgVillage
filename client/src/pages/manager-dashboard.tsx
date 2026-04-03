@@ -1850,8 +1850,8 @@ function getHouseholdFlag(stats: any, thresholds: any) {
   if (stats.mixedCountLast7 > t.maxMixed7Days) {
     reasons.push(`Mixed waste ${stats.mixedCountLast7}x this week (max: ${t.maxMixed7Days})`);
   }
-  // Only apply inactivity when totalCollections >= 3
-  if (stats.totalCollections >= 3 && stats.daysSinceLastCollection > t.maxInactiveDays) {
+  // Apply inactivity if the household has at least one collection
+  if (stats.totalCollections > 0 && stats.daysSinceLastCollection > t.maxInactiveDays) {
     reasons.push(`Inactive for ${stats.daysSinceLastCollection} days (max: ${t.maxInactiveDays})`);
   }
 
@@ -1921,7 +1921,7 @@ function HouseholdPerformance({ onBack, villageId }: { onBack: () => void; villa
       case 'mixed_waste': return needsAttention.filter((s: any) =>
         s.mixedCountLast7 > thresholds.maxMixed7Days);
       case 'inactive': return needsAttention.filter((s: any) =>
-        s.totalCollections >= 3 && s.daysSinceLastCollection > thresholds.maxInactiveDays);
+        s.totalCollections > 0 && s.daysSinceLastCollection > thresholds.maxInactiveDays);
       case 'never': return noData;
       case 'good': return good;
       default: return needsAttention;
