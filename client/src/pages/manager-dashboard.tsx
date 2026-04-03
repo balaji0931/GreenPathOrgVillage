@@ -1836,7 +1836,13 @@ const ReportsTabContent = ({
 // ═══════════════════════════════════════════
 // Household Performance Monitor
 // ═══════════════════════════════════════════
-const DEFAULT_THRESHOLDS = { minAvgRating: 3, maxMixed7Days: 3, maxInactiveDays: 21 };
+const DEFAULT_THRESHOLDS = {
+  minAvgRating: 3,
+  maxMixed7Days: 3,
+  maxInactiveDays: 21,
+  minCollections7Days: 0,
+  minCollections30Days: 0,
+};
 
 function getHouseholdFlag(stats: any, thresholds: any) {
   if (stats.totalCollections === 0) return { flag: 'no_data', reasons: ['No collections recorded'] };
@@ -1853,6 +1859,12 @@ function getHouseholdFlag(stats: any, thresholds: any) {
   // Apply inactivity if the household has at least one collection
   if (stats.totalCollections > 0 && stats.daysSinceLastCollection > t.maxInactiveDays) {
     reasons.push(`Inactive for ${stats.daysSinceLastCollection} days (max: ${t.maxInactiveDays})`);
+  }
+  if (stats.collectionsLast7 < t.minCollections7Days) {
+    reasons.push(`Low collections: ${stats.collectionsLast7} in last 7 days (min: ${t.minCollections7Days})`);
+  }
+  if (stats.collectionsLast30 < t.minCollections30Days) {
+    reasons.push(`Low collections: ${stats.collectionsLast30} in last 30 days (min: ${t.minCollections30Days})`);
   }
 
   return reasons.length > 0
@@ -1922,6 +1934,10 @@ function HouseholdPerformance({ onBack, villageId }: { onBack: () => void; villa
         s.mixedCountLast7 > thresholds.maxMixed7Days);
       case 'inactive': return needsAttention.filter((s: any) =>
         s.totalCollections > 0 && s.daysSinceLastCollection > thresholds.maxInactiveDays);
+      case 'low_7_days': return needsAttention.filter((s: any) =>
+        s.collectionsLast7 < thresholds.minCollections7Days);
+      case 'low_30_days': return needsAttention.filter((s: any) =>
+        s.collectionsLast30 < thresholds.minCollections30Days);
       case 'never': return noData;
       case 'good': return good;
       default: return needsAttention;
@@ -1975,6 +1991,8 @@ function HouseholdPerformance({ onBack, villageId }: { onBack: () => void; villa
           { id: 'low_rating', label: t('householdPerformance.lowRating') },
           { id: 'mixed_waste', label: t('householdPerformance.mixedWaste') },
           { id: 'inactive', label: t('householdPerformance.inactive') },
+          { id: 'low_7_days', label: 'Low (7D)' },
+          { id: 'low_30_days', label: 'Low (30D)' },
           { id: 'never', label: t('householdPerformance.never') },
           { id: 'good', label: t('householdPerformance.good') },
         ].map(({ id, label }) => (
@@ -1989,8 +2007,8 @@ function HouseholdPerformance({ onBack, villageId }: { onBack: () => void; villa
         ))}
       </div>
 
-      {/* Ward filter */}
-      {wards.length > 1 && (
+      {/* Ward filter - keep visible if ward is selected or multiple wards exist */}
+      {(wards.length > 1 || wardFilter !== 'all') && (
         <div className="px-3 pb-2">
           <select
             value={wardFilter}
@@ -2191,6 +2209,18 @@ function HouseholdPerformance({ onBack, villageId }: { onBack: () => void; villa
                 <Input type="number" min={1}
                   value={thresholdForm.maxInactiveDays}
                   onChange={(e) => setThresholdForm({ ...thresholdForm, maxInactiveDays: parseInt(e.target.value) })} />
+              </div>
+              <div>
+                <Label>Min collections (Last 7 Days)</Label>
+                <Input type="number" min={0}
+                  value={thresholdForm.minCollections7Days}
+                  onChange={(e) => setThresholdForm({ ...thresholdForm, minCollections7Days: parseInt(e.target.value) })} />
+              </div>
+              <div>
+                <Label>Min collections (Last 30 Days)</Label>
+                <Input type="number" min={0}
+                  value={thresholdForm.minCollections30Days}
+                  onChange={(e) => setThresholdForm({ ...thresholdForm, minCollections30Days: parseInt(e.target.value) })} />
               </div>
               <Button
                 onClick={() => updateThresholdsMutation.mutate(thresholdForm)}

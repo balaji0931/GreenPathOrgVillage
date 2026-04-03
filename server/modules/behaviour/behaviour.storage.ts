@@ -21,6 +21,8 @@ export const DEFAULT_THRESHOLDS = {
   minAvgRating: 3,
   maxMixed7Days: 3,
   maxInactiveDays: 21,
+  minCollections7Days: 0,
+  minCollections30Days: 0,
 };
 
 // ═══════════════════════════════════════════
