@@ -124,6 +124,9 @@ describe('Daily Stats Integration', () => {
                 });
             expect(res.status).toBe(200);
 
+            // Stats now update in fire-and-forget background — wait for completion
+            await new Promise(r => setTimeout(r, 2000));
+
             // Check daily_village_stats
             const vsResult = await dbPool.query(
                 `SELECT * FROM daily_village_stats WHERE village_id = $1`,

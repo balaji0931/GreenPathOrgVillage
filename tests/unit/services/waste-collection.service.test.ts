@@ -30,6 +30,16 @@ jest.unstable_mockModule('../../../server/modules/analytics/daily-stats.storage'
     updateDailyStatsAfterCollection: mockUpdateDailyStats,
 }));
 
+const mockUpdateBehaviourStats = jest.fn().mockResolvedValue(undefined as never);
+jest.unstable_mockModule('../../../server/modules/behaviour/behaviour.storage', () => ({
+    updateHouseholdBehaviourStats: mockUpdateBehaviourStats,
+}));
+
+const mockTriggerProximityAlert = jest.fn().mockResolvedValue(undefined as never);
+jest.unstable_mockModule('../../../server/modules/push/push.service', () => ({
+    triggerProximityAlert: mockTriggerProximityAlert,
+}));
+
 const { submitCollection } =
     await import('../../../server/modules/waste-collection/waste-collection.service');
 
@@ -67,6 +77,9 @@ describe('waste-collection.service', () => {
             expect(result.conflict).toBe(false);
             expect(result.collection).toBeDefined();
             expect(mockStorage.createWasteCollection).toHaveBeenCalled();
+
+            // Cache invalidation now runs in fire-and-forget background — wait for it
+            await new Promise(r => setTimeout(r, 100));
             expect(mockCache.delete).toHaveBeenCalled();
         });
 
@@ -112,6 +125,9 @@ describe('waste-collection.service', () => {
             mockStorage.getHouseholdsByVillage.mockResolvedValue([{ id: 1, ward: 'Ward-1' }] as never);
 
             await submitCollection(validData);
+
+            // Cache invalidation now runs in fire-and-forget background — wait for it
+            await new Promise(r => setTimeout(r, 100));
 
             // Village stats cache invalidated
             expect(mockCache.delete).toHaveBeenCalledTimes(1);

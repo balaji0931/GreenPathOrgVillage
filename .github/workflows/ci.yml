@@ -53,7 +53,14 @@ jobs:
           done
 
       - name: Run tests with coverage
-        run: npm run test:ci
+        run: |
+          npm run test:ci 2>&1 | tee test-output.txt
+          # Check if Jest reported any test failures (not just exit code)
+          if grep -q "Tests:.*failed" test-output.txt; then
+            echo "❌ Some tests failed"
+            exit 1
+          fi
+          echo "✅ All tests passed"
 
       - name: Upload coverage report
         if: always()

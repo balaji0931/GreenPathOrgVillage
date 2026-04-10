@@ -355,17 +355,19 @@ export default function CollectorDashboard() {
       setRefreshTrigger(prev => prev + 1);
     },
     onError: (error: any) => {
-      // Handle duplicate collection error specifically
-      if (error.status === 409) {
+      const errorMsg = error?.message || '';
+      // Handle duplicate collection error (apiRequest throws Error with "409: ..." message)
+      if (errorMsg.startsWith('409')) {
         toast({
           title: t('app.error'),
           description: t('collector.alreadyCollected'),
           variant: "destructive",
         });
       } else {
+        console.error('[Collection Submit Error]', errorMsg);
         toast({
           title: t('app.error'),
-          description: t('app.error'),
+          description: t('collector.collectionFailed'),
           variant: "destructive",
         });
       }

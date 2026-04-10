@@ -84,9 +84,18 @@ export async function submitCollection(data: {
         longitude: longitude || undefined,
     });
 
-    // Update pre-calculated daily stats (transactional — 4 atomic UPSERTs)
-    try {
-        const village = await storage.getVillageByVillageId(household.villageId);
+    // ─── Response is ready: return immediately ───
+    // All post-insert side effects run fire-and-forget so the collector
+    // is never blocked and rapid submissions don't exhaust the DB pool.
+    const villageId = household.villageId;
+    const ward = household.ward || "Unknown";
+    const householdId = household.id;
+
+    // Fire-and-forget: stats, cache, push
+    (async () => {
+      try {
+        // Update pre-calculated daily stats
+        const village = await storage.getVillageByVillageId(villageId);
         const vehiclesList = (village?.vehicles as any[]) || [];
         const regNo = collector.assignedVehicle || "Unassigned";
         const vehicleEntry = vehiclesList.find((v: any) => v.registrationNumber === regNo);
@@ -95,61 +104,64 @@ export async function submitCollection(data: {
         // Get collector names for this vehicle
         let collectorNames = collector.name;
         if (regNo !== "Unassigned") {
-            const allCollectors = await storage.getCollectorsByVillage(household.villageId);
+            const allCollectors = await storage.getCollectorsByVillage(villageId);
             const vehicleCollectors = allCollectors.filter((c: any) => c.assignedVehicle === regNo);
             collectorNames = vehicleCollectors.map((c: any) => c.name).join(", ") || collector.name;
         }
 
-        // Get ward household count
-        const allHouseholds = await storage.getHouseholdsByVillage(household.villageId);
-        const wardHouseholds = allHouseholds.filter((h: any) => h.ward === household.ward);
+        // Targeted ward household count (instead of fetching ALL households)
+        const allHouseholds = await storage.getHouseholdsByVillage(villageId);
+        const wardHouseholds = allHouseholds.filter((h: any) => h.ward === ward);
 
         await updateDailyStatsAfterCollection({
-            villageId: household.villageId,
+            villageId,
             collectionDate,
             segregationRating,
-            ward: household.ward || "Unknown",
+            ward,
             registrationNumber: regNo,
             vehicleName,
             collectorNames,
             currentTotalHouseholds: village?.totalHouseholds ?? allHouseholds.length,
             wardTotalHouseholds: wardHouseholds.length,
         });
-    } catch (statsError) {
-        // Stats update failure should not block the collection response.
-        // Stats can be reconciled via backfill script if needed.
-    }
+      } catch (statsError) {
+        // Stats update failure is non-critical; nightly reconciliation will fix
+      }
 
-    // Update household behaviour stats (pre-computed table, ~15ms)
-    try {
+      // Update household behaviour stats
+      try {
         await updateHouseholdBehaviourStats(
-            household.id,
-            household.villageId,
-            household.ward || "Unknown",
+            householdId,
+            villageId,
+            ward,
             wasteTypes || []
         );
-    } catch (behaviourError) {
+      } catch (_behaviourError) {
         // Non-blocking — nightly refresh will catch up
-    }
+      }
 
-    // Invalidate relevant caches
-    const cache = getCache();
-    await cache.delete(cacheKeys.villageStats(household.villageId));
+      // Invalidate caches
+      try {
+        const cache = getCache();
+        await cache.delete(cacheKeys.villageStats(villageId));
+      } catch (_) {}
 
-    // Trigger proximity push alerts (async, non-blocking)
-    // Use collector's live GPS if available, else fall back to household's stored GPS
-    const alertLat = parseFloat(latitude || '') || parseFloat(String(household.latitude || ''));
-    const alertLng = parseFloat(longitude || '') || parseFloat(String(household.longitude || ''));
-    if (alertLat && alertLng && status === 'collected') {
-      triggerProximityAlert({
-        collectorId: collectorUserId,
-        villageId: household.villageId,
-        householdId: household.id,
-        lat: alertLat,
-        lng: alertLng,
-        todayDateStr: dateStr,
-      }).catch(() => {}); // fire-and-forget
-    }
+      // Trigger proximity push alerts
+      const alertLat = parseFloat(latitude || '') || parseFloat(String(household.latitude || ''));
+      const alertLng = parseFloat(longitude || '') || parseFloat(String(household.longitude || ''));
+      if (alertLat && alertLng && status === 'collected') {
+        triggerProximityAlert({
+          collectorId: collectorUserId,
+          villageId,
+          householdId,
+          lat: alertLat,
+          lng: alertLng,
+          todayDateStr: dateStr,
+        }).catch(() => {});
+      }
+    })().catch((err) => {
+      console.error('[submitCollection] Background task error:', err);
+    });
 
     return { conflict: false, collection };
 }

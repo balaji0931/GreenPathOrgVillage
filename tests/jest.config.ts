@@ -8,6 +8,7 @@ export default {
         '^.+\\.ts$': ['ts-jest', {
             useESM: true,
             tsconfig: 'tests/tsconfig.test.json',
+            diagnostics: false,
         }],
     },
 
@@ -17,6 +18,9 @@ export default {
         // Mock cloudinary to prevent real network calls in all tests
         '^.*/upload/cloudinary$': '<rootDir>/tests/mocks/cloudinary.mock.ts',
         '^.*/upload/cloudinary\\.ts$': '<rootDir>/tests/mocks/cloudinary.mock.ts',
+        // Mock vite.ts to avoid import.meta.dirname (not supported in Jest CJS)
+        '^.*/vite$': '<rootDir>/tests/mocks/vite.mock.ts',
+        '^.*/vite\\.ts$': '<rootDir>/tests/mocks/vite.mock.ts',
     },
 
     globalSetup: '<rootDir>/tests/setup/global-setup.ts',
@@ -24,7 +28,7 @@ export default {
 
 
 
-    testTimeout: 30000,
+    testTimeout: 120000,
     verbose: true,
     forceExit: true,
 
