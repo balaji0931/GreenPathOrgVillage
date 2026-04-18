@@ -45,11 +45,10 @@ export function Navbar() {
   return (
     <>
       <nav
-        className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
-          hasScrolled
+        className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${hasScrolled
             ? "bg-white/90 backdrop-blur-xl shadow-sm border-b border-slate-100"
             : "bg-white/80 backdrop-blur-xl"
-        }`}
+          }`}
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16 md:h-18">
@@ -71,11 +70,10 @@ export function Navbar() {
                 <button
                   key={link.href}
                   onClick={() => setLocation(link.href)}
-                  className={`relative px-3 py-2 text-sm font-medium rounded-lg transition-colors duration-200 ${
-                    isActive(link.href)
+                  className={`relative px-3 py-2 text-sm font-medium rounded-lg transition-colors duration-200 ${isActive(link.href)
                       ? "text-emerald-700 bg-emerald-50"
                       : "text-slate-600 hover:text-slate-900 hover:bg-slate-50"
-                  }`}
+                    }`}
                 >
                   {link.label}
                 </button>
@@ -103,10 +101,10 @@ export function Navbar() {
                     Login
                   </Button>
                   <Button
-                    onClick={() => setLocation("/contact")}
+                    onClick={() => setLocation("/demo")}
                     className="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold px-5 py-2 rounded-lg shadow-sm hover:shadow-md hover:scale-[1.02] active:scale-[0.98] transition-all duration-200"
                   >
-                    Request Demo
+                    Try Demo
                     <ArrowRight className="w-4 h-4 ml-2" />
                   </Button>
                 </>
@@ -130,11 +128,10 @@ export function Navbar() {
 
       {/* Mobile menu overlay */}
       <div
-        className={`fixed inset-0 z-40 lg:hidden transition-all duration-300 ${
-          isMobileOpen
+        className={`fixed inset-0 z-40 lg:hidden transition-all duration-300 ${isMobileOpen
             ? "opacity-100 pointer-events-auto"
             : "opacity-0 pointer-events-none"
-        }`}
+          }`}
       >
         {/* Backdrop */}
         <div
@@ -144,11 +141,10 @@ export function Navbar() {
 
         {/* Menu panel */}
         <div
-          className={`absolute top-16 left-0 right-0 bg-white border-b border-slate-200 shadow-xl transition-all duration-300 ${
-            isMobileOpen
+          className={`absolute top-16 left-0 right-0 bg-white border-b border-slate-200 shadow-xl transition-all duration-300 ${isMobileOpen
               ? "translate-y-0 opacity-100"
               : "-translate-y-4 opacity-0"
-          }`}
+            }`}
         >
           <div className="max-w-7xl mx-auto px-4 py-4">
             <div className="flex flex-col gap-1">
@@ -156,11 +152,10 @@ export function Navbar() {
                 <button
                   key={link.href}
                   onClick={() => setLocation(link.href)}
-                  className={`text-left px-4 py-3 text-base font-medium rounded-xl transition-colors ${
-                    isActive(link.href)
+                  className={`text-left px-4 py-3 text-base font-medium rounded-xl transition-colors ${isActive(link.href)
                       ? "text-emerald-700 bg-emerald-50"
                       : "text-slate-700 hover:bg-slate-50"
-                  }`}
+                    }`}
                 >
                   {link.label}
                 </button>
@@ -187,10 +182,10 @@ export function Navbar() {
                     Login
                   </Button>
                   <Button
-                    onClick={() => setLocation("/contact")}
+                    onClick={() => setLocation("/demo")}
                     className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-3 rounded-xl"
                   >
-                    Request Demo
+                    Try Demo
                     <ArrowRight className="w-4 h-4 ml-2" />
                   </Button>
                 </>

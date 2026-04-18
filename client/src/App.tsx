@@ -26,6 +26,10 @@ import ContactPage from "@/pages/public/ContactPage";
 import CaseStudiesPage from "@/pages/public/CaseStudiesPage";
 import { ScrollToTop } from "@/components/ScrollToTop";
 
+// Interactive demo (public, zero server impact)
+import DemoLanding from "@/demo/DemoLanding";
+import { DemoRoute } from "@/demo/DemoRoute";
+
 
 function App() {
   return (
@@ -71,6 +75,10 @@ function Router() {
         <Route path="/case-studies" component={CaseStudiesPage} />
         <Route path="/impact">{() => <Redirect to="/product" />}</Route>
         <Route path="/blog">{() => <Redirect to="/about" />}</Route>
+
+        {/* Interactive demo — public, no auth needed */}
+        <Route path="/demo/:role">{(params) => <DemoRoute role={params.role} />}</Route>
+        <Route path="/demo" component={DemoLanding} />
 
         {/* Legacy routes redirect to new pages */}
         <Route path="/home">{() => <HomePage />}</Route>
@@ -124,6 +132,10 @@ function Router() {
       <Route path="/blog">{() => <Redirect to="/about" />}</Route>
       <Route path="/home">{() => <HomePage />}</Route>
       <Route path="/feedback">{() => <Redirect to="/contact" />}</Route>
+
+      {/* Interactive demo — also accessible when logged in */}
+      <Route path="/demo/:role">{(params) => <DemoRoute role={params.role} />}</Route>
+      <Route path="/demo" component={DemoLanding} />
 
       {/* Role-specific routes */}
       <Route path="/admin">

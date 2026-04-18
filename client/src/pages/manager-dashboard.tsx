@@ -309,10 +309,11 @@ const NeedsAttentionStrip = ({ items, onSelect }: { items: any[], onSelect: (h: 
 // Detail sheet for Needs Attention households - Redesigned for full screen Action
 const AttentionDetailSheet = ({ household, onClose }: { household: any, onClose: () => void }) => {
   const { t } = useTranslation();
-  if (!household) return null;
   const [isPlaying, setIsPlaying] = React.useState(false);
   const audioRef = React.useRef<HTMLAudioElement>(null);
   const { toast: detailToast } = useToast();
+
+  if (!household) return null;
 
   const togglePlay = () => {
     if (!audioRef.current) return;
