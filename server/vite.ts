@@ -13,31 +13,31 @@ const BASE_URL = "https://greenpathindia.in";
 // Per-page SEO metadata for server-side injection (social crawlers, Googlebot)
 const SEO_META: Record<string, { title: string; description: string; image?: string }> = {
   "/": {
-    title: "GreenPath — Waste Collection Management Platform",
-    description: "Digital waste management for communities. QR-based household tracking, offline-first collection, real-time analytics, and governance — from doorstep to processing.",
+    title: "GreenPath - Waste Collection Management Platform",
+    description: "Digital waste management for communities. QR-based household tracking, offline-first collection, real-time analytics, and governance - from doorstep to processing.",
   },
   "/product": {
-    title: "Platform — GreenPath",
+    title: "Platform - GreenPath",
     description: "Complete waste management operating system: QR-based household tracking, offline-first collector app, vehicle sessions, analytics dashboards, multi-language support.",
   },
   "/solutions": {
-    title: "Solutions — GreenPath",
+    title: "Solutions - GreenPath",
     description: "Tailored waste management for municipalities, panchayats, apartments, campuses, and NGOs. Offline-first, multi-language, QR-based tracking for every community type.",
   },
   "/case-studies": {
-    title: "Case Studies — GreenPath",
+    title: "Case Studies - GreenPath",
     description: "Real deployments with measurable outcomes. Billapura panchayat achieved 95% source segregation. 8+ panchayats now replicating across 1.5 lakh people.",
   },
   "/pricing": {
-    title: "Pricing — GreenPath",
-    description: "₹4/household/month. All features included. No per-user fees. No hidden costs. Transparent pricing for waste management — from panchayats to municipalities.",
+    title: "Pricing - GreenPath",
+    description: "₹4/household/month. All features included. No per-user fees. No hidden costs. Transparent pricing for waste management - from panchayats to municipalities.",
   },
   "/about": {
-    title: "About — GreenPath",
+    title: "About - GreenPath",
     description: "Born from the field, not a boardroom. Built through Azim Premji University collaboration with Billapura Panchayat. Technology that serves communities.",
   },
   "/contact": {
-    title: "Contact — GreenPath",
+    title: "Contact - GreenPath",
     description: "Get in touch with the GreenPath team. Request a demo, discuss partnerships, or ask about deploying waste management technology in your community.",
   },
 };

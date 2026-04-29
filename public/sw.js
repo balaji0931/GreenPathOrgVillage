@@ -1,10 +1,10 @@
 // GreenPath Service Worker
 // Rules:
-//   1. Network-first everywhere — always prefer live data
-//   2. Single versioned cache — keyed by build ID from build-meta.json
+//   1. Network-first everywhere - always prefer live data
+//   2. Single versioned cache - keyed by build ID from build-meta.json
 //   3. On deploy: new build ID = delete ALL old caches (login cookies untouched)
 //   4. cache.put() replaces by URL (never duplicates)
-//   5. Strict cap — cache never grows past MAX_ENTRIES
+//   5. Strict cap - cache never grows past MAX_ENTRIES
 //   6. Only cache what's truly needed: app shell + static assets + collector API data
 //   7. Role-aware offline: collectors get app shell, everyone else gets branded offline page
 
@@ -161,7 +161,7 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  // Static assets (.js, .css, images, fonts) — network first, cache for offline
+  // Static assets (.js, .css, images, fonts) - network first, cache for offline
   if (isStaticAsset(url.pathname)) {
     event.respondWith(networkFirstStrict(request));
     return;
@@ -191,7 +191,7 @@ async function networkFirstStrict(request) {
 /** Put into cache, REPLACING any existing entry. Enforce cap. */
 async function cacheReplace(request, response) {
   const cache = await caches.open(currentCacheName);
-  await cache.put(request, response); // replaces by URL — never duplicates
+  await cache.put(request, response); // replaces by URL - never duplicates
   await enforceCapIfNeeded(cache);
 }
 
@@ -231,7 +231,7 @@ async function handleOfflineNavigation() {
   const cachedIndex = await caches.match("/");
   if (cachedIndex && userResp) return cachedIndex;
 
-  // Truly no cached content — show branded offline page
+  // Truly no cached content - show branded offline page
   return offlinePage();
 }
 
@@ -243,7 +243,7 @@ function offlinePage() {
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>GreenPath — Offline</title>
+  <title>GreenPath - Offline</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
@@ -361,7 +361,7 @@ function offlinePage() {
       Try Again
     </button>
 
-    <p class="hint">Your session is saved — you'll pick up right where you left off.</p>
+    <p class="hint">Your session is saved - you'll pick up right where you left off.</p>
   </div>
 </body>
 </html>`,
@@ -495,7 +495,7 @@ async function syncOfflineCollections() {
   isSyncInProgress = true;
 
   try {
-    // Fetch a fresh CSRF token before syncing (GET — no CSRF check needed)
+    // Fetch a fresh CSRF token before syncing (GET - no CSRF check needed)
     let csrfToken = null;
     try {
       const csrfResp = await fetch('/api/auth/csrf-token', { credentials: 'include' });
@@ -611,7 +611,7 @@ self.addEventListener('message', async (event) => {
       break;
     }
     case 'CLEAR_ALL_CACHES': {
-      // Called on logout — nuke everything
+      // Called on logout - nuke everything
       try {
         const names = await caches.keys();
         await Promise.all(names.map(n => caches.delete(n)));
@@ -638,8 +638,8 @@ self.addEventListener("push", (event) => {
       badge: data.badge || "/logos/png/logo-64x64.png",
       tag: data.tag || "greenpath-notification",
       renotify: true,                // Replace old notification with same tag
-      requireInteraction: false,     // Auto-dismiss — battery friendly
-      vibrate: [200],                // Single short vibration — not spammy
+      requireInteraction: false,     // Auto-dismiss - battery friendly
+      vibrate: [200],                // Single short vibration - not spammy
       data: { url: data.url || "/" },
     })
   );

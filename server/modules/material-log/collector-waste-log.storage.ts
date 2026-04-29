@@ -50,7 +50,7 @@ export async function getCollectorWasteLogsByVillageAndDate(
         .orderBy(desc(collectorDailyWasteLog.createdAt));
 }
 
-/** Summed totals for a village on a given date — used by manager form pre-load & premium report fallback */
+/** Summed totals for a village on a given date - used by manager form pre-load & premium report fallback */
 export async function getCollectorWasteLogSummaryByVillageAndDate(
     villageId: string,
     date: string,

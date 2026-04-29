@@ -69,7 +69,7 @@ export function PublicFooter() {
               Digital waste management for communities across India.
             </p>
             <p className="text-sm text-slate-500">
-              support@greenpathorg.social
+              support@greenpathindia.in
             </p>
           </div>
 

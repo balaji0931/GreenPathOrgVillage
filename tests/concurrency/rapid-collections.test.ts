@@ -1,5 +1,5 @@
 /**
- * RAPID COLLECTIONS — Stress test for field collection workflow.
+ * RAPID COLLECTIONS - Stress test for field collection workflow.
  *
  * Simulates real-world scenarios:
  *   A. Single collector submitting 10 collections rapidly (sequential burst)
@@ -139,7 +139,7 @@ function makePayload(householdUid: string, index: number) {
 
 describe('Rapid Collections', () => {
 
-    describe('A. Single collector — 10 rapid sequential submissions', () => {
+    describe('A. Single collector - 10 rapid sequential submissions', () => {
         let setup: Awaited<ReturnType<typeof createVillageWithCollectors>>;
 
         beforeAll(async () => {
@@ -150,7 +150,7 @@ describe('Rapid Collections', () => {
             const collector = setup.collectors[0];
             const results: { status: number; householdUid: string }[] = [];
 
-            // Sequential burst — no await gap, fire as fast as possible
+            // Sequential burst - no await gap, fire as fast as possible
             for (let i = 0; i < 10; i++) {
                 const res = await collector.agent
                     .post('/api/waste-collections')
@@ -177,7 +177,7 @@ describe('Rapid Collections', () => {
         });
     });
 
-    describe('B. 10 collectors — simultaneous parallel submissions', () => {
+    describe('B. 10 collectors - simultaneous parallel submissions', () => {
         let setup: Awaited<ReturnType<typeof createVillageWithCollectors>>;
 
         beforeAll(async () => {
@@ -186,7 +186,7 @@ describe('Rapid Collections', () => {
         }, 120000);
 
         test('3. All 10 parallel submissions succeed', async () => {
-            // Each collector submits for a different household — all should succeed
+            // Each collector submits for a different household - all should succeed
             const promises = setup.collectors.map((col, i) =>
                 col.agent
                     .post('/api/waste-collections')
@@ -213,7 +213,7 @@ describe('Rapid Collections', () => {
         });
     });
 
-    describe('C. Burst mode — 20 rapid collections, single collector', () => {
+    describe('C. Burst mode - 20 rapid collections, single collector', () => {
         let setup: Awaited<ReturnType<typeof createVillageWithCollectors>>;
 
         beforeAll(async () => {
@@ -223,7 +223,7 @@ describe('Rapid Collections', () => {
         test('5. All 20 burst submissions succeed', async () => {
             const collector = setup.collectors[0];
 
-            // Fire all 20 in parallel — maximum stress
+            // Fire all 20 in parallel - maximum stress
             const promises = setup.households.map((hh, i) =>
                 collector.agent
                     .post('/api/waste-collections')
@@ -257,11 +257,11 @@ describe('Rapid Collections', () => {
         let setup: Awaited<ReturnType<typeof createVillageWithCollectors>>;
 
         beforeAll(async () => {
-            // 3 collectors, 1 household — to test duplicate detection
+            // 3 collectors, 1 household - to test duplicate detection
             setup = await createVillageWithCollectors('DupD', 3, 1);
         }, 120000);
 
-        test('7. Same household, 3 collectors simultaneously — at most 3 succeed', async () => {
+        test('7. Same household, 3 collectors simultaneously - at most 3 succeed', async () => {
             const hh = setup.households[0];
 
             const promises = setup.collectors.map((col, i) =>
@@ -282,7 +282,7 @@ describe('Rapid Collections', () => {
             expect(statuses.filter(s => s === 200).length).toBeGreaterThanOrEqual(1);
         }, 60000);
 
-        test('8. Same collector, same household, 5 parallel — at most 1 new record', async () => {
+        test('8. Same collector, same household, 5 parallel - at most 1 new record', async () => {
             const collector = setup.collectors[0];
             // Collector 0 already submitted above, so all 5 should be 409
             const promises = Array.from({ length: 5 }, (_, i) =>
@@ -296,7 +296,7 @@ describe('Rapid Collections', () => {
             const statuses = results.map(r => r.status);
             const serverErrors = statuses.filter(s => s >= 500);
 
-            // No 500 errors — all should be 409 (already collected)
+            // No 500 errors - all should be 409 (already collected)
             expect(serverErrors).toHaveLength(0);
 
             // Due to race conditions, possibly 0 or 1 more 200s may slip through

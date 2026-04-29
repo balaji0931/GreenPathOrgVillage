@@ -32,7 +32,7 @@ export function registerAttendanceRoutes(app: Express, requireAuth: any, require
   // Attendance Centers (Manager)
   // ═══════════════════════════════════════════
 
-  // Create center — manager stands at location and taps "Set Location Here"
+  // Create center - manager stands at location and taps "Set Location Here"
   app.post("/api/attendance/centers", requireAuth, requireRole(["manager"]), requireVillageAccess, async (req, res) => {
     try {
       const { name, latitude, longitude, radiusMeters } = req.body;
@@ -194,7 +194,7 @@ export function registerAttendanceRoutes(app: Express, requireAuth: any, require
   });
 
   // ═══════════════════════════════════════════
-  // Shift Log (Collector — QR scan + GPS)
+  // Shift Log (Collector - QR scan + GPS)
   // ═══════════════════════════════════════════
 
   // Scan QR to start or end shift

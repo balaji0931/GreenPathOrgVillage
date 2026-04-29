@@ -80,7 +80,7 @@ export async function markNotified(subIds: number[]) {
 
 /**
  * Find nearby households with active push subscriptions.
- * Bounding-box geo filter — no GIS extension needed.
+ * Bounding-box geo filter - no GIS extension needed.
  * Skips households already notified within cooldownMinutes.
  * Skips households already collected today.
  */

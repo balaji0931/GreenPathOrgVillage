@@ -17,7 +17,7 @@ export const toFullUid = (scannedUid: string): string => {
   return `GEN-${scannedUid}`;
 };
 
-/** Generate credentials for generator (household) user — async bcrypt */
+/** Generate credentials for generator (household) user - async bcrypt */
 export const generateGeneratorCredentials = async (uid: string): Promise<{
   userId: string;
   password: string;
@@ -137,7 +137,7 @@ function drawVectorQR(
     let col = 0;
     while (col < size) {
       if (matrix[row][col]) {
-        // Start of a dark run — find how far it extends
+        // Start of a dark run - find how far it extends
         const startCol = col;
         while (col < size && matrix[row][col]) {
           col++;
@@ -163,10 +163,10 @@ function drawVectorQR(
  * Generate a printable PDF for pre-mapped QR codes.
  *
  * OPTIMIZATIONS (vs original):
- * 1. QR codes drawn as vector rectangles — zero raster image data
+ * 1. QR codes drawn as vector rectangles - zero raster image data
  * 2. Logo image added ONCE with alias, referenced on every card
- * 3. Horizontal run-length encoding — ~200 draw calls per QR vs ~1681
- * 4. No intermediate PNG buffers — direct matrix → PDF
+ * 3. Horizontal run-length encoding - ~200 draw calls per QR vs ~1681
+ * 4. No intermediate PNG buffers - direct matrix → PDF
  *
  * Memory: ~20-30MB for 500 QR codes (vs ~300-400MB before)
  * PDF size: ~2-5MB for 500 QR codes (vs ~230MB before)
@@ -192,7 +192,7 @@ export const generatePreMappedQRCodesPDF = async (
   const boxHeight = pageHeight / rows; // 99mm
   const qrCodesPerPage = cols * rows;  // 9
 
-  // Pre-generate all QR matrices (lightweight — just boolean arrays, no images)
+  // Pre-generate all QR matrices (lightweight - just boolean arrays, no images)
   // Each matrix is ~41×41 booleans = ~1.7KB vs ~50KB for a PNG
   const qrMatrices = qrCodes.map(qr => {
     const scannableUid = getScannableUid(qr.uid);
@@ -224,7 +224,7 @@ export const generatePreMappedQRCodesPDF = async (
     pdf.rect(x, y, boxWidth, boxHeight);
     pdf.setLineDashPattern([], 0);
 
-    // Logo — pass same logoDataURL variable every time.
+    // Logo - pass same logoDataURL variable every time.
     // jsPDF internally deduplicates by matching the data string,
     // so only one copy is stored in the PDF regardless of how many cards.
     pdf.addImage(
@@ -243,7 +243,7 @@ export const generatePreMappedQRCodesPDF = async (
     pdf.text("Waste Management System", centerX, currentY, { align: "center" });
     currentY += 7;
 
-    // QR code — vector rectangles (no raster image)
+    // QR code - vector rectangles (no raster image)
     const qrX = centerX - qrSize / 2;
     const { matrix, size } = qrMatrices[i];
     drawVectorQR(pdf, matrix, size, qrX, currentY, qrSize);

@@ -110,8 +110,8 @@ export class CashfreeAdapter implements PaymentGatewayAdapter {
 
         if (qrData) {
           // Cashfree returns either:
-          // 1. A pre-rendered QR image (base64 data URL) — pass directly to frontend
-          // 2. A UPI intent string (upi://pay?...) — frontend generates QR from this
+          // 1. A pre-rendered QR image (base64 data URL) - pass directly to frontend
+          // 2. A UPI intent string (upi://pay?...) - frontend generates QR from this
           if (qrData.startsWith("data:image/")) {
             return { qrPayload: "", qrImageDataUrl: qrData, expiresAt };
           } else {

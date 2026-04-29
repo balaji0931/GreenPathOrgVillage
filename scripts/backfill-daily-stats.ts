@@ -2,7 +2,7 @@
  * Backfill script: Replay all historical waste_collections
  * to populate the pre-calculated daily stats tables.
  *
- * Run once after schema migration. Safe to re-run (idempotent — truncates stats tables first).
+ * Run once after schema migration. Safe to re-run (idempotent - truncates stats tables first).
  *
  * Usage: npx tsx scripts/backfill-daily-stats.ts
  */

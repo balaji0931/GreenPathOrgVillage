@@ -15,7 +15,7 @@ let cachedServer: Server | null = null;
  * Cloudinary is mocked via Jest moduleNameMapper.
  *
  * Returns the Express app for use with Supertest.
- * Does NOT call listen() — Supertest handles that internally.
+ * Does NOT call listen() - Supertest handles that internally.
  */
 export async function getTestApp(): Promise<Express> {
     if (cachedApp) return cachedApp;

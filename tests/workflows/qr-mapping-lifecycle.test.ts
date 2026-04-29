@@ -1,5 +1,5 @@
 /**
- * QR MAPPING LIFECYCLE — QR state machine tests.
+ * QR MAPPING LIFECYCLE - QR state machine tests.
  *
  * notMapped → mapped, re-map blocked, cross-village blocked, PDF, credential validity.
  */

@@ -1,5 +1,5 @@
 /**
- * ROLE MATRIX — Full Declarative Security Sweep
+ * ROLE MATRIX - Full Declarative Security Sweep
  *
  * Tests every protected endpoint × every role.
  * Generates tests programmatically from a declarative permission map.
@@ -147,7 +147,7 @@ function resolvePath(template: string): string {
         .replace(':householdUid', householdUid);
 }
 
-// Static endpoint list — paths use placeholders resolved at test time
+// Static endpoint list - paths use placeholders resolved at test time
 const ENDPOINTS: EndpointSpec[] = [
     // ─── Village (admin only for list) ───
     { method: 'get', pathTemplate: '/api/villages', label: 'GET /api/villages', roles: allow('admin') },
@@ -166,7 +166,7 @@ const ENDPOINTS: EndpointSpec[] = [
     { method: 'get', pathTemplate: '/api/waste-collections/village', label: 'GET /api/waste-collections/village', roles: allow('manager') },
     { method: 'get', pathTemplate: '/api/collections/daily-summary', label: 'GET /api/collections/daily-summary', roles: allow('manager') },
 
-    // ─── Issue (requireAuth only — all authenticated roles can read) ───
+    // ─── Issue (requireAuth only - all authenticated roles can read) ───
     { method: 'get', pathTemplate: '/api/issues', label: 'GET /api/issues', roles: allow('admin', 'moderator', 'manager', 'fieldworker', 'collector', 'generator') },
     { method: 'get', pathTemplate: '/api/issues/paginated', label: 'GET /api/issues/paginated', roles: allow('admin', 'moderator', 'manager', 'fieldworker', 'collector', 'generator') },
 
@@ -230,7 +230,7 @@ const ENDPOINTS: EndpointSpec[] = [
 ];
 
 // ─── Programmatic test generation ───
-describe('Role Matrix — Access Control Sweep', () => {
+describe('Role Matrix - Access Control Sweep', () => {
     for (const ep of ENDPOINTS) {
         describe(ep.label, () => {
             for (const role of ROLES) {

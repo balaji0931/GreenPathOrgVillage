@@ -1,5 +1,5 @@
 /**
- * CROSS-MODULE INVARIANTS — System-level referential integrity & role enforcement.
+ * CROSS-MODULE INVARIANTS - System-level referential integrity & role enforcement.
  *
  * Collection → valid household. Feedback → valid collection.
  * VILLAGE_MISMATCH enforced. Generator sees only own data.
@@ -229,7 +229,7 @@ describe('Cross-Module Invariants', () => {
     });
 
     test('8. New password works after change', async () => {
-        // Use the same manager from test 7 — create fresh to be isolated
+        // Use the same manager from test 7 - create fresh to be isolated
         const v4Res = await adminAgent
             .post('/api/villages')
             .set('x-csrf-token', adminCsrf)

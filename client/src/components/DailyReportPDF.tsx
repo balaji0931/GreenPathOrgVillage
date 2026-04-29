@@ -92,7 +92,7 @@ function buildFullReport(d: PDFReportData): string {
   const divColor = statusColor(divPct, 70, 40);
   const divLabel = divPct >= 70 ? "Excellent" : divPct >= 40 ? "Needs Improvement" : "Critical";
 
-  // KPI card builder — horizontal: label+sub left, value right (No progress bar)
+  // KPI card builder - horizontal: label+sub left, value right (No progress bar)
   const kpi = (label: string, value: string, sub: string, color: string) => `
     <div style="background:${C.s50};border:1.5px solid ${C.s200};border-radius:10px;padding:14px 16px;border-left:4px solid ${color};display:flex;align-items:center;justify-content:space-between;gap:10px;">
       <div style="flex:1;">

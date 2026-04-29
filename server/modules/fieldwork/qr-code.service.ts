@@ -2,7 +2,7 @@ import { storage } from "../../storage";
 
 /**
  * Create a batch of pre-mapped QR codes for a village.
- * No Cloudinary — just creates DB rows with UIDs.
+ * No Cloudinary - just creates DB rows with UIDs.
  * 500 codes: ~200ms (single DB insert).
  */
 export async function createBatchQRCodes(villageId: string, quantity: number) {
@@ -14,7 +14,7 @@ export async function createBatchQRCodes(villageId: string, quantity: number) {
     const batchId = await storage.getNextBatchId(villageId);
     const uids = await storage.getNextQRCodeUid(villageId, quantity);
 
-    // No Cloudinary upload — just create DB records with UIDs
+    // No Cloudinary upload - just create DB records with UIDs
     const qrCodeRecords = uids.map(uid => ({
         uid,
         villageId,
@@ -97,7 +97,7 @@ export async function mapQRToHousehold(
     // Generate generator credentials (async bcrypt)
     const { userId: generatorUserId, hashedPassword } = await generateGeneratorCredentials(householdUid);
 
-    // Create household — no qrCodeUrl/qrCodePublicId needed
+    // Create household - no qrCodeUrl/qrCodePublicId needed
     const household = await storage.createHousehold({
         uid: householdUid,
         villageId,
@@ -139,7 +139,7 @@ export async function mapQRToHousehold(
 
 /**
  * Generate PDF for a batch of QR codes.
- * QR images are generated locally — no Cloudinary fetch.
+ * QR images are generated locally - no Cloudinary fetch.
  */
 export async function generateBatchPDF(batchId: string) {
     const qrCodes = await storage.getQRCodesByBatch(batchId);

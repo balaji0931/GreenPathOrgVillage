@@ -10,11 +10,11 @@ interface DemoProviderProps {
   children: ReactNode;
 }
 
-// Guard flag — prevents double-patching if two DemoProviders mount briefly
+// Guard flag - prevents double-patching if two DemoProviders mount briefly
 const DEMO_FETCH_FLAG = "__demo_fetch_patched__";
 
 /**
- * DemoProvider — wraps a real dashboard component with isolated demo data.
+ * DemoProvider - wraps a real dashboard component with isolated demo data.
  *
  * How it works:
  * 1. Creates a SEPARATE QueryClient with mock data pre-seeded
@@ -33,7 +33,7 @@ export function DemoProvider({ role, children }: DemoProviderProps) {
   const { toast } = useToast();
   const lastToastTime = useRef(0);
 
-  // Create isolated QueryClient — recreated on reset
+  // Create isolated QueryClient - recreated on reset
   const demoQueryClient = useMemo(() => {
     const client = new QueryClient({
       defaultOptions: {
@@ -75,7 +75,7 @@ export function DemoProvider({ role, children }: DemoProviderProps) {
           refetchOnReconnect: false,
         },
         mutations: {
-          // Block ALL mutations — show demo toast (throttled)
+          // Block ALL mutations - show demo toast (throttled)
           mutationFn: async () => {
             // Return success shape so onSuccess callbacks don't crash
             return { success: true, id: Date.now() };
@@ -87,7 +87,7 @@ export function DemoProvider({ role, children }: DemoProviderProps) {
     // Pre-seed all mock data for this role
     seedDemoData(client, role);
 
-    // Debug helper — access demo client from browser console
+    // Debug helper - access demo client from browser console
     if (process.env.NODE_ENV === "development") {
       (window as any).__demoClient = client;
     }
@@ -114,10 +114,10 @@ export function DemoProvider({ role, children }: DemoProviderProps) {
             ? input.toString()
             : input.url;
 
-      // ONLY intercept /api/ calls — everything else passes through
+      // ONLY intercept /api/ calls - everything else passes through
       const pathname = new URL(url, window.location.origin).pathname;
       if (pathname.startsWith("/api/")) {
-        // Block mutations (POST/PUT/DELETE/PATCH) — with demo-specific simulation
+        // Block mutations (POST/PUT/DELETE/PATCH) - with demo-specific simulation
         const method = (init?.method || "GET").toUpperCase();
         if (!["GET", "HEAD", "OPTIONS"].includes(method)) {
           const fullUrl = new URL(url, window.location.origin);
@@ -181,7 +181,7 @@ export function DemoProvider({ role, children }: DemoProviderProps) {
           );
         }
 
-        // GET requests — return mock data based on URL (with error handling)
+        // GET requests - return mock data based on URL (with error handling)
         try {
           const mockData = getDemoApiResponse(url, role);
           return new Response(JSON.stringify(mockData), {

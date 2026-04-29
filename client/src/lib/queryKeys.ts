@@ -1,5 +1,5 @@
 /**
- * Query Key Factory — single source of truth for all React Query cache keys.
+ * Query Key Factory - single source of truth for all React Query cache keys.
  *
  * Used by demo seeder + fetch interceptor to stay in sync with dashboard queries.
  * Production dashboards still use hardcoded strings (no refactor needed).

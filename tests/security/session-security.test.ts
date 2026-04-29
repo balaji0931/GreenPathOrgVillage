@@ -1,5 +1,5 @@
 /**
- * SESSION SECURITY — Fixation, invalidation, tampering.
+ * SESSION SECURITY - Fixation, invalidation, tampering.
  *
  * Tests:
  * - Session ID changes after login (fixation protection)
@@ -75,7 +75,7 @@ describe('Session Security', () => {
             const logoutRes = await agent.post('/api/auth/logout').set('x-csrf-token', csrf);
             expect(logoutRes.status).toBe(200);
 
-            // Session destroyed — should be 401
+            // Session destroyed - should be 401
             const postLogoutRes = await agent.get('/api/auth/user');
             expect(postLogoutRes.status).toBe(401);
         });

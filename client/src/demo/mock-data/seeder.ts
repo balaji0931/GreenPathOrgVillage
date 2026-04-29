@@ -1,5 +1,5 @@
 /**
- * Cache Seeder — pre-fills a QueryClient with mock data for a given role.
+ * Cache Seeder - pre-fills a QueryClient with mock data for a given role.
  * Uses MEMOIZED getters from generators (same data as fetch interceptor).
  */
 
@@ -73,7 +73,7 @@ export function seedDemoData(client: QueryClient, role: DemoRole): void {
 
   // Village by ID path (some dashboards use /api/villages/:id)
   client.setQueryData(qk.villageById(V), village);
-  // Wards — dashboard uses ["/api/villages", villageId, "wards"]
+  // Wards - dashboard uses ["/api/villages", villageId, "wards"]
   client.setQueryData(qk.villageWards(V), village.wards);
   client.setQueryData(qk.villageDetails(V), village);
 
@@ -103,7 +103,7 @@ export function seedDemoData(client: QueryClient, role: DemoRole): void {
     // Audit / Activity logs
     client.setQueryData(["/api/audit-logs"], generateAuditLogs());
 
-    // Behaviour stats — seed with and without ward filter
+    // Behaviour stats - seed with and without ward filter
     const thresholds = { minAvgRating: 3, maxMixed7Days: 3, maxInactiveDays: 21, minCollections7Days: 0, minCollections30Days: 0 };
     const allBehaviourData = { stats: behaviourStats, thresholds };
     client.setQueryData(qk.behaviourStats(V, undefined), allBehaviourData);
@@ -123,11 +123,11 @@ export function seedDemoData(client: QueryClient, role: DemoRole): void {
       pageParams: [1],
     });
 
-    // Date-dependent data — seed last 14 days
+    // Date-dependent data - seed last 14 days
     for (const date of recentDates(14)) {
       client.setQueryData(qk.dailySummary(V, date), generateDailySummary(date));
       client.setQueryData(qk.premiumAnalytics(V, date), generatePremiumAnalytics(date));
-      // Attendance — dashboard uses key: ['/api/attendance/daily', villageId, date, workerType]
+      // Attendance - dashboard uses key: ['/api/attendance/daily', villageId, date, workerType]
       for (const wType of ["collector", "helper", "segregator"]) {
         client.setQueryData(["/api/attendance/daily", V, date, wType], generateAttendanceDaily(wType));
       }
@@ -150,7 +150,7 @@ export function seedDemoData(client: QueryClient, role: DemoRole): void {
 
   // ─── Generator (Household) ─────────────────────────────────────
   if (role === "generator") {
-    const DEMO_GENERATOR_INDEX = 41; // Sunita Patil — H-042
+    const DEMO_GENERATOR_INDEX = 41; // Sunita Patil - H-042
     const myHousehold = households[DEMO_GENERATOR_INDEX];
     const allCollections = getCollections();
     const myCollections = allCollections.filter((c) => c.householdId === DEMO_GENERATOR_INDEX + 1);

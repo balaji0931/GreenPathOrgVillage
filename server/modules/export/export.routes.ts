@@ -1,5 +1,5 @@
 /**
- * Export Routes — CSV export endpoints.
+ * Export Routes - CSV export endpoints.
  * 3 endpoints: estimate, single, bulk (ZIP).
  */
 import type { Express, Request, Response } from 'express';
@@ -8,7 +8,7 @@ import archiver from 'archiver';
 import { rateLimitExport } from './export.middleware';
 
 // Register the encrypted ZIP format
-// @ts-ignore — no type declarations available
+// @ts-ignore - no type declarations available
 import archiverZipEncrypted from 'archiver-zip-encrypted';
 archiver.registerFormat('zip-encrypted', archiverZipEncrypted);
 import {
@@ -206,7 +206,7 @@ export function registerExportRoutes(
         return res.status(403).json({ message: 'No access to requested villages' });
       }
 
-      // Sensitive export check — require password verification already done client-side
+      // Sensitive export check - require password verification already done client-side
       const isSensitive = accessibleVillages.length > 1 || user.role === 'admin';
 
       const mask = body.maskPersonalData ?? false;
@@ -453,7 +453,7 @@ async function generateSingleCsv(
  */
 async function getAccessibleVillages(user: any, requestedVillageIds: string[]): Promise<string[]> {
   if (user.role === 'admin') {
-    // Admin can access all — validate they exist
+    // Admin can access all - validate they exist
     const { villages } = await import('@shared/schema');
     const { db: database } = await import('../../db');
     const { inArray } = await import('drizzle-orm');
@@ -465,7 +465,7 @@ async function getAccessibleVillages(user: any, requestedVillageIds: string[]): 
   }
 
   if (user.role === 'moderator') {
-    // Moderator — only assigned villages
+    // Moderator - only assigned villages
     const { moderatorVillageAssignments } = await import('@shared/schema');
     const { db: database } = await import('../../db');
     const { eq, inArray } = await import('drizzle-orm');
@@ -478,7 +478,7 @@ async function getAccessibleVillages(user: any, requestedVillageIds: string[]): 
   }
 
   if (user.role === 'manager') {
-    // Manager — only own village
+    // Manager - only own village
     return requestedVillageIds.filter(id => id === user.villageId);
   }
 

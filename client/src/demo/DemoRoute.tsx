@@ -3,7 +3,7 @@ import type { DemoRole } from "./DemoContext";
 import { DemoProvider } from "./DemoProvider";
 import { DemoBanner } from "./DemoBanner";
 
-// Lazy-load dashboard components for demo — no extra bundle for real users
+// Lazy-load dashboard components for demo - no extra bundle for real users
 const ManagerDashboard = lazy(() => import("@/pages/manager-dashboard"));
 const CollectorDashboard = lazy(() => import("@/pages/collector-dashboard"));
 const GeneratorDashboard = lazy(() => import("@/pages/generator-dashboard"));
@@ -30,7 +30,7 @@ function DemoLoading() {
 }
 
 /**
- * DemoRoute — renders the real dashboard wrapped in DemoProvider.
+ * DemoRoute - renders the real dashboard wrapped in DemoProvider.
  * Access via /demo/:role (e.g., /demo/manager)
  */
 export function DemoRoute({ role }: { role: string }) {

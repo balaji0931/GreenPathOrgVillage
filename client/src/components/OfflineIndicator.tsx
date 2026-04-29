@@ -135,7 +135,7 @@ export function OfflineIndicator({ userRole }: { userRole?: string }) {
         </button>
 
         <p style={{ marginTop: '1.5rem', fontSize: '0.8rem', color: '#94a3b8' }}>
-          Your session is saved — you'll pick up right where you left off.
+          Your session is saved - you'll pick up right where you left off.
         </p>
       </div>
     </div>

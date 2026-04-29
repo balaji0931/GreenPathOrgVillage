@@ -19,8 +19,8 @@ export const villages = pgTable("villages", {
   totalHouseholds: integer("total_households").notNull().default(0), // Pre-calculated household count
   proximityAlertsEnabled: boolean("proximity_alerts_enabled").default(false), // Admin toggle: enable push notifications for nearby collection
   notificationRadiusMeters: integer("notification_radius_meters").default(150), // Radius for proximity alerts (120-300m)
-  notificationWindowStart: text("notification_window_start").default("05:30"), // HH:MM IST — earliest push time
-  notificationWindowEnd: text("notification_window_end").default("13:00"), // HH:MM IST — latest push time
+  notificationWindowStart: text("notification_window_start").default("05:30"), // HH:MM IST - earliest push time
+  notificationWindowEnd: text("notification_window_end").default("13:00"), // HH:MM IST - latest push time
   collectorWasteLogEnabled: boolean("collector_waste_log_enabled").default(false), // Manager toggle: let collectors enter daily waste logs
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
@@ -538,7 +538,7 @@ export type CompostProductionLog = typeof compostProductionLog.$inferSelect;
 export type DryWasteSale = typeof dryWasteSales.$inferSelect;
 export type DryWasteSaleMaterial = typeof dryWasteSaleMaterials.$inferSelect;
 
-// Collector Daily Waste Log — multiple entries per collector per day, summed for reports
+// Collector Daily Waste Log - multiple entries per collector per day, summed for reports
 export const collectorDailyWasteLog = pgTable("collector_daily_waste_log", {
   id: serial("id").primaryKey(),
   collectorId: integer("collector_id").notNull().references(() => collectors.id),
@@ -587,7 +587,7 @@ export type CollectorDailyWasteLog = typeof collectorDailyWasteLog.$inferSelect;
 // Pre-Calculated Daily Analytics Tables
 // ═══════════════════════════════════════════════════════════════════
 
-// Daily village-level stats — one row per village per day
+// Daily village-level stats - one row per village per day
 export const dailyVillageStats = pgTable("daily_village_stats", {
   id: serial("id").primaryKey(),
   villageId: text("village_id").notNull().references(() => villages.villageId),
@@ -600,7 +600,7 @@ export const dailyVillageStats = pgTable("daily_village_stats", {
   uniqueIndex("idx_dvs_village_date").on(table.villageId, table.reportDate),
 ]);
 
-// Daily ward-level stats — one row per village per ward per day
+// Daily ward-level stats - one row per village per ward per day
 export const dailyWardStats = pgTable("daily_ward_stats", {
   id: serial("id").primaryKey(),
   villageId: text("village_id").notNull().references(() => villages.villageId),
@@ -614,7 +614,7 @@ export const dailyWardStats = pgTable("daily_ward_stats", {
   index("idx_dws_village_date").on(table.villageId, table.reportDate),
 ]);
 
-// Daily vehicle-level stats — one row per vehicle per village per day
+// Daily vehicle-level stats - one row per vehicle per village per day
 export const dailyVehicleStats = pgTable("daily_vehicle_stats", {
   id: serial("id").primaryKey(),
   villageId: text("village_id").notNull().references(() => villages.villageId),
@@ -631,7 +631,7 @@ export const dailyVehicleStats = pgTable("daily_vehicle_stats", {
   index("idx_dvhs_village_date").on(table.villageId, table.reportDate),
 ]);
 
-// Daily hourly stats — one row per vehicle per hour per village per day
+// Daily hourly stats - one row per vehicle per hour per village per day
 export const dailyHourlyStats = pgTable("daily_hourly_stats", {
   id: serial("id").primaryKey(),
   villageId: text("village_id").notNull().references(() => villages.villageId),
@@ -665,7 +665,7 @@ export type InsertDailyHourlyStats = z.infer<typeof insertDailyHourlyStatsSchema
 // Payment Ledger Tables (Phase A1)
 // ═══════════════════════════════════════════════════════════════════
 
-// Household type registry — per-village configurable types
+// Household type registry - per-village configurable types
 export const householdTypes = pgTable("household_types", {
   id: serial("id").primaryKey(),
   villageId: text("village_id").notNull().references(() => villages.villageId),
@@ -680,7 +680,7 @@ export const householdTypes = pgTable("household_types", {
   index("idx_ht_village").on(table.villageId),
 ]);
 
-// Fee config — current active fee per type per village
+// Fee config - current active fee per type per village
 export const villageMonthFeeConfig = pgTable("village_month_fee_config", {
   id: serial("id").primaryKey(),
   villageId: text("village_id").notNull().references(() => villages.villageId),
@@ -694,7 +694,7 @@ export const villageMonthFeeConfig = pgTable("village_month_fee_config", {
   index("idx_fee_village").on(table.villageId),
 ]);
 
-// Billing cycles — governance lock per village per month
+// Billing cycles - governance lock per village per month
 export const billingCycles = pgTable("billing_cycles", {
   id: serial("id").primaryKey(),
   villageId: text("village_id").notNull().references(() => villages.villageId),
@@ -725,7 +725,7 @@ export const billingCycles = pgTable("billing_cycles", {
   index("idx_cycle_village").on(table.villageId),
 ]);
 
-// Household monthly bills — the ledger register (one row = one bill = one payment)
+// Household monthly bills - the ledger register (one row = one bill = one payment)
 export const householdMonthlyBills = pgTable("household_monthly_bills", {
   id: serial("id").primaryKey(),
   householdId: integer("household_id").notNull().references(() => households.id),
@@ -737,7 +737,7 @@ export const householdMonthlyBills = pgTable("household_monthly_bills", {
   householdTypeSnapshot: text("household_type_snapshot").notNull(),
   feeAmountSnapshot: decimal("fee_amount_snapshot", { precision: 10, scale: 2 }).notNull(),
 
-  // Status (BINARY — no partial)
+  // Status (BINARY - no partial)
   status: text("status").default("unpaid"),                   // unpaid | paid | waived
 
   // Payment fields (filled when paid)
@@ -751,7 +751,7 @@ export const householdMonthlyBills = pgTable("household_monthly_bills", {
   waivedReason: text("waived_reason"),
   waivedBy: text("waived_by"),
 
-  // Payment lock — prevents duplicate gateway orders
+  // Payment lock - prevents duplicate gateway orders
   isLockedForPayment: boolean("is_locked_for_payment").default(false),
 
   createdAt: timestamp("created_at").defaultNow(),
@@ -763,12 +763,12 @@ export const householdMonthlyBills = pgTable("household_monthly_bills", {
   uniqueIndex("idx_bill_gateway_txn").on(table.gatewayTxnId),
 ]);
 
-// Payment gateway config — provider-agnostic, village-owned
+// Payment gateway config - provider-agnostic, village-owned
 export const villagePaymentGatewayConfig = pgTable("village_payment_gateway_config", {
   id: serial("id").primaryKey(),
   villageId: text("village_id").notNull().references(() => villages.villageId),
   provider: text("provider").notNull(),                       // razorpay | cashfree | payU
-  encryptedConfigJson: text("encrypted_config_json"),         // AES-256-GCM — all credentials + signature_key inside
+  encryptedConfigJson: text("encrypted_config_json"),         // AES-256-GCM - all credentials + signature_key inside
   mdrPolicy: text("mdr_policy").default("village_absorbs"),   // village_absorbs | household_pays
   mdrPercentage: decimal("mdr_percentage", { precision: 5, scale: 2 }).default("0"),
   isActive: boolean("is_active").default(false),
@@ -786,7 +786,7 @@ export const villagePaymentGatewayConfig = pgTable("village_payment_gateway_conf
   // CREATE UNIQUE INDEX idx_one_active_gateway ON village_payment_gateway_config(village_id) WHERE is_active = true;
 ]);
 
-// Payment gateway orders — backend-owned order→bill mapping (never rely on gateway metadata)
+// Payment gateway orders - backend-owned order→bill mapping (never rely on gateway metadata)
 export const paymentGatewayOrders = pgTable("payment_gateway_orders", {
   id: serial("id").primaryKey(),
   orderId: text("order_id").notNull().unique(),               // gateway order ID
@@ -806,7 +806,7 @@ export const paymentGatewayOrders = pgTable("payment_gateway_orders", {
   index("idx_orders_village").on(table.villageId),
 ]);
 
-// Payment gateway events — webhook audit trail (idempotent processing)
+// Payment gateway events - webhook audit trail (idempotent processing)
 export const paymentGatewayEvents = pgTable("payment_gateway_events", {
   id: serial("id").primaryKey(),
   villageId: text("village_id").notNull(),
@@ -826,7 +826,7 @@ export const paymentGatewayEvents = pgTable("payment_gateway_events", {
   index("idx_gateway_event_order").on(table.orderId),
 ]);
 
-// Payment audit log — forensic action trail
+// Payment audit log - forensic action trail
 export const paymentAuditLog = pgTable("payment_audit_log", {
   id: serial("id").primaryKey(),
   billId: integer("bill_id").notNull().references(() => householdMonthlyBills.id),
@@ -839,7 +839,7 @@ export const paymentAuditLog = pgTable("payment_audit_log", {
   index("idx_audit_action").on(table.action),
 ]);
 
-// Receipt counters — concurrency-safe sequential receipt numbering per village+month
+// Receipt counters - concurrency-safe sequential receipt numbering per village+month
 export const receiptCounters = pgTable("receipt_counters", {
   id: serial("id").primaryKey(),
   villageId: text("village_id").notNull().references(() => villages.villageId),
@@ -977,7 +977,7 @@ export type InsertPaymentGatewayEvent = z.infer<typeof insertPaymentGatewayEvent
 export type InsertPaymentAuditLog = z.infer<typeof insertPaymentAuditLogSchema>;
 
 // ═══════════════════════════════════════════════════════════════════
-// Audit Log Table (A6 — Important Actions Only)
+// Audit Log Table (A6 - Important Actions Only)
 // ═══════════════════════════════════════════════════════════════════
 
 export const auditLogs = pgTable("audit_logs", {
@@ -1014,7 +1014,7 @@ export type InsertAuditLog = z.infer<typeof insertAuditLogSchema>;
 // Attendance & Shift Log Tables (Layer-1 Operations)
 // ═══════════════════════════════════════════════════════════════════
 
-// Attendance Centers — locations where collectors scan QR to start/end shift
+// Attendance Centers - locations where collectors scan QR to start/end shift
 export const attendanceCenters = pgTable("attendance_centers", {
   id: serial("id").primaryKey(),
   villageId: text("village_id").notNull().references(() => villages.villageId),
@@ -1029,7 +1029,7 @@ export const attendanceCenters = pgTable("attendance_centers", {
   index("idx_att_centers_village").on(table.villageId),
 ]);
 
-// Shift Logs — collector scans QR + GPS to start/end shifts (multiple per day)
+// Shift Logs - collector scans QR + GPS to start/end shifts (multiple per day)
 export const shiftLogs = pgTable("shift_logs", {
   id: serial("id").primaryKey(),
   villageId: text("village_id").notNull().references(() => villages.villageId),
@@ -1049,7 +1049,7 @@ export const shiftLogs = pgTable("shift_logs", {
   index("idx_shift_worker_date").on(table.workerId, table.shiftDate),
 ]);
 
-// Worker Attendance — manager-marked daily attendance
+// Worker Attendance - manager-marked daily attendance
 export const workerAttendance = pgTable("worker_attendance", {
   id: serial("id").primaryKey(),
   villageId: text("village_id").notNull().references(() => villages.villageId),

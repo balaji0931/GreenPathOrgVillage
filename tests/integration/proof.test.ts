@@ -1,5 +1,5 @@
 /**
- * Minimal proof test — validates that test infrastructure works.
+ * Minimal proof test - validates that test infrastructure works.
  * This test verifies:
  * 1. Jest boots in ESM mode
  * 2. .env.test loads correctly

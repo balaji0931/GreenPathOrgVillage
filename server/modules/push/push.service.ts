@@ -5,13 +5,13 @@ import { findNearbySubscriptions, markNotified, deactivateSubscription } from ".
 // Initialize VAPID keys
 const VAPID_PUBLIC_KEY = process.env.VAPID_PUBLIC_KEY || "";
 const VAPID_PRIVATE_KEY = process.env.VAPID_PRIVATE_KEY || "";
-const VAPID_SUBJECT = process.env.VAPID_SUBJECT || "mailto:support@greenpathorg.social";
+const VAPID_SUBJECT = process.env.VAPID_SUBJECT || "mailto:support@greenpathindia.in";
 
 if (VAPID_PUBLIC_KEY && VAPID_PRIVATE_KEY) {
   webpush.setVapidDetails(VAPID_SUBJECT, VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY);
 }
 
-// In-memory collector movement cache — prevents notification storms
+// In-memory collector movement cache - prevents notification storms
 // Key: collectorId, Value: { lat, lng, timestamp }
 const collectorAlertCache = new Map<string, { lat: number; lng: number; at: number }>();
 
@@ -63,7 +63,7 @@ function isWithinNotificationWindow(windowStart: string, windowEnd: string): boo
 /**
  * Main entry point: called after each collection is saved.
  * Decides whether to send proximity alerts based on movement-cluster logic.
- * Completely async / fire-and-forget — does NOT block the collection response.
+ * Completely async / fire-and-forget - does NOT block the collection response.
  */
 export async function triggerProximityAlert(params: {
   collectorId: string;
@@ -97,7 +97,7 @@ export async function triggerProximityAlert(params: {
       const timeSince = Date.now() - lastAlert.at;
 
       if (distanceMoved < CLUSTER_DISTANCE_M && timeSince < CLUSTER_TIME_MS) {
-        // Same cluster — skip to avoid notification spam
+        // Same cluster - skip to avoid notification spam
         return;
       }
     }
@@ -119,7 +119,7 @@ export async function triggerProximityAlert(params: {
       });
     }, SEND_DELAY_MS);
   } catch (err) {
-    // Completely non-blocking — log and continue
+    // Completely non-blocking - log and continue
     console.error("[PushAlert] Trigger failed:", (err as Error).message);
   }
 }
@@ -168,7 +168,7 @@ async function sendNearbyAlerts(params: {
             keys: { p256dh: sub.p256dhKey, auth: sub.authKey },
           },
           payload,
-          { TTL: 300 } // 5 min TTL — notification expires if device is offline
+          { TTL: 300 } // 5 min TTL - notification expires if device is offline
         )
       )
     );
@@ -180,7 +180,7 @@ async function sendNearbyAlerts(params: {
       } else {
         const statusCode = (result.reason as any)?.statusCode;
         if (statusCode === 410 || statusCode === 404) {
-          // Dead subscription — auto-cleanup
+          // Dead subscription - auto-cleanup
           deactivateSubscription(batch[idx].endpoint).catch(() => { });
         }
       }

@@ -1,6 +1,6 @@
 /**
  * CSV Export Utilities
- * Pure Node.js CSV generation — no external dependencies.
+ * Pure Node.js CSV generation - no external dependencies.
  */
 import type { Response } from 'express';
 
@@ -61,7 +61,7 @@ export function setZipHeaders(res: Response, filename: string): void {
 }
 
 /**
- * Stream a CSV response — writes BOM + header, then streams data rows.
+ * Stream a CSV response - writes BOM + header, then streams data rows.
  * Use for large datasets (10k+ rows) to avoid memory pressure.
  */
 export function streamCsvStart(res: Response, filename: string, headers: string[]): void {

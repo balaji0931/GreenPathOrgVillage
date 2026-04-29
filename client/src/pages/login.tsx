@@ -60,7 +60,7 @@ export default function Login() {
       className="min-h-screen flex"
       style={{ fontFamily: "'Inter', system-ui, -apple-system, sans-serif" }}
     >
-      {/* Left panel — illustration side (hidden on mobile) */}
+      {/* Left panel - illustration side (hidden on mobile) */}
       <div className="md:p-5 hidden lg:flex lg:w-1/2 relative bg-gradient-to-br from-slate-900 via-emerald-950 to-slate-900 overflow-hidden">
         {/* Decorative blurs */}
         <div className="absolute top-20 left-20 w-80 h-80 bg-emerald-500/10 rounded-full blur-3xl" />
@@ -120,7 +120,7 @@ export default function Login() {
         </div>
       </div>
 
-      {/* Right panel — login form */}
+      {/* Right panel - login form */}
       <div className="w-full lg:w-1/2 flex flex-col">
         {/* Top bar */}
         <div className="flex items-center justify-between p-4 md:p-6">

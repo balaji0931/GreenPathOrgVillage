@@ -124,7 +124,7 @@ describe('Daily Stats Integration', () => {
                 });
             expect(res.status).toBe(200);
 
-            // Stats now update in fire-and-forget background — wait for completion
+            // Stats now update in fire-and-forget background - wait for completion
             await new Promise(r => setTimeout(r, 2000));
 
             // Check daily_village_stats

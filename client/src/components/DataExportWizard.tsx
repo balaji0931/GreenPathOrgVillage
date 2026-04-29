@@ -1,5 +1,5 @@
 /**
- * Data Export Wizard — 6-step export flow.
+ * Data Export Wizard - 6-step export flow.
  * Steps: Villages → Date Range → Reports → Preview → Options → Terms & Download
  * Shared by Manager, Moderator, and Admin dashboards.
  */
@@ -120,7 +120,7 @@ export function DataExportWizard({ role, userVillageId, userId, onBack }: Props)
   const assignedVillages = useMemo(() => {
     if (role === "manager") return [];
     if (role === "moderator") {
-      // Moderator sees assigned villages only — this is filtered server-side
+      // Moderator sees assigned villages only - this is filtered server-side
       return villages;
     }
     return villages; // Admin sees all
@@ -420,7 +420,7 @@ export function DataExportWizard({ role, userVillageId, userId, onBack }: Props)
             {dateRangeDays > 90 && dateRangeDays <= 365 && (
               <div className="flex items-center gap-2 p-2 bg-amber-50 rounded-lg text-amber-700 text-xs">
                 <AlertTriangle className="h-4 w-4 flex-shrink-0" />
-                <span>{dateRangeDays} days selected — large range may take longer</span>
+                <span>{dateRangeDays} days selected - large range may take longer</span>
               </div>
             )}
             {dateRangeDays > 365 && (
@@ -605,7 +605,7 @@ export function DataExportWizard({ role, userVillageId, userId, onBack }: Props)
                 {estimateMutation.data.isSensitive && (
                   <div className="flex items-center gap-2 p-2 bg-purple-50 rounded-lg text-purple-700 text-xs">
                     <Shield className="h-3.5 w-3.5 flex-shrink-0" />
-                    Sensitive export — password re-entry required at final step
+                    Sensitive export - password re-entry required at final step
                   </div>
                 )}
               </div>
@@ -771,7 +771,7 @@ export function DataExportWizard({ role, userVillageId, userId, onBack }: Props)
               <div className="border-t pt-4 space-y-2">
                 <p className="text-sm font-medium flex items-center gap-2 text-purple-700">
                   <Shield className="h-4 w-4" />
-                  Sensitive export — re-enter your password
+                  Sensitive export - re-enter your password
                 </p>
                 <div className="relative">
                   <Input

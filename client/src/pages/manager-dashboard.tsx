@@ -1039,7 +1039,7 @@ const WardPerformanceTripleChart = ({ data }: { data: any[] }) => {
   const { t } = useTranslation();
   return (
     <PremiumReportCard title={t('manager.wardBreakdown')}>
-      {/* Mobile: Horizontal stacked bars — one row per ward */}
+      {/* Mobile: Horizontal stacked bars - one row per ward */}
       <div className="md:hidden space-y-4">
         {data.map((ward, idx) => {
           const collectedPct = ward.total > 0 ? Math.round((ward.collected / ward.total) * 100) : 0;
@@ -1500,7 +1500,7 @@ const DailyInsightsGrid = ({ kpis, pulses }: { kpis: any; pulses: any[] }) => {
         </div>
       </div>
 
-      {/* Row 2: Collection Pulse — full width */}
+      {/* Row 2: Collection Pulse - full width */}
       <div className="bg-green-100/50 backdrop-blur-md border border-green-100/20 shadow-sm rounded-3xl py-2 px-4">
         <div className="flex items-center justify-between">
           <div>
@@ -1528,7 +1528,7 @@ const DailyInsightsGrid = ({ kpis, pulses }: { kpis: any; pulses: any[] }) => {
         </div>
       </div>
 
-      {/* Row 3: Segregation Pulse — full width */}
+      {/* Row 3: Segregation Pulse - full width */}
       <div className="bg-yellow-50/50 backdrop-blur-md border border-yellow-100/20 shadow-sm rounded-3xl py-2 px-4">
         <div className="flex items-center justify-between">
           <div>
@@ -1613,7 +1613,7 @@ const ReportsTabContent = ({
           helpers: (helpData.workers || []).map((w: any) => ({ workerName: w.workerName, attendance: w.attendance })),
           segregators: (segData.workers || []).map((w: any) => ({ workerName: w.workerName, attendance: w.attendance })),
         };
-      } catch { /* attendance not available — PDF will show fallback */ }
+      } catch { /* attendance not available - PDF will show fallback */ }
 
       const pdfData: PDFReportData = {
         villageName,
@@ -2239,7 +2239,7 @@ function HouseholdPerformance({ onBack, villageId }: { onBack: () => void; villa
 }
 
 // ═══════════════════════════════════════════
-// Staff Screen — Manage Helpers & Segregators
+// Staff Screen - Manage Helpers & Segregators
 // ═══════════════════════════════════════════
 const WORK_TYPE_OPTIONS = [
   { value: 'compost_helper', label: 'Compost Helper' },
@@ -2427,7 +2427,7 @@ function StaffScreen({ onBack, staffType, title }: { onBack: () => void; staffTy
 }
 
 // ═══════════════════════════════════════════
-// Attendance Screen — Mark attendance + view shifts
+// Attendance Screen - Mark attendance + view shifts
 // ═══════════════════════════════════════════
 function AttendanceScreen({ onBack, villageId, mode = 'mark' }: { onBack: () => void; villageId: string; mode?: 'centers' | 'mark' | 'shifts' }) {
   const { t } = useTranslation();
@@ -2498,7 +2498,7 @@ function AttendanceScreen({ onBack, villageId, mode = 'mark' }: { onBack: () => 
       return response.json();
     },
     onSuccess: (data) => {
-      toast({ title: 'Center Created', description: `${data.name} — QR poster downloading...` });
+      toast({ title: 'Center Created', description: `${data.name} - QR poster downloading...` });
       queryClient.invalidateQueries({ queryKey: ['/api/attendance/centers'] });
       setShowCenterForm(false);
       setCenterName('');
@@ -3757,7 +3757,7 @@ export default function ManagerDashboard() {
             </div>
           </div>
 
-          {/* Desktop Sidebar Navigation — no More button, all items inline */}
+          {/* Desktop Sidebar Navigation - no More button, all items inline */}
           <div className="hidden md:block w-56 bg-white border-r sticky top-[64px] h-[calc(100vh-64px)] overflow-y-auto">
             <div className="p-3">
               <nav className="space-y-1">
@@ -4344,7 +4344,7 @@ export default function ManagerDashboard() {
                   </div>
                 )}
 
-                {/* Households sub-screen — Premium */}
+                {/* Households sub-screen - Premium */}
                 {activeMoreScreen === "household-details" && (
                   <div className="space-y-3 p-3">
                     {/* Search */}
@@ -4426,7 +4426,7 @@ export default function ManagerDashboard() {
                   </div>
                 )}
 
-                {/* Generate QR — Premium */}
+                {/* Generate QR - Premium */}
                 {activeMoreScreen === "generate-qr" && (
                   <div className="space-y-4 p-3">
                     <div className="flex items-center gap-2">
@@ -4462,7 +4462,7 @@ export default function ManagerDashboard() {
                   </div>
                 )}
 
-                {/* Download QR — Premium */}
+                {/* Download QR - Premium */}
                 {activeMoreScreen === "download-qr" && (
                   <div className="space-y-3 p-3">
                     <div className="flex items-center gap-2">
@@ -4514,7 +4514,7 @@ export default function ManagerDashboard() {
 
 
 
-                {/* Collectors sub-screen — Premium */}
+                {/* Collectors sub-screen - Premium */}
                 {activeMoreScreen === "collectors" && (
                   <div className="space-y-3 p-3">
                     {/* Top bar */}
@@ -4580,7 +4580,7 @@ export default function ManagerDashboard() {
                               style={{ top: 60, left: 0, transform: 'none', height: 'calc(100dvh - 60px)' }}
                             >
                               <div className="px-4 border-b flex items-center justify-between bg-green-50 min-h-[50px] flex-shrink-0">
-                                <DialogTitle className="text-sm font-black uppercase tracking-tight text-gray-900 truncate">Feedbacks — {collector.name}</DialogTitle>
+                                <DialogTitle className="text-sm font-black uppercase tracking-tight text-gray-900 truncate">Feedbacks - {collector.name}</DialogTitle>
                               </div>
                               <div className="flex-1 overflow-y-auto p-3">
                                 <CollectorFeedbackModal
@@ -4711,7 +4711,7 @@ export default function ManagerDashboard() {
                   </div>
                 )}
 
-                {/* Announcements sub-screen — Premium */}
+                {/* Announcements sub-screen - Premium */}
                 {activeMoreScreen === "announcements" && (
                   <div className="space-y-4 p-3">
                     {/* Top bar */}
@@ -4812,7 +4812,7 @@ export default function ManagerDashboard() {
 
 
 
-                {/* Vehicles sub-screen — Premium */}
+                {/* Vehicles sub-screen - Premium */}
                 {activeMoreScreen === "vehicles" && (
                   <div className="space-y-3 p-3">
                     {/* Top bar */}
@@ -4969,7 +4969,7 @@ export default function ManagerDashboard() {
                   </div>
                 )}
 
-                {/* Wards sub-screen — Premium */}
+                {/* Wards sub-screen - Premium */}
                 {activeMoreScreen === "wards" && (
                   <div className="space-y-3 p-3">
                     {/* Top bar */}
@@ -5121,7 +5121,7 @@ export default function ManagerDashboard() {
                       </div>
                     </div>
 
-                    {/* Vehicle Notification Settings — only if proximity alerts enabled */}
+                    {/* Vehicle Notification Settings - only if proximity alerts enabled */}
                     {villageData?.proximityAlertsEnabled && (
                       <div className="bg-white rounded-2xl ring-1 ring-black/5 shadow-sm overflow-hidden">
                         <div className="px-4 py-3 border-b border-gray-100 bg-amber-50/50">
@@ -5220,7 +5220,7 @@ export default function ManagerDashboard() {
                   </div>
                 )}
 
-                {/* Change Password sub-screen — Premium */}
+                {/* Change Password sub-screen - Premium */}
                 {activeMoreScreen === "change-password" && (
                   <div className="space-y-4 p-3">
                     <div className="flex items-center gap-2">
@@ -5246,7 +5246,7 @@ export default function ManagerDashboard() {
                   </div>
                 )}
 
-                {/* Language sub-screen — Premium */}
+                {/* Language sub-screen - Premium */}
                 {activeMoreScreen === "language" && (
                   <div className="space-y-4 p-3">
                     <div className="flex items-center gap-2">
@@ -5262,7 +5262,7 @@ export default function ManagerDashboard() {
                   </div>
                 )}
 
-                {/* Payments sub-screen — Ledger */}
+                {/* Payments sub-screen - Ledger */}
                 {activeMoreScreen === "payments-ledger" && villageData?.paymentsEnabled && (
                   <div>
                     <div className="flex items-center gap-2 p-3 pb-0">
@@ -5275,7 +5275,7 @@ export default function ManagerDashboard() {
                   </div>
                 )}
 
-                {/* Payments sub-screen — Settings */}
+                {/* Payments sub-screen - Settings */}
                 {activeMoreScreen === "payments-settings" && villageData?.paymentsEnabled && (
                   <div>
                     <div className="flex items-center gap-2 p-3 pb-0">
@@ -5298,7 +5298,7 @@ export default function ManagerDashboard() {
                   />
                 )}
 
-                {/* Attendance — 3 separate screens */}
+                {/* Attendance - 3 separate screens */}
                 {activeMoreScreen === "att-centers" && villageData?.attendanceEnabled && (
                   <AttendanceScreen
                     onBack={() => setActiveMoreScreen(null)}
@@ -5357,7 +5357,7 @@ export default function ManagerDashboard() {
 
 
 
-            {/* Issues Tab — Premium Mobile-First */}
+            {/* Issues Tab - Premium Mobile-First */}
             {
               activeTab === "issues" && (() => {
                 const openCount = allIssues.filter(i => i.status === "open").length;
@@ -5438,7 +5438,7 @@ export default function ManagerDashboard() {
                                   </button>
                                 </div>
 
-                                {/* Description — 2 lines max */}
+                                {/* Description - 2 lines max */}
                                 <p className="text-[11px] text-gray-600 leading-relaxed line-clamp-2 mb-1.5">{issue.description}</p>
 
                                 {/* Photo + Reporter row */}
@@ -5454,7 +5454,7 @@ export default function ManagerDashboard() {
                                   <span className="text-[9px] font-medium text-gray-400 truncate">by {issue.reportedBy}</span>
                                 </div>
 
-                                {/* Manager reply — compact */}
+                                {/* Manager reply - compact */}
                                 {issue.managerReply && (
                                   <div className="mt-2 p-2 bg-green-50/80 rounded-lg border border-green-100">
                                     <div className="flex items-start gap-2">
@@ -5520,7 +5520,7 @@ export default function ManagerDashboard() {
         </div >
       </div >
 
-      {/* Delete Confirmation Dialog — More Tab */}
+      {/* Delete Confirmation Dialog - More Tab */}
       <Dialog open={!!moreDeleteConfirm} onOpenChange={() => setMoreDeleteConfirm(null)}>
         <DialogContent className="max-w-xs rounded-2xl border-none shadow-xl p-6">
           <div className="text-center space-y-3">
@@ -5594,7 +5594,7 @@ export default function ManagerDashboard() {
         </DialogContent>
       </Dialog >
 
-      {/* Issue Management Dialog — Fullscreen */}
+      {/* Issue Management Dialog - Fullscreen */}
       <Dialog open={showIssueDialog} onOpenChange={setShowIssueDialog}>
         <DialogContent
           className="max-w-[100vw] w-full md:max-w-lg md:h-[90vh] md:rounded-xl overflow-hidden p-0 flex flex-col border-none md:border"

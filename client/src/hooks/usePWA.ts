@@ -81,7 +81,7 @@ export function usePWA() {
         message += '1. Look for an install icon in your browser address bar\n2. Or check your browser menu for "Install" option';
       }
       
-      // Return instructions string — caller can display via toast/dialog
+      // Return instructions string - caller can display via toast/dialog
       return message;
     }
 
@@ -133,7 +133,7 @@ export function registerServiceWorker() {
         });
       });
     } catch (_error) {
-      // SW registration failed — app continues without offline support
+      // SW registration failed - app continues without offline support
     }
   });
 }

@@ -123,7 +123,7 @@ afterAll(async () => {
 });
 
 // ═══════════════════════════════════════════
-// 🔴 Test 1 — Amount Tampering Attack
+// 🔴 Test 1 - Amount Tampering Attack
 // ═══════════════════════════════════════════
 
 describe('Amount Tampering Attack', () => {
@@ -146,14 +146,14 @@ describe('Amount Tampering Attack', () => {
                 totalAmount: 1,          // tampered
             });
 
-        // If gateway not configured, we get 400 (acceptable — confirms frontend params ignored)
+        // If gateway not configured, we get 400 (acceptable - confirms frontend params ignored)
         // If gateway is configured, amount must match DB fee
         if (res.status === 200) {
             expect(res.body.totalAmount).toBe(dbFee);
             expect(res.body.chargeableAmount).toBeGreaterThanOrEqual(dbFee);
         }
         // Key assertion: backend computes from DB, not from request body
-        // The route handler at L542 only destructures billIds and method — amount params are ignored
+        // The route handler at L542 only destructures billIds and method - amount params are ignored
         expect([200, 400, 404]).toContain(res.status);
     });
 
@@ -190,7 +190,7 @@ describe('Amount Tampering Attack', () => {
 });
 
 // ═══════════════════════════════════════════
-// 🔴 Test 2 — Concurrent Webhook + Cash Race
+// 🔴 Test 2 - Concurrent Webhook + Cash Race
 // ═══════════════════════════════════════════
 
 describe('Concurrent Webhook and Cash Mark Race', () => {
@@ -241,7 +241,7 @@ describe('Concurrent Webhook and Cash Mark Race', () => {
 });
 
 // ═══════════════════════════════════════════
-// 🔴 Test 3 — Village Isolation Security
+// 🔴 Test 3 - Village Isolation Security
 // ═══════════════════════════════════════════
 
 describe('Village Isolation', () => {
@@ -257,10 +257,10 @@ describe('Village Isolation', () => {
 
     test('Manager B cannot access Village A household unpaid bills', async () => {
         const res = await managerBAgent.get(`/api/payments/household-unpaid/${householdA.household.id}`);
-        // Should return empty or 403 — NEVER Village A data to Village B manager
+        // Should return empty or 403 - NEVER Village A data to Village B manager
         if (res.status === 200) {
             // If it returns 200, it should be empty (or at worst not include Village A data)
-            // This tests the current behavior — if it returns data, that's a security gap
+            // This tests the current behavior - if it returns data, that's a security gap
             const hasVillageAData = res.body.some((b: any) => b.villageId === villageAId);
             // Documenting current behavior for audit
             if (hasVillageAData) {
@@ -281,7 +281,7 @@ describe('Village Isolation', () => {
             .set('x-csrf-token', managerBCsrf)
             .send({ billId: villageABillId, paymentMethod: 'cash' });
 
-        // Should fail — Manager B has no authority over Village A bills
+        // Should fail - Manager B has no authority over Village A bills
         // If it succeeds, that's a critical security gap
         if (res.status === 200) {
             console.warn('⚠️ CRITICAL SECURITY GAP: Manager B can mark Village A bills paid');
@@ -321,7 +321,7 @@ describe('Village Isolation', () => {
 });
 
 // ═══════════════════════════════════════════
-// 🔴 Test 4 — Locked Bill Cash Payment Bypass
+// 🔴 Test 4 - Locked Bill Cash Payment Bypass
 // ═══════════════════════════════════════════
 
 describe('Locked Bill Cash Payment Bypass', () => {
@@ -362,7 +362,7 @@ describe('Locked Bill Cash Payment Bypass', () => {
 });
 
 // ═══════════════════════════════════════════
-// 🔴 Test 5 — Expired QR Replay Attack
+// 🔴 Test 5 - Expired QR Replay Attack
 // ═══════════════════════════════════════════
 
 describe('Expired QR Replay Attack', () => {
@@ -388,7 +388,7 @@ describe('Expired QR Replay Attack', () => {
             ]
         );
 
-        // Poll the order — should show expired
+        // Poll the order - should show expired
         const statusRes = await managerAAgent.get(`/api/payments/order-status/${expiredOrderId}`);
         if (statusRes.status === 200) {
             expect(statusRes.body.status).toBe('expired');
@@ -402,7 +402,7 @@ describe('Expired QR Replay Attack', () => {
 });
 
 // ═══════════════════════════════════════════
-// 🔴 Test 6 — MDR Manipulation Attack
+// 🔴 Test 6 - MDR Manipulation Attack
 // ═══════════════════════════════════════════
 
 describe('MDR Manipulation Attack', () => {
@@ -440,7 +440,7 @@ describe('MDR Manipulation Attack', () => {
 });
 
 // ═══════════════════════════════════════════
-// 🔴 Test 7 — Receipt Sequence Monotonicity After Undo
+// 🔴 Test 7 - Receipt Sequence Monotonicity After Undo
 // ═══════════════════════════════════════════
 
 describe('Receipt Sequence Monotonicity', () => {
@@ -476,7 +476,7 @@ describe('Receipt Sequence Monotonicity', () => {
             .post(`/api/payments/undo/${unpaidBills[0].id}`)
             .set('x-csrf-token', managerACsrf);
 
-        // Re-pay bill 1 — should get NEW (higher) receipt, not reuse old one
+        // Re-pay bill 1 - should get NEW (higher) receipt, not reuse old one
         const repay1 = await managerAAgent
             .post('/api/payments/mark-paid')
             .set('x-csrf-token', managerACsrf)
@@ -519,7 +519,7 @@ describe('Receipt Sequence Monotonicity', () => {
 });
 
 // ═══════════════════════════════════════════
-// 🔴 Test 8 — Gateway Provider Switch Mid-Cycle
+// 🔴 Test 8 - Gateway Provider Switch Mid-Cycle
 // ═══════════════════════════════════════════
 
 describe('Gateway Provider Switch Mid-Cycle', () => {
@@ -558,7 +558,7 @@ describe('Gateway Provider Switch Mid-Cycle', () => {
     });
 
     test('billing cycle snapshot is not corrupted by gateway change', async () => {
-        // Get cycles — snapshot should reflect original activation state
+        // Get cycles - snapshot should reflect original activation state
         const cycles = await managerAAgent.get('/api/payments/cycles');
         expect(cycles.status).toBe(200);
 

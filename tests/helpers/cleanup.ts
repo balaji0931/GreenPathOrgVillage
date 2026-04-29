@@ -3,7 +3,7 @@ import { Pool } from 'pg';
 import bcrypt from 'bcrypt';
 import { getCache } from '../../server/cache';
 
-// Dedicated pool for test cleanup — separate from app pool
+// Dedicated pool for test cleanup - separate from app pool
 let cleanupPool: Pool | null = null;
 
 function getCleanupPool(): Pool {

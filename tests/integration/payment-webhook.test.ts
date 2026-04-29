@@ -83,7 +83,7 @@ afterAll(async () => {
 });
 
 // ═══════════════════════════════════════════
-// Test 8 — Dev Simulate Payment Success
+// Test 8 - Dev Simulate Payment Success
 // ═══════════════════════════════════════════
 
 describe('Payment Simulation (Dev Endpoint)', () => {
@@ -145,7 +145,7 @@ describe('Payment Simulation (Dev Endpoint)', () => {
 });
 
 // ═══════════════════════════════════════════
-// Test 9 — Duplicate Webhook Prevention
+// Test 9 - Duplicate Webhook Prevention
 // ═══════════════════════════════════════════
 
 describe('Duplicate Payment Prevention', () => {
@@ -182,7 +182,7 @@ describe('Duplicate Payment Prevention', () => {
             .send({ billId, paymentMethod: 'cash' });
         expect(first.status).toBe(200);
 
-        // Second payment attempt — should not create new receipt
+        // Second payment attempt - should not create new receipt
         const second = await managerAgent
             .post('/api/payments/mark-paid')
             .set('x-csrf-token', managerCsrf)
@@ -198,7 +198,7 @@ describe('Duplicate Payment Prevention', () => {
 });
 
 // ═══════════════════════════════════════════
-// Test 10 — Order Expiry
+// Test 10 - Order Expiry
 // ═══════════════════════════════════════════
 
 describe('Order Expiry', () => {
@@ -219,7 +219,7 @@ describe('Order Expiry', () => {
             ]
         );
 
-        // Poll — depending on backend logic, should show expired or pending
+        // Poll - depending on backend logic, should show expired or pending
         const res = await managerAgent.get(`/api/payments/order-status/${expiredOrderId}`);
         expect([200, 404]).toContain(res.status);
 

@@ -23,7 +23,7 @@ export interface CreateInAppCheckoutInput {
 
 export interface UPIQRResult {
   qrPayload: string;                  // UPI intent URL or payment link (QR-encodable)
-  qrImageDataUrl?: string;            // Pre-rendered QR image (base64 data URL) — some gateways provide this
+  qrImageDataUrl?: string;            // Pre-rendered QR image (base64 data URL) - some gateways provide this
   expiresAt: Date;                     // 5 min from now
 }
 

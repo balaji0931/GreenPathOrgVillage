@@ -1,5 +1,5 @@
 /**
- * HTTP METHOD MISUSE — Wrong HTTP methods return 404/405, never 200.
+ * HTTP METHOD MISUSE - Wrong HTTP methods return 404/405, never 200.
  */
 import '../setup/test-env';
 import { describe, test, expect, beforeAll, afterAll } from '@jest/globals';
@@ -72,7 +72,7 @@ describe('HTTP Method Misuse', () => {
                         req = req.send({});
                     }
                     const res = await req;
-                    // Should never succeed — expect 401, 403, 404, or 405
+                    // Should never succeed - expect 401, 403, 404, or 405
                     expect([200, 201]).not.toContain(res.status);
                 });
             }

@@ -1,5 +1,5 @@
 /**
- * ISSUE LIFECYCLE — Issue state machine + cache consistency.
+ * ISSUE LIFECYCLE - Issue state machine + cache consistency.
  *
  * open → in_progress (proof required) → resolved (proof required).
  * Cache invalidation verified via double-fetch.
@@ -136,7 +136,7 @@ describe('Issue Lifecycle', () => {
         const issue1 = fetch1.body.find((i: any) => i.id === issueId);
         expect(issue1.status).toBe('resolved');
 
-        // Fetch 2 — should return same data (no double-update)
+        // Fetch 2 - should return same data (no double-update)
         const fetch2 = await managerAgent.get('/api/issues');
         const issue2 = fetch2.body.find((i: any) => i.id === issueId);
         expect(issue2.status).toBe('resolved');

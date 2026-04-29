@@ -82,7 +82,7 @@ afterAll(async () => {
 });
 
 // ═══════════════════════════════════════════
-// Test 5 — Multi-Bill Order Mapping
+// Test 5 - Multi-Bill Order Mapping
 // ═══════════════════════════════════════════
 
 describe('Multi-Bill Order Creation', () => {
@@ -109,7 +109,7 @@ describe('Multi-Bill Order Creation', () => {
 });
 
 // ═══════════════════════════════════════════
-// Test 6 — Overlap Guard
+// Test 6 - Overlap Guard
 // ═══════════════════════════════════════════
 
 describe('Order Overlap Guard', () => {
@@ -135,7 +135,7 @@ describe('Order Overlap Guard', () => {
 });
 
 // ═══════════════════════════════════════════
-// Test — Household Validation
+// Test - Household Validation
 // ═══════════════════════════════════════════
 
 describe('Household Validation', () => {
@@ -162,7 +162,7 @@ describe('Household Validation', () => {
 });
 
 // ═══════════════════════════════════════════
-// Test — Household Unpaid Bills Endpoint
+// Test - Household Unpaid Bills Endpoint
 // ═══════════════════════════════════════════
 
 describe('Household Unpaid Bills Endpoint', () => {
@@ -185,7 +185,7 @@ describe('Household Unpaid Bills Endpoint', () => {
 });
 
 // ═══════════════════════════════════════════
-// Test — Order Status Polling
+// Test - Order Status Polling
 // ═══════════════════════════════════════════
 
 describe('Order Status Polling', () => {

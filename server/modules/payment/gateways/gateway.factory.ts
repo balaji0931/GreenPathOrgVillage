@@ -2,7 +2,7 @@
  * Gateway Adapter Factory
  *
  * Returns the correct adapter instance based on provider name.
- * Decrypts config JSON at runtime — never persists decrypted keys.
+ * Decrypts config JSON at runtime - never persists decrypted keys.
  */
 import { decryptConfig } from "../../../utils/crypto";
 import type { PaymentGatewayAdapter } from "./gateway.interface";
@@ -18,7 +18,7 @@ export interface GatewayFactoryInput {
 
 /**
  * Get a gateway adapter instance for the given provider.
- * Decrypts the config at runtime — adapter holds decrypted keys in memory only.
+ * Decrypts the config at runtime - adapter holds decrypted keys in memory only.
  */
 export function getGatewayAdapter(input: GatewayFactoryInput): PaymentGatewayAdapter {
   const { provider, encryptedConfigJson, isTestMode } = input;

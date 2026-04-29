@@ -263,7 +263,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Note: manifest.json and icon routes are handled in server/index.ts to avoid conflicts
 
-  // Serve uploaded files — AUTHENTICATED
+  // Serve uploaded files - AUTHENTICATED
   app.use('/uploads', (req, res, next) => {
     if (!req.session?.userId) {
       return res.status(401).json({ message: "Unauthorized" });

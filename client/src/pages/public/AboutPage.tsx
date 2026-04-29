@@ -85,7 +85,7 @@ export default function AboutPage() {
                 <p className="text-lg md:text-xl text-slate-600 leading-relaxed">
                   GreenPath builds reliable digital infrastructure to help communities track
                   daily waste collection, improve segregation practices, and strengthen local
-                  governance — starting with panchayats and scaling gradually to urban systems.
+                  governance - starting with panchayats and scaling gradually to urban systems.
                 </p>
               </div>
             </AnimateOnScroll>

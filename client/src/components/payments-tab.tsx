@@ -427,7 +427,7 @@ export default function PaymentsTab({ initialScreen = "overview" }: { initialScr
     }
   }
 
-  // Countdown timer effect — computed inline
+  // Countdown timer effect - computed inline
   const expiresAtMs = qrData?.expiresAt ? new Date(qrData.expiresAt).getTime() : 0;
   const remainingMs = expiresAtMs ? Math.max(0, expiresAtMs - Date.now()) : 0;
   const remainingSecs = Math.ceil(remainingMs / 1000);
@@ -467,7 +467,7 @@ export default function PaymentsTab({ initialScreen = "overview" }: { initialScr
 
   return (
     <div className="space-y-4 p-4">
-      {/* Header — month selector for ledger view */}
+      {/* Header - month selector for ledger view */}
       {paymentScreen === "overview" && (
         <div className="flex items-center justify-end flex-wrap gap-2">
           <div className="flex items-center gap-2">
@@ -547,7 +547,7 @@ export default function PaymentsTab({ initialScreen = "overview" }: { initialScr
             <Card>
               <CardHeader className="pb-2">
                 <div className="flex items-center justify-between flex-wrap gap-2">
-                  <CardTitle className="text-base">Household Ledger — {formatMonth(selectedMonth)}</CardTitle>
+                  <CardTitle className="text-base">Household Ledger - {formatMonth(selectedMonth)}</CardTitle>
                   <div className="flex items-center gap-2">
                     <div className="relative">
                       <Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-gray-400" />
@@ -659,7 +659,7 @@ export default function PaymentsTab({ initialScreen = "overview" }: { initialScr
       ) : (
         /* Settings Screen */
         <div className="space-y-4">
-          {/* Fee Config Card — Editable */}
+          {/* Fee Config Card - Editable */}
           <Card>
             <CardHeader className="pb-2">
               <div className="flex items-center justify-between">
@@ -798,7 +798,7 @@ export default function PaymentsTab({ initialScreen = "overview" }: { initialScr
             </CardContent>
           </Card>
 
-          {/* Gateway Config Card — Multi-Gateway */}
+          {/* Gateway Config Card - Multi-Gateway */}
           <Card>
             <CardHeader className="pb-2">
               <div className="flex items-center justify-between">
@@ -910,7 +910,7 @@ export default function PaymentsTab({ initialScreen = "overview" }: { initialScr
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Zap className="h-5 w-5 text-green-600" />
-              Activate Billing Cycle — {formatMonth(selectedMonth)}
+              Activate Billing Cycle - {formatMonth(selectedMonth)}
             </DialogTitle>
           </DialogHeader>
 
@@ -976,7 +976,7 @@ export default function PaymentsTab({ initialScreen = "overview" }: { initialScr
               {activationPreview.gatewayStatus ? (
                 <div className="text-xs text-green-600 font-medium">
                   ✔ Using existing gateway: {activationPreview.gatewayStatus.provider}
-                  {activationPreview.gatewayStatus.isActive ? " — Connected" : " — ⚠ Inactive"}
+                  {activationPreview.gatewayStatus.isActive ? " - Connected" : " - ⚠ Inactive"}
                 </div>
               ) : (
                 <div className="text-xs text-gray-500">ℹ No gateway configured. Cash-only mode.</div>
@@ -1100,7 +1100,7 @@ export default function PaymentsTab({ initialScreen = "overview" }: { initialScr
                   </Button>
                   {gatewayStatus?.configured && (
                     <>
-                      {/* Gateway selector — show when multiple gateways configured */}
+                      {/* Gateway selector - show when multiple gateways configured */}
                       {gatewayStatus.gateways && gatewayStatus.gateways.length > 1 && (
                         <select
                           className="h-12 px-3 rounded-lg border border-gray-200 text-sm bg-white"
@@ -1319,7 +1319,7 @@ export default function PaymentsTab({ initialScreen = "overview" }: { initialScr
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <CreditCard className="h-5 w-5" />
-              {gwProvider ? `${gwProvider.charAt(0).toUpperCase() + gwProvider.slice(1)} — Edit Config` : "Add Payment Gateway"}
+              {gwProvider ? `${gwProvider.charAt(0).toUpperCase() + gwProvider.slice(1)} - Edit Config` : "Add Payment Gateway"}
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-4 max-h-[60vh] overflow-auto">
@@ -1394,8 +1394,8 @@ export default function PaymentsTab({ initialScreen = "overview" }: { initialScr
                       <div className="font-medium text-gray-600 mt-2">📡 Webhook Events to Enable:</div>
                       <div className="text-[11px] text-gray-500">Settings → Webhooks → Add New → select these events:</div>
                       <ul className="list-disc ml-4 space-y-0.5">
-                        <li><code className="bg-gray-100 px-1 rounded">payment.captured</code> — payment successful</li>
-                        <li><code className="bg-gray-100 px-1 rounded">payment.failed</code> — payment failed</li>
+                        <li><code className="bg-gray-100 px-1 rounded">payment.captured</code> - payment successful</li>
+                        <li><code className="bg-gray-100 px-1 rounded">payment.failed</code> - payment failed</li>
                       </ul>
                       <div className="font-medium text-gray-600 mt-2">🔒 Webhook Secret:</div>
                       <div>In the webhook form, set a secret → paste it in "Webhook Secret" field above.</div>
@@ -1414,11 +1414,11 @@ export default function PaymentsTab({ initialScreen = "overview" }: { initialScr
                       <div className="font-medium text-gray-600 mt-2">📡 Webhook Events to Enable:</div>
                       <div className="text-[11px] text-gray-500">Developers → Webhooks → Add → select these events:</div>
                       <ul className="list-disc ml-4 space-y-0.5">
-                        <li><code className="bg-gray-100 px-1 rounded">PAYMENT_SUCCESS_WEBHOOK</code> — payment successful</li>
-                        <li><code className="bg-gray-100 px-1 rounded">PAYMENT_FAILED_WEBHOOK</code> — payment failed</li>
+                        <li><code className="bg-gray-100 px-1 rounded">PAYMENT_SUCCESS_WEBHOOK</code> - payment successful</li>
+                        <li><code className="bg-gray-100 px-1 rounded">PAYMENT_FAILED_WEBHOOK</code> - payment failed</li>
                       </ul>
                       <p className="text-amber-600 mt-1">
-                        ⚠ Cashfree uses your Secret Key for webhook verification — no separate webhook secret needed.
+                        ⚠ Cashfree uses your Secret Key for webhook verification - no separate webhook secret needed.
                       </p>
                     </div>
                   )}
@@ -1435,7 +1435,7 @@ export default function PaymentsTab({ initialScreen = "overview" }: { initialScr
                       <div className="font-medium text-gray-600 mt-2">📡 Webhook / Callback:</div>
                       <p>PayU uses <strong>redirect callbacks</strong>, not webhook events. No event selection needed.</p>
                       <p className="text-amber-600 mt-1">
-                        ⚠ PayU uses Merchant Salt for hash verification — no separate webhook secret needed.
+                        ⚠ PayU uses Merchant Salt for hash verification - no separate webhook secret needed.
                       </p>
                     </div>
                   )}
@@ -1479,7 +1479,7 @@ export default function PaymentsTab({ initialScreen = "overview" }: { initialScr
               className="bg-green-600 hover:bg-green-700"
               disabled={!gwProvider || saveGatewayMutation.isPending}
               onClick={() => {
-                // Build config — filter out masked values (keep only new values)
+                // Build config - filter out masked values (keep only new values)
                 const fields = GATEWAY_FIELD_MAP[gwProvider] || [];
                 const isEditing = Object.values(gwConfig).some(v => v?.includes("***"));
                 const cleanConfig: Record<string, string> = {};
@@ -1499,7 +1499,7 @@ export default function PaymentsTab({ initialScreen = "overview" }: { initialScr
                 }
                 // For editing, at least one field must be provided (or MDR change)
                 if (isEditing && Object.keys(cleanConfig).length === 0) {
-                  // Just MDR update, send empty configJson — server will merge
+                  // Just MDR update, send empty configJson - server will merge
                   cleanConfig._mdrOnly = "true";
                 }
                 saveGatewayMutation.mutate({

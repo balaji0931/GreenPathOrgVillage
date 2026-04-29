@@ -94,7 +94,7 @@ export function registerWasteCollectionRoutes(app: Express, requireAuth: any, re
       }
 
       const result = await storage.getCollectionsByHousehold(household.id, { limit: 1000 });
-      // result is { data: [...], stats: {...} } — extract the data array
+      // result is { data: [...], stats: {...} } - extract the data array
       const collections = Array.isArray(result.data) ? result.data : [];
       // Strip internal IDs from collection data for generators
       const sanitized = collections.map(({ collectorId, ...rest }: any) => rest);
@@ -115,7 +115,7 @@ export function registerWasteCollectionRoutes(app: Express, requireAuth: any, re
         return res.status(404).json({ message: "Household not found" });
       }
 
-      // Strip sensitive/internal fields — generator sees own info but not credentials or internal IDs
+      // Strip sensitive/internal fields - generator sees own info but not credentials or internal IDs
       const { generatorPassword, generatorUserId, ...safeHousehold } = household as any;
       res.json(safeHousehold);
     } catch (error) {

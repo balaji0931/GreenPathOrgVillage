@@ -76,8 +76,8 @@ export default function DemoLanding() {
   const [, setLocation] = useLocation();
 
   useSEO({
-    title: "GreenPath Demo — Interactive Waste Management Dashboard",
-    description: "Try GreenPath's waste management platform — explore Manager, Collector, Household, and Field Worker dashboards with realistic demo data. No signup required.",
+    title: "GreenPath Demo - Interactive Waste Management Dashboard",
+    description: "Try GreenPath's waste management platform - explore Manager, Collector, Household, and Field Worker dashboards with realistic demo data. No signup required.",
     path: "/demo",
   });
 
@@ -88,14 +88,14 @@ export default function DemoLanding() {
         <div className="max-w-5xl mx-auto px-4 pt-10 pb-6 text-center">
           <div className="inline-flex items-center gap-2 bg-emerald-50 text-emerald-700 text-xs font-semibold px-3 py-1.5 rounded-full mb-4">
             <Zap className="w-3.5 h-3.5" />
-            Interactive Demo — No signup needed
+            Interactive Demo - No signup needed
           </div>
           <h1 className="text-3xl sm:text-4xl font-bold text-slate-900 mb-3">
             Experience GreenPath in Action
           </h1>
           <p className="text-slate-600 text-base sm:text-lg max-w-2xl mx-auto mb-2">
             Explore every feature of our waste management system. Pick a role below and interact
-            with a fully working dashboard — powered by realistic demo data.
+            with a fully working dashboard - powered by realistic demo data.
           </p>
           <p className="text-slate-400 text-sm">
             All data resets on refresh • No real information is stored

@@ -1,5 +1,5 @@
 /**
- * UNAUTHORIZED SWEEP — Every protected endpoint returns 401 without session.
+ * UNAUTHORIZED SWEEP - Every protected endpoint returns 401 without session.
  *
  * Iterates all protected endpoints and confirms: no session → 401.
  */
@@ -27,7 +27,7 @@ afterAll(async () => {
 // All protected endpoints
 const PROTECTED_ENDPOINTS: Array<{ method: 'get' | 'post' | 'put' | 'patch' | 'delete'; path: string; body?: any }> = [
     // Auth
-    // Auth (logout is idempotent — returns 200 even without session)
+    // Auth (logout is idempotent - returns 200 even without session)
     { method: 'get', path: '/api/auth/user' },
     { method: 'post', path: '/api/auth/change-password', body: { newPassword: 'x' } },
 
@@ -176,7 +176,7 @@ const PROTECTED_ENDPOINTS: Array<{ method: 'get' | 'post' | 'put' | 'patch' | 'd
     { method: 'get', path: '/api/generator/household' },
 ];
 
-describe('Unauthorized Sweep — No Session → 401', () => {
+describe('Unauthorized Sweep - No Session → 401', () => {
     for (const ep of PROTECTED_ENDPOINTS) {
         test(`${ep.method.toUpperCase()} ${ep.path} → 401`, async () => {
             const freshAgent = request.agent(app);

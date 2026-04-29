@@ -1,7 +1,7 @@
 /**
  * Gateway Adapter Contract Tests (Layer 4)
  *
- * Pure unit tests for adapter logic — no DB, no network.
+ * Pure unit tests for adapter logic - no DB, no network.
  * Tests hash generation, amount conversion, status mapping,
  * and webhook signature verification.
  */
@@ -14,7 +14,7 @@ import crypto from 'crypto';
 // ═══════════════════════════════════════════
 
 describe('Razorpay Adapter', () => {
-    // Import adapter directly — constructor validates config
+    // Import adapter directly - constructor validates config
     let RazorpayAdapter: any;
 
     beforeAll(async () => {

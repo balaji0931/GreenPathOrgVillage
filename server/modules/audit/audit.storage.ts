@@ -4,7 +4,7 @@ import { eq, and, desc, sql, count, inArray } from "drizzle-orm";
 
 /**
  * Log an important action to the audit trail.
- * This is fire-and-forget — failures are silently caught to never block the main operation.
+ * This is fire-and-forget - failures are silently caught to never block the main operation.
  */
 export async function logAction(
   villageId: string | null | undefined,

@@ -603,7 +603,7 @@ export default function TermsOfService() {
                   <div className="space-y-1 text-slate-700">
                     <div className="flex items-center gap-2">
                       <Mail className="h-4 w-4 text-slate-400" />
-                      <span>Email: info@greenpathorg.social</span>
+                      <span>Email: info@greenpathindia.in</span>
                     </div>
                     <div className="flex items-center gap-2">
                       <Globe className="h-4 w-4 text-slate-400" />

@@ -58,14 +58,14 @@ export function registerQRCodeRoutes(app: Express, requireAuth: any, requireRole
     }
   });
 
-  // On-demand QR image generation — replaces Cloudinary URLs
+  // On-demand QR image generation - replaces Cloudinary URLs
   app.get('/api/qr-codes/:uid/image', requireAuth, async (req, res) => {
     try {
       const { uid } = req.params;
       const { generateQRBuffer, toFullUid } = await import('./qr-service');
       const fullUid = toFullUid(uid);
 
-      // Verify village access — prevent cross-village QR image requests
+      // Verify village access - prevent cross-village QR image requests
       const qrCode = await storage.getQRCodeByUid(fullUid);
       if (!qrCode) {
         // Also check households table (for directly-created households)

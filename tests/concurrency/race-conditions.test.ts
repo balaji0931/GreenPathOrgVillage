@@ -1,8 +1,8 @@
 /**
- * RACE CONDITIONS — Concurrency safety tests.
+ * RACE CONDITIONS - Concurrency safety tests.
  *
  * Use Promise.all() only. No delays. No randomness.
- * Document actual behavior — assert at-least-one-success semantics.
+ * Document actual behavior - assert at-least-one-success semantics.
  * Verify DB invariants after parallel operations.
  */
 import '../setup/test-env';
@@ -82,7 +82,7 @@ describe('Race Conditions', () => {
             collectorCsrf = cLogin.body.csrfToken;
         }, 60000);
 
-        test('1. Parallel submissions — at least one succeeds', async () => {
+        test('1. Parallel submissions - at least one succeeds', async () => {
             const payload = {
                 householdUid,
                 segregationRating: 4,
@@ -159,7 +159,7 @@ describe('Race Conditions', () => {
             qrUid = batchRes.body.qrCodes[0].uid;
         }, 60000);
 
-        test('3. Parallel mapping — at least one succeeds', async () => {
+        test('3. Parallel mapping - at least one succeeds', async () => {
             const [r1, r2] = await Promise.all([
                 fieldworkerAgent.post(`/api/qr-codes/${qrUid}/map`)
                     .set('x-csrf-token', fieldworkerCsrf)
@@ -220,7 +220,7 @@ describe('Race Conditions', () => {
             );
 
             const statuses = results.map(r => r.status);
-            // All should succeed (200) — village creation is safe for parallel
+            // All should succeed (200) - village creation is safe for parallel
             const successes = statuses.filter(s => s === 200);
             expect(successes.length).toBeGreaterThanOrEqual(2);
 

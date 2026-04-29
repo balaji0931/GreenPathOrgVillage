@@ -501,7 +501,7 @@ export async function addIndividualBill(data: {
 // ═══════════════════════════════════════════
 
 async function getNextReceiptNumber(villageId: string, billingMonth: string): Promise<string> {
-  // Atomic increment — safe under concurrent payments
+  // Atomic increment - safe under concurrent payments
   const result = await db.insert(receiptCounters)
     .values({ villageId, billingMonth, lastSequence: 1 })
     .onConflictDoUpdate({
@@ -540,12 +540,12 @@ export async function markBillPaid(billId: number, data: {
   const bill = await getBillById(billId);
   if (!bill) throw new Error("Bill not found");
   if (bill.status === "paid") throw new Error("Bill is already paid");
-  if (bill.status === "waived") throw new Error("Bill is waived — cannot mark as paid");
+  if (bill.status === "waived") throw new Error("Bill is waived - cannot mark as paid");
 
-  // Fix 2: Locked bill guard — prevent cash payment during active QR session
+  // Fix 2: Locked bill guard - prevent cash payment during active QR session
   // Gateway webhooks set gatewayTxnId, so they bypass this check intentionally
   if (bill.isLockedForPayment && !data.gatewayTxnId) {
-    throw new Error("Bill is locked for an active payment session — wait for QR to expire or cancel it first");
+    throw new Error("Bill is locked for an active payment session - wait for QR to expire or cancel it first");
   }
 
   const receiptNumber = await getNextReceiptNumber(bill.villageId, bill.billingMonth);
@@ -575,7 +575,7 @@ export async function markBillPaid(billId: number, data: {
     .returning();
 
   if (updated.length === 0) {
-    throw new Error("Bill status changed — payment not recorded (possible double payment prevented)");
+    throw new Error("Bill status changed - payment not recorded (possible double payment prevented)");
   }
 
   // Audit log
@@ -621,7 +621,7 @@ export async function markBillsPaidBulk(billIds: number[], data: {
 export async function undoBillPayment(billId: number, performedBy: string) {
   const bill = await getBillById(billId);
   if (!bill) throw new Error("Bill not found");
-  if (bill.status !== "paid") throw new Error("Bill is not paid — cannot undo");
+  if (bill.status !== "paid") throw new Error("Bill is not paid - cannot undo");
   if (bill.paymentMethod !== "cash") throw new Error("Only cash payments can be undone. Gateway refunds must be handled via the provider dashboard.");
 
   // Store previous state for forensic audit
@@ -649,7 +649,7 @@ export async function undoBillPayment(billId: number, performedBy: string) {
 export async function waiveBill(billId: number, waivedBy: string, waivedReason: string) {
   const bill = await getBillById(billId);
   if (!bill) throw new Error("Bill not found");
-  if (bill.status === "paid") throw new Error("Bill is already paid — cannot waive");
+  if (bill.status === "paid") throw new Error("Bill is already paid - cannot waive");
 
   await db.update(householdMonthlyBills)
     .set({
@@ -734,7 +734,7 @@ export async function getPaymentSummary(villageId: string, billingMonth: string)
 
   const collectionRate = totalDue > 0 ? ((totalCollected / totalDue) * 100).toFixed(1) : "0.0";
 
-  // Past arrears — unpaid bills from previous months
+  // Past arrears - unpaid bills from previous months
   const pastArrearsResult = await db.select({ count: count() })
     .from(householdMonthlyBills)
     .where(and(
@@ -918,7 +918,7 @@ export async function getUnpaidBillsByHousehold(householdId: number) {
 
 /**
  * Find any pending order that overlaps with the given billIds.
- * Used to prevent duplicate QR sessions — returns the active session if one exists.
+ * Used to prevent duplicate QR sessions - returns the active session if one exists.
  */
 export async function findPendingOrderForBills(billIds: number[]) {
   const pendingOrders = await db.select({

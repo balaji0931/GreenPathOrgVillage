@@ -14,7 +14,7 @@ import { db } from "../../db";
 import { getCache, cacheKeys } from "../../cache";
 import { incrementHouseholdCount, decrementHouseholdCount } from "../analytics/daily-stats.storage";
 
-// Columns safe to return from household queries — generatorPassword NEVER leaves the DB
+// Columns safe to return from household queries - generatorPassword NEVER leaves the DB
 const safeHouseholdColumns = {
     id: households.id,
     uid: households.uid,

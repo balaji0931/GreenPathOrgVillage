@@ -1,5 +1,5 @@
 /**
- * INPUT VALIDATION ATTACKS — XSS, oversized, malformed, negative, extra fields.
+ * INPUT VALIDATION ATTACKS - XSS, oversized, malformed, negative, extra fields.
  *
  * Tests that all endpoints reject malicious input with 400 (not 500).
  */
@@ -66,7 +66,7 @@ afterAll(async () => {
     await closeCleanupPool();
 });
 
-// Strings rejected by validateInput middleware (400) — contains <, >, javascript:, onerror=, onload=
+// Strings rejected by validateInput middleware (400) - contains <, >, javascript:, onerror=, onload=
 const BLOCKED_XSS_STRINGS = [
     '<script>alert(1)</script>',
     '"><img src=x onerror=alert(1)>',
@@ -82,7 +82,7 @@ const SAFE_BUT_SUSPICIOUS_STRINGS = [
 const OVERSIZED_STRING = 'A'.repeat(11000);
 
 describe('Input Validation Attacks', () => {
-    describe('XSS injection in login — rejected with 400', () => {
+    describe('XSS injection in login - rejected with 400', () => {
         for (const xss of BLOCKED_XSS_STRINGS) {
             test(`login userId: "${xss.slice(0, 30)}..." → 400`, async () => {
                 const freshAgent = request.agent(app);
@@ -94,7 +94,7 @@ describe('Input Validation Attacks', () => {
         }
     });
 
-    describe('Non-dangerous suspicious strings in login — safely handled', () => {
+    describe('Non-dangerous suspicious strings in login - safely handled', () => {
         for (const s of SAFE_BUT_SUSPICIOUS_STRINGS) {
             test(`login userId: "${s.slice(0, 30)}..." → 401 (no crash)`, async () => {
                 const freshAgent = request.agent(app);
@@ -108,7 +108,7 @@ describe('Input Validation Attacks', () => {
     });
 
     // validateInput now rejects dangerous input with 400 on ALL endpoints
-    describe('XSS in village creation — rejected with 400', () => {
+    describe('XSS in village creation - rejected with 400', () => {
         for (const xss of BLOCKED_XSS_STRINGS) {
             test(`villageName: "${xss.slice(0, 30)}..." → 400`, async () => {
                 const res = await adminAgent
@@ -121,7 +121,7 @@ describe('Input Validation Attacks', () => {
     });
 
 
-    describe('XSS in issue creation — rejected with 400', () => {
+    describe('XSS in issue creation - rejected with 400', () => {
         for (const xss of BLOCKED_XSS_STRINGS) {
             test(`title: "${xss.slice(0, 30)}..." → 400`, async () => {
                 const res = await collectorAgent
@@ -133,7 +133,7 @@ describe('Input Validation Attacks', () => {
         }
     });
 
-    describe('XSS in website feedback — rejected with 400', () => {
+    describe('XSS in website feedback - rejected with 400', () => {
         test('XSS in message → 400', async () => {
             const res = await request(app)
                 .post('/api/website-feedback')
@@ -147,7 +147,7 @@ describe('Input Validation Attacks', () => {
         });
     });
 
-    describe('XSS in contact form — rejected with 400', () => {
+    describe('XSS in contact form - rejected with 400', () => {
         test('XSS in subject/message → 400', async () => {
             const res = await request(app)
                 .post('/api/contact')
@@ -161,13 +161,13 @@ describe('Input Validation Attacks', () => {
         });
     });
 
-    describe('Oversized inputs — no crash', () => {
+    describe('Oversized inputs - no crash', () => {
         test('oversized village name → no 500', async () => {
             const res = await adminAgent
                 .post('/api/villages')
                 .set('x-csrf-token', adminCsrf)
                 .send({ villageName: OVERSIZED_STRING, managerName: 'Test', paymentsEnabled: true, managerPhone: '0000000000' });
-            // No server-side length validation — accepted or DB error, never crash
+            // No server-side length validation - accepted or DB error, never crash
             expect(res.status).not.toBe(500);
         });
 

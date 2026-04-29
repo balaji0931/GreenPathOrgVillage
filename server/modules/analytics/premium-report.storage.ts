@@ -84,7 +84,7 @@ export async function getPremiumReportData(villageId: string, date: string): Pro
             eq(dailyHourlyStats.reportDate, date)
         ));
 
-    // ── Query 5: Material log (existing — unchanged) ──
+    // ── Query 5: Material log (existing - unchanged) ──
     const materialLog = await dailyWasteLogStorage.getDailyWasteLogByDate(villageId, date);
 
     // ── Query 6: Collection timestamps for session derivation ──
@@ -207,10 +207,10 @@ export async function getPremiumReportData(villageId: string, date: string): Pro
         };
     });
 
-    // ── Material Data (5 categories) — Manager entry takes priority, fall back to collector summary ──
+    // ── Material Data (5 categories) - Manager entry takes priority, fall back to collector summary ──
     let materialData;
     if (materialLog) {
-        // Manager entry exists — use it
+        // Manager entry exists - use it
         materialData = {
             wet: parseFloat(materialLog.wetWasteKg || "0"),
             dry: parseFloat(materialLog.dryWasteKg || "0"),
@@ -221,7 +221,7 @@ export async function getPremiumReportData(villageId: string, date: string): Pro
             source: 'manager' as const,
         };
     } else {
-        // No manager entry — check for collector entries
+        // No manager entry - check for collector entries
         const collectorSummary = await collectorWasteLogStorage.getCollectorWasteLogSummaryByVillageAndDate(villageId, date);
         if (collectorSummary) {
             materialData = {

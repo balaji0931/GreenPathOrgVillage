@@ -137,7 +137,7 @@ export async function submitCollection(data: {
             wasteTypes || []
         );
       } catch (_behaviourError) {
-        // Non-blocking — nightly refresh will catch up
+        // Non-blocking - nightly refresh will catch up
       }
 
       // Invalidate caches

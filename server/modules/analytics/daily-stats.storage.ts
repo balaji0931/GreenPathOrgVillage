@@ -29,11 +29,11 @@ export function toISTHour(date: Date): number {
 }
 
 // ═══════════════════════════════════════════════════════════════
-// UPSERT Functions — called after each collection event
+// UPSERT Functions - called after each collection event
 // ═══════════════════════════════════════════════════════════════
 
 /**
- * Upsert daily village stats — increment collected_count and segregation_sum.
+ * Upsert daily village stats - increment collected_count and segregation_sum.
  */
 export async function upsertDailyVillageStats(
     villageId: string,
@@ -64,7 +64,7 @@ export async function upsertDailyVillageStats(
 }
 
 /**
- * Upsert daily ward stats — increment collected_count for a specific ward.
+ * Upsert daily ward stats - increment collected_count for a specific ward.
  */
 export async function upsertDailyWardStats(
     villageId: string,
@@ -94,7 +94,7 @@ export async function upsertDailyWardStats(
 }
 
 /**
- * Upsert daily vehicle stats — increment count, update first/last timestamps.
+ * Upsert daily vehicle stats - increment count, update first/last timestamps.
  */
 export async function upsertDailyVehicleStats(
     villageId: string,
@@ -131,7 +131,7 @@ export async function upsertDailyVehicleStats(
 }
 
 /**
- * Upsert daily hourly stats — increment collection count for a specific hour+vehicle.
+ * Upsert daily hourly stats - increment collection count for a specific hour+vehicle.
  */
 export async function upsertDailyHourlyStats(
     villageId: string,
@@ -268,7 +268,7 @@ export async function decrementHouseholdCount(
 }
 
 // ═══════════════════════════════════════════════════════════════
-// Transactional stats update — called after collection insert
+// Transactional stats update - called after collection insert
 // ═══════════════════════════════════════════════════════════════
 
 export interface CollectionStatsContext {
@@ -309,7 +309,7 @@ export async function updateDailyStatsAfterCollection(ctx: CollectionStatsContex
 }
 
 // ═══════════════════════════════════════════════════════════════
-// Session Derivation — pure in-memory computation
+// Session Derivation - pure in-memory computation
 // ═══════════════════════════════════════════════════════════════
 
 export interface DerivedSession {

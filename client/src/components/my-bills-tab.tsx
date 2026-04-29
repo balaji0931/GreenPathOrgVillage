@@ -59,7 +59,7 @@ function loadCheckoutScript(provider: string): Promise<boolean> {
   // Check if script tag already exists (previous load attempt)
   const existing = document.querySelector(`script[src="${config.src}"]`);
   if (existing) {
-    // Script tag exists but global isn't set — wait a moment
+    // Script tag exists but global isn't set - wait a moment
     return new Promise((resolve) => {
       setTimeout(() => resolve(!!(window as any)[config.globalName]), 1000);
     });
@@ -117,7 +117,7 @@ function openProviderCheckout(
       onFailed(err);
     });
   } else if (provider === "payu") {
-    // PayU Bolt SDK — opens a payment popup (like Razorpay/Cashfree)
+    // PayU Bolt SDK - opens a payment popup (like Razorpay/Cashfree)
     const { formFields } = checkoutData;
     if (!formFields) {
       onFailed(new Error("Missing PayU checkout data"));
@@ -249,7 +249,7 @@ export function MyBillsTab() {
       openProviderCheckout(
         provider,
         checkoutData,
-        // onSuccess — send payment details to backend for verification
+        // onSuccess - send payment details to backend for verification
         async (response: any) => {
           try {
             // Build verify payload based on provider
@@ -263,7 +263,7 @@ export function MyBillsTab() {
               verifyPayload.razorpay_order_id = response.razorpay_order_id;
               verifyPayload.razorpay_signature = response.razorpay_signature;
             } else if (provider === "cashfree") {
-              // Cashfree checkout returns order status — server verifies via API
+              // Cashfree checkout returns order status - server verifies via API
               verifyPayload.cf_order_id = checkoutData.cfOrderId || response?.order?.orderId;
             } else if (provider === "payu") {
               verifyPayload.mihpayid = response.mihpayid;
@@ -526,7 +526,7 @@ export function MyBillsTab() {
             </DialogTitle>
           </DialogHeader>
 
-          {/* IDLE — Show bill breakdown + confirm */}
+          {/* IDLE - Show bill breakdown + confirm */}
           {paymentState === "idle" && (
             <div className="space-y-4">
               {/* Bill breakdown */}
@@ -546,7 +546,7 @@ export function MyBillsTab() {
                 </div>
               </div>
 
-              {/* Gateway selector — shown only when multiple gateways available */}
+              {/* Gateway selector - shown only when multiple gateways available */}
               {gateways.length > 1 && (
                 <div className="space-y-2">
                   <div className="text-xs font-medium text-gray-500 uppercase">Pay via</div>

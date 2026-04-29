@@ -1,5 +1,5 @@
 /**
- * Fetch interceptor — maps /api/* URLs to mock data via memoized getters.
+ * Fetch interceptor - maps /api/* URLs to mock data via memoized getters.
  * This is the SAFETY NET for custom queryFn calls that bypass the cached data.
  * Both this and the cache seeder consume the SAME memoized data → consistent.
  */
@@ -32,7 +32,7 @@ import {
   generateAuditLogs,
 } from "./generators";
 
-const DEMO_GENERATOR_INDEX = 41; // Sunita Patil — H-042
+const DEMO_GENERATOR_INDEX = 41; // Sunita Patil - H-042
 
 /**
  * Returns mock API response for a given URL.

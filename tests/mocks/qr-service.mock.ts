@@ -1,5 +1,5 @@
 /**
- * QR Service mock — stubs QR generation (local, no Cloudinary).
+ * QR Service mock - stubs QR generation (local, no Cloudinary).
  * Keeps helper functions (toFullUid, generateGeneratorCredentials) real.
  *
  * This mock is NOT auto-applied. Import it explicitly in tests that need it:
@@ -16,7 +16,7 @@ export const generatePreMappedQRCodesPDF = jest.fn().mockResolvedValue(
     Buffer.from('fake-premapped-pdf-content')
 );
 
-// Real helper functions — keep actual logic
+// Real helper functions - keep actual logic
 export function getScannableUid(fullUid: string): string {
     return fullUid.replace(/^GEN-/, '');
 }

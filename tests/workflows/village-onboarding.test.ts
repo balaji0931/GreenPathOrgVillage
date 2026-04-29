@@ -1,5 +1,5 @@
 /**
- * VILLAGE ONBOARDING — Full QR-first lifecycle.
+ * VILLAGE ONBOARDING - Full QR-first lifecycle.
  *
  * Admin → Village → Manager → Collector + Fieldworker → QR batch →
  * QR mapping → Generator login → Collection → Feedback → Stats validation.
@@ -54,7 +54,7 @@ afterAll(async () => {
     await closeCleanupPool();
 });
 
-describe('Village Onboarding — Full QR-First Lifecycle', () => {
+describe('Village Onboarding - Full QR-First Lifecycle', () => {
     test('1. Admin creates village → manager credentials returned', async () => {
         const res = await adminAgent
             .post('/api/villages')

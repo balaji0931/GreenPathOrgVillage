@@ -1627,7 +1627,7 @@ export default function PublicHome({ initialSection = "home" }: PublicHomeProps 
                       </div>
                       <div>
                         <h4 className="font-semibold text-gray-800 text-sm sm:text-base">Email</h4>
-                        <p className="text-gray-600 text-sm sm:text-base">support@greenpathorg.social</p>
+                        <p className="text-gray-600 text-sm sm:text-base">support@greenpathindia.in</p>
                       </div>
                     </div>
 

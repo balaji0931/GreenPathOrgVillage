@@ -76,7 +76,7 @@ function Router() {
         <Route path="/impact">{() => <Redirect to="/product" />}</Route>
         <Route path="/blog">{() => <Redirect to="/about" />}</Route>
 
-        {/* Interactive demo — public, no auth needed */}
+        {/* Interactive demo - public, no auth needed */}
         <Route path="/demo/:role">{(params) => <DemoRoute role={params.role} />}</Route>
         <Route path="/demo" component={DemoLanding} />
 
@@ -133,7 +133,7 @@ function Router() {
       <Route path="/home">{() => <HomePage />}</Route>
       <Route path="/feedback">{() => <Redirect to="/contact" />}</Route>
 
-      {/* Interactive demo — also accessible when logged in */}
+      {/* Interactive demo - also accessible when logged in */}
       <Route path="/demo/:role">{(params) => <DemoRoute role={params.role} />}</Route>
       <Route path="/demo" component={DemoLanding} />
 

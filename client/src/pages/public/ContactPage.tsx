@@ -39,7 +39,7 @@ export default function ContactPage() {
   const { toast } = useToast();
 
   useSEO({
-    title: "Contact — GreenPath",
+    title: "Contact - GreenPath",
     description: "Get in touch with the GreenPath team. Request a demo, discuss partnerships, or ask about deploying waste management technology in your community.",
     path: "/contact",
   });
@@ -366,7 +366,7 @@ export default function ContactPage() {
               { 
                 icon: Mail, 
                 title: "Email", 
-                value: "support@greenpathorg.social",
+                value: "support@greenpathindia.in",
                 desc: "Send us your detailed requirements"
               },
               { 
@@ -418,7 +418,7 @@ export default function ContactPage() {
                     WhatsApp Chat
                   </a>
                   <a
-                    href="mailto:support@greenpathorg.social?subject=Schedule%20a%20Call%20-%20GreenPath%20Demo"
+                    href="mailto:support@greenpathindia.in?subject=Schedule%20a%20Call%20-%20GreenPath%20Demo"
                     className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-white/10 hover:bg-white/20 border border-white/20 text-white font-bold px-8 py-4 rounded-2xl shadow-sm hover:scale-[1.02] active:scale-[0.98] transition-all"
                   >
                     <Clock className="w-6 h-6 text-emerald-400" />

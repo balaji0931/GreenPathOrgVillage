@@ -1,9 +1,9 @@
 import { useEffect } from "react";
 
 const BASE_URL = "https://greenpathindia.in";
-const DEFAULT_TITLE = "GreenPath — Waste Collection Management Platform";
+const DEFAULT_TITLE = "GreenPath - Waste Collection Management Platform";
 const DEFAULT_DESCRIPTION =
-  "Digital waste management for communities. QR-based household tracking, offline-first collection, analytics, and governance — from doorstep to processing.";
+  "Digital waste management for communities. QR-based household tracking, offline-first collection, analytics, and governance - from doorstep to processing.";
 
 interface SEOOptions {
   title: string;
@@ -60,7 +60,7 @@ export function useSEO({ title, description, path, image }: SEOOptions) {
     if (twDesc) twDesc.setAttribute("content", description);
     if (twImage && image) twImage.setAttribute("content", `${BASE_URL}${image}`);
 
-    // Cleanup — restore defaults on unmount
+    // Cleanup - restore defaults on unmount
     return () => {
       document.title = prevTitle || DEFAULT_TITLE;
       if (descMeta) descMeta.setAttribute("content", prevDesc || DEFAULT_DESCRIPTION);

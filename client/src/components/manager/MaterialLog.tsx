@@ -310,7 +310,7 @@ export function MaterialLog({ defaultTab = "daily", onBack }: { defaultTab?: Log
         />
       )}
 
-      {/* Form Dialog — Fullscreen on mobile */}
+      {/* Form Dialog - Fullscreen on mobile */}
       <Dialog open={showForm} onOpenChange={(open) => {
         setShowForm(open);
         if (!open) setEditingItem(null);
@@ -457,7 +457,7 @@ function PhotoUploadButton({
       const data = await response.json();
       onUpload(data.url);
     } catch (_error) {
-      // Upload failed silently — user sees no photo was set
+      // Upload failed silently - user sees no photo was set
     }
   };
 
@@ -597,7 +597,7 @@ function DailyWasteForm({
             {collectorSummary.sanitaryWasteKg > 0 && <span className="bg-red-100 px-2 py-0.5 rounded-full">Sanitary: {collectorSummary.sanitaryWasteKg}kg</span>}
             {collectorSummary.mixedWasteKg > 0 && <span className="bg-yellow-100 px-2 py-0.5 rounded-full">Mixed: {collectorSummary.mixedWasteKg}kg</span>}
           </div>
-          <p className="text-[10px] text-blue-500 mt-1">Values pre-filled below. Review and save — your entry takes priority.</p>
+          <p className="text-[10px] text-blue-500 mt-1">Values pre-filled below. Review and save - your entry takes priority.</p>
         </div>
       )}
 

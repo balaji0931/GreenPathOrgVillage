@@ -327,7 +327,7 @@ export default function CollectorDashboard() {
       return response.json();
     },
     onSuccess: (newCollection) => {
-      // Play success sound — 3-note ascending chime
+      // Play success sound - 3-note ascending chime
       try {
         const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
         const playTone = (freq: number, start: number, dur: number, vol = 0.25) => {
@@ -344,7 +344,7 @@ export default function CollectorDashboard() {
         };
         playTone(659, 0, 0.18);     // E5
         playTone(880, 0.15, 0.18);  // A5
-        playTone(1318, 0.30, 0.35); // E6 — held slightly longer
+        playTone(1318, 0.30, 0.35); // E6 - held slightly longer
       } catch (_) { }
 
       toast({ title: '✅', description: t('collector.collectionRecorded') });
@@ -1203,7 +1203,7 @@ export default function CollectorDashboard() {
                 </button>
               </div>
             ) : shiftState.isShiftActive ? (
-              // Shift active — show status + end button
+              // Shift active - show status + end button
               <div className="space-y-4">
                 <div className="bg-green-50 border-2 border-green-200 rounded-2xl p-5 text-center">
                   <div className="text-xs font-bold text-green-700 uppercase tracking-widest mb-1">{t("collector.onDuty")}</div>
@@ -1521,7 +1521,7 @@ export default function CollectorDashboard() {
           </div>
         )}
 
-        {/* WASTE LOG TAB — only if enabled */}
+        {/* WASTE LOG TAB - only if enabled */}
         {activeTab === 'wastelog' && villageData?.collectorWasteLogEnabled && (
           <CollectorWasteLog />
         )}
@@ -1592,7 +1592,7 @@ export default function CollectorDashboard() {
       </Dialog>
 
 
-      {/* Collection Form — Full Screen Premium Overlay */}
+      {/* Collection Form - Full Screen Premium Overlay */}
       {showCollectionModal && (
         <div className="fixed inset-0 z-50 bg-gray-50 flex flex-col max-w-md mx-auto">
           {/* Header */}
@@ -1612,7 +1612,7 @@ export default function CollectorDashboard() {
           {/* Scrollable Form Body */}
           <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4">
 
-            {/* 1. Collection Status — FIRST QUESTION */}
+            {/* 1. Collection Status - FIRST QUESTION */}
             <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4">
               <p className="text-xs font-black text-gray-500 uppercase tracking-widest mb-3 text-center">
                 {t('collections.wasteCollectionStatus')}
@@ -2249,7 +2249,7 @@ export default function CollectorDashboard() {
 
       {/* Premium Bottom Navigation with Elliptical Notch */}
       <div className="fixed bottom-0 left-1/2 transform -translate-x-1/2 w-full max-w-md z-30">
-        {/* Center FAB — raised circle */}
+        {/* Center FAB - raised circle */}
         <div className="absolute left-1/2 transform -translate-x-1/2 -top-6 z-10">
           <button
             onClick={() => {
@@ -2274,7 +2274,7 @@ export default function CollectorDashboard() {
 
         {/* Nav bar with SVG elliptical notch background */}
         <div className="relative pt-3">
-          {/* SVG background — draws the nav shape with curved notch */}
+          {/* SVG background - draws the nav shape with curved notch */}
           <svg
             className="absolute top-0 left-0 w-full h-full"
             viewBox="0 0 400 68"
@@ -2293,7 +2293,7 @@ export default function CollectorDashboard() {
             />
           </svg>
 
-          {/* Tab buttons — 2 left + spacer + 2 right */}
+          {/* Tab buttons - 2 left + spacer + 2 right */}
           <div className="relative flex items-end justify-around px-3 pt-1 pb-3">
             {/* Left group */}
             {villageData?.attendanceEnabled && (
@@ -2334,7 +2334,7 @@ export default function CollectorDashboard() {
               </button>
             )}
 
-            {/* Me button — only in nav when even total tabs */}
+            {/* Me button - only in nav when even total tabs */}
             {((villageData?.attendanceEnabled ? 1 : 0) + 1 + (villageData?.collectorWasteLogEnabled ? 1 : 0) + 1) % 2 === 0 && (
               <button
                 className={`flex flex-col items-center gap-0.5 py-1 px-3 rounded-xl transition-all ${activeTab === 'profile'

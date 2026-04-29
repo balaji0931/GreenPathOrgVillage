@@ -8,7 +8,7 @@ export function registerPushRoutes(
   requireAuth: any,
   requireRole: any
 ) {
-  // GET /api/push/vapid-key — returns VAPID public key (no auth required)
+  // GET /api/push/vapid-key - returns VAPID public key (no auth required)
   app.get("/api/push/vapid-key", (_req, res) => {
     const key = getVapidPublicKey();
     if (!key) {
@@ -17,7 +17,7 @@ export function registerPushRoutes(
     res.json({ vapidPublicKey: key });
   });
 
-  // POST /api/push/subscribe — save push subscription (generator only)
+  // POST /api/push/subscribe - save push subscription (generator only)
   app.post(
     "/api/push/subscribe",
     requireAuth,
@@ -54,7 +54,7 @@ export function registerPushRoutes(
     }
   );
 
-  // DELETE /api/push/subscribe — remove push subscription (generator only)
+  // DELETE /api/push/subscribe - remove push subscription (generator only)
   app.delete(
     "/api/push/subscribe",
     requireAuth,
@@ -75,7 +75,7 @@ export function registerPushRoutes(
     }
   );
 
-  // GET /api/push/status — check subscription status (generator only)
+  // GET /api/push/status - check subscription status (generator only)
   app.get(
     "/api/push/status",
     requireAuth,

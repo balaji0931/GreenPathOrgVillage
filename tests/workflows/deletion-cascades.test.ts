@@ -1,5 +1,5 @@
 /**
- * DELETION CASCADES — Verify manual cascade integrity.
+ * DELETION CASCADES - Verify manual cascade integrity.
  *
  * Household deletion: removes collections, feedback, QR codes. NOT collector.
  * Collector deletion: preserves historical collections. Removes user record.

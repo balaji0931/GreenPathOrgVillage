@@ -1,5 +1,5 @@
 /**
- * Cloudinary mock — returns fake URLs for all upload operations.
+ * Cloudinary mock - returns fake URLs for all upload operations.
  * Used via Jest moduleNameMapper to intercept real cloudinary imports.
  */
 

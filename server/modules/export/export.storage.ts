@@ -1,5 +1,5 @@
 /**
- * Export Storage — Database queries for CSV export.
+ * Export Storage - Database queries for CSV export.
  * 11 export types + estimate queries.
  * All queries are village-scoped and date-filtered.
  */
@@ -12,7 +12,7 @@ import {
 import { eq, and, gte, lte, count, sql, desc, asc, inArray } from 'drizzle-orm';
 
 // ═══════════════════════════════════════════════════════════════
-// Estimate Queries (fast COUNTs — no data returned)
+// Estimate Queries (fast COUNTs - no data returned)
 // ═══════════════════════════════════════════════════════════════
 
 export async function estimateExport(
@@ -102,7 +102,7 @@ async function estimateIssues(villageId: string, from: string, to: string): Prom
 }
 
 // ═══════════════════════════════════════════════════════════════
-// Data Queries — return flat rows ready for CSV
+// Data Queries - return flat rows ready for CSV
 // ═══════════════════════════════════════════════════════════════
 
 interface ExportOptions {
@@ -466,7 +466,7 @@ export async function getCoverageForExport(opts: ExportOptions) {
     ))
     .orderBy(asc(dailyVillageStats.reportDate));
 
-  // Get issue counts per date (lightweight — just counts)
+  // Get issue counts per date (lightweight - just counts)
   const fromDate = new Date(opts.from!);
   const toDate = new Date(opts.to!);
   toDate.setHours(23, 59, 59, 999);

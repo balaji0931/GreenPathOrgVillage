@@ -274,7 +274,7 @@ export class PayUAdapter implements PaymentGatewayAdapter {
         break;
       case "pending":
       case "in_progress":
-        // Pending — should not trigger final state change
+        // Pending - should not trigger final state change
         status = "failed"; // filtered at webhook handler level
         break;
       default:

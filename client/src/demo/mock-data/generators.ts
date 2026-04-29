@@ -1,9 +1,9 @@
 /**
- * Mock data generators — single source of truth for ALL demo data.
+ * Mock data generators - single source of truth for ALL demo data.
  * Both the cache seeder AND the fetch interceptor use these functions.
  *
  * Design: Generators produce realistic Indian village data with believable
- * patterns — inconsistent coverage, weekend dips, varying ratings.
+ * patterns - inconsistent coverage, weekend dips, varying ratings.
  *
  * IMPORTANT: Use the memoized getXxx() getters (bottom of file) instead of
  * calling generateXxx() directly. This ensures consistent object references
@@ -19,7 +19,7 @@ function pick<T>(arr: T[]): T {
 }
 
 function seededRandom(seed: number): () => number {
-  // Simple deterministic PRNG — same seed = same "random" data every time
+  // Simple deterministic PRNG - same seed = same "random" data every time
   let s = seed;
   return () => {
     s = (s * 1664525 + 1013904223) & 0xffffffff;
@@ -162,7 +162,7 @@ export function generateVillage() {
 // ─── Households ───────────────────────────────────────────────────────
 
 export function generateHouseholds(count: number = 100) {
-  const rand = seededRandom(42); // Deterministic — same data every time
+  const rand = seededRandom(42); // Deterministic - same data every time
   const households = [];
 
   for (let i = 0; i < count; i++) {
@@ -584,7 +584,7 @@ export function generateDailyWasteLogs() {
       id: 3, villageId: DEMO_VILLAGE_ID, date: getISTDate(3).toISOString().split("T")[0],
       wetWasteKg: "38.0", dryWasteKg: "15.0", specialCareWasteKg: "2.1",
       sanitaryWasteKg: "3.0", mixedWasteKg: "9.2",
-      notes: "Higher mixed waste from Ward-3 — awareness drive needed.",
+      notes: "Higher mixed waste from Ward-3 - awareness drive needed.",
       createdAt: getISTDate(3).toISOString(), createdBy: "DEMO-MGR-001",
     },
     {
@@ -791,7 +791,7 @@ export function generateFeedback() {
 // ─── QR Codes (individual records, grouped by batchId in UI) ──────────
 
 export function generateQRCodes() {
-  // Single batch with 9 QR codes — one per collector
+  // Single batch with 9 QR codes - one per collector
   const codes = [];
   for (let i = 1; i <= 9; i++) {
     codes.push({
@@ -1001,7 +1001,7 @@ export function getQRCodes() { return _qrCodes ??= generateQRCodes(); }
 export function getAttendanceCenters() { return _attendanceCenters ??= generateAttendanceCenters(); }
 export function getHouseholdTypes() { return _householdTypes ??= generateHouseholdTypes(); }
 
-/** Reset all cached data — called on demo reset */
+/** Reset all cached data - called on demo reset */
 export function clearMemoizedData() {
   _households = _collections = _behaviourStats = _collectors = null;
   _collectorStats = _fieldWorkers = _village = _managerStats = null;

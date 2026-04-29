@@ -79,7 +79,7 @@ afterAll(async () => {
 });
 
 // ═══════════════════════════════════════════
-// Test 1 — Cycle Activation Generates Correct Bills
+// Test 1 - Cycle Activation Generates Correct Bills
 // ═══════════════════════════════════════════
 
 describe('Cycle Activation', () => {
@@ -104,13 +104,13 @@ describe('Cycle Activation', () => {
             .set('x-csrf-token', managerCsrf)
             .send({ billingMonth: '2026-01' });
 
-        // Should reject — cycle already exists
+        // Should reject - cycle already exists
         expect([400, 409]).toContain(res.status);
     });
 });
 
 // ═══════════════════════════════════════════
-// Test 2 — Cash Payment Marks Bills Correctly
+// Test 2 - Cash Payment Marks Bills Correctly
 // ═══════════════════════════════════════════
 
 describe('Cash Payment', () => {
@@ -149,7 +149,7 @@ describe('Cash Payment', () => {
 });
 
 // ═══════════════════════════════════════════
-// Test 3 — Bulk Cash Payment (Multi-Month)
+// Test 3 - Bulk Cash Payment (Multi-Month)
 // ═══════════════════════════════════════════
 
 describe('Bulk Cash Payment', () => {
@@ -199,7 +199,7 @@ describe('Bulk Cash Payment', () => {
 });
 
 // ═══════════════════════════════════════════
-// Test 4 — Cannot Pay Already-Paid Bill
+// Test 4 - Cannot Pay Already-Paid Bill
 // ═══════════════════════════════════════════
 
 describe('Duplicate Payment Prevention', () => {
@@ -226,7 +226,7 @@ describe('Duplicate Payment Prevention', () => {
 });
 
 // ═══════════════════════════════════════════
-// Test — Undo Cash Payment
+// Test - Undo Cash Payment
 // ═══════════════════════════════════════════
 
 describe('Undo Cash Payment', () => {

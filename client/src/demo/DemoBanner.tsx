@@ -56,7 +56,7 @@ export function DemoBanner() {
             <div className="flex items-center gap-1.5">
               <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
               <span className="text-xs font-semibold text-emerald-800">
-                Demo Mode — {ROLE_LABELS[demo.role]}
+                Demo Mode - {ROLE_LABELS[demo.role]}
               </span>
             </div>
           </div>

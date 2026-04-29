@@ -1,5 +1,5 @@
 /**
- * CSRF SWEEP — Every mutating endpoint tested for CSRF enforcement.
+ * CSRF SWEEP - Every mutating endpoint tested for CSRF enforcement.
  *
  * For every POST/PUT/PATCH/DELETE:
  *   ✓ Valid CSRF token → success (not 403)
@@ -100,10 +100,10 @@ const CSRF_ENDPOINTS: CsrfEndpoint[] = [
     { method: 'post', getPath: () => `/api/villages/${villageId}/vehicles`, getBody: () => ({ registrationNumber: 'CSRF-REG-001', name: 'CSRF Truck' }), agent: () => managerAgent, csrf: () => managerCsrf, label: 'POST /api/villages/:villageId/vehicles (manager)' },
     { method: 'post', getPath: () => '/api/material-log/daily-waste', getBody: () => ({ date: '2025-01-01', wetWasteKg: '1', dryWasteKg: '1' }), agent: () => managerAgent, csrf: () => managerCsrf, label: 'POST /api/material-log/daily-waste (manager)' },
 
-    // Collector POST — issues created by collector
+    // Collector POST - issues created by collector
     { method: 'post', getPath: () => '/api/issues', getBody: () => ({ title: 'CSRF Issue Title Long Enough', description: 'CSRF issue description that is long enough to pass validation', category: 'waste' }), agent: () => collectorAgent, csrf: () => collectorCsrf, label: 'POST /api/issues (collector)' },
 
-    // Collector POST — waste collection
+    // Collector POST - waste collection
     { method: 'post', getPath: () => '/api/waste-collections', getBody: () => ({ householdUid, segregationRating: 4, remarks: '', photoUrl: '', voiceUrl: '', status: 'collected', missedReason: '' }), agent: () => collectorAgent, csrf: () => collectorCsrf, label: 'POST /api/waste-collections (collector)' },
 
     // Admin PUT
@@ -120,7 +120,7 @@ const PUBLIC_ENDPOINTS = [
     { method: 'post' as const, path: '/api/contact', body: { name: 'T', email: 't@t.com', subject: 'CSRF Test Subject', message: 'Test CSRF exempt contact message long enough' }, label: 'POST /api/contact' },
 ];
 
-describe('CSRF Sweep — Every Mutation', () => {
+describe('CSRF Sweep - Every Mutation', () => {
     for (const ep of CSRF_ENDPOINTS) {
         describe(ep.label, () => {
             test('missing CSRF token → 403', async () => {
@@ -152,7 +152,7 @@ describe('CSRF Sweep — Every Mutation', () => {
         });
     }
 
-    describe('Public endpoints — CSRF exempt', () => {
+    describe('Public endpoints - CSRF exempt', () => {
         for (const pub of PUBLIC_ENDPOINTS) {
             test(`${pub.label} works without CSRF token`, async () => {
                 const freshAgent = request.agent(app);

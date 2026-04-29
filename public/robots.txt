@@ -1,4 +1,4 @@
-# GreenPath — robots.txt
+# GreenPath - robots.txt
 # https://greenpathindia.in
 
 User-agent: *
@@ -11,6 +11,12 @@ Allow: /case-studies
 Allow: /pricing
 Allow: /about
 Allow: /contact
+Allow: /demo
+Allow: /demo/manager
+Allow: /demo/collector
+Allow: /demo/generator
+Allow: /demo/moderator
+Allow: /demo/fieldworker
 
 # Legal pages
 Allow: /privacy-policy

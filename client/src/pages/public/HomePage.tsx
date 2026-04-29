@@ -44,8 +44,8 @@ export default function HomePage() {
   const [, setLocation] = useLocation();
 
   useSEO({
-    title: "GreenPath — Waste Collection Management Platform",
-    description: "Digital waste management for communities. QR-based household tracking, offline-first collection, real-time analytics, and governance — from doorstep to processing.",
+    title: "GreenPath - Waste Collection Management Platform",
+    description: "Digital waste management for communities. QR-based household tracking, offline-first collection, real-time analytics, and governance - from doorstep to processing.",
     path: "/",
   });
 
@@ -131,12 +131,12 @@ export default function HomePage() {
               </AnimateOnScroll>
             </div>
 
-            {/* HERO ILLUSTRATION — LARGE, dominates */}
+            {/* HERO ILLUSTRATION - LARGE, dominates */}
             <AnimateOnScroll delay={150} className="relative">
               <div className="relative float-slow">
                 <img
                   src="/images/hero/hero-main.png"
-                  alt="GreenPath — Smart Waste Management Ecosystem"
+                  alt="GreenPath - Smart Waste Management Ecosystem"
                   className="w-full h-auto max-w-[600px] mx-auto lg:max-w-none"
                   style={{ filter: "drop-shadow(0 25px 50px rgba(5,150,105,0.15))" }}
                 />
@@ -222,7 +222,7 @@ export default function HomePage() {
                       "No digital tracking of daily collections",
                       "Zero visibility into collector performance",
                       "Manual monitoring with paper registers",
-                      /* FUTURE: "No data for compliance or ESG reporting" — commented out, ESG not yet built */
+                      /* FUTURE: "No data for compliance or ESG reporting" - commented out, ESG not yet built */
                       "No data for accountability or reporting",
                     ].map((item) => (
                       <li key={item} className="flex items-start gap-2 text-sm text-slate-600">
@@ -240,7 +240,7 @@ export default function HomePage() {
                 <div className="relative bg-gradient-to-br from-amber-50 via-yellow-50 to-orange-50 p-8 flex items-center justify-center">
                   <img
                     src="/images/illustrations/problem-citizen.png"
-                    alt="Citizen frustrations — no transparency"
+                    alt="Citizen frustrations - no transparency"
                     className="w-full max-w-[380px] h-auto group-hover:scale-105 transition-transform duration-700"
                     style={{ filter: "drop-shadow(0 8px 20px rgba(0,0,0,0.06))" }}
                   />
@@ -337,7 +337,7 @@ export default function HomePage() {
               {
                 step: 8, icon: PieChart, title: "Analyze & Report",
                 desc: "Generate ward-level reports, segregation trends, and collector benchmarks. Export data as CSV or branded PDF reports. Full audit trail for every collection event with timestamped, immutable logs.",
-                /* FUTURE: Original desc included 'ESG reporting, SBM/SLWM audits, carbon credit verification, climate financing' — removed until built */
+                /* FUTURE: Original desc included 'ESG reporting, SBM/SLWM audits, carbon credit verification, climate financing' - removed until built */
                 result: "→ Audit-ready reports, actionable insights, full accountability",
                 img: "/images/illustrations/step-5-analyze.png",
                 color: "from-purple-500 to-purple-600", bg: "from-purple-50 to-fuchsia-50",
@@ -393,7 +393,7 @@ export default function HomePage() {
                 <div className="absolute -inset-10 bg-gradient-to-r from-emerald-100/30 via-teal-100/40 to-cyan-100/30 rounded-full blur-3xl" />
                 <img
                   src="/images/illustrations/transparency-triangle.png"
-                  alt="Transparency triangle — Manager, Collector, Household connected by data flows"
+                  alt="Transparency triangle - Manager, Collector, Household connected by data flows"
                   className="relative w-full max-w-[480px] h-auto float-slow"
                   style={{ filter: "drop-shadow(0 15px 40px rgba(5,150,105,0.12))" }}
                 />
@@ -446,7 +446,7 @@ export default function HomePage() {
               {[
                 { icon: Eye, text: "Every collection tracked" },
                 { icon: ClipboardCheck, text: "Automated workforce tracking" },
-                /* FUTURE: { icon: FileCheck, text: "ESG & compliance ready" }, — removed until ESG reporting is built */
+                /* FUTURE: { icon: FileCheck, text: "ESG & compliance ready" }, - removed until ESG reporting is built */
                 { icon: FileCheck, text: "Audit trail & accountability" },
                 { icon: QrCode, text: "QR-based digital identity" },
               ].map((h) => (
@@ -672,7 +672,7 @@ export default function HomePage() {
             </blockquote>
 
             <p className="text-base text-slate-400">
-              — Balaji Nayak & Sreeja Gummula
+              - Balaji Nayak & Sreeja Gummula
             </p>
           </AnimateOnScroll>
         </div>

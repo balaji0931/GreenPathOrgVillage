@@ -43,7 +43,7 @@ export function decrypt(ciphertext: string): string {
   const parts = ciphertext.split(":");
 
   if (parts.length !== 3) {
-    throw new Error("Invalid encrypted format — expected iv:tag:ciphertext");
+    throw new Error("Invalid encrypted format - expected iv:tag:ciphertext");
   }
 
   const iv = Buffer.from(parts[0], "hex");
@@ -60,7 +60,7 @@ export function decrypt(ciphertext: string): string {
 }
 
 /**
- * Generate a SHA-256 hash of the encrypted config — used for billing cycle snapshots.
+ * Generate a SHA-256 hash of the encrypted config - used for billing cycle snapshots.
  * Does NOT decrypt; hashes the ciphertext directly.
  */
 export function hashConfig(encryptedConfigJson: string): string {
@@ -87,7 +87,7 @@ export function decryptConfig<T = Record<string, any>>(encryptedData: string): T
  */
 export function generateMasterKey(): string {
   const key = crypto.randomBytes(32).toString("hex");
-  // Only print when run directly as CLI script — never in server process
+  // Only print when run directly as CLI script - never in server process
   if (require.main === module) {
     process.stdout.write(`GATEWAY_ENCRYPTION_KEY=${key}\n`);
   }

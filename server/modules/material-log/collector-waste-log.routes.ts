@@ -12,7 +12,7 @@ export function registerCollectorWasteLogRoutes(
 ) {
     // ─── Collector-facing routes ───────────────────────────────────
 
-    /** GET /api/collector-waste-log — list own logs */
+    /** GET /api/collector-waste-log - list own logs */
     app.get('/api/collector-waste-log', requireAuth, requireRole(['collector']), requireVillageAccess, async (req, res) => {
         try {
             const userId = req.session.userId!;
@@ -31,7 +31,7 @@ export function registerCollectorWasteLogRoutes(
         }
     });
 
-    /** POST /api/collector-waste-log — create entry (multiple per day allowed) */
+    /** POST /api/collector-waste-log - create entry (multiple per day allowed) */
     app.post('/api/collector-waste-log', requireAuth, requireRole(['collector']), requireVillageAccess, async (req, res) => {
         try {
             const userId = req.session.userId!;
@@ -56,7 +56,7 @@ export function registerCollectorWasteLogRoutes(
         }
     });
 
-    /** PATCH /api/collector-waste-log/:id — update own entry */
+    /** PATCH /api/collector-waste-log/:id - update own entry */
     app.patch('/api/collector-waste-log/:id', requireAuth, requireRole(['collector']), requireVillageAccess, async (req, res) => {
         try {
             const userId = req.session.userId!;
@@ -77,7 +77,7 @@ export function registerCollectorWasteLogRoutes(
         }
     });
 
-    /** DELETE /api/collector-waste-log/:id — delete own entry */
+    /** DELETE /api/collector-waste-log/:id - delete own entry */
     app.delete('/api/collector-waste-log/:id', requireAuth, requireRole(['collector']), requireVillageAccess, async (req, res) => {
         try {
             const userId = req.session.userId!;
@@ -100,7 +100,7 @@ export function registerCollectorWasteLogRoutes(
 
     // ─── Manager-facing routes ────────────────────────────────────
 
-    /** GET /api/collector-waste-log/village/:date — all collector entries for a village+date */
+    /** GET /api/collector-waste-log/village/:date - all collector entries for a village+date */
     app.get('/api/collector-waste-log/village/:date', requireAuth, requireRole(['manager']), requireVillageAccess, async (req, res) => {
         try {
             const villageId = req.session.villageId!;
@@ -112,7 +112,7 @@ export function registerCollectorWasteLogRoutes(
         }
     });
 
-    /** GET /api/collector-waste-log/village/:date/summary — summed totals for pre-loading manager form */
+    /** GET /api/collector-waste-log/village/:date/summary - summed totals for pre-loading manager form */
     app.get('/api/collector-waste-log/village/:date/summary', requireAuth, requireRole(['manager']), requireVillageAccess, async (req, res) => {
         try {
             const villageId = req.session.villageId!;

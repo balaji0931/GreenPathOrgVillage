@@ -1,5 +1,5 @@
 /**
- * Export Middleware — Rate limiting for CSV exports.
+ * Export Middleware - Rate limiting for CSV exports.
  * 10 exports per user per hour, tracked in-memory.
  */
 import type { Request, Response, NextFunction } from 'express';

@@ -47,7 +47,7 @@ describe('qr-code.service', () => {
             expect(result.batchId).toBe('BATCH-V001-001');
             expect(result.count).toBe(2);
 
-            // Verify no QR generation/upload calls — pure DB insert
+            // Verify no QR generation/upload calls - pure DB insert
             expect(mockStorage.createBatchQRCodes).toHaveBeenCalledWith([
                 { uid: 'GEN-V001-0001', villageId: 'V001', batchId: 'BATCH-V001-001', status: 'notMapped' },
                 { uid: 'GEN-V001-0002', villageId: 'V001', batchId: 'BATCH-V001-001', status: 'notMapped' },

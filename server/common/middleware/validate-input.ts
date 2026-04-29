@@ -1,4 +1,4 @@
-// Input validation middleware — reject unsafe input with 400 (validate on input, encode on output)
+// Input validation middleware - reject unsafe input with 400 (validate on input, encode on output)
 export const validateInput = (req: any, res: any, next: any) => {
     // Dangerous patterns: HTML tags, event handlers, script injection
     const DANGEROUS_PATTERN = /<|>|javascript:|onerror\s*=|onload\s*=/i;

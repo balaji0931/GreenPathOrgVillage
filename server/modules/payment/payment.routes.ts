@@ -26,9 +26,9 @@ async function requirePaymentsEnabled(req: Request, res: Response, next: NextFun
 
 export function registerPaymentRoutes(app: Express, requireAuth: any, requireRole: any, requireVillageAccess: any) {
   // Apply payments guard to all payment routes (except public webhook)
-  // This runs before individual route handlers — if payments is disabled, returns 403
+  // This runs before individual route handlers - if payments is disabled, returns 403
   app.use(['/api/payments'], async (req: Request, res: Response, next: NextFunction) => {
-    // Skip webhook — it's gateway-initiated and doesn't have a session
+    // Skip webhook - it's gateway-initiated and doesn't have a session
     if (req.path.includes('/gateway/webhook')) return next();
     // Skip if no session (let requireAuth handle)
     const villageId = req.session?.villageId;
@@ -232,7 +232,7 @@ export function registerPaymentRoutes(app: Express, requireAuth: any, requireRol
 
       // Get fee config to determine fee
       const feeConfig = await paymentStorage.getFeeConfigByVillage(villageId);
-      // We would need to look up the household type — simplified here
+      // We would need to look up the household type - simplified here
       const bill = await paymentStorage.addIndividualBill({
         householdId,
         villageId,
@@ -267,7 +267,7 @@ export function registerPaymentRoutes(app: Express, requireAuth: any, requireRol
       const bill = await paymentStorage.getBillById(billId);
       if (!bill) return res.status(404).json({ message: "Bill not found" });
       if (bill.villageId !== villageId) {
-        return res.status(403).json({ message: "Access denied — bill belongs to another village" });
+        return res.status(403).json({ message: "Access denied - bill belongs to another village" });
       }
 
       const method = paymentMethod || "cash";
@@ -302,7 +302,7 @@ export function registerPaymentRoutes(app: Express, requireAuth: any, requireRol
         const bill = await paymentStorage.getBillById(id);
         if (!bill) return res.status(404).json({ message: `Bill ${id} not found` });
         if (bill.villageId !== villageId) {
-          return res.status(403).json({ message: "Access denied — bill belongs to another village" });
+          return res.status(403).json({ message: "Access denied - bill belongs to another village" });
         }
       }
 
@@ -329,7 +329,7 @@ export function registerPaymentRoutes(app: Express, requireAuth: any, requireRol
       const bill = await paymentStorage.getBillById(billId);
       if (!bill) return res.status(404).json({ message: "Bill not found" });
       if (bill.villageId !== villageId) {
-        return res.status(403).json({ message: "Access denied — bill belongs to another village" });
+        return res.status(403).json({ message: "Access denied - bill belongs to another village" });
       }
 
       await paymentStorage.undoBillPayment(billId, userId);
@@ -355,7 +355,7 @@ export function registerPaymentRoutes(app: Express, requireAuth: any, requireRol
       const bill = await paymentStorage.getBillById(billId);
       if (!bill) return res.status(404).json({ message: "Bill not found" });
       if (bill.villageId !== villageId) {
-        return res.status(403).json({ message: "Access denied — bill belongs to another village" });
+        return res.status(403).json({ message: "Access denied - bill belongs to another village" });
       }
 
       await paymentStorage.waiveBill(billId, userId, reason);
@@ -388,7 +388,7 @@ export function registerPaymentRoutes(app: Express, requireAuth: any, requireRol
       const villageId = req.session.villageId!;
       const householdId = parseInt(req.params.householdId);
       const results = await paymentStorage.getUnpaidBillsByHousehold(householdId);
-      // Flatten for frontend — filter to session village for defense-in-depth
+      // Flatten for frontend - filter to session village for defense-in-depth
       const bills = results
         .filter(r => r.bill.villageId === villageId)
         .map(r => ({
@@ -408,7 +408,7 @@ export function registerPaymentRoutes(app: Express, requireAuth: any, requireRol
   // Gateway Config
   // ═══════════════════════════════════════════
 
-  // Get gateway status — returns all active gateways for the village
+  // Get gateway status - returns all active gateways for the village
   app.get('/api/payments/gateway/status', requireAuth, requireRole(['manager']), requireVillageAccess, async (req, res) => {
     try {
       const villageId = req.session.villageId!;
@@ -501,7 +501,7 @@ export function registerPaymentRoutes(app: Express, requireAuth: any, requireRol
         return res.status(400).json({ message: "provider and configJson are required" });
       }
 
-      // Auto-determine test mode from environment — not a manager decision
+      // Auto-determine test mode from environment - not a manager decision
       const isTestMode = process.env.NODE_ENV !== "production";
 
       // Handle partial updates: merge new fields with existing config
@@ -549,7 +549,7 @@ export function registerPaymentRoutes(app: Express, requireAuth: any, requireRol
       }
 
       try {
-        // Try to create an adapter — validates config decrypts and has required fields
+        // Try to create an adapter - validates config decrypts and has required fields
         getGatewayAdapter({
           provider: config.provider,
           encryptedConfigJson: config.encryptedConfigJson,
@@ -559,7 +559,7 @@ export function registerPaymentRoutes(app: Express, requireAuth: any, requireRol
         res.json({ status: "success", message: "Gateway credentials validated" });
       } catch {
         await paymentStorage.updateGatewayTestStatus(villageId, "failed");
-        res.json({ status: "failed", message: "Invalid gateway credentials — adapter initialization failed" });
+        res.json({ status: "failed", message: "Invalid gateway credentials - adapter initialization failed" });
       }
     } catch (error) {
       res.status(500).json({ message: "Failed to test gateway" });
@@ -606,7 +606,7 @@ export function registerPaymentRoutes(app: Express, requireAuth: any, requireRol
       const decryptedConf = decryptConfig(gatewayConfig.encryptedConfigJson);
       const signatureKey = decryptedConf.signature_key || "";
 
-      // Fix 4: Mandatory signature verification — NEVER allow unsigned webhooks
+      // Fix 4: Mandatory signature verification - NEVER allow unsigned webhooks
       if (!signatureKey) {
         return res.status(400).json({ status: "error", reason: "no_signature_key_configured" });
       }
@@ -637,7 +637,7 @@ export function registerPaymentRoutes(app: Express, requireAuth: any, requireRol
         return res.json({ status: "ok", duplicate: true });
       }
 
-      // Fix 3: Webhook amount verification — reject if gateway amount mismatches stored order
+      // Fix 3: Webhook amount verification - reject if gateway amount mismatches stored order
       if (parsed.amountPaise && order.chargeableAmount) {
         const expectedPaise = Math.round(parseFloat(order.chargeableAmount) * 100);
         if (Math.abs(parsed.amountPaise - expectedPaise) > 100) { // ₹1 tolerance for rounding
@@ -658,7 +658,7 @@ export function registerPaymentRoutes(app: Express, requireAuth: any, requireRol
 
       // Step 7: Process payment
       if (parsed.status === "success") {
-        // Mark order as captured (even if it was expired — delayed webhook scenario)
+        // Mark order as captured (even if it was expired - delayed webhook scenario)
         await paymentStorage.updateOrderStatus(rawOrderId, "captured");
 
         // Mark all bills paid
@@ -725,10 +725,10 @@ export function registerPaymentRoutes(app: Express, requireAuth: any, requireRol
         return res.status(400).json({ message: "All bills must belong to the same household" });
       }
 
-      // Handler-level village validation — prevent cross-village order creation
+      // Handler-level village validation - prevent cross-village order creation
       const billVillageIds = new Set(bills.map(b => b.villageId));
       if (billVillageIds.size > 1 || !billVillageIds.has(sessionVillageId)) {
-        return res.status(403).json({ message: "Access denied — bills belong to another village" });
+        return res.status(403).json({ message: "Access denied - bills belong to another village" });
       }
 
       // Check for overlapping pending order → return existing session
@@ -759,7 +759,7 @@ export function registerPaymentRoutes(app: Express, requireAuth: any, requireRol
       // Lock bills
       const locked = await paymentStorage.lockBillsForPayment(billIds);
       if (!locked) {
-        return res.status(409).json({ message: "Could not lock all bills — some may already be in payment" });
+        return res.status(409).json({ message: "Could not lock all bills - some may already be in payment" });
       }
 
       try {
@@ -767,7 +767,7 @@ export function registerPaymentRoutes(app: Express, requireAuth: any, requireRol
         const billAmounts = bills.map(b => parseFloat(b.feeAmountSnapshot || "0"));
         const totalAmount = billAmounts.reduce((sum, a) => sum + a, 0);
 
-        // MDR calculation — no rounding internally, round half-up for gateway
+        // MDR calculation - no rounding internally, round half-up for gateway
         let mdrAmount = 0;
         if (config.mdrPolicy === "household_pays" && config.mdrPercentage) {
           mdrAmount = totalAmount * (parseFloat(config.mdrPercentage) / 100);
@@ -808,7 +808,7 @@ export function registerPaymentRoutes(app: Express, requireAuth: any, requireRol
         const internalOrderId = `gp_${villageId}_${crypto.randomUUID()}`;
 
         if (method === "upi") {
-          // Manager QR flow — create Payment Link for household to scan
+          // Manager QR flow - create Payment Link for household to scan
           // Note: UPI Payment Links only work in Razorpay LIVE mode
           const qrResult = await adapter.createUPIQRPayment({
             orderId: internalOrderId.slice(0, 40),
@@ -852,7 +852,7 @@ export function registerPaymentRoutes(app: Express, requireAuth: any, requireRol
             chargeableAmount,
           };
         } else {
-          // Generator checkout flow — standard Razorpay Checkout.js (works in test & live)
+          // Generator checkout flow - standard Razorpay Checkout.js (works in test & live)
           const checkoutResult = await adapter.createInAppCheckout({
             orderId: internalOrderId.slice(0, 40),
             chargeableAmountRupees: chargeableAmount,
@@ -903,7 +903,7 @@ export function registerPaymentRoutes(app: Express, requireAuth: any, requireRol
         return res.status(404).json({ message: "Order not found" });
       }
 
-      // Fix 6: Village scope check — prevent cross-village order polling
+      // Fix 6: Village scope check - prevent cross-village order polling
       if (order.villageId !== villageId) {
         return res.status(404).json({ message: "Order not found" }); // 404 not 403 to avoid info leak
       }
@@ -1009,7 +1009,7 @@ export function registerPaymentRoutes(app: Express, requireAuth: any, requireRol
         return res.json({ message: "Payment already verified", status: "captured" });
       }
 
-      // Get gateway config — use the specific provider's config
+      // Get gateway config - use the specific provider's config
       const config = await paymentStorage.getGatewayConfig(villageId, provider);
       if (!config || !config.encryptedConfigJson) {
         return res.status(400).json({ message: `Gateway '${provider}' not configured` });
@@ -1128,7 +1128,7 @@ export function registerPaymentRoutes(app: Express, requireAuth: any, requireRol
         return res.status(400).json({ message: "Payment could not be verified" });
       }
 
-      // Verified — mark order as captured and bills as paid
+      // Verified - mark order as captured and bills as paid
       await paymentStorage.updateOrderStatus(orderId, "captured");
 
       const billIds = (order.billIds || []) as number[];
@@ -1153,7 +1153,7 @@ export function registerPaymentRoutes(app: Express, requireAuth: any, requireRol
   // ═══════════════════════════════════════════
 
   // PayU redirects the user here after payment (both success and failure)
-  // This is a public endpoint — no requireAuth (user's session may not persist across redirect)
+  // This is a public endpoint - no requireAuth (user's session may not persist across redirect)
   app.post('/api/payments/payu/callback', async (req, res) => {
     try {
       const body = req.body;
@@ -1172,7 +1172,7 @@ export function registerPaymentRoutes(app: Express, requireAuth: any, requireRol
       // Try exact match first, then partial match
       let order = await paymentStorage.getOrderById(txnid);
       if (!order) {
-        // txnid is the truncated orderId — find by matching prefix
+        // txnid is the truncated orderId - find by matching prefix
         const allPending = await paymentStorage.findOrderByTruncatedId(txnid);
         order = allPending;
       }
@@ -1218,7 +1218,7 @@ export function registerPaymentRoutes(app: Express, requireAuth: any, requireRol
         return res.redirect('/?payment=error&reason=verification_failed');
       }
 
-      // Verified — mark order as captured and bills as paid
+      // Verified - mark order as captured and bills as paid
       await paymentStorage.updateOrderStatus(order.orderId, "captured");
 
       const billIds = (order.billIds || []) as number[];
@@ -1242,7 +1242,7 @@ export function registerPaymentRoutes(app: Express, requireAuth: any, requireRol
   // ═══════════════════════════════════════════
 
   if (process.env.NODE_ENV !== "production") {
-    // Simulate payment success — instantly marks bills as paid via order
+    // Simulate payment success - instantly marks bills as paid via order
     app.post('/api/dev/simulate-payment-success', requireAuth, async (req, res) => {
       try {
         const { orderId } = req.body;

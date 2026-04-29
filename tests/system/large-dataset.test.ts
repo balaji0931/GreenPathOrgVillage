@@ -1,5 +1,5 @@
 /**
- * LARGE DATASET — Pagination correctness at scale.
+ * LARGE DATASET - Pagination correctness at scale.
  *
  * Seeds 100 households via seedHousehold, tests pagination, filtering, deletion impact.
  */
@@ -57,7 +57,7 @@ afterAll(async () => {
     await closeCleanupPool();
 });
 
-describe('Large Dataset — Pagination', () => {
+describe('Large Dataset - Pagination', () => {
     test('1. Page 1 (limit 10) returns exactly 10 items', async () => {
         const res = await managerAgent.get('/api/households/paginated?page=1&limit=10');
         expect(res.status).toBe(200);

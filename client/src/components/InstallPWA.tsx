@@ -22,7 +22,7 @@ export function InstallPWA({ showInline = false, onInstallComplete }: InstallPWA
     setIsInstalling(false);
     
     if (typeof result === 'string') {
-      // No native install prompt available — show manual instructions
+      // No native install prompt available - show manual instructions
       alert(result);
     } else if (result === true) {
       onInstallComplete?.();

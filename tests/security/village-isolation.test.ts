@@ -1,5 +1,5 @@
 /**
- * VILLAGE ISOLATION — Cross-village access prevention.
+ * VILLAGE ISOLATION - Cross-village access prevention.
  *
  * Setup: Village A + Village B, each with manager, collector, household.
  * Tests: Users from A cannot access data from B.
@@ -114,7 +114,7 @@ afterAll(async () => {
     await closeCleanupPool();
 });
 
-describe('Village Isolation — Cross-village access denied', () => {
+describe('Village Isolation - Cross-village access denied', () => {
     describe('Manager A cannot access Village B', () => {
         test('Manager A cannot see Village B households', async () => {
             // Manager A's GET /api/households should only return A's households
@@ -141,7 +141,7 @@ describe('Village Isolation — Cross-village access denied', () => {
         test('Manager A cannot access Village B waste collections', async () => {
             const res = await managerAAgent.get('/api/waste-collections/village');
             expect(res.status).toBe(200);
-            // Village-scoped — only A's data
+            // Village-scoped - only A's data
         });
 
         test('Manager A cannot add vehicle to Village B', async () => {

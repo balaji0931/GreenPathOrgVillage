@@ -78,7 +78,7 @@ describe('waste-collection.service', () => {
             expect(result.collection).toBeDefined();
             expect(mockStorage.createWasteCollection).toHaveBeenCalled();
 
-            // Cache invalidation now runs in fire-and-forget background — wait for it
+            // Cache invalidation now runs in fire-and-forget background - wait for it
             await new Promise(r => setTimeout(r, 100));
             expect(mockCache.delete).toHaveBeenCalled();
         });
@@ -126,7 +126,7 @@ describe('waste-collection.service', () => {
 
             await submitCollection(validData);
 
-            // Cache invalidation now runs in fire-and-forget background — wait for it
+            // Cache invalidation now runs in fire-and-forget background - wait for it
             await new Promise(r => setTimeout(r, 100));
 
             // Village stats cache invalidated
