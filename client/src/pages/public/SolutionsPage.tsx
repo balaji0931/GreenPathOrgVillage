@@ -80,7 +80,7 @@ const solutions = [
       "Local employment generation through organized collection systems",
       "Operational visibility for panchayat leaders and field supervisors",
       "Revenue opportunities from composting and dry waste recovery",
-      "Digital record of village-level waste management performance",
+      "Digital record of community-level waste management performance",
     ],
   },
   {
@@ -111,8 +111,8 @@ const solutions = [
   },
   {
     icon: Factory,
-    title: "For Bulk Waste Generators & Campuses",
-    subtitle: "Hotels, universities, markets, and institutions with regulatory waste compliance needs",
+    title: "For Institutions & Campuses",
+    subtitle: "Universities, hospitals, hotels, markets, and campuses with regulatory waste compliance needs",
     scale: "50–500 units / waste points per deployment",
     color: "from-amber-500 to-orange-500",
     bgScene: "from-amber-50 via-orange-50/30 to-white",
@@ -164,7 +164,7 @@ const solutions = [
 export default function SolutionsPage() {
   useSEO({
     title: "Solutions - GreenPath",
-    description: "Tailored waste management for municipalities, panchayats, apartments, townships, and NGOs. Offline-first, multi-language, QR-based tracking for every community type.",
+    description: "Tailored waste management for municipalities, panchayats, apartments, townships, and institutions. Offline-first, multi-language, QR-based tracking for every community type.",
     path: "/solutions",
   });
 
@@ -188,7 +188,7 @@ export default function SolutionsPage() {
                   </span>
                 </h1>
                 <p className="text-lg md:text-xl text-slate-600 leading-relaxed">
-                  Whether you're a gated-community, village panchayat or a city municipality,
+                  Whether you're a gated community, village panchayat, campus, or a city municipality,
                   GreenPath fits your waste management workflow - with features
                   that work at every scale.
                 </p>

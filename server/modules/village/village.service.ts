@@ -28,8 +28,10 @@ export async function createVillageWithManager(data: {
     managerName: string;
     managerPhone: string;
     paymentsEnabled?: boolean;
+    unitType?: string;
+    maxHouseholds?: number;
 }) {
-    const { villageName, managerName, managerPhone, paymentsEnabled } = data;
+    const { villageName, managerName, managerPhone, paymentsEnabled, unitType, maxHouseholds } = data;
 
     const villageId = await generateVillageId();
 
@@ -38,6 +40,8 @@ export async function createVillageWithManager(data: {
         villageId,
         name: villageName,
         paymentsEnabled: paymentsEnabled ?? false,
+        unitType: unitType || 'gram_panchayat',
+        maxHouseholds: maxHouseholds ?? 50,
     });
 
     // Create manager

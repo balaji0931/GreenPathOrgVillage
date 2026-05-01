@@ -16,13 +16,11 @@ import {
 } from "lucide-react";
 
 const orgTypes = [
-  "Municipality / Urban Local Body",
   "Gram Panchayat",
-  "Apartment Complex / Society",
-  "Gated Community / Township",
-  "Campus / Institution",
-  "NGO / Impact Organization",
-  "Bulk Waste Generator",
+  "Municipality / Urban Local Body",
+  "Apartment / Gated Community",
+  "Township / Layout",
+  "Institution / Campus",
   "Other",
 ];
 
@@ -211,7 +209,7 @@ export default function ContactPage() {
                           required
                           value={form.orgName}
                           onChange={(e) => updateForm("orgName", e.target.value)}
-                          placeholder="e.g., Katepally Gram Panchayat"
+                          placeholder="e.g., Sunrise Apartments, Katepally GP"
                           className="mt-2 h-12 rounded-xl border-slate-200 focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
                         />
                       </div>

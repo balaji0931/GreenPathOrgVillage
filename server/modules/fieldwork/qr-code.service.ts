@@ -10,6 +10,16 @@ export async function createBatchQRCodes(villageId: string, quantity: number) {
         throw new Error("Quantity must be between 1 and 500");
     }
 
+    // ── Enforce household limit ──
+    const village = await storage.getVillageByVillageId(villageId);
+    const maxHouseholds = (village as any)?.maxHouseholds ?? 0;
+    const existingCount = await storage.getQRCodeCountByVillage(villageId);
+
+    if (existingCount + quantity > maxHouseholds) {
+        const remaining = Math.max(0, maxHouseholds - existingCount);
+        throw new Error(`LIMIT_EXCEEDED:${remaining}:${maxHouseholds}`);
+    }
+
     // Get next batch ID and UIDs
     const batchId = await storage.getNextBatchId(villageId);
     const uids = await storage.getNextQRCodeUid(villageId, quantity);
@@ -148,8 +158,65 @@ export async function generateBatchPDF(batchId: string) {
         throw new Error("Batch not found");
     }
 
+    // Look up unitType from the village to get the correct label
+    const villageId = qrCodes[0].villageId;
+    const village = await storage.getVillageByVillageId(villageId);
+    const unitType = (village as any)?.unitType || 'gram_panchayat';
+    const UNIT_LABELS: Record<string, string> = {
+        gram_panchayat: 'House',
+        municipality: 'House',
+        apartment: 'Flat',
+        township: 'Unit',
+        institution_campus: 'Unit',
+    };
+    const householdLabel = UNIT_LABELS[unitType] || 'House';
+
     const { generatePreMappedQRCodesPDF } = await import('./qr-service');
-    const pdfBuffer = await generatePreMappedQRCodesPDF(qrCodes);
+    const pdfBuffer = await generatePreMappedQRCodesPDF(qrCodes, householdLabel);
 
     return pdfBuffer;
+}
+
+/** Helper to resolve unit-type label for a village */
+async function getHouseholdLabel(villageId: string): Promise<string> {
+    const village = await storage.getVillageByVillageId(villageId);
+    const unitType = (village as any)?.unitType || 'gram_panchayat';
+    const UNIT_LABELS: Record<string, string> = {
+        gram_panchayat: 'House',
+        municipality: 'House',
+        apartment: 'Flat',
+        township: 'Unit',
+        institution_campus: 'Unit',
+    };
+    return UNIT_LABELS[unitType] || 'House';
+}
+
+/**
+ * Generate PDF for unmapped QR codes in a specific batch.
+ */
+export async function generateUnmappedBatchPDF(batchId: string) {
+    const unmapped = await storage.getUnmappedQRCodesByBatch(batchId);
+
+    if (unmapped.length === 0) {
+        throw new Error("No unmapped QR codes in this batch");
+    }
+
+    const householdLabel = await getHouseholdLabel(unmapped[0].villageId);
+    const { generatePreMappedQRCodesPDF } = await import('./qr-service');
+    return await generatePreMappedQRCodesPDF(unmapped, householdLabel);
+}
+
+/**
+ * Generate PDF for ALL unmapped QR codes across all batches in a village.
+ */
+export async function generateAllUnmappedPDF(villageId: string) {
+    const unmapped = await storage.getUnmappedQRCodesByVillage(villageId);
+
+    if (unmapped.length === 0) {
+        throw new Error("No unmapped QR codes");
+    }
+
+    const householdLabel = await getHouseholdLabel(villageId);
+    const { generatePreMappedQRCodesPDF } = await import('./qr-service');
+    return await generatePreMappedQRCodesPDF(unmapped, householdLabel);
 }

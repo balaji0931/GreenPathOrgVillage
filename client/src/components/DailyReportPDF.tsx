@@ -34,6 +34,15 @@ export interface PDFReportData {
     helpers: Array<{ workerName: string; attendance: string | null }>;
     segregators: Array<{ workerName: string; attendance: string | null }>;
   };
+  /** Unit-type-aware labels for PDF text */
+  labels?: {
+    household: string;
+    householdPlural: string;
+    ward: string;
+    wardPlural: string;
+    org: string;
+    houseNumber: string;
+  };
 }
 
 // ── Helpers ─────────────────────────────────────────────────────
@@ -85,6 +94,7 @@ const noData = (title: string, message: string) => `
 
 // ── Build the full report as one continuous HTML ───────────────
 function buildFullReport(d: PDFReportData): string {
+  const L = d.labels || { household: 'Household', householdPlural: 'Households', ward: 'Ward', wardPlural: 'Wards', org: 'Village', houseNumber: 'House Number' };
   const coverage = d.kpis.totalHouseholds > 0 ? (d.kpis.collectedToday / d.kpis.totalHouseholds * 100) : 0;
   const diverted = d.materialData.wet + d.materialData.dry;
   const totalWaste = diverted + d.materialData.mixed + d.materialData.sanitary + d.materialData.specialCare;
@@ -226,11 +236,11 @@ function buildFullReport(d: PDFReportData): string {
       <div class="avoid-break">
         ${sec("Executive Summary")}
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
-          ${kpi("Collection Coverage", `${Math.round(coverage)}%`, `${d.kpis.collectedToday} of ${d.kpis.totalHouseholds} households`, statusColor(coverage, 90, 70))}
+          ${kpi("Collection Coverage", `${Math.round(coverage)}%`, `${d.kpis.collectedToday} of ${d.kpis.totalHouseholds} ${L.householdPlural.toLowerCase()}`, statusColor(coverage, 90, 70))}
           ${kpi("Segregation Rating", `${d.kpis.avgSegregationRating}/5`, "Average rating", statusColor(d.kpis.avgSegregationRating, 4, 3))}
           ${kpi("Collected Today", `${d.kpis.collectedToday}`, `Yesterday: ${d.kpis.collectedYesterday}`, C.brand)}
-          ${kpi("Not Collected", `${d.kpis.nonCollectedToday}`, "Households missed today", d.kpis.nonCollectedToday > 0 ? C.red : C.green)}
-          ${kpi("Total Households", `${d.kpis.totalHouseholds}`, "Registered in village", C.blue)}
+          ${kpi("Not Collected", `${d.kpis.nonCollectedToday}`, `${L.householdPlural} missed today`, d.kpis.nonCollectedToday > 0 ? C.red : C.green)}
+          ${kpi(`Total ${L.householdPlural}`, `${d.kpis.totalHouseholds}`, `Registered in ${L.org.toLowerCase()}`, C.blue)}
           ${d.materialData.isLogged ? kpi("Waste Diversion", `${Math.round(divPct)}%`, `${diverted.toFixed(1)}kg diverted`, statusColor(divPct, 70, 40)) : kpi("Waste Diversion", "--", "No material log today", C.s500)}
         </div>
       </div>
@@ -303,11 +313,11 @@ function buildFullReport(d: PDFReportData): string {
 
       <!-- WARD TABLE -->
       <div class="avoid-break">
-        ${sec("Ward-Wise Performance")}
+        ${sec(`${L.ward}-Wise Performance`)}
         <table style="width:100%;border-collapse:collapse;border:1.5px solid ${C.s200};border-radius:10px;overflow:hidden;">
           <thead><tr style="background:linear-gradient(135deg,${C.brandDark},${C.brand});">
-            ${th("Ward")}
-            ${th("Total HH", "center")}
+            ${th(L.ward)}
+            ${th(`Total ${L.householdPlural.substring(0,2).toUpperCase()}`, "center")}
             ${th("Collected", "center")}
             ${th("Missed", "center")}
             ${th("Coverage", "right")}
@@ -368,7 +378,7 @@ function buildFullReport(d: PDFReportData): string {
       </div>
       ${(() => {
       const att = d.attendance;
-      if (!att) return `<div class="avoid-break">${noData("Attendance Not Available", "Attendance feature may not be enabled for this village.")}</div>`;
+      if (!att) return `<div class="avoid-break">${noData("Attendance Not Available", `Attendance feature may not be enabled for this ${L.org.toLowerCase()}.`)}</div>`;
 
       const statusBadge = (s: string | null) => {
         if (s === 'present') return `<span style="background:#dcfce7;color:#166534;padding:4px 10px;border-radius:6px;font-size:13px;font-weight:800;text-transform:uppercase;letter-spacing:0.05em;">Present</span>`;

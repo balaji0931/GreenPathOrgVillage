@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTerminology } from '@/hooks/useTerminology';
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -96,6 +97,9 @@ export default function ModeratorDashboard() {
     queryKey: ["/api/moderator/villages"],
   });
 
+  // Derive terminology from first assigned village's unitType
+  const { label } = useTerminology((villages as any)?.[0]?.unitType);
+
   // Fetch moderator managers
   const { data: managers, isLoading: managersLoading } = useQuery<any[]>({
     queryKey: ["/api/moderator/managers"],
@@ -167,7 +171,7 @@ export default function ModeratorDashboard() {
     onSuccess: (data) => {
       toast({
         title: "Success",
-        description: data.message || `Announcement sent to ${data.villageCount || 'all assigned'} villages successfully`,
+        description: data.message || `Announcement sent to ${data.villageCount || 'all assigned'} ${label.orgPlural.toLowerCase()} successfully`,
       });
       setAnnouncement({ message: "", targetAudience: "all", photoFile: null });
     },
@@ -290,7 +294,7 @@ export default function ModeratorDashboard() {
   };
 
   const navigationItems = [
-    { id: "villages", label: "Villages", icon: Building2 },
+    { id: "villages", label: label.orgPlural, icon: Building2 },
     { id: "managers", label: "Managers", icon: Users },
     { id: "announcements", label: "Announcements", icon: Bell },
     { id: "profile", label: "Profile", icon: User },
@@ -306,13 +310,13 @@ export default function ModeratorDashboard() {
     <div className="space-y-4 sm:space-y-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h2 className="text-2xl sm:text-3xl font-bold">Village Management</h2>
+          <h2 className="text-2xl sm:text-3xl font-bold">{label.org} Management</h2>
         </div>
       </div>
       {/* Villages Table */}
       <Card>
         <CardHeader className="p-3 sm:p-6">
-          <CardTitle className="text-lg sm:text-xl">All Villages</CardTitle>
+          <CardTitle className="text-lg sm:text-xl">All {label.orgPlural}</CardTitle>
         </CardHeader>
         <CardContent className="p-3 sm:p-6 pt-0">
           <div className="overflow-x-auto">
@@ -320,11 +324,11 @@ export default function ModeratorDashboard() {
               <TableHeader>
                 <TableRow>
                   <TableHead className="text-xs sm:text-sm">
-                    Village ID
+                    {label.org} ID
                   </TableHead>
                   <TableHead className="text-xs sm:text-sm">Name</TableHead>
                   <TableHead className="text-xs sm:text-sm hidden sm:table-cell">
-                    Households
+                    {label.householdPlural}
                   </TableHead>
                   <TableHead className="text-xs sm:text-sm hidden sm:table-cell">
                     Collectors
@@ -420,7 +424,7 @@ export default function ModeratorDashboard() {
     <div className="space-y-4 sm:space-y-6">
       <div>
         <h2 className="text-2xl sm:text-3xl font-bold">Manager Management</h2>
-        <p className="text-muted-foreground">Manage all village managers</p>
+        <p className="text-muted-foreground">Manage all {label.org.toLowerCase()} managers</p>
       </div>
 
       <Card>
@@ -439,12 +443,12 @@ export default function ModeratorDashboard() {
               </DialogHeader>
               <div className="space-y-4">
                 <div>
-                  <Label>Village</Label>
+                  <Label>{label.org}</Label>
                   <select
                     id="newManagerVillageId"
                     className="w-full p-2 border rounded-md"
                   >
-                    <option value="">Select a village</option>
+                    <option value="">Select a {label.org.toLowerCase()}</option>
                     {villages?.map((v: any) => (
                       <option key={v.villageId} value={v.villageId}>
                         {v.name}
@@ -512,7 +516,7 @@ export default function ModeratorDashboard() {
                     </TableHead>
                     <TableHead className="text-xs sm:text-sm">Name</TableHead>
                     <TableHead className="text-xs sm:text-sm hidden md:table-cell">
-                      Village
+                      {label.org}
                     </TableHead>
                     <TableHead className="text-xs sm:text-sm hidden sm:table-cell">
                       Phone
@@ -579,7 +583,7 @@ export default function ModeratorDashboard() {
     <div className="space-y-4 sm:space-y-6">
       <div>
         <h2 className="text-2xl sm:text-3xl font-bold">Announcements</h2>
-        <p className="text-muted-foreground">Send announcements to villages</p>
+        <p className="text-muted-foreground">Send announcements to {label.orgPlural.toLowerCase()}</p>
       </div>
 
       <Card>

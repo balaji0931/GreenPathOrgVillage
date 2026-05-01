@@ -8,7 +8,7 @@ import AdminDashboard from "@/pages/admin-dashboard";
 import ManagerDashboard from "@/pages/manager-dashboard";
 import CollectorDashboard from "@/pages/collector-dashboard";
 import GeneratorDashboard from "@/pages/generator-dashboard";
-import ModeratorDashboard from "@/pages/moderator-dashboard";
+import ModeratorDashboard from "@/pages/moderator";
 import FieldWorkerDashboard from "@/pages/fieldworker-dashboard";
 import PrivacyPolicy from "@/pages/privacy-policy";
 import TermsOfService from "@/pages/terms-of-service";

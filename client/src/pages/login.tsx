@@ -145,7 +145,7 @@ export default function Login() {
                 className="h-10 w-auto mx-auto mb-3"
               />
               <p className="text-sm text-slate-500">
-                Waste management platform for communities
+                Digital waste governance for communities
               </p>
             </div>
 

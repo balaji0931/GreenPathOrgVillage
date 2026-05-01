@@ -54,6 +54,8 @@ import * as moderatorStatsStorage from "./modules/moderation/moderator-stats.sto
 
 import * as adminStatsStorage from "./modules/analytics/admin-stats.storage";
 import * as premiumReportStorage from "./modules/analytics/premium-report.storage";
+import * as attendanceStorage from "./modules/attendance/attendance.storage";
+import * as staffStorage from "./modules/staff/staff.storage";
 
 import type { IStorage } from "./storage/storage.interface";
 export type { IStorage };
@@ -389,6 +391,26 @@ export class DatabaseStorage implements IStorage {
     return moderatorStatsStorage.getModeratorHouseholds(villageIds);
   }
 
+  async getModeratorOverviewStats(villageIds: string[], date: string) {
+    return moderatorStatsStorage.getModeratorOverviewStats(villageIds, date);
+  }
+
+  async getVillageAttendanceDaily(villageId: string, date: string, workerType: string) {
+    const [attendance, collectors] = await Promise.all([
+      attendanceStorage.getAttendanceForDate(villageId, date),
+      workerType === 'collector'
+        ? attendanceStorage.getCollectorsForVillage(villageId)
+        : staffStorage.getStaffByType(villageId, workerType),
+    ]);
+    const attendanceMap = new Map(attendance.map((a: any) => [a.workerId, a]));
+    const workers = (collectors as any[]).map((c: any) => ({
+      workerId: c.uid,
+      workerName: c.name,
+      attendance: attendanceMap.get(c.uid)?.status || null,
+    }));
+    return { date, workers, workerType };
+  }
+
 
 
 
@@ -445,6 +467,18 @@ export class DatabaseStorage implements IStorage {
 
   async getNextQRCodeUid(villageId: string, count: number): Promise<string[]> {
     return qrcodeStorage.getNextQRCodeUid(villageId, count);
+  }
+
+  async getQRCodeCountByVillage(villageId: string): Promise<number> {
+    return qrcodeStorage.getQRCodeCountByVillage(villageId);
+  }
+
+  async getUnmappedQRCodesByVillage(villageId: string): Promise<QRCode[]> {
+    return qrcodeStorage.getUnmappedQRCodesByVillage(villageId);
+  }
+
+  async getUnmappedQRCodesByBatch(batchId: string): Promise<QRCode[]> {
+    return qrcodeStorage.getUnmappedQRCodesByBatch(batchId);
   }
 
   // Field worker operations

@@ -80,10 +80,10 @@ const allFeatures = [
   { icon: FileText, text: "PDF report export" },
   { icon: MapPin, text: "GPS location capture per collection" },
   { icon: QrCode, text: "QR batch generation for field mapping" },
-  { icon: Settings, text: "Configurable village settings" },
+  { icon: Settings, text: "Configurable community settings" },
   { icon: Users, text: "Multi-role hierarchy (5 roles)" },
   { icon: UserPlus, text: "Household feedback to collector" },
-  { icon: Shield, text: "Moderator multi-village oversight" },
+  { icon: Shield, text: "Multi-community oversight" },
   { icon: CreditCard, text: "Payment & billing management" },
   { icon: ClipboardList, text: "Attendance & shift tracking" },
   { icon: Users, text: "Helpers & segregator staff management" },
@@ -97,7 +97,7 @@ export default function PricingPage() {
 
   useSEO({
     title: "Pricing - GreenPath",
-    description: "₹4/household/month. All features included. No per-user fees. No hidden costs. Transparent pricing for waste management - from panchayats to municipalities.",
+    description: "₹4/household/month. All features included. No per-user fees. No hidden costs. Transparent pricing for waste management - from panchayats to apartments to municipalities.",
     path: "/pricing",
   });
   const [selectedPlan, setSelectedPlan] = useState("annual");

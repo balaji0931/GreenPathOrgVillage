@@ -174,7 +174,8 @@ function drawVectorQR(
  * Layout: 3×3 grid (9 cards per A4 page). Visual design unchanged.
  */
 export const generatePreMappedQRCodesPDF = async (
-  qrCodes: Array<{ uid: string; villageId: string }>
+  qrCodes: Array<{ uid: string; villageId: string }>,
+  householdLabel: string = 'House'
 ): Promise<Buffer> => {
   const pdf = new jsPDF("p", "mm", "a4");
   const logoDataURL = await getLogoDataURL();
@@ -253,7 +254,7 @@ export const generatePreMappedQRCodesPDF = async (
     const displayUid = qr.uid.startsWith("GEN-") ? qr.uid : `GEN-${qr.uid}`;
     pdf.setFontSize(12);
     pdf.setTextColor(0, 0, 0);
-    pdf.text(`House UID: ${displayUid}`, centerX, currentY, { align: "center" });
+    pdf.text(`${householdLabel} UID: ${displayUid}`, centerX, currentY, { align: "center" });
     currentY += 7;
 
     // Website line

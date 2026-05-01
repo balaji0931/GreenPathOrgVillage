@@ -5,6 +5,7 @@ import { useQuery, useMutation, useQueryClient, useInfiniteQuery } from "@tansta
 import { apiRequest, fetchWithCsrf } from "@/lib/queryClient";
 import { useTranslation } from "react-i18next";
 import { translateEnum } from '../i18n/enumTranslations';
+import { useTerminology } from '@/hooks/useTerminology';
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -212,6 +213,7 @@ const HouseholdStatusRow = React.memo(({
   };
   onSelect: (h: any) => void;
 }) => {
+  const { tt } = useTerminology();
   const { t } = useTranslation();
   return (
     <div
@@ -239,9 +241,9 @@ const HouseholdStatusRow = React.memo(({
         <div className="flex items-center justify-between gap-2">
           <h3 className="font-bold text-sm text-gray-900 truncate font-outfit">{household.headName}</h3>
           {household.collected ? (
-            <span className="text-[10px] font-semibold text-green-500 uppercase tracking-wider">{t('manager.collected')}</span>
+            <span className="text-[10px] font-semibold text-green-500 uppercase tracking-wider">{tt('manager.collected')}</span>
           ) : (
-            <span className="text-[10px] font-semibold text-red-500 uppercase tracking-wider">{t('manager.pending')}</span>
+            <span className="text-[10px] font-semibold text-red-500 uppercase tracking-wider">{tt('manager.pending')}</span>
           )}
         </div>
         <div className="flex items-center justify-between gap-2 mt-0.5">
@@ -263,13 +265,14 @@ const HouseholdStatusRow = React.memo(({
 
 // Horizontal "Needs Attention" Strip (WhatsApp Style)
 const NeedsAttentionStrip = ({ items, onSelect }: { items: any[], onSelect: (h: any) => void }) => {
+  const { tt } = useTerminology();
   const { t } = useTranslation();
   if (!items || items.length === 0) return null;
 
   return (
     <div className="bg-white py-1 border-b border-gray-100 overflow-hidden">
       <div className="px-4 mb-2 flex items-center justify-between">
-        <h3 className="text-xs font-bold uppercase tracking-widest text-gray-400 font-outfit">{t('manager.needsAttention')}</h3>
+        <h3 className="text-xs font-bold uppercase tracking-widest text-gray-400 font-outfit">{tt('manager.needsAttention')}</h3>
         <Badge variant="secondary" className="bg-red-50 text-red-600 border-red-100 rounded-full text-[10px]">
           {items.length} critical
         </Badge>
@@ -309,6 +312,7 @@ const NeedsAttentionStrip = ({ items, onSelect }: { items: any[], onSelect: (h: 
 // Detail sheet for Needs Attention households - Redesigned for full screen Action
 const AttentionDetailSheet = ({ household, onClose }: { household: any, onClose: () => void }) => {
   const { t } = useTranslation();
+  const { tt } = useTerminology();
   const [isPlaying, setIsPlaying] = React.useState(false);
   const audioRef = React.useRef<HTMLAudioElement>(null);
   const { toast: detailToast } = useToast();
@@ -335,7 +339,7 @@ const AttentionDetailSheet = ({ household, onClose }: { household: any, onClose:
     if (household.latitude && household.longitude) {
       window.open(`https://www.google.com/maps/search/?api=1&query=${household.latitude},${household.longitude}`);
     } else {
-      detailToast({ title: t('app.error'), description: t('app.error'), variant: "destructive" });
+      detailToast({ title: tt('app.error'), description: tt('app.error'), variant: "destructive" });
     }
   };
 
@@ -370,7 +374,7 @@ const AttentionDetailSheet = ({ household, onClose }: { household: any, onClose:
         ) : (
           <div className="flex flex-col items-center justify-center text-white/20">
             <Camera className="h-16 w-16 mb-4 opacity-10" />
-            <p className="text-sm font-black uppercase tracking-widest opacity-40">{t('manager.collectionPhoto')}</p>
+            <p className="text-sm font-black uppercase tracking-widest opacity-40">{tt('manager.collectionPhoto')}</p>
           </div>
         )}
       </div>
@@ -396,7 +400,7 @@ const AttentionDetailSheet = ({ household, onClose }: { household: any, onClose:
                 {isPlaying ? <Pause className="h-5 w-5 fill-current" /> : <Play className="h-5 w-5 fill-current ml-0.5" />}
               </Button>
               <div className="flex-1">
-                <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">{t('manager.voiceRecording')}</p>
+                <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">{tt('manager.voiceRecording')}</p>
                 <div className="flex items-center gap-2">
                   <div className="flex-1 h-1 bg-gray-200 rounded-full overflow-hidden">
                     <div className={cn("h-full bg-gray-900 transition-all duration-300", isPlaying ? "w-full" : "w-0")} />
@@ -411,7 +415,7 @@ const AttentionDetailSheet = ({ household, onClose }: { household: any, onClose:
         {/* Layer 2: Rating & Collector info */}
         <div className="py-1 px-4 border-t border-gray-100 flex items-center justify-between">
           <div className="flex flex-col gap-0.5">
-            <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest">{t('app.rating')}</p>
+            <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest">{tt('app.rating')}</p>
             <div className="flex items-center gap-2">
               <span className="text-xl font-black text-red-600 font-outfit">{household.segregationRating}</span>
               <div className="flex gap-0.5">
@@ -423,7 +427,7 @@ const AttentionDetailSheet = ({ household, onClose }: { household: any, onClose:
           </div>
 
           <div className="text-right flex flex-col gap-0.5">
-            <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest">{t('manager.collector')}</p>
+            <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest">{tt('manager.collector')}</p>
             <p className="font-bold text-gray-900 text-xs truncate max-w-[150px]">{household.collectorName}</p>
           </div>
         </div>
@@ -435,7 +439,7 @@ const AttentionDetailSheet = ({ household, onClose }: { household: any, onClose:
             className="flex-1 h-10 rounded-[1.25rem] bg-green-500 text-white font-bold hover:bg-green-600 transition-all flex items-center justify-center gap-2"
           >
             <Phone className="h-4 w-4" />
-            {t('householdPerformance.call')}
+            {tt('householdPerformance.call')}
           </Button>
 
           <Button
@@ -444,7 +448,7 @@ const AttentionDetailSheet = ({ household, onClose }: { household: any, onClose:
             className="flex-1 h-10 rounded-[1.25rem] bg-blue-500 text-white font-bold hover:bg-gray-50 transition-all flex items-center justify-center gap-2"
           >
             <MapPin className="h-4 w-4" />
-            {t('householdPerformance.visit')}
+            {tt('householdPerformance.visit')}
           </Button>
         </div>
       </div>
@@ -455,6 +459,7 @@ const AttentionDetailSheet = ({ household, onClose }: { household: any, onClose:
 // Redesigned Household Collection Details View (Timeline History)
 // Media Popup for Timeline details
 const MediaPopup = ({ type, url, remarks, onClose }: { type: 'photo' | 'voice', url: string | null, remarks?: string | null, onClose: () => void }) => {
+  const { tt } = useTerminology();
   const { t } = useTranslation();
   return (
     <div className="fixed inset-0 z-[120] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-200" onClick={onClose}>
@@ -475,17 +480,17 @@ const MediaPopup = ({ type, url, remarks, onClose }: { type: 'photo' | 'voice', 
             ) : (
               <div className="p-20 flex flex-col items-center justify-center text-gray-200">
                 <Camera className="h-20 w-20 mb-4 opacity-10" />
-                <p className="text-sm font-black uppercase tracking-widest opacity-30">{t('app.noData')}</p>
+                <p className="text-sm font-black uppercase tracking-widest opacity-30">{tt('app.noData')}</p>
               </div>
             )}
             <div className="p-6 bg-white border-t border-gray-100">
-              <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">{t('manager.remarks')}</h4>
+              <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">{tt('manager.remarks')}</h4>
               <p className="text-gray-900 font-medium leading-relaxed">{remarks || "No additional remarks provided."}</p>
             </div>
           </div>
         ) : (
           <div className="p-8">
-            <h3 className="text-xl font-black text-gray-900 font-outfit uppercase tracking-tight mb-6">{t('manager.voiceRecording')}</h3>
+            <h3 className="text-xl font-black text-gray-900 font-outfit uppercase tracking-tight mb-6">{tt('manager.voiceRecording')}</h3>
             {url ? (
               <div className="bg-gray-50 rounded-[2rem] p-6 border border-gray-100 mb-6">
                 <audio src={url} controls className="w-full" autoPlay />
@@ -493,11 +498,11 @@ const MediaPopup = ({ type, url, remarks, onClose }: { type: 'photo' | 'voice', 
             ) : (
               <div className="py-10 text-center opacity-30">
                 <Volume2 className="h-10 w-10 mx-auto mb-2" />
-                <p className="text-xs font-bold uppercase tracking-widest">{t('app.noData')}</p>
+                <p className="text-xs font-bold uppercase tracking-widest">{tt('app.noData')}</p>
               </div>
             )}
             <div className="border-t border-gray-100 pt-6">
-              <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">{t('manager.remarks')}</h4>
+              <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">{tt('manager.remarks')}</h4>
               <p className="text-gray-900 font-medium leading-relaxed italic">"{remarks || "No written remarks."}"</p>
             </div>
           </div>
@@ -516,6 +521,7 @@ const CollectionDetailView = ({
   onBack: () => void;
 }) => {
   const { t } = useTranslation();
+  const { tt } = useTerminology();
   const [offset, setOffset] = React.useState(0);
   const [limit] = React.useState(10);
   const [allCollections, setAllCollections] = React.useState<any[]>([]);
@@ -569,11 +575,11 @@ const CollectionDetailView = ({
           {/* Real Aggregates Header */}
           <div className="grid grid-cols-2 gap-3">
             <div className="bg-white p-5 rounded-[2rem] shadow-sm border border-gray-100">
-              <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">{t('manager.totalCollections')}</p>
+              <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">{tt('manager.totalCollections')}</p>
               <p className="text-2xl font-black text-gray-900 font-outfit">{data?.stats?.totalCollections || 0}</p>
             </div>
             <div className="bg-white p-5 rounded-[2rem] shadow-sm border border-gray-100">
-              <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">{t('manager.avgSegregation')}</p>
+              <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">{tt('manager.avgSegregation')}</p>
               <div className="flex items-center gap-2">
                 <p className="text-2xl font-black text-gray-900 font-outfit">
                   {data?.stats?.avgRating ? data.stats.avgRating.toFixed(1) : "0.0"}
@@ -585,12 +591,12 @@ const CollectionDetailView = ({
 
           {/* Timeline listing */}
           <div className="space-y-4 pb-20">
-            <h3 className="text-[10px] font-black uppercase tracking-widest text-gray-400 px-1">{t('manager.collectionHistory')}</h3>
+            <h3 className="text-[10px] font-black uppercase tracking-widest text-gray-400 px-1">{tt('manager.collectionHistory')}</h3>
 
             {collectionsLoading && allCollections.length === 0 ? (
               <div className="py-20 flex flex-col items-center justify-center opacity-40">
                 <div className="animate-spin h-10 w-10 border-[5px] border-gray-900 border-t-transparent rounded-full mb-4" />
-                <p className="text-[10px] font-black uppercase tracking-widest">{t('app.loading')}</p>
+                <p className="text-[10px] font-black uppercase tracking-widest">{tt('app.loading')}</p>
               </div>
             ) : allCollections.length > 0 ? (
               <div className="space-y-3">
@@ -615,7 +621,7 @@ const CollectionDetailView = ({
                           ))}
                         </div>
                         <p className="text-[10px] font-bold text-gray-800 uppercase tracking-tight truncate max-w-[120px]">
-                          {collection.collectorName || t('manager.fieldWorkers')}
+                          {collection.collectorName || tt('manager.fieldWorkers')}
                         </p>
                       </div>
                     </div>
@@ -627,7 +633,7 @@ const CollectionDetailView = ({
                         <span className={cn("text-[10px] font-black uppercase tracking-[0.15em] shrink-0",
                           collection.status === 'missed' ? "text-red-500" : "text-green-500"
                         )}>
-                          {collection.status === 'missed' ? t('dashboard.missed') : t('manager.collected')}
+                          {collection.status === 'missed' ? tt('dashboard.missed') : tt('manager.collected')}
                         </span>
                       </div>
 
@@ -640,7 +646,7 @@ const CollectionDetailView = ({
                             className="h-8 px-3 rounded-full bg-blue-50 text-blue-600 hover:bg-blue-100 border-none text-[9px] font-black uppercase tracking-widest gap-1.5"
                           >
                             <Camera className="h-3 w-3" />
-                            {t('manager.collectionPhoto')}
+                            {tt('manager.collectionPhoto')}
                           </Button>
                         )}
                         {(collection.voiceUrl || collection.remarks) && (
@@ -650,7 +656,7 @@ const CollectionDetailView = ({
                             className="h-8 px-3 rounded-full bg-purple-50 text-purple-600 hover:bg-purple-100 border-none text-[9px] font-black uppercase tracking-widest gap-1.5"
                           >
                             <Volume2 className="h-3 w-3" />
-                            {t('manager.remarks')}
+                            {tt('manager.remarks')}
                           </Button>
                         )}
                       </div>
@@ -668,7 +674,7 @@ const CollectionDetailView = ({
                       className="h-10 px-8 rounded-2xl border-2 border-gray-900 text-gray-900 font-black text-xs uppercase tracking-widest hover:bg-gray-50 transition-all flex items-center gap-2"
                     >
                       {collectionsLoading ? <div className="animate-spin h-3 w-3 border-2 border-gray-900 border-t-transparent rounded-full" /> : <ChevronDown className="h-4 w-4" />}
-                      {t('app.viewAll')}
+                      {tt('app.viewAll')}
                     </Button>
                   </div>
                 )}
@@ -678,8 +684,8 @@ const CollectionDetailView = ({
                 <div className="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-6">
                   <ClipboardList className="h-10 w-10 text-gray-300" />
                 </div>
-                <h4 className="text-xl font-black text-gray-900 font-outfit mb-1 uppercase tracking-tight">{t('app.noData')}</h4>
-                <p className="text-sm text-gray-400 font-medium max-w-[200px] mx-auto leading-relaxed">{t('manager.noCollectionsRecorded')}</p>
+                <h4 className="text-xl font-black text-gray-900 font-outfit mb-1 uppercase tracking-tight">{tt('app.noData')}</h4>
+                <p className="text-sm text-gray-400 font-medium max-w-[200px] mx-auto leading-relaxed">{tt('manager.noCollectionsRecorded')}</p>
               </div>
             )}
           </div>
@@ -707,6 +713,7 @@ const DateNavBar = ({
   onChange: (d: string) => void
 }) => {
   const { t } = useTranslation();
+  const { tt } = useTerminology();
   const isToday = date === new Date().toISOString().split('T')[0];
   const dateInputRef = React.useRef<HTMLInputElement>(null);
 
@@ -733,7 +740,7 @@ const DateNavBar = ({
           onClick={() => dateInputRef.current?.showPicker()}
         >
           <Calendar className="h-4 w-4" />
-          <span className="text-[10px] font-black uppercase tracking-widest text-gray-400">{t('manager.selectDate')}</span>
+          <span className="text-[10px] font-black uppercase tracking-widest text-gray-400">{tt('manager.selectDate')}</span>
         </Button>
       </div>
 
@@ -748,7 +755,7 @@ const DateNavBar = ({
         </Button>
         <div className="flex flex-col items-center px-2 min-w-[120px]">
           <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none mb-1">
-            {isToday ? t('manager.today') : new Date(date).toLocaleDateString(undefined, { weekday: 'short' })}
+            {isToday ? tt('manager.today') : new Date(date).toLocaleDateString(undefined, { weekday: 'short' })}
           </span>
           <span className="text-sm font-black text-gray-900 leading-none font-outfit">
             {new Date(date).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
@@ -767,12 +774,14 @@ const DateNavBar = ({
   );
 };
 
-const StickyDateSwitcher = ({
+export const StickyDateSwitcher = ({
   date,
-  onChange
+  onChange,
+  onBack,
 }: {
   date: string,
-  onChange: (d: string) => void
+  onChange: (d: string) => void,
+  onBack?: () => void,
 }) => {
   const isToday = isSameDay(new Date(date), new Date());
   const dateInputRef = React.useRef<HTMLInputElement>(null);
@@ -787,6 +796,21 @@ const StickyDateSwitcher = ({
       {/* Fixed bar pinned below the nav header */}
       <div className="fixed left-0 md:left-56 right-0 z-40 bg-white/90 backdrop-blur-md border-b border-gray-100/50 px-4 sm:py-2" style={{ top: 60 }}>
         <div className="pt-1 max-w-4xl mx-auto flex items-center justify-between">
+          {/* Left: back arrow (when onBack provided) */}
+          {onBack && (
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-9 w-9 rounded-full hover:bg-gray-100 active:scale-90 transition-all"
+              onClick={onBack}
+            >
+              <ArrowLeft className="h-5 w-5" />
+            </Button>
+          )}
+
+          {/* Spacer to push date to right when back arrow is shown */}
+          {onBack && <div className="flex-1" />}
+
           <div className="flex items-center gap-1">
             <Button
               variant="ghost"
@@ -829,14 +853,17 @@ const StickyDateSwitcher = ({
             </Button>
           </div>
 
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-9 w-9 rounded-full bg-gray-50 text-gray-600 hover:bg-gray-100"
-            onClick={() => dateInputRef.current?.showPicker()}
-          >
-            <Calendar className="h-4 w-4" />
-          </Button>
+          {/* Calendar icon only when no back arrow */}
+          {!onBack && (
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-9 w-9 rounded-full bg-gray-50 text-gray-600 hover:bg-gray-100"
+              onClick={() => dateInputRef.current?.showPicker()}
+            >
+              <Calendar className="h-4 w-4" />
+            </Button>
+          )}
         </div>
       </div>
       {/* Spacer to push content below the fixed bar */}
@@ -845,7 +872,7 @@ const StickyDateSwitcher = ({
   );
 };
 
-const PremiumReportCard = ({ title, children, icon: Icon, className, description }: any) => (
+export const PremiumReportCard = ({ title, children, icon: Icon, className, description }: any) => (
   <motion.div
     initial={{ opacity: 0, y: 20 }}
     animate={{ opacity: 1, y: 0 }}
@@ -869,20 +896,21 @@ const PremiumReportCard = ({ title, children, icon: Icon, className, description
   </motion.div>
 );
 
-const EfficiencyDonut = ({ current, total }: { current: number; total: number }) => {
+export const EfficiencyDonut = ({ current, total }: { current: number; total: number }) => {
   const { t } = useTranslation();
+  const { tt } = useTerminology();
   const [showAbsolute, setShowAbsolute] = React.useState(false);
   const currentPercentage = total > 0 ? (current / total) * 100 : 0;
   const remaining = total - current;
   const remainingPercentage = 100 - currentPercentage;
 
   const data = [
-    { name: t('manager.collected'), value: current, color: '#22c55e' },
-    { name: t('dashboard.missed'), value: remaining, color: '#ef4444' },
+    { name: tt('manager.collected'), value: current, color: '#22c55e' },
+    { name: tt('dashboard.missed'), value: remaining, color: '#ef4444' },
   ];
 
   return (
-    <PremiumReportCard title={t('manager.collectionEfficiency')}>
+    <PremiumReportCard title={tt('manager.collectionEfficiency')}>
       <div className="flex flex-col items-center justify-center">
         <div
           className="w-full h-36 relative cursor-pointer"
@@ -922,7 +950,7 @@ const EfficiencyDonut = ({ current, total }: { current: number; total: number })
             {showAbsolute ? (
               <div className="text-center">
                 <div className="text-2xl font-black text-gray-900 leading-none font-outfit">{current}</div>
-                <div className="text-[8px] text-gray-400 font-black uppercase">{t('manager.collected')}</div>
+                <div className="text-[8px] text-gray-400 font-black uppercase">{tt('manager.collected')}</div>
               </div>
             ) : (
               <span className="text-3xl font-black text-gray-900 leading-none font-outfit">
@@ -990,13 +1018,14 @@ const PulseCard = ({ title, value, unit, history, color, icon: Icon }: { title: 
 
 const PeakHoursChart = ({ data }: { data: any[] }) => {
   const { t } = useTranslation();
+  const { tt } = useTerminology();
   const peakHour = data.reduce((prev, current) => (prev.count > current.count) ? prev : current, data[0]);
 
   return (
     <PremiumReportCard
-      title={t('manager.peakHours')}
+      title={tt('manager.peakHours')}
       icon={Clock}
-      description={t('manager.hourlyDistribution')}
+      description={tt('manager.hourlyDistribution')}
     >
       <div className="space-y-4">
         <div className="flex items-center gap-2 mb-2">
@@ -1035,10 +1064,11 @@ const PeakHoursChart = ({ data }: { data: any[] }) => {
   );
 };
 
-const WardPerformanceTripleChart = ({ data }: { data: any[] }) => {
+export const WardPerformanceTripleChart = ({ data, unitType }: { data: any[]; unitType?: string }) => {
   const { t } = useTranslation();
+  const { tt } = useTerminology(unitType);
   return (
-    <PremiumReportCard title={t('manager.wardBreakdown')}>
+    <PremiumReportCard title={tt('manager.wardBreakdown')}>
       {/* Mobile: Horizontal stacked bars - one row per ward */}
       <div className="md:hidden space-y-4">
         {data.map((ward, idx) => {
@@ -1076,7 +1106,7 @@ const WardPerformanceTripleChart = ({ data }: { data: any[] }) => {
         })}
         {/* <div className="flex items-center gap-3 mt-1 justify-center">
           <div className="flex items-center gap-1"><div className="w-2.5 h-2.5 rounded-sm bg-green-500" /><span className="text-[8px] font-bold text-gray-400 uppercase">Collected</span></div>
-          <div className="flex items-center gap-1"><div className="w-2.5 h-2.5 rounded-sm bg-red-400" /><span className="text-[8px] font-bold text-gray-400 uppercase">{t('manager.nonCollected')}</span></div>
+          <div className="flex items-center gap-1"><div className="w-2.5 h-2.5 rounded-sm bg-red-400" /><span className="text-[8px] font-bold text-gray-400 uppercase">{tt('manager.nonCollected')}</span></div>
         </div> */}
       </div>
 
@@ -1106,13 +1136,13 @@ const WardPerformanceTripleChart = ({ data }: { data: any[] }) => {
               iconType="circle"
               wrapperStyle={{ fontSize: '10px', fontWeight: 900, textTransform: 'uppercase', paddingBottom: '20px' }}
             />
-            <Bar dataKey="total" fill="#1f1fcbff" name={t('app.total')} radius={[4, 4, 0, 0]}>
+            <Bar dataKey="total" fill="#1f1fcbff" name={tt('app.total')} radius={[4, 4, 0, 0]}>
               <LabelList dataKey="total" position="top" fill="#9ca3af" fontSize={9} fontWeight={700} />
             </Bar>
-            <Bar dataKey="collected" fill="#22c55e" name={t('manager.collected')} radius={[4, 4, 0, 0]}>
+            <Bar dataKey="collected" fill="#22c55e" name={tt('manager.collected')} radius={[4, 4, 0, 0]}>
               <LabelList dataKey="collected" position="top" fill="#22c55e" fontSize={9} fontWeight={700} />
             </Bar>
-            <Bar dataKey="nonCollected" fill="#ef4444" name={t('manager.nonCollected')} radius={[4, 4, 0, 0]}>
+            <Bar dataKey="nonCollected" fill="#ef4444" name={tt('manager.nonCollected')} radius={[4, 4, 0, 0]}>
               <LabelList dataKey="nonCollected" position="top" fill="#ef4444" fontSize={9} fontWeight={700} />
             </Bar>
           </BarChart>
@@ -1122,10 +1152,11 @@ const WardPerformanceTripleChart = ({ data }: { data: any[] }) => {
   );
 };
 
-const WasteMaterialChart = ({ data }: { data: any[] }) => {
+export const WasteMaterialChart = ({ data }: { data: any[] }) => {
+  const { tt } = useTerminology();
   const { t } = useTranslation();
   return (
-    <PremiumReportCard title={t('manager.dailyWasteLogs')}>
+    <PremiumReportCard title={tt('manager.dailyWasteLogs')}>
       <div className="w-full h-72">
         <RechartsContainer width="100%" height="100%">
           <BarChart data={data} margin={{ top: 30, right: 0, left: 0, bottom: 10 }}>
@@ -1153,8 +1184,9 @@ const WasteMaterialChart = ({ data }: { data: any[] }) => {
   );
 };
 
-const WasteDiversionGauge = ({ materialData }: { materialData: { wet: number; dry: number; sanitary: number; specialCare: number; mixed: number } }) => {
+export const WasteDiversionGauge = ({ materialData }: { materialData: { wet: number; dry: number; sanitary: number; specialCare: number; mixed: number } }) => {
   const { t } = useTranslation();
+  const { tt } = useTerminology();
   const diverted = materialData.wet + materialData.dry;
   const landfill = materialData.mixed + materialData.sanitary + materialData.specialCare;
   const total = diverted + landfill;
@@ -1165,12 +1197,12 @@ const WasteDiversionGauge = ({ materialData }: { materialData: { wet: number; dr
   const statusLabel = diversionRate >= 70 ? 'Excellent' : diversionRate >= 40 ? 'Needs Improvement' : 'Critical';
 
   const gaugeData = [
-    { name: t('manager.divertedWetDry'), value: diverted || 0, color: '#22c55e' },
-    { name: t('manager.landfill'), value: landfill || (total === 0 ? 1 : 0), color: '#ef4444' },
+    { name: tt('manager.divertedWetDry'), value: diverted || 0, color: '#22c55e' },
+    { name: tt('manager.landfill'), value: landfill || (total === 0 ? 1 : 0), color: '#ef4444' },
   ];
 
   return (
-    <PremiumReportCard title={t('manager.diversionRate')}>
+    <PremiumReportCard title={tt('manager.diversionRate')}>
       <div className="flex flex-col items-center justify-center">
         {/* Semicircle gauge */}
         <div className="w-full h-32 relative">
@@ -1199,7 +1231,7 @@ const WasteDiversionGauge = ({ materialData }: { materialData: { wet: number; dr
               {total > 0 ? Math.round(diversionRate) : '—'}<span className="text-sm text-gray-400">{total > 0 ? '%' : ''}</span>
             </span>
             <span className={`text-[8px] font-black uppercase tracking-widest mt-1 px-2 py-0.5 rounded-full ${statusBg}`} style={{ color: statusColor }}>
-              {total > 0 ? statusLabel : t('manager.noDataStatus')}
+              {total > 0 ? statusLabel : tt('manager.noDataStatus')}
             </span>
           </div>
         </div>
@@ -1234,11 +1266,11 @@ const WasteDiversionGauge = ({ materialData }: { materialData: { wet: number; dr
             </div>
             <div className="flex flex-wrap justify-center gap-x-3 gap-y-1 mt-2">
               {[
-                { label: t('enums.wet'), value: materialData.wet, color: '#22c55e' },
-                { label: t('enums.dry'), value: materialData.dry, color: '#3b82f6' },
-                { label: t('enums.mixed'), value: materialData.mixed, color: '#6b7280' },
-                { label: t('enums.sanitary'), value: materialData.sanitary, color: '#ec4899' },
-                { label: t('enums.specialCare'), value: materialData.specialCare, color: '#f59e0b' },
+                { label: tt('enums.wet'), value: materialData.wet, color: '#22c55e' },
+                { label: tt('enums.dry'), value: materialData.dry, color: '#3b82f6' },
+                { label: tt('enums.mixed'), value: materialData.mixed, color: '#6b7280' },
+                { label: tt('enums.sanitary'), value: materialData.sanitary, color: '#ec4899' },
+                { label: tt('enums.specialCare'), value: materialData.specialCare, color: '#f59e0b' },
               ].filter(i => i.value > 0).map(item => (
                 <div key={item.label} className="flex items-center gap-1">
                   <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: item.color }} />
@@ -1253,8 +1285,9 @@ const WasteDiversionGauge = ({ materialData }: { materialData: { wet: number; dr
   );
 };
 
-const CollectionPerformanceCard = ({ data, dateLabel }: { data: any[]; dateLabel: string }) => {
+export const CollectionPerformanceCard = ({ data, dateLabel }: { data: any[]; dateLabel: string }) => {
   const { t } = useTranslation();
+  const { tt } = useTerminology();
   const fmtMs = (ms: number) => {
     const h = Math.floor(ms / (1000 * 60 * 60));
     const m = Math.floor((ms % (1000 * 60 * 60)) / (1000 * 60));
@@ -1272,8 +1305,9 @@ const CollectionPerformanceCard = ({ data, dateLabel }: { data: any[]; dateLabel
             <Button variant="outline" size="sm" className="bg-green-200 font-bold text-xs rounded-xl">Details</Button>
           </DialogTrigger>
           <DialogContent
-            className="max-w-[100vw] w-full md:max-w-4xl md:h-[90vh] md:rounded-xl overflow-hidden p-0 flex flex-col border-none md:border"
+            className="max-w-[100vw] w-full md:max-w-4xl md:h-[90vh] md:rounded-xl overflow-hidden p-0 flex flex-col border-none md:border [&~*]:hidden"
             style={{ top: 60, left: 0, transform: 'none', height: 'calc(100dvh - 60px)' }}
+            overlayStyle={{ top: 60 }}
           >
             <div className="px-3 border-b flex items-center gap-3 bg-green-50 sticky top-0 z-10 min-h-[56px]">
               <DialogTrigger asChild>
@@ -1381,8 +1415,8 @@ const CollectionPerformanceCard = ({ data, dateLabel }: { data: any[]; dateLabel
                   <span className="font-bold">Collectors:</span> {vehicle.collectorNames || "None assigned"}
                 </div>
                 <div className="font-bold text-md flex justify-between text-[10px] border-t pt-1">
-                  <span>{t('manager.start')}: {startTime}</span>
-                  <span>{t('manager.end')}: {endTime}</span>
+                  <span>{tt('manager.start')}: {startTime}</span>
+                  <span>{tt('manager.end')}: {endTime}</span>
                 </div>
               </div>
             );
@@ -1396,6 +1430,7 @@ const CollectionPerformanceCard = ({ data, dateLabel }: { data: any[]; dateLabel
 // Simple dialog components
 const CreateCollectorDialog = ({ villageId }: { villageId: string }) => {
   const { t } = useTranslation();
+  const { tt } = useTerminology();
   const [open, setOpen] = useState(false);
   const [formData, setFormData] = useState({ name: "", phone: "" });
   const { toast } = useToast();
@@ -1406,7 +1441,7 @@ const CreateCollectorDialog = ({ villageId }: { villageId: string }) => {
     mutationFn: (data: { name: string; phone: string }) =>
       apiRequest("POST", "/api/collectors", { ...data, villageId }),
     onSuccess: () => {
-      toast({ title: t("messages.operationSuccess") });
+      toast({ title: tt("messages.operationSuccess") });
       queryClient.invalidateQueries({ queryKey: ["/api/collectors"] });
       queryClient.invalidateQueries({ queryKey: ["/api/manager/stats"] });
       setFormData({ name: "", phone: "" });
@@ -1414,8 +1449,8 @@ const CreateCollectorDialog = ({ villageId }: { villageId: string }) => {
     },
     onError: (_error: unknown) => {
       toast({
-        title: t("messages.operationFailed"),
-        description: t('app.error'),
+        title: tt("messages.operationFailed"),
+        description: tt('app.error'),
         variant: "destructive",
       });
     },
@@ -1424,7 +1459,7 @@ const CreateCollectorDialog = ({ villageId }: { villageId: string }) => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.name.trim() || !formData.phone.trim()) {
-      toast({ title: t("validation.required"), variant: "destructive" });
+      toast({ title: tt("validation.required"), variant: "destructive" });
       return;
     }
     collectorMutation.mutate(formData);
@@ -1435,41 +1470,41 @@ const CreateCollectorDialog = ({ villageId }: { villageId: string }) => {
       <DialogTrigger asChild>
         <Button>
           <Plus className="h-4 w-4 mr-2" />
-          {t("collectors.addCollector")}
+          {tt("collectors.addCollector")}
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>{t("collectors.addCollector")}</DialogTitle>
+          <DialogTitle>{tt("collectors.addCollector")}</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <Label htmlFor="collector-name">{t("collectors.collectorName")} *</Label>
+            <Label htmlFor="collector-name">{tt("collectors.collectorName")} *</Label>
             <Input
               id="collector-name"
               value={formData.name}
               onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-              placeholder={t("collectors.collectorName")}
+              placeholder={tt("collectors.collectorName")}
               required
             />
           </div>
           <div>
-            <Label htmlFor="collector-phone">{t("collectors.phone")} *</Label>
+            <Label htmlFor="collector-phone">{tt("collectors.phone")} *</Label>
             <Input
               id="collector-phone"
               type="tel"
               value={formData.phone}
               onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
-              placeholder={t("collectors.phone")}
+              placeholder={tt("collectors.phone")}
               required
             />
           </div>
           <div className="flex gap-2 pt-4">
             <Button type="button" variant="outline" onClick={() => setOpen(false)} className="flex-1">
-              {t("app.cancel")}
+              {tt("app.cancel")}
             </Button>
             <Button type="submit" disabled={collectorMutation.isPending} className="flex-1">
-              {collectorMutation.isPending ? t("app.submitting") : t("collectors.addCollector")}
+              {collectorMutation.isPending ? tt("app.submitting") : tt("collectors.addCollector")}
             </Button>
           </div>
         </form>
@@ -1478,8 +1513,9 @@ const CreateCollectorDialog = ({ villageId }: { villageId: string }) => {
   );
 };
 
-const DailyInsightsGrid = ({ kpis, pulses }: { kpis: any; pulses: any[] }) => {
+export const DailyInsightsGrid = ({ kpis, pulses, unitType }: { kpis: any; pulses: any[]; unitType?: string }) => {
   const { t } = useTranslation();
+  const { label, tt } = useTerminology(unitType);
   const collectionHistory = pulses.map(p => ({ day: p.day, value: p.collections }));
   const ratingHistory = pulses.map(p => ({ day: p.day, value: p.rating }));
 
@@ -1491,7 +1527,7 @@ const DailyInsightsGrid = ({ kpis, pulses }: { kpis: any; pulses: any[] }) => {
       {/* Row 1: Total Households + Not Collected side by side */}
       <div className="grid grid-cols-2 gap-3">
         <div className="text-center bg-white/70 backdrop-blur-md border border-white/20 shadow-sm rounded-3xl p-2">
-          <div className="text-[9px] font-black text-gray-500 uppercase tracking-widest mb-1">Total Households</div>
+          <div className="text-[9px] font-black text-gray-500 uppercase tracking-widest mb-1">{tt('manager.totalHouseholds')}</div>
           <div className="text-2xl font-black text-gray-900 font-outfit">{kpis.totalHouseholds}</div>
         </div>
         <div className="text-center bg-red-50/50 backdrop-blur-md border border-red-100/20 shadow-sm rounded-3xl p-2">
@@ -1557,7 +1593,7 @@ const DailyInsightsGrid = ({ kpis, pulses }: { kpis: any; pulses: any[] }) => {
   );
 };
 
-const SectionSummary = ({ text }: { text: string }) => (
+export const SectionSummary = ({ text }: { text: string }) => (
   <motion.div
     initial={{ opacity: 0, y: 10 }}
     animate={{ opacity: 1, y: 0 }}
@@ -1568,14 +1604,16 @@ const SectionSummary = ({ text }: { text: string }) => (
   </motion.div>
 );
 
-const ReportsTabContent = ({
+export const ReportsTabContent = ({
   filters,
   updateFilter,
   reportData,
   isLoading,
   villageName,
   villageId,
-  managerName
+  managerName,
+  unitType,
+  onBack,
 }: {
   filters: any;
   updateFilter: (k: any, v: any) => void;
@@ -1584,7 +1622,10 @@ const ReportsTabContent = ({
   villageName: string;
   villageId: string;
   managerName: string;
+  unitType?: string;
+  onBack?: () => void;
 }) => {
+  const { tt, label: tLabel } = useTerminology(unitType);
   const [pdfGenerating, setPdfGenerating] = React.useState(false);
   const [pdfProgress, setPdfProgress] = React.useState("");
   const { toast } = useToast();
@@ -1593,7 +1634,7 @@ const ReportsTabContent = ({
   const handleDownloadPDF = async () => {
     if (!reportData || pdfGenerating) return;
     setPdfGenerating(true);
-    setPdfProgress(t('app.loading'));
+    setPdfProgress(tt('app.loading'));
     try {
       // Fetch attendance for all worker types in parallel
       let attendance: PDFReportData['attendance'] | undefined;
@@ -1627,11 +1668,19 @@ const ReportsTabContent = ({
         vehicleStats: reportData.vehicleStats,
         collectionTimeline: reportData.collectionTimeline,
         attendance,
+        labels: {
+          household: tLabel.household,
+          householdPlural: tLabel.householdPlural,
+          ward: tLabel.ward,
+          wardPlural: tLabel.wardPlural,
+          org: tLabel.org,
+          houseNumber: tLabel.houseNumber,
+        },
       };
       await generateDailyReportPDF(pdfData, setPdfProgress);
       toast({ title: "✅ Daily report PDF downloaded!" });
     } catch (_err) {
-      toast({ title: t('app.error'), variant: "destructive" });
+      toast({ title: tt('app.error'), variant: "destructive" });
     } finally {
       setPdfGenerating(false);
       setPdfProgress("");
@@ -1658,11 +1707,11 @@ const ReportsTabContent = ({
   const { kpis, pulses, wardPerformance, materialData, vehicleStats, collectionTimeline } = reportData;
 
   const materialDataArray = [
-    { name: t('enums.wet'), value: materialData.wet, color: '#22c55e' },
-    { name: t('enums.dry'), value: materialData.dry, color: '#3b82f6' },
-    { name: t('enums.sanitary'), value: materialData.sanitary, color: '#ec4899' },
-    { name: t('enums.specialCare'), value: materialData.specialCare, color: '#f59e0b' },
-    { name: t('enums.mixed'), value: materialData.mixed, color: '#6b7280' },
+    { name: tt('enums.wet'), value: materialData.wet, color: '#22c55e' },
+    { name: tt('enums.dry'), value: materialData.dry, color: '#3b82f6' },
+    { name: tt('enums.sanitary'), value: materialData.sanitary, color: '#ec4899' },
+    { name: tt('enums.specialCare'), value: materialData.specialCare, color: '#f59e0b' },
+    { name: tt('enums.mixed'), value: materialData.mixed, color: '#6b7280' },
   ];
 
   return (
@@ -1670,6 +1719,7 @@ const ReportsTabContent = ({
       <StickyDateSwitcher
         date={targetDate}
         onChange={(d) => updateFilter("date", d)}
+        onBack={onBack}
       />
 
       {/* PDF Download Button */}
@@ -1686,7 +1736,7 @@ const ReportsTabContent = ({
             {pdfGenerating ? (
               <>
                 <div className="w-3.5 h-3.5 border-2 border-gray-300 border-t-gray-500 rounded-full animate-spin" />
-                {pdfProgress || t('manager.generatingPdf')}
+                {pdfProgress || tt('manager.generatingPdf')}
               </>
             ) : (
               <>
@@ -1708,7 +1758,7 @@ const ReportsTabContent = ({
       >
         {/* Section 1: Insights & Stats */}
         <section>
-          <DailyInsightsGrid kpis={kpis} pulses={pulses} />
+          <DailyInsightsGrid kpis={kpis} pulses={pulses} unitType={unitType} />
         </section>
 
         {/* Section 2: Efficiency */}
@@ -1718,12 +1768,12 @@ const ReportsTabContent = ({
             <div className="flex flex-col hidden sm:block justify-center bg-gray-50/50 rounded-[2.5rem] p-8 border border-gray-100/50">
               <div className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-4">Quick Insight</div>
               <div className="text-xl font-black text-gray-900 font-outfit uppercase leading-tight mb-2">
-                {kpis.collectedToday >= kpis.totalHouseholds * 0.9 ? t('manager.outstandingCoverage') : t('manager.improveCoverage')}
+                {kpis.collectedToday >= kpis.totalHouseholds * 0.9 ? tt('manager.outstandingCoverage') : tt('manager.improveCoverage')}
               </div>
               <p className="text-[11px] font-bold text-gray-500 leading-relaxed uppercase tracking-tight">
                 {kpis.collectedToday >= kpis.totalHouseholds * 0.9
-                  ? t('manager.outstandingCoverageDesc')
-                  : t('manager.improveCoverageDesc')}
+                  ? tt('manager.outstandingCoverageDesc')
+                  : tt('manager.improveCoverageDesc')}
               </p>
             </div>
           </div>
@@ -1751,7 +1801,7 @@ const ReportsTabContent = ({
           {materialData.isLogged ? (
             <WasteDiversionGauge materialData={materialData} />
           ) : (
-            <PremiumReportCard title={t('manager.diversionRate')}>
+            <PremiumReportCard title={tt('manager.diversionRate')}>
               <div className="text-center py-8">
                 <div className="flex justify-center items-center gap-2 mb-4">
                   <TrendingUp className="h-8 w-8 text-gray-300" />
@@ -1764,7 +1814,7 @@ const ReportsTabContent = ({
 
         {/* Section 4: Wards */}
         <section>
-          <WardPerformanceTripleChart data={wardPerformance} />
+          <WardPerformanceTripleChart data={wardPerformance} unitType={unitType} />
         </section>
 
         {/* Section 5: Vehicles */}
@@ -1873,8 +1923,9 @@ function getHouseholdFlag(stats: any, thresholds: any) {
     : { flag: 'good', reasons: [] };
 }
 
-function HouseholdPerformance({ onBack, villageId }: { onBack: () => void; villageId: string }) {
+function HouseholdPerformance({ onBack, villageId, unitType }: { onBack: () => void; villageId: string; unitType?: string }) {
   const { t } = useTranslation();
+  const { tt, label } = useTerminology(unitType);
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [activeFilter, setActiveFilter] = useState<string>('all_flagged');
@@ -1882,6 +1933,7 @@ function HouseholdPerformance({ onBack, villageId }: { onBack: () => void; villa
   const [showSettings, setShowSettings] = useState(false);
   const [thresholdForm, setThresholdForm] = useState(DEFAULT_THRESHOLDS);
   const [selectedHousehold, setSelectedHousehold] = useState<any>(null);
+  const [performanceLimit, setPerformanceLimit] = useState(25);
 
   // Fetch stats + thresholds
   const { data, isLoading } = useQuery<any>({
@@ -1955,7 +2007,7 @@ function HouseholdPerformance({ onBack, villageId }: { onBack: () => void; villa
         <button onClick={onBack} className="p-1.5 rounded-full hover:bg-gray-100">
           <ArrowLeft className="h-5 w-5 text-gray-600" />
         </button>
-        <h2 className="text-sm font-black uppercase tracking-tight text-gray-900 flex-1">Household Performance</h2>
+        <h2 className="text-sm font-black uppercase tracking-tight text-gray-900 flex-1">{tt('manager.householdPerformance')}</h2>
         <button onClick={() => { setThresholdForm(thresholds); setShowSettings(true); }}
           className="p-1.5 rounded-full hover:bg-gray-100">
           <Settings className="h-4 w-4 text-gray-500" />
@@ -1981,21 +2033,21 @@ function HouseholdPerformance({ onBack, villageId }: { onBack: () => void; villa
         </button>
         <div className="flex-1 bg-blue-50 rounded-xl p-2 text-center">
           <div className="text-lg font-bold text-blue-700">{stats.length}</div>
-          <div className="text-[10px] font-bold text-blue-500 uppercase">{t('app.total')}</div>
+          <div className="text-[10px] font-bold text-blue-500 uppercase">{tt('app.total')}</div>
         </div>
       </div>
 
       {/* Filter tabs */}
       <div className="flex gap-1.5 px-3 pb-2 overflow-x-auto">
         {[
-          { id: 'all_flagged', label: t('householdPerformance.allFlagged') },
-          { id: 'low_rating', label: t('householdPerformance.lowRating') },
-          { id: 'mixed_waste', label: t('householdPerformance.mixedWaste') },
-          { id: 'inactive', label: t('householdPerformance.inactive') },
+          { id: 'all_flagged', label: tt('householdPerformance.allFlagged') },
+          { id: 'low_rating', label: tt('householdPerformance.lowRating') },
+          { id: 'mixed_waste', label: tt('householdPerformance.mixedWaste') },
+          { id: 'inactive', label: tt('householdPerformance.inactive') },
           { id: 'low_7_days', label: 'Low (7D)' },
           { id: 'low_30_days', label: 'Low (30D)' },
-          { id: 'never', label: t('householdPerformance.never') },
-          { id: 'good', label: t('householdPerformance.good') },
+          { id: 'never', label: tt('householdPerformance.never') },
+          { id: 'good', label: tt('householdPerformance.good') },
         ].map(({ id, label }) => (
           <button
             key={id}
@@ -2016,7 +2068,7 @@ function HouseholdPerformance({ onBack, villageId }: { onBack: () => void; villa
             onChange={(e) => setWardFilter(e.target.value)}
             className="w-full text-xs border rounded-lg px-2 py-1.5 bg-gray-50"
           >
-            <option value="all">{t('householdPerformance.allWards')}</option>
+            <option value="all">{tt('householdPerformance.allWards')}</option>
             {wards.map(w => <option key={w} value={w}>{w}</option>)}
           </select>
         </div>
@@ -2029,10 +2081,10 @@ function HouseholdPerformance({ onBack, villageId }: { onBack: () => void; villa
         ) : filtered.length === 0 ? (
           <div className="text-center py-12">
             <TrendingUp className="h-10 w-10 text-gray-200 mx-auto mb-3" />
-            <p className="text-sm text-gray-500">No households in this category</p>
+            <p className="text-sm text-gray-500">{tt('householdPerformance.noHouseholdsInCategory')}</p>
           </div>
         ) : (
-          filtered.map((h: any) => (
+          filtered.slice(0, performanceLimit).map((h: any) => (
             <div key={h.householdId} className="bg-white border border-gray-200 rounded-xl p-3 cursor-pointer hover:border-gray-400 transition-colors" onClick={() => setSelectedHousehold(h)}>
               <div className="flex items-start justify-between mb-1">
                 <div>
@@ -2067,7 +2119,7 @@ function HouseholdPerformance({ onBack, villageId }: { onBack: () => void; villa
                     {h.lastCollectionType === 'mixed' ? ' 🟤' : ' 🟢'}
                   </span>
                 ) : (
-                  <span>{t('householdPerformance.neverCollected')}</span>
+                  <span>{tt('householdPerformance.neverCollected')}</span>
                 )}
                 <span className="text-gray-300">|</span>
                 <span>⭐{h.avgRatingLast10 ? parseFloat(h.avgRatingLast10).toFixed(1) : '—'}</span>
@@ -2078,6 +2130,16 @@ function HouseholdPerformance({ onBack, villageId }: { onBack: () => void; villa
               </div>
             </div>
           ))
+        )}
+        {filtered.length > performanceLimit && (
+          <div className="p-4 text-center">
+            <button
+              className="w-full h-12 rounded-2xl bg-gray-50 text-gray-500 font-bold text-xs uppercase tracking-widest hover:bg-gray-100 active:scale-[0.98] transition-all"
+              onClick={() => setPerformanceLimit(prev => prev + 25)}
+            >
+              View More ({filtered.length - performanceLimit} remaining) →
+            </button>
+          </div>
         )}
       </div>
 
@@ -2091,7 +2153,7 @@ function HouseholdPerformance({ onBack, villageId }: { onBack: () => void; villa
                 <h3 className="text-lg font-bold text-gray-900">{selectedHousehold.headName}</h3>
                 <p className="text-xs text-gray-500 mt-1">
                   UID: {selectedHousehold.uid}
-                  {selectedHousehold.houseNumber && ` · House #${selectedHousehold.houseNumber}`}
+                  {selectedHousehold.houseNumber && ` · ${label.houseNumber} #${selectedHousehold.houseNumber}`}
                   {selectedHousehold.ward && ` · ${selectedHousehold.ward}`}
                 </p>
                 {selectedHousehold.address && (
@@ -2189,24 +2251,24 @@ function HouseholdPerformance({ onBack, villageId }: { onBack: () => void; villa
         <Dialog open={showSettings} onOpenChange={setShowSettings}>
           <DialogContent className="max-w-[95vw] sm:max-w-md">
             <DialogHeader>
-              <DialogTitle>{t('householdPerformance.monitoringThresholds')}</DialogTitle>
+              <DialogTitle>{tt('householdPerformance.monitoringThresholds')}</DialogTitle>
             </DialogHeader>
             <div className="space-y-4">
               <p className="text-xs text-gray-500">Configure when a household gets flagged for attention.</p>
               <div>
-                <Label>{t('householdPerformance.minAvgRating')}</Label>
+                <Label>{tt('householdPerformance.minAvgRating')}</Label>
                 <Input type="number" min={1} max={5} step={0.5}
                   value={thresholdForm.minAvgRating}
                   onChange={(e) => setThresholdForm({ ...thresholdForm, minAvgRating: parseFloat(e.target.value) })} />
               </div>
               <div>
-                <Label>{t('householdPerformance.maxMixed7Days')}</Label>
+                <Label>{tt('householdPerformance.maxMixed7Days')}</Label>
                 <Input type="number" min={0}
                   value={thresholdForm.maxMixed7Days}
                   onChange={(e) => setThresholdForm({ ...thresholdForm, maxMixed7Days: parseInt(e.target.value) })} />
               </div>
               <div>
-                <Label>{t('householdPerformance.maxInactiveDays')}</Label>
+                <Label>{tt('householdPerformance.maxInactiveDays')}</Label>
                 <Input type="number" min={1}
                   value={thresholdForm.maxInactiveDays}
                   onChange={(e) => setThresholdForm({ ...thresholdForm, maxInactiveDays: parseInt(e.target.value) })} />
@@ -2228,7 +2290,7 @@ function HouseholdPerformance({ onBack, villageId }: { onBack: () => void; villa
                 disabled={updateThresholdsMutation.isPending}
                 className="w-full"
               >
-                {updateThresholdsMutation.isPending ? t('app.saving') : t('householdPerformance.saveThresholds')}
+                {updateThresholdsMutation.isPending ? tt('app.saving') : tt('householdPerformance.saveThresholds')}
               </Button>
             </div>
           </DialogContent>
@@ -2252,6 +2314,7 @@ const WORK_TYPE_OPTIONS = [
 
 function StaffScreen({ onBack, staffType, title }: { onBack: () => void; staffType: 'helper' | 'segregator'; title: string }) {
   const { t } = useTranslation();
+  const { tt } = useTerminology();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [showForm, setShowForm] = useState(false);
@@ -2365,7 +2428,7 @@ function StaffScreen({ onBack, staffType, title }: { onBack: () => void; staffTy
           onClick={() => setShowForm(true)}
           className="w-full py-2.5 text-xs font-bold text-gray-500 bg-gray-50 border border-gray-200 rounded-xl hover:bg-gray-100"
         >
-          + Add {staffType === 'helper' ? t('manager.helpers') : t('manager.segregators')}
+          + Add {staffType === 'helper' ? tt('manager.helpers') : tt('manager.segregators')}
         </button>
       </div>
 
@@ -2373,20 +2436,20 @@ function StaffScreen({ onBack, staffType, title }: { onBack: () => void; staffTy
         <Dialog open={showForm} onOpenChange={setShowForm}>
           <DialogContent className="max-w-[95vw] sm:max-w-md">
             <DialogHeader>
-              <DialogTitle>{staffType === 'helper' ? t('staff.addHelper') : t('staff.addSegregator')}</DialogTitle>
+              <DialogTitle>{staffType === 'helper' ? tt('staff.addHelper') : tt('staff.addSegregator')}</DialogTitle>
             </DialogHeader>
             <div className="space-y-4">
               <div>
-                <Label>{t('staff.fullName')}</Label>
-                <Input value={name} onChange={(e) => setName(e.target.value)} placeholder={t("staff.fullName")} />
+                <Label>{tt('staff.fullName')}</Label>
+                <Input value={name} onChange={(e) => setName(e.target.value)} placeholder={tt("staff.fullName")} />
               </div>
               <div>
-                <Label>{t('staff.mobileNumber')}</Label>
+                <Label>{tt('staff.mobileNumber')}</Label>
                 <Input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="10-digit number" type="tel" />
               </div>
               {staffType === 'helper' && (
                 <div>
-                  <Label>{t('staff.workType')}</Label>
+                  <Label>{tt('staff.workType')}</Label>
                   <select
                     value={workType}
                     onChange={(e) => setWorkType(e.target.value)}
@@ -2403,7 +2466,7 @@ function StaffScreen({ onBack, staffType, title }: { onBack: () => void; staffTy
                 disabled={!name.trim() || createMutation.isPending}
                 className="w-full"
               >
-                {createMutation.isPending ? t('manager.adding') : `Add ${staffType === 'helper' ? 'Helper' : 'Segregator'}`}
+                {createMutation.isPending ? tt('manager.adding') : `Add ${staffType === 'helper' ? 'Helper' : 'Segregator'}`}
               </Button>
             </div>
           </DialogContent>
@@ -2414,8 +2477,8 @@ function StaffScreen({ onBack, staffType, title }: { onBack: () => void; staffTy
         open={confirmDeleteId !== null}
         onOpenChange={(open) => { if (!open) setConfirmDeleteId(null); }}
         title={`Remove ${confirmDeleteName}?`}
-        description={t('manager.removeStaffDesc')}
-        confirmLabel={t('app.delete')}
+        description={tt('manager.removeStaffDesc')}
+        confirmLabel={tt('app.delete')}
         variant="danger"
         onConfirm={() => {
           if (confirmDeleteId !== null) deleteMutation.mutate(confirmDeleteId);
@@ -2431,6 +2494,7 @@ function StaffScreen({ onBack, staffType, title }: { onBack: () => void; staffTy
 // ═══════════════════════════════════════════
 function AttendanceScreen({ onBack, villageId, mode = 'mark' }: { onBack: () => void; villageId: string; mode?: 'centers' | 'mark' | 'shifts' }) {
   const { t } = useTranslation();
+  const { tt } = useTerminology();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [workerType, setWorkerType] = useState<'collector' | 'helper' | 'segregator'>('collector');
@@ -2537,9 +2601,9 @@ function AttendanceScreen({ onBack, villageId, mode = 'mark' }: { onBack: () => 
   const WorkerTypeToggle = () => (
     <div className="flex mx-3 mb-3 bg-gray-100 rounded-xl p-1">
       {([
-        { type: 'collector' as const, label: t('manager.collectors') },
-        { type: 'helper' as const, label: t('manager.helpers') },
-        { type: 'segregator' as const, label: t('manager.segregators') },
+        { type: 'collector' as const, label: tt('manager.collectors') },
+        { type: 'helper' as const, label: tt('manager.helpers') },
+        { type: 'segregator' as const, label: tt('manager.segregators') },
       ]).map(({ type, label }) => (
         <button
           key={type}
@@ -2560,7 +2624,7 @@ function AttendanceScreen({ onBack, villageId, mode = 'mark' }: { onBack: () => 
           <ArrowLeft className="h-5 w-5 text-gray-600" />
         </button>
         <h2 className="text-sm font-black uppercase tracking-tight text-gray-900 flex-1">
-          {mode === 'centers' ? t('manager.attendanceCenters') : mode === 'mark' ? 'Mark Attendance' : 'View Shifts'}
+          {mode === 'centers' ? tt('manager.attendanceCenters') : mode === 'mark' ? 'Mark Attendance' : 'View Shifts'}
         </h2>
         {mode !== 'centers' && (
           <input
@@ -2664,9 +2728,9 @@ function AttendanceScreen({ onBack, villageId, mode = 'mark' }: { onBack: () => 
                   </div>
                   <div className="flex gap-2 mt-2">
                     {[
-                      { status: 'present', label: t('attendance.present'), bg: 'bg-green-500', bgOut: 'bg-green-50 text-green-700 border border-green-200' },
-                      { status: 'half_day', label: t('attendance.halfDay'), bg: 'bg-yellow-500', bgOut: 'bg-yellow-50 text-yellow-700 border border-yellow-200' },
-                      { status: 'absent', label: t('attendance.absent'), bg: 'bg-red-500', bgOut: 'bg-red-50 text-red-700 border border-red-200' },
+                      { status: 'present', label: tt('attendance.present'), bg: 'bg-green-500', bgOut: 'bg-green-50 text-green-700 border border-green-200' },
+                      { status: 'half_day', label: tt('attendance.halfDay'), bg: 'bg-yellow-500', bgOut: 'bg-yellow-50 text-yellow-700 border border-yellow-200' },
+                      { status: 'absent', label: tt('attendance.absent'), bg: 'bg-red-500', bgOut: 'bg-red-50 text-red-700 border border-red-200' },
                     ].map(({ status, label, bg, bgOut }) => (
                       <button
                         key={status}
@@ -2766,16 +2830,16 @@ function AttendanceScreen({ onBack, villageId, mode = 'mark' }: { onBack: () => 
         <Dialog open={showCenterForm} onOpenChange={setShowCenterForm}>
           <DialogContent className="max-w-[95vw] sm:max-w-md">
             <DialogHeader>
-              <DialogTitle>{t('attendance.addCenter')}</DialogTitle>
+              <DialogTitle>{tt('attendance.addCenter')}</DialogTitle>
             </DialogHeader>
             <div className="space-y-4">
               <p className="text-xs text-gray-500">Stand at the center location and tap create. Your current GPS will be used.</p>
               <div>
-                <Label>{t('attendance.centerName')}</Label>
+                <Label>{tt('attendance.centerName')}</Label>
                 <Input value={centerName} onChange={(e) => setCenterName(e.target.value)} placeholder="e.g. Main Depot" />
               </div>
               <div>
-                <Label>{t('attendance.centerRadius')}</Label>
+                <Label>{tt('attendance.centerRadius')}</Label>
                 <Input type="number" value={centerRadius} onChange={(e) => setCenterRadius(e.target.value)} placeholder="200" />
               </div>
               <Button
@@ -2783,7 +2847,7 @@ function AttendanceScreen({ onBack, villageId, mode = 'mark' }: { onBack: () => 
                 disabled={!centerName || createCenterMutation.isPending}
                 className="w-full"
               >
-                {createCenterMutation.isPending ? t('manager.creating') : t('attendance.addCenter')}
+                {createCenterMutation.isPending ? tt('manager.creating') : tt('attendance.addCenter')}
               </Button>
             </div>
           </DialogContent>
@@ -2795,25 +2859,25 @@ function AttendanceScreen({ onBack, villageId, mode = 'mark' }: { onBack: () => 
         <Dialog open={rotateConfirm !== null} onOpenChange={() => setRotateConfirm(null)}>
           <DialogContent className="max-w-[95vw] sm:max-w-md">
             <DialogHeader>
-              <DialogTitle>{t('attendance.rotateQr')}?</DialogTitle>
+              <DialogTitle>{tt('attendance.rotateQr')}?</DialogTitle>
             </DialogHeader>
             <div className="space-y-4">
               <div className="bg-orange-50 border border-orange-200 rounded-lg p-3">
                 <p className="text-sm text-orange-800 font-medium">⚠️ Please note:</p>
                 <ul className="text-xs text-orange-700 mt-1 space-y-1 list-disc list-inside">
-                  <li>{t('attendance.rotateDesc')}</li>
-                  <li>{t('attendance.rotateDesc')}</li>
-                  <li>{t('attendance.rotateDesc')}</li>
+                  <li>{tt('attendance.rotateDesc')}</li>
+                  <li>{tt('attendance.rotateDesc')}</li>
+                  <li>{tt('attendance.rotateDesc')}</li>
                 </ul>
               </div>
               <div className="flex gap-2">
-                <Button variant="outline" className="flex-1" onClick={() => setRotateConfirm(null)}>{t('app.cancel')}</Button>
+                <Button variant="outline" className="flex-1" onClick={() => setRotateConfirm(null)}>{tt('app.cancel')}</Button>
                 <Button
                   className="flex-1 bg-orange-600 hover:bg-orange-700"
                   disabled={rotateMutation.isPending}
                   onClick={() => rotateMutation.mutate(rotateConfirm)}
                 >
-                  {rotateMutation.isPending ? t('app.loading') : t('attendance.rotateQr')}
+                  {rotateMutation.isPending ? tt('app.loading') : tt('attendance.rotateQr')}
                 </Button>
               </div>
             </div>
@@ -2870,10 +2934,12 @@ export default function ManagerDashboard() {
   // Field Worker and Batch QR state
   const [collectorsSubTab, setCollectorsSubTab] = useState("collectors");
   const [batchQuantity, setBatchQuantity] = useState(10);
+  const [downloadDialogBatch, setDownloadDialogBatch] = useState<string | null>(null);
   const [showCreateFieldWorkerDialog, setShowCreateFieldWorkerDialog] = useState(false);
   const [newFieldWorkerName, setNewFieldWorkerName] = useState("");
   const [newFieldWorkerPhone, setNewFieldWorkerPhone] = useState("");
   const [householdSearch, setHouseholdSearch] = useState("");
+  const [householdDetailsLimit, setHouseholdDetailsLimit] = useState(25);
 
 
 
@@ -2967,7 +3033,7 @@ export default function ManagerDashboard() {
 
       <!-- Subheading -->
       <div style="font-size:10pt; color:#555; margin-bottom:4mm;">
-        Waste Management System
+        GreenPath
       </div>
 
       <!-- QR -->
@@ -2986,11 +3052,11 @@ export default function ManagerDashboard() {
 
       <!-- Info -->
       <div style="font-size:11pt; font-weight:400; margin-bottom:2mm;">
-        House UID: GEN-${h.uid}
+        ${label.household} UID: GEN-${h.uid}
       </div>
 
       <div style="font-size:11pt; margin-bottom:3mm;">
-        Head: ${h.headName}
+        ${label.headName}: ${h.headName}
       </div>
 
       <div style="font-size:9pt; color:#555;">
@@ -3023,11 +3089,11 @@ export default function ManagerDashboard() {
 
       document.body.removeChild(cardElement);
 
-      toast({ title: t('app.success') });
+      toast({ title: tt('app.success') });
 
     } catch (_err) {
       toast({
-        title: t('app.error'),
+        title: tt('app.error'),
         variant: "destructive",
       });
     }
@@ -3042,15 +3108,15 @@ export default function ManagerDashboard() {
   const deleteHouseholdMutation = useMutation({
     mutationFn: (id: number) => apiRequest("DELETE", `/api/households/${id}`),
     onSuccess: () => {
-      toast({ title: t('app.success') });
+      toast({ title: tt('app.success') });
       queryClient.invalidateQueries({ queryKey: ["/api/households"] });
       setShowDeleteConfirm(false);
       setShowHouseholdDetails(false);
     },
     onError: (_error: unknown) => {
       toast({
-        title: t('app.error'),
-        description: t('app.error'),
+        title: tt('app.error'),
+        description: tt('app.error'),
         variant: "destructive",
       });
     },
@@ -3061,8 +3127,8 @@ export default function ManagerDashboard() {
       window.open(`https://www.google.com/maps?q=${h.latitude},${h.longitude}`, '_blank');
     } else {
       toast({
-        title: t('app.error'),
-        description: t('app.error'),
+        title: tt('app.error'),
+        description: tt('app.error'),
         variant: "destructive"
       });
     }
@@ -3083,6 +3149,9 @@ export default function ManagerDashboard() {
       return response.json();
     },
   });
+
+  // Derive terminology labels based on organization type + language
+  const { tt, label } = useTerminology(villageData?.unitType);
 
   const { data: collectors = [] } = useQuery<Collector[]>({
     queryKey: ["/api/collectors", user?.villageId],
@@ -3163,6 +3232,15 @@ export default function ManagerDashboard() {
     ),
   });
 
+  // QR code stats (for limit progress bar)
+  const { data: qrStats } = useQuery<any>({
+    queryKey: ["/api/qr-codes/stats", user?.villageId],
+    enabled: !!user?.villageId && activeTab === "more" && (
+      activeMoreScreen === "generate-qr" ||
+      activeMoreScreen === "download-qr"
+    ),
+  });
+
   // Mutations
   const updateIssueMutation = useMutation({
     mutationFn: async ({ issueId, status, managerReply, proofPhotoFile }: {
@@ -3203,14 +3281,14 @@ export default function ManagerDashboard() {
       });
     },
     onSuccess: () => {
-      toast({ title: t('app.success') });
+      toast({ title: tt('app.success') });
       queryClient.invalidateQueries({ queryKey: ["/api/issues/paginated"] });
       setShowIssueDialog(false);
     },
     onError: (_error: unknown) => {
       toast({
-        title: t('app.error'),
-        description: t('app.error'),
+        title: tt('app.error'),
+        description: tt('app.error'),
         variant: "destructive"
       });
     },
@@ -3224,7 +3302,7 @@ export default function ManagerDashboard() {
     },
     onSuccess: (data) => {
       toast({
-        title: t('app.success'),
+        title: tt('app.success'),
         description: `User ID: ${data.userId}, Password: ${data.userId}`
       });
       queryClient.invalidateQueries({ queryKey: ["/api/fieldworkers"] });
@@ -3233,7 +3311,7 @@ export default function ManagerDashboard() {
       setNewFieldWorkerPhone("");
     },
     onError: (_error: unknown) => {
-      toast({ title: t('app.error'), description: "Please try again.", variant: "destructive" });
+      toast({ title: tt('app.error'), description: "Please try again.", variant: "destructive" });
     },
   });
 
@@ -3242,11 +3320,11 @@ export default function ManagerDashboard() {
       await apiRequest("DELETE", `/api/fieldworkers/${userId}`);
     },
     onSuccess: () => {
-      toast({ title: t('app.success') });
+      toast({ title: tt('app.success') });
       queryClient.invalidateQueries({ queryKey: ["/api/fieldworkers"] });
     },
     onError: (_error: unknown) => {
-      toast({ title: t('app.error'), description: "Please try again.", variant: "destructive" });
+      toast({ title: tt('app.error'), description: "Please try again.", variant: "destructive" });
     },
   });
 
@@ -3257,11 +3335,24 @@ export default function ManagerDashboard() {
       return response.json();
     },
     onSuccess: (data) => {
-      toast({ title: t('app.success'), description: `Batch ${data.batchId} with ${data.qrCodes.length} QR codes created` });
+      toast({ title: tt('app.success'), description: `Batch ${data.batchId} with ${data.qrCodes.length} QR codes created` });
       queryClient.invalidateQueries({ queryKey: ["/api/qr-codes"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/qr-codes/stats"] });
     },
-    onError: (_error: unknown) => {
-      toast({ title: t('app.error'), description: "Please try again.", variant: "destructive" });
+    onError: async (error: any) => {
+      try {
+        // apiRequest throws the response, parse it
+        const body = error?.message ? { message: error.message } : await error?.json?.();
+        if (body?.code === 'LIMIT_EXCEEDED') {
+          toast({
+            title: 'Household Limit Reached',
+            description: body.message,
+            variant: 'destructive',
+          });
+          return;
+        }
+      } catch {}
+      toast({ title: tt('app.error'), description: "Please try again.", variant: "destructive" });
     },
   });
 
@@ -3302,13 +3393,13 @@ export default function ManagerDashboard() {
       return response.json();
     },
     onSuccess: () => {
-      toast({ title: t('app.success') });
+      toast({ title: tt('app.success') });
       queryClient.invalidateQueries({ queryKey: ["/api/announcements"] });
       setAnnouncementMessage("");
 
     },
     onError: () => {
-      toast({ title: t('app.error'), variant: "destructive" });
+      toast({ title: tt('app.error'), variant: "destructive" });
     },
   });
 
@@ -3316,13 +3407,13 @@ export default function ManagerDashboard() {
     mutationFn: (data: { currentPassword: string; newPassword: string }) =>
       apiRequest("PUT", "/api/profile", data),
     onSuccess: () => {
-      toast({ title: t('app.success') });
+      toast({ title: tt('app.success') });
       setShowPasswordDialog(false);
     },
     onError: (_error: unknown) => {
       toast({
-        title: t('app.error'),
-        description: t('app.error'),
+        title: tt('app.error'),
+        description: tt('app.error'),
         variant: "destructive"
       });
     },
@@ -3332,15 +3423,15 @@ export default function ManagerDashboard() {
     mutationFn: (wardName: string) =>
       apiRequest("POST", `/api/villages/${user?.villageId}/wards`, { ward: wardName }),
     onSuccess: () => {
-      toast({ title: t('app.success') });
+      toast({ title: tt('app.success') });
       queryClient.invalidateQueries({ queryKey: ["/api/villages", user?.villageId, "wards"] });
       setNewWard("");
       setShowWardForm(false);
     },
     onError: (_error: unknown) => {
       toast({
-        title: t('app.error'),
-        description: t('app.error'),
+        title: tt('app.error'),
+        description: tt('app.error'),
         variant: "destructive",
       });
     },
@@ -3351,7 +3442,7 @@ export default function ManagerDashboard() {
     mutationFn: (data: { registrationNumber: string; name: string; collectorIds: number[] }) =>
       apiRequest("POST", `/api/villages/${user?.villageId}/vehicles`, data),
     onSuccess: () => {
-      toast({ title: t('app.success') });
+      toast({ title: tt('app.success') });
       queryClient.invalidateQueries({ queryKey: ["/api/villages", user?.villageId] });
       queryClient.invalidateQueries({ queryKey: ["/api/collectors", user?.villageId] });
       setNewVehicleReg("");
@@ -3360,7 +3451,7 @@ export default function ManagerDashboard() {
       setShowVehicleForm(false);
     },
     onError: (_error: unknown) => {
-      toast({ title: t('app.error'), description: "Failed to add vehicle. Please try again.", variant: "destructive" });
+      toast({ title: tt('app.error'), description: "Failed to add vehicle. Please try again.", variant: "destructive" });
     },
   });
 
@@ -3371,7 +3462,7 @@ export default function ManagerDashboard() {
         collectorIds: data.collectorIds
       }),
     onSuccess: () => {
-      toast({ title: t('app.success') });
+      toast({ title: tt('app.success') });
       queryClient.invalidateQueries({ queryKey: ["/api/villages", user?.villageId] });
       queryClient.invalidateQueries({ queryKey: ["/api/collectors", user?.villageId] });
       setEditingVehicle(null);
@@ -3381,7 +3472,7 @@ export default function ManagerDashboard() {
       setShowVehicleForm(false);
     },
     onError: (_error: unknown) => {
-      toast({ title: t('app.error'), description: "Failed to update vehicle. Please try again.", variant: "destructive" });
+      toast({ title: tt('app.error'), description: "Failed to update vehicle. Please try again.", variant: "destructive" });
     },
   });
 
@@ -3389,7 +3480,7 @@ export default function ManagerDashboard() {
     mutationFn: (regNumber: string) =>
       apiRequest("DELETE", `/api/villages/${user?.villageId}/vehicles/${regNumber}`),
     onSuccess: () => {
-      toast({ title: t('app.success') });
+      toast({ title: tt('app.success') });
       queryClient.invalidateQueries({ queryKey: ["/api/villages", user?.villageId] });
       queryClient.invalidateQueries({ queryKey: ["/api/collectors", user?.villageId] });
     },
@@ -3399,7 +3490,7 @@ export default function ManagerDashboard() {
     mutationFn: (data: { collectorId: number; registrationNumber: string | null }) =>
       apiRequest("PATCH", `/api/collectors/${data.collectorId}/vehicle`, { registrationNumber: data.registrationNumber }),
     onSuccess: () => {
-      toast({ title: t('app.success') });
+      toast({ title: tt('app.success') });
       queryClient.invalidateQueries({ queryKey: ["/api/collectors", user?.villageId] });
       queryClient.invalidateQueries({ queryKey: ["/api/villages", user?.villageId] });
     },
@@ -3466,7 +3557,7 @@ export default function ManagerDashboard() {
               <div>
                 <h3 className="text-lg font-semibold text-blue-900">{collector.name}</h3>
                 <p className="text-sm text-blue-700">
-                  ID: {collector.uid} | {t("collectors.phone")}: {collector.phone}
+                  ID: {collector.uid} | {tt("collectors.phone")}: {collector.phone}
                 </p>
                 <div className="mt-2">
                   <Label className="text-xs text-blue-800">Assigned Vehicle</Label>
@@ -3478,10 +3569,10 @@ export default function ManagerDashboard() {
                     })}
                   >
                     <SelectTrigger className="h-8 bg-white border-blue-200">
-                      <SelectValue placeholder={t("manager.selectVehicle")} />
+                      <SelectValue placeholder={tt("manager.selectVehicle")} />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="none">{t('vehicles.noVehiclesYet')}</SelectItem>
+                      <SelectItem value="none">{tt('vehicles.noVehiclesYet')}</SelectItem>
                       {villageData?.vehicles?.map((v: any) => (
                         <SelectItem key={v.registrationNumber} value={v.registrationNumber}>
                           {v.name} ({v.registrationNumber})
@@ -3496,19 +3587,19 @@ export default function ManagerDashboard() {
                   <div className="text-lg font-bold text-blue-900">
                     {collectorCollections.length}
                   </div>
-                  <div className="text-xs text-blue-700">{t("collections.totalCollections")}</div>
+                  <div className="text-xs text-blue-700">{tt("collections.totalCollections")}</div>
                 </div>
                 <div>
                   <div className="text-lg font-bold text-blue-900">
                     {avgRating}
                   </div>
-                  <div className="text-xs text-blue-700">{t("app.rating")}</div>
+                  <div className="text-xs text-blue-700">{tt("app.rating")}</div>
                 </div>
                 <div>
                   <div className="text-lg font-bold text-blue-900">
                     {filteredFeedbacks.length}
                   </div>
-                  <div className="text-xs text-blue-700">{t("feedback.title")}</div>
+                  <div className="text-xs text-blue-700">{tt("feedback.title")}</div>
                 </div>
               </div>
             </div>
@@ -3518,12 +3609,12 @@ export default function ManagerDashboard() {
         {/* Date Filter for Feedbacks */}
         <Card>
           <CardHeader>
-            <CardTitle>{t("app.filter")} {t("feedback.title")}</CardTitle>
+            <CardTitle>{tt("app.filter")} {tt("feedback.title")}</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="flex gap-4 items-center">
               <div className="flex-1">
-                <Label htmlFor="feedback-date">{t("filters.startDate")}</Label>
+                <Label htmlFor="feedback-date">{tt("filters.startDate")}</Label>
                 <Input
                   id="feedback-date"
                   type="date"
@@ -3532,13 +3623,13 @@ export default function ManagerDashboard() {
                 />
               </div>
               <Button variant="outline" onClick={() => setFeedbackDateFilter("")}>
-                {t("app.clear")}
+                {tt("app.clear")}
               </Button>
             </div>
             <p className="text-xs text-muted-foreground mt-2">
               {feedbackDateFilter
-                ? `${t("app.filter")} ${new Date(feedbackDateFilter).toLocaleDateString()}`
-                : t("app.all")}
+                ? `${tt("app.filter")} ${new Date(feedbackDateFilter).toLocaleDateString()}`
+                : tt("app.all")}
             </p>
           </CardContent>
         </Card>
@@ -3546,9 +3637,9 @@ export default function ManagerDashboard() {
         {/* Generator Feedbacks List */}
         <Card>
           <CardHeader>
-            <CardTitle>{t("feedback.title")} ({filteredFeedbacks.length})</CardTitle>
+            <CardTitle>{tt("feedback.title")} ({filteredFeedbacks.length})</CardTitle>
             <p className="text-sm text-muted-foreground">
-              {t("feedback.fromHousehold")} {t("feedback.toCollector")} {collector.name}
+              {tt("feedback.fromHousehold")} {tt("feedback.toCollector")} {collector.name}
             </p>
           </CardHeader>
           <CardContent>
@@ -3566,9 +3657,9 @@ export default function ManagerDashboard() {
                           <div className="space-y-3">
                             <div className="flex items-center justify-between">
                               <div>
-                                <h4 className="font-medium">{household?.headName || t("messages.noData")}</h4>
+                                <h4 className="font-medium">{household?.headName || tt("messages.noData")}</h4>
                                 <p className="text-sm text-muted-foreground">
-                                  {t("households.houseNumber")}: {household?.houseNumber || "N/A"} | UID: {household?.uid || "N/A"}
+                                  {tt("households.houseNumber")}: {household?.houseNumber || "N/A"} | UID: {household?.uid || "N/A"}
                                 </p>
                               </div>
                               <div className="flex items-center gap-2">
@@ -3580,7 +3671,7 @@ export default function ManagerDashboard() {
 
                             {/* Feedback Rating */}
                             <div className="flex items-center justify-between p-3 bg-purple-50 rounded-lg">
-                              <span className="text-sm font-medium">{t("app.rating")}:</span>
+                              <span className="text-sm font-medium">{tt("app.rating")}:</span>
                               <div className="flex items-center gap-1">
                                 {Array.from({ length: 5 }).map((_, i) => (
                                   <Star
@@ -3597,7 +3688,7 @@ export default function ManagerDashboard() {
                             {/* Feedback Remarks */}
                             {feedback.remarks && (
                               <div className="p-3 bg-gray-50 rounded-lg">
-                                <span className="text-sm font-medium block mb-2">{t("feedback.comments")}:</span>
+                                <span className="text-sm font-medium block mb-2">{tt("feedback.comments")}:</span>
                                 <p className="text-sm text-gray-700 italic">"{feedback.remarks}"</p>
                               </div>
                             )}
@@ -3605,17 +3696,17 @@ export default function ManagerDashboard() {
                             {/* Rating Description */}
                             <div className="p-2 bg-yellow-50 rounded text-center">
                               <span className="text-sm font-medium">
-                                {feedback.rating === 1 && `😞 ${t("collections.veryPoor")}`}
-                                {feedback.rating === 2 && `😐 ${t("collections.poor")}`}
-                                {feedback.rating === 3 && `😊 ${t("collections.average")}`}
-                                {feedback.rating === 4 && `😄 ${t("collections.good")}`}
-                                {feedback.rating === 5 && `🤩 ${t("collections.excellent")}`}
-                                {!feedback.rating && t("messages.noData")}
+                                {feedback.rating === 1 && `😞 ${tt("collections.veryPoor")}`}
+                                {feedback.rating === 2 && `😐 ${tt("collections.poor")}`}
+                                {feedback.rating === 3 && `😊 ${tt("collections.average")}`}
+                                {feedback.rating === 4 && `😄 ${tt("collections.good")}`}
+                                {feedback.rating === 5 && `🤩 ${tt("collections.excellent")}`}
+                                {!feedback.rating && tt("messages.noData")}
                               </span>
                             </div>
 
                             <div className="flex justify-between items-center pt-2 border-t text-xs text-muted-foreground">
-                              <span>{t("feedback.title")} ID: {feedback.id}</span>
+                              <span>{tt("feedback.title")} ID: {feedback.id}</span>
                               <span>{new Date(feedback.createdAt).toLocaleTimeString()}</span>
                             </div>
                           </div>
@@ -3628,10 +3719,10 @@ export default function ManagerDashboard() {
               <div className="text-center py-8">
                 <MessageSquare className="w-12 h-12 text-gray-300 mx-auto mb-3" />
                 <p className="text-muted-foreground">
-                  {feedbackDateFilter ? t("messages.noData") : t("feedback.title")}
+                  {feedbackDateFilter ? tt("messages.noData") : tt("feedback.title")}
                 </p>
                 <p className="text-sm text-muted-foreground mt-2">
-                  {t("feedback.fromHousehold")} {t("feedback.toCollector")}
+                  {tt("feedback.fromHousehold")} {tt("feedback.toCollector")}
                 </p>
               </div>
             )}
@@ -3668,34 +3759,34 @@ export default function ManagerDashboard() {
                   {villageData?.name || "GreenPath"}
                 </span>
                 <span className="text-lg font-bold text-gray-900 leading-tight truncate">
-                  {activeMoreScreen === "household-details" ? t('manager.householdDetails')
-                    : activeMoreScreen === "generate-qr" ? t('manager.generateQr')
-                      : activeMoreScreen === "download-qr" ? t('manager.downloadQr')
-                        : activeMoreScreen === "collectors" ? t('manager.collectors')
-                          : activeMoreScreen === "fieldworkers" ? t('manager.fieldWorkers')
-                            : activeMoreScreen === "helpers" ? t('manager.helpers')
-                              : activeMoreScreen === "segregators" ? t('manager.segregators')
-                                : activeMoreScreen === "announcements" ? t('manager.announcements')
-                                  : activeMoreScreen === "daily-waste-logs" ? t('manager.dailyWasteLogs')
-                                    : activeMoreScreen === "compost-logs" ? t('manager.compostLogs')
-                                      : activeMoreScreen === "sales-logs" ? t('manager.salesLogs')
-                                        : activeMoreScreen === "vehicles" ? t('manager.vehicleManagement')
-                                          : activeMoreScreen === "wards" ? t('manager.wardsManagement')
-                                            : activeMoreScreen === "village-settings" ? t('manager.villageSettings')
-                                              : activeMoreScreen === "payments-ledger" ? t('manager.paymentLedger')
-                                                : activeMoreScreen === "payments-settings" ? t('manager.paymentSettings')
-                                                  : activeMoreScreen === "att-centers" ? t('manager.attendanceCenters')
-                                                    : activeMoreScreen === "att-mark" ? t('manager.markAttendance')
-                                                      : activeMoreScreen === "att-shifts" ? t('manager.viewShifts')
-                                                        : activeMoreScreen === "activity-log" ? t('manager.activityLog')
-                                                          : activeMoreScreen === "data-export" ? t('manager.dataExport')
-                                                            : activeMoreScreen === "change-password" ? t('app.changePassword')
-                                                              : activeMoreScreen === "language" ? t('generator.language')
-                                                                : activeTab === "reports" ? t('manager.dailyReports')
-                                                                  : activeTab === "collections" ? t('collections.title')
-                                                                    : activeTab === "issues" ? t('navigation.issues')
-                                                                      : activeTab === "more" ? t('manager.more')
-                                                                        : t('manager.dashboard')}
+                  {activeMoreScreen === "household-details" ? tt('manager.householdDetails')
+                    : activeMoreScreen === "generate-qr" ? tt('manager.generateQr')
+                      : activeMoreScreen === "download-qr" ? tt('manager.downloadQr')
+                        : activeMoreScreen === "collectors" ? tt('manager.collectors')
+                          : activeMoreScreen === "fieldworkers" ? tt('manager.fieldWorkers')
+                            : activeMoreScreen === "helpers" ? tt('manager.helpers')
+                              : activeMoreScreen === "segregators" ? tt('manager.segregators')
+                                : activeMoreScreen === "announcements" ? tt('manager.announcements')
+                                  : activeMoreScreen === "daily-waste-logs" ? tt('manager.dailyWasteLogs')
+                                    : activeMoreScreen === "compost-logs" ? tt('manager.compostLogs')
+                                      : activeMoreScreen === "sales-logs" ? tt('manager.salesLogs')
+                                        : activeMoreScreen === "vehicles" ? tt('manager.vehicleManagement')
+                                          : activeMoreScreen === "wards" ? tt('manager.wardsManagement')
+                                            : activeMoreScreen === "village-settings" ? tt('manager.villageSettings')
+                                              : activeMoreScreen === "payments-ledger" ? tt('manager.paymentLedger')
+                                                : activeMoreScreen === "payments-settings" ? tt('manager.paymentSettings')
+                                                  : activeMoreScreen === "att-centers" ? tt('manager.attendanceCenters')
+                                                    : activeMoreScreen === "att-mark" ? tt('manager.markAttendance')
+                                                      : activeMoreScreen === "att-shifts" ? tt('manager.viewShifts')
+                                                        : activeMoreScreen === "activity-log" ? tt('manager.activityLog')
+                                                          : activeMoreScreen === "data-export" ? tt('manager.dataExport')
+                                                            : activeMoreScreen === "change-password" ? tt('app.changePassword')
+                                                              : activeMoreScreen === "language" ? tt('generator.language')
+                                                                : activeTab === "reports" ? tt('manager.dailyReports')
+                                                                  : activeTab === "collections" ? tt('collections.title')
+                                                                    : activeTab === "issues" ? tt('navigation.issues')
+                                                                      : activeTab === "more" ? tt('manager.more')
+                                                                        : tt('manager.dashboard')}
                 </span>
               </div>
             </div>
@@ -3705,7 +3796,7 @@ export default function ManagerDashboard() {
               <button
                 onClick={() => { setActiveTab("more"); setActiveMoreScreen("announcements"); }}
                 className="relative p-2 rounded-full hover:bg-gray-100 transition-colors active:scale-90"
-                aria-label={t('manager.announcements')}
+                aria-label={tt('manager.announcements')}
               >
                 <Bell className="h-5 w-5 text-gray-600" />
                 {announcements.length > 0 && (
@@ -3715,7 +3806,7 @@ export default function ManagerDashboard() {
               <button
                 onClick={() => { setActiveTab("more"); setActiveMoreScreen(null); }}
                 className="w-8 h-8 rounded-full bg-green-600 flex items-center justify-center text-white text-xs font-bold transition-all active:scale-90 flex-shrink-0"
-                aria-label={t('manager.profile')}
+                aria-label={tt('manager.profile')}
               >
                 {(user?.name || "M").charAt(0).toUpperCase()}
               </button>
@@ -3729,10 +3820,10 @@ export default function ManagerDashboard() {
             style={{ paddingBottom: "env(safe-area-inset-bottom)" }}>
             <div className="flex">
               {[
-                { id: "reports", icon: BarChart3, label: t('manager.reports') },
-                { id: "collections", icon: Package, label: t('collections.title') },
-                { id: "issues", icon: AlertCircle, label: t('navigation.issues') },
-                { id: "more", icon: LayoutDashboard, label: t('manager.more') },
+                { id: "reports", icon: BarChart3, label: tt('manager.reports') },
+                { id: "collections", icon: Package, label: tt('collections.title') },
+                { id: "issues", icon: AlertCircle, label: tt('navigation.issues') },
+                { id: "more", icon: LayoutDashboard, label: tt('manager.more') },
               ].map(({ id, icon: Icon, label }) => {
                 const isActive = activeTab === id;
                 return (
@@ -3762,9 +3853,9 @@ export default function ManagerDashboard() {
             <div className="p-3">
               <nav className="space-y-1">
                 {[
-                  { id: "reports", icon: BarChart3, label: t('manager.dailyReports') },
-                  { id: "collections", icon: Package, label: t("navigation.collections") },
-                  { id: "issues", icon: AlertCircle, label: t("navigation.issues") },
+                  { id: "reports", icon: BarChart3, label: tt('manager.dailyReports') },
+                  { id: "collections", icon: Package, label: tt("navigation.collections") },
+                  { id: "issues", icon: AlertCircle, label: tt("navigation.issues") },
                 ].map(({ id, icon: Icon, label }) => (
                   <button
                     key={id}
@@ -3781,11 +3872,11 @@ export default function ManagerDashboard() {
                   </button>
                 ))}
                 <div className="mt-4 pt-3 border-t border-gray-100">
-                  <p className="text-[10px] uppercase tracking-widest text-gray-400 font-semibold px-3 mb-1">{t('manager.households')}</p>
+                  <p className="text-[10px] uppercase tracking-widest text-gray-400 font-semibold px-3 mb-1">{tt('manager.households')}</p>
                   {[
-                    { id: "household-details", icon: Home, label: t('manager.householdDetails') },
-                    { id: "generate-qr", icon: QrCode, label: t('manager.generateQr') },
-                    { id: "download-qr", icon: Download, label: t('manager.downloadQr') },
+                    { id: "household-details", icon: Home, label: tt('manager.householdDetails') },
+                    { id: "generate-qr", icon: QrCode, label: tt('manager.generateQr') },
+                    { id: "download-qr", icon: Download, label: tt('manager.downloadQr') },
                   ].map(({ id, icon: Icon, label }) => (
                     <button
                       key={id}
@@ -3799,13 +3890,13 @@ export default function ManagerDashboard() {
                       {label}
                     </button>
                   ))}
-                  <p className="text-[10px] uppercase tracking-widest text-gray-400 font-semibold px-3 mt-3 mb-1">{t('manager.fieldWorkers')}</p>
+                  <p className="text-[10px] uppercase tracking-widest text-gray-400 font-semibold px-3 mt-3 mb-1">{tt('manager.fieldWorkers')}</p>
                   {[
-                    { id: "collectors", icon: Users, label: t('manager.collectors') },
-                    { id: "fieldworkers", icon: Users, label: t('manager.fieldWorkers') },
-                    { id: "helpers", icon: Wrench, label: t('manager.helpers') },
-                    { id: "segregators", icon: Users, label: t('manager.segregators') },
-                    { id: "announcements", icon: Bell, label: t('manager.announcements') },
+                    { id: "collectors", icon: Users, label: tt('manager.collectors') },
+                    { id: "fieldworkers", icon: Users, label: tt('manager.fieldWorkers') },
+                    { id: "helpers", icon: Wrench, label: tt('manager.helpers') },
+                    { id: "segregators", icon: Users, label: tt('manager.segregators') },
+                    { id: "announcements", icon: Bell, label: tt('manager.announcements') },
                   ].map(({ id, icon: Icon, label }) => (
                     <button
                       key={id}
@@ -3819,11 +3910,11 @@ export default function ManagerDashboard() {
                       {label}
                     </button>
                   ))}
-                  <p className="text-[10px] uppercase tracking-widest text-gray-400 font-semibold px-3 mt-3 mb-1">{t('manager.dailyWasteLogs')}</p>
+                  <p className="text-[10px] uppercase tracking-widest text-gray-400 font-semibold px-3 mt-3 mb-1">{tt('manager.dailyWasteLogs')}</p>
                   {[
-                    { id: "daily-waste-logs", icon: ClipboardList, label: t('manager.dailyWasteLogs') },
-                    { id: "compost-logs", icon: Package, label: t('manager.compostLogs') },
-                    { id: "sales-logs", icon: BarChart3, label: t('manager.salesLogs') },
+                    { id: "daily-waste-logs", icon: ClipboardList, label: tt('manager.dailyWasteLogs') },
+                    { id: "compost-logs", icon: Package, label: tt('manager.compostLogs') },
+                    { id: "sales-logs", icon: BarChart3, label: tt('manager.salesLogs') },
                   ].map(({ id, icon: Icon, label }) => (
                     <button
                       key={id}
@@ -3837,9 +3928,9 @@ export default function ManagerDashboard() {
                       {label}
                     </button>
                   ))}
-                  <p className="text-[10px] uppercase tracking-widest text-gray-400 font-semibold px-3 mt-3 mb-1">{t('manager.analytics')}</p>
+                  <p className="text-[10px] uppercase tracking-widest text-gray-400 font-semibold px-3 mt-3 mb-1">{tt('manager.analytics')}</p>
                   {[
-                    { id: "household-performance", icon: TrendingUp, label: t('manager.householdPerformance') },
+                    { id: "household-performance", icon: TrendingUp, label: tt('manager.householdPerformance') },
                   ].map(({ id, icon: Icon, label }) => (
                     <button
                       key={id}
@@ -3853,13 +3944,13 @@ export default function ManagerDashboard() {
                       {label}
                     </button>
                   ))}
-                  <p className="text-[10px] uppercase tracking-widest text-gray-400 font-semibold px-3 mt-3 mb-1">{t('manager.management')}</p>
+                  <p className="text-[10px] uppercase tracking-widest text-gray-400 font-semibold px-3 mt-3 mb-1">{tt('manager.management')}</p>
                   {[
-                    { id: "vehicles", icon: Package, label: t('manager.vehicles') },
-                    { id: "wards", icon: MapPin, label: t('manager.wards') },
-                    { id: "village-settings", icon: Settings, label: t('manager.villageSettings') },
-                    { id: "activity-log", icon: ClipboardList, label: t('manager.activityLog') },
-                    { id: "data-export", icon: FileDown, label: t('manager.dataExport') },
+                    { id: "vehicles", icon: Package, label: tt('manager.vehicles') },
+                    { id: "wards", icon: MapPin, label: tt('manager.wards') },
+                    { id: "village-settings", icon: Settings, label: tt('manager.villageSettings') },
+                    { id: "activity-log", icon: ClipboardList, label: tt('manager.activityLog') },
+                    { id: "data-export", icon: FileDown, label: tt('manager.dataExport') },
                   ].map(({ id, icon: Icon, label }) => (
                     <button
                       key={id}
@@ -3875,10 +3966,10 @@ export default function ManagerDashboard() {
                   ))}
                   {villageData?.paymentsEnabled && (
                     <>
-                      <p className="text-[10px] uppercase tracking-widest text-gray-400 font-semibold px-3 mt-3 mb-1">{t('manager.paymentLedger')}</p>
+                      <p className="text-[10px] uppercase tracking-widest text-gray-400 font-semibold px-3 mt-3 mb-1">{tt('manager.paymentLedger')}</p>
                       {[
-                        { id: "payments-ledger", icon: BarChart3, label: t('manager.paymentLedger') },
-                        { id: "payments-settings", icon: Settings, label: t('manager.paymentSettings') },
+                        { id: "payments-ledger", icon: BarChart3, label: tt('manager.paymentLedger') },
+                        { id: "payments-settings", icon: Settings, label: tt('manager.paymentSettings') },
                       ].map(({ id, icon: Icon, label }) => (
                         <button
                           key={id}
@@ -3896,11 +3987,11 @@ export default function ManagerDashboard() {
                   )}
                   {villageData?.attendanceEnabled && (
                     <>
-                      <p className="text-[10px] uppercase tracking-widest text-gray-400 font-semibold px-3 mt-3 mb-1">{t('manager.attendanceCenters')}</p>
+                      <p className="text-[10px] uppercase tracking-widest text-gray-400 font-semibold px-3 mt-3 mb-1">{tt('manager.attendanceCenters')}</p>
                       {[
-                        { id: "att-centers", icon: MapPin, label: t('manager.attendanceCenters') },
-                        { id: "att-mark", icon: Clock, label: t('manager.markAttendance') },
-                        { id: "att-shifts", icon: ClipboardList, label: t('manager.viewShifts') },
+                        { id: "att-centers", icon: MapPin, label: tt('manager.attendanceCenters') },
+                        { id: "att-mark", icon: Clock, label: tt('manager.markAttendance') },
+                        { id: "att-shifts", icon: ClipboardList, label: tt('manager.viewShifts') },
                       ].map(({ id, icon: Icon, label }) => (
                         <button
                           key={id}
@@ -4019,7 +4110,7 @@ export default function ManagerDashboard() {
                         {/* Main Household List */}
                         <div className="bg-white">
                           <div className="px-5 py-1 border-b border-gray-50 flex items-center justify-between">
-                            <h4 className="text-[11px] font-black text-gray-400 uppercase tracking-widest">Village Members</h4>
+                            <h4 className="text-[11px] font-black text-gray-400 uppercase tracking-widest">{label.orgPlural} Members</h4>
                             <Button
                               variant="ghost"
                               size="sm"
@@ -4096,7 +4187,7 @@ export default function ManagerDashboard() {
                         {(user?.name || "M").charAt(0).toUpperCase()}
                       </div>
                       <div className="min-w-0">
-                        <p className="font-bold text-gray-900 truncate">{user?.name || t('roles.manager')}</p>
+                        <p className="font-bold text-gray-900 truncate">{user?.name || tt('roles.manager')}</p>
                         <div className="flex px-3 space-x-5 justify-center items-center">
                           <p className="text-xs text-gray-500 truncate">{user?.userId}</p>
                           <Badge variant="secondary" className="text-xs mt-0.5">{user?.role}</Badge>
@@ -4105,12 +4196,12 @@ export default function ManagerDashboard() {
                     </div>
 
                     {/* Households group */}
-                    <p className="text-[11px] uppercase tracking-widest text-gray-400 font-bold px-1 pt-2 pb-1">Households</p>
+                    <p className="text-[11px] uppercase tracking-widest text-gray-400 font-bold px-1 pt-2 pb-1">{label.householdPlural}</p>
                     <div className="bg-white rounded-2xl ring-1 ring-black/5 shadow-sm overflow-hidden">
                       {[
-                        { id: "household-details", icon: Home, label: t('manager.householdDetails'), description: t('manager.householdDetails') },
-                        { id: "generate-qr", icon: QrCode, label: t('manager.generateQr'), description: t('manager.generateQr') },
-                        { id: "download-qr", icon: Download, label: t('manager.downloadQr'), description: t('manager.downloadQr') },
+                        { id: "household-details", icon: Home, label: tt('manager.householdDetails'), description: tt('manager.householdDetails') },
+                        { id: "generate-qr", icon: QrCode, label: tt('manager.generateQr'), description: tt('manager.generateQr') },
+                        { id: "download-qr", icon: Download, label: tt('manager.downloadQr'), description: tt('manager.downloadQr') },
                       ].map(({ id, icon: Icon, label, description }, idx, arr) => (
                         <button
                           key={id}
@@ -4136,11 +4227,11 @@ export default function ManagerDashboard() {
                     <p className="text-[11px] uppercase tracking-widest text-gray-400 font-bold px-1 pt-4 pb-1">Field Staff</p>
                     <div className="bg-white rounded-2xl ring-1 ring-black/5 shadow-sm overflow-hidden">
                       {[
-                        { id: "collectors", icon: Users, label: t('manager.collectors'), description: t('manager.collectors') },
-                        { id: "fieldworkers", icon: Users, label: t('manager.fieldWorkers'), description: t('manager.fieldWorkers') },
-                        { id: "helpers", icon: Wrench, label: t('manager.helpers'), description: t('manager.helpers') },
-                        { id: "segregators", icon: Users, label: t('manager.segregators'), description: t('manager.segregators') },
-                        { id: "announcements", icon: Bell, label: t('manager.announcements'), description: t('manager.announcements') },
+                        { id: "collectors", icon: Users, label: tt('manager.collectors'), description: tt('manager.collectors') },
+                        { id: "fieldworkers", icon: Users, label: tt('manager.fieldWorkers'), description: tt('manager.fieldWorkers') },
+                        { id: "helpers", icon: Wrench, label: tt('manager.helpers'), description: tt('manager.helpers') },
+                        { id: "segregators", icon: Users, label: tt('manager.segregators'), description: tt('manager.segregators') },
+                        { id: "announcements", icon: Bell, label: tt('manager.announcements'), description: tt('manager.announcements') },
                       ].map(({ id, icon: Icon, label, description }, idx, arr) => (
                         <button
                           key={id}
@@ -4166,9 +4257,9 @@ export default function ManagerDashboard() {
                     <p className="text-[11px] uppercase tracking-widest text-gray-400 font-bold px-1 pt-4 pb-1">Material Logs</p>
                     <div className="bg-white rounded-2xl ring-1 ring-black/5 shadow-sm overflow-hidden">
                       {[
-                        { id: "daily-waste-logs", icon: ClipboardList, label: t('manager.dailyWasteLogs'), description: t('manager.dailyWasteLogs') },
-                        { id: "compost-logs", icon: Package, label: t('manager.compostLogs'), description: t('manager.compostLogs') },
-                        { id: "sales-logs", icon: BarChart3, label: t('manager.salesLogs'), description: t('manager.salesLogs') },
+                        { id: "daily-waste-logs", icon: ClipboardList, label: tt('manager.dailyWasteLogs'), description: tt('manager.dailyWasteLogs') },
+                        { id: "compost-logs", icon: Package, label: tt('manager.compostLogs'), description: tt('manager.compostLogs') },
+                        { id: "sales-logs", icon: BarChart3, label: tt('manager.salesLogs'), description: tt('manager.salesLogs') },
                       ].map(({ id, icon: Icon, label, description }, idx, arr) => (
                         <button
                           key={id}
@@ -4194,7 +4285,7 @@ export default function ManagerDashboard() {
                     <p className="text-[11px] uppercase tracking-widest text-gray-400 font-bold px-1 pt-4 pb-1">Analytics</p>
                     <div className="bg-white rounded-2xl ring-1 ring-black/5 shadow-sm overflow-hidden">
                       {[
-                        { id: "household-performance", icon: TrendingUp, label: t('manager.householdPerformance'), description: t('manager.householdPerformance') },
+                        { id: "household-performance", icon: TrendingUp, label: tt('manager.householdPerformance'), description: tt('manager.householdPerformance') },
                       ].map(({ id, icon: Icon, label, description }, idx, arr) => (
                         <button
                           key={id}
@@ -4220,11 +4311,11 @@ export default function ManagerDashboard() {
                     <p className="text-[11px] uppercase tracking-widest text-gray-400 font-bold px-1 pt-4 pb-1">Management</p>
                     <div className="bg-white rounded-2xl ring-1 ring-black/5 shadow-sm overflow-hidden">
                       {[
-                        { id: "vehicles", icon: Package, label: t('manager.vehicleManagement'), description: t('manager.vehicleManagement') },
-                        { id: "wards", icon: MapPin, label: t('manager.wardsManagement'), description: t('manager.wardsManagement') },
-                        { id: "village-settings", icon: Settings, label: t('manager.villageSettings'), description: t('manager.villageSettings') },
-                        { id: "activity-log", icon: ClipboardList, label: t('manager.activityLog'), description: t('manager.activityLog') },
-                        { id: "data-export", icon: FileDown, label: t('manager.dataExport'), description: t('manager.dataExport') },
+                        { id: "vehicles", icon: Package, label: tt('manager.vehicleManagement'), description: tt('manager.vehicleManagement') },
+                        { id: "wards", icon: MapPin, label: tt('manager.wardsManagement'), description: tt('manager.wardsManagement') },
+                        { id: "village-settings", icon: Settings, label: tt('manager.villageSettings'), description: tt('manager.villageSettings') },
+                        { id: "activity-log", icon: ClipboardList, label: tt('manager.activityLog'), description: tt('manager.activityLog') },
+                        { id: "data-export", icon: FileDown, label: tt('manager.dataExport'), description: tt('manager.dataExport') },
                       ].map(({ id, icon: Icon, label, description }, idx, arr) => (
                         <button
                           key={id}
@@ -4252,8 +4343,8 @@ export default function ManagerDashboard() {
                         <p className="text-[11px] uppercase tracking-widest text-gray-400 font-bold px-1 pt-4 pb-1">Payments & Billing</p>
                         <div className="bg-white rounded-2xl ring-1 ring-black/5 shadow-sm overflow-hidden">
                           {[
-                            { id: "payments-ledger", icon: BarChart3, label: t('manager.paymentLedger'), description: t('manager.paymentLedger') },
-                            { id: "payments-settings", icon: Settings, label: t('manager.paymentSettings'), description: t('manager.paymentSettings') },
+                            { id: "payments-ledger", icon: BarChart3, label: tt('manager.paymentLedger'), description: tt('manager.paymentLedger') },
+                            { id: "payments-settings", icon: Settings, label: tt('manager.paymentSettings'), description: tt('manager.paymentSettings') },
                           ].map(({ id, icon: Icon, label, description }, idx, arr) => (
                             <button
                               key={id}
@@ -4283,9 +4374,9 @@ export default function ManagerDashboard() {
                         <p className="text-[11px] uppercase tracking-widest text-gray-400 font-bold px-1 pt-4 pb-1">Attendance & Shifts</p>
                         <div className="bg-white rounded-2xl ring-1 ring-black/5 shadow-sm overflow-hidden">
                           {[
-                            { id: "att-centers", icon: MapPin, label: t('manager.attendanceCenters'), description: t('manager.attendanceCenters') },
-                            { id: "att-mark", icon: Clock, label: t('manager.markAttendance'), description: t('manager.markAttendance') },
-                            { id: "att-shifts", icon: ClipboardList, label: t('manager.viewShifts'), description: t('manager.viewShifts') },
+                            { id: "att-centers", icon: MapPin, label: tt('manager.attendanceCenters'), description: tt('manager.attendanceCenters') },
+                            { id: "att-mark", icon: Clock, label: tt('manager.markAttendance'), description: tt('manager.markAttendance') },
+                            { id: "att-shifts", icon: ClipboardList, label: tt('manager.viewShifts'), description: tt('manager.viewShifts') },
                           ].map(({ id, icon: Icon, label, description }, idx, arr) => (
                             <button
                               key={id}
@@ -4310,11 +4401,11 @@ export default function ManagerDashboard() {
                     )}
 
                     {/* Account group */}
-                    <p className="text-[11px] uppercase tracking-widest text-gray-400 font-bold px-1 pt-4 pb-1">{t('manager.profile')}</p>
+                    <p className="text-[11px] uppercase tracking-widest text-gray-400 font-bold px-1 pt-4 pb-1">{tt('manager.profile')}</p>
                     <div className="bg-white rounded-2xl ring-1 ring-black/5 shadow-sm overflow-hidden">
                       {[
-                        { id: "change-password", icon: Settings, label: t('app.changePassword') },
-                        { id: "language", icon: Bell, label: t('generator.language') },
+                        { id: "change-password", icon: Settings, label: tt('app.changePassword') },
+                        { id: "language", icon: Bell, label: tt('generator.language') },
                       ].map(({ id, icon: Icon, label }, idx, arr) => (
                         <button
                           key={id}
@@ -4359,7 +4450,6 @@ export default function ManagerDashboard() {
                       </Button>
                       <div className="relative flex-1">
                         <Input
-                          autoFocus
                           className="w-full h-10 bg-gray-50 border-none rounded-2xl pl-10 pr-4 focus-visible:ring-1 focus-visible:ring-gray-200 transition-all text-sm font-medium"
                           placeholder="Search name, house # or UID or mobile"
                           value={householdSearch}
@@ -4380,8 +4470,8 @@ export default function ManagerDashboard() {
                     </div>
                     {/* Household list */}
                     <div className="space-y-2 max-h-[600px] overflow-y-auto">
-                      {households
-                        .filter(h => {
+                      {(() => {
+                        const filteredHouseholds = households.filter(h => {
                           const search = householdSearch.toLowerCase();
                           return (
                             h.headName.toLowerCase().includes(search) ||
@@ -4389,39 +4479,55 @@ export default function ManagerDashboard() {
                             (h.houseNumber && h.houseNumber.toLowerCase().includes(search)) ||
                             (h.phone && h.phone.toLowerCase().includes(search))
                           );
-                        })
-                        .map((h) => (
-                          <div
-                            key={h.id}
-                            className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden flex active:scale-[0.98] transition-transform cursor-pointer"
-                            onClick={() => { setViewingHousehold(h); setShowHouseholdDetails(true); }}
-                          >
-                            <div className="w-1 flex-shrink-0 bg-green-500" />
-                            <div className="flex-1 flex items-center justify-between p-3 min-w-0">
-                              <div className="min-w-0">
-                                <h4 className="text-[12px] font-black text-gray-900 truncate">{h.headName}</h4>
-                                <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
-                                  <span className="text-[8px] font-bold text-gray-400 bg-gray-50 px-1.5 py-0.5 rounded-md">{h.uid}</span>
-                                  {h.houseNumber && <span className="text-[8px] font-bold text-blue-500 bg-blue-50 px-1.5 py-0.5 rounded-md">#{h.houseNumber}</span>}
-                                  {h.ward && <span className="text-[8px] font-bold text-green-600 bg-green-50 px-1.5 py-0.5 rounded-md uppercase">{h.ward}</span>}
+                        });
+                        return (
+                          <>
+                            {filteredHouseholds
+                              .slice(0, householdDetailsLimit)
+                              .map((h) => (
+                              <div
+                                key={h.id}
+                                className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden flex active:scale-[0.98] transition-transform cursor-pointer"
+                                onClick={() => { setViewingHousehold(h); setShowHouseholdDetails(true); }}
+                              >
+                                <div className="w-1 flex-shrink-0 bg-green-500" />
+                                <div className="flex-1 flex items-center justify-between p-3 min-w-0">
+                                  <div className="min-w-0">
+                                    <h4 className="text-[12px] font-black text-gray-900 truncate">{h.headName}</h4>
+                                    <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
+                                      <span className="text-[8px] font-bold text-gray-400 bg-gray-50 px-1.5 py-0.5 rounded-md">{h.uid}</span>
+                                      {h.houseNumber && <span className="text-[8px] font-bold text-blue-500 bg-blue-50 px-1.5 py-0.5 rounded-md">#{h.houseNumber}</span>}
+                                      {h.ward && <span className="text-[8px] font-bold text-green-600 bg-green-50 px-1.5 py-0.5 rounded-md uppercase">{h.ward}</span>}
+                                    </div>
+                                  </div>
+                                  <ChevronRight className="h-4 w-4 text-gray-300 flex-shrink-0 ml-2" />
                                 </div>
                               </div>
-                              <ChevronRight className="h-4 w-4 text-gray-300 flex-shrink-0 ml-2" />
-                            </div>
-                          </div>
-                        ))}
-                      {households.filter(h => {
-                        const search = householdSearch.toLowerCase();
-                        return h.headName.toLowerCase().includes(search) || h.uid.toLowerCase().includes(search) || (h.houseNumber && h.houseNumber.toLowerCase().includes(search)) || (h.phone && h.phone.toLowerCase().includes(search));
-                      }).length === 0 && (
-                          <div className="text-center py-12">
-                            <Package className="h-10 w-10 text-gray-200 mx-auto mb-3" />
-                            <p className="text-[11px] font-bold text-gray-400 uppercase tracking-widest">No households found</p>
-                          </div>
-                        )}
+                            ))}
+                            {filteredHouseholds.length > householdDetailsLimit && (
+                              <div className="p-4 text-center">
+                                <Button
+                                  variant="ghost"
+                                  className="w-full h-12 rounded-2xl bg-gray-50 text-gray-500 font-bold text-xs uppercase tracking-widest hover:bg-gray-100 active:scale-[0.98] transition-all"
+                                  onClick={() => setHouseholdDetailsLimit(prev => prev + 25)}
+                                >
+                                  View More ({filteredHouseholds.length - householdDetailsLimit} remaining)
+                                  <ChevronRight className="h-4 w-4 ml-2" />
+                                </Button>
+                              </div>
+                            )}
+                            {filteredHouseholds.length === 0 && (
+                              <div className="text-center py-12">
+                                <Package className="h-10 w-10 text-gray-200 mx-auto mb-3" />
+                                <p className="text-[11px] font-bold text-gray-400 uppercase tracking-widest">No {label.householdPlural.toLowerCase()} found</p>
+                              </div>
+                            )}
+                          </>
+                        );
+                      })()}
                     </div>
                     <p className="text-[9px] font-bold text-gray-300 uppercase tracking-widest text-center">
-                      {households.length} households
+                      {households.length} {label.householdPlural.toLowerCase()}
                     </p>
                   </div>
                 )}
@@ -4436,13 +4542,35 @@ export default function ManagerDashboard() {
                       <h2 className="text-sm font-black uppercase tracking-tight text-gray-900">Generate QR Codes</h2>
                     </div>
                     <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 space-y-4">
+                      {/* Limit progress bar */}
+                      {qrStats && (
+                        <div className="space-y-2">
+                          <div className="flex items-center justify-between">
+                            <span className="text-[10px] font-black text-gray-500 uppercase tracking-wider">{qrStats.total} / {qrStats.max} QR Codes Used</span>
+                            <span className="text-[10px] font-bold text-gray-400">{qrStats.remaining} remaining</span>
+                          </div>
+                          <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+                            <div
+                              className={`h-full rounded-full transition-all duration-500 ${
+                                qrStats.remaining === 0 ? 'bg-red-500' : qrStats.total / qrStats.max > 0.8 ? 'bg-amber-500' : 'bg-green-500'
+                              }`}
+                              style={{ width: `${Math.min(100, (qrStats.total / Math.max(1, qrStats.max)) * 100)}%` }}
+                            />
+                          </div>
+                          {qrStats.remaining === 0 && (
+                            <p className="text-[10px] font-bold text-red-500">
+                              Limit reached. Contact support@greenpathindia.in to increase.
+                            </p>
+                          )}
+                        </div>
+                      )}
                       <div>
                         <label className="text-[10px] font-black text-gray-500 uppercase tracking-wider mb-1.5 block">Number of QR Codes</label>
                         <Input
                           id="batch-quantity-hh"
                           type="number"
                           min={1}
-                          max={100}
+                          max={qrStats?.remaining || 100}
                           value={batchQuantity}
                           onChange={(e) => setBatchQuantity(parseInt(e.target.value) || 10)}
                           data-testid="input-batch-quantity-households"
@@ -4451,12 +4579,12 @@ export default function ManagerDashboard() {
                       </div>
                       <button
                         onClick={() => generateBatchQRMutation.mutate(batchQuantity)}
-                        disabled={generateBatchQRMutation.isPending || batchQuantity < 1}
+                        disabled={generateBatchQRMutation.isPending || batchQuantity < 1 || (qrStats?.remaining === 0)}
                         data-testid="button-generate-batch-households"
                         className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-green-600 hover:bg-green-700 disabled:opacity-50 text-white text-[11px] font-bold uppercase tracking-wider shadow-md active:scale-95 transition-all"
                       >
                         <QrCode className="h-4 w-4" />
-                        {generateBatchQRMutation.isPending ? t('manager.generatingPdf') : "Generate Batch"}
+                        {generateBatchQRMutation.isPending ? tt('manager.generatingPdf') : "Generate Batch"}
                       </button>
                     </div>
                   </div>
@@ -4477,37 +4605,83 @@ export default function ManagerDashboard() {
                         <p className="text-[11px] font-bold text-gray-400 uppercase tracking-widest">No QR codes generated yet</p>
                       </div>
                     ) : (
-                      Object.entries(
-                        batchQRCodes.reduce((acc: any, qr: any) => {
-                          if (!acc[qr.batchId]) acc[qr.batchId] = { total: 0, mapped: 0, notMapped: 0 };
-                          acc[qr.batchId].total++;
-                          if (qr.status === 'mapped') acc[qr.batchId].mapped++;
-                          else acc[qr.batchId].notMapped++;
-                          return acc;
-                        }, {})
-                      ).map(([batchId, stats]: [string, any]) => (
-                        <div key={batchId} className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden flex" data-testid={`row-batch-households-${batchId}`}>
-                          <div className="w-1 flex-shrink-0 bg-blue-500" />
-                          <div className="flex-1 flex items-center justify-between p-3 min-w-0">
-                            <div className="min-w-0">
-                              <h4 className="text-[11px] font-black text-gray-900 truncate">{batchId}</h4>
-                              <div className="flex items-center gap-1.5 mt-0.5">
-                                <span className="text-[8px] font-bold text-gray-500 bg-gray-50 px-1.5 py-0.5 rounded-md">{stats.total} total</span>
-                                <span className="text-[8px] font-bold text-green-600 bg-green-50 px-1.5 py-0.5 rounded-md">{stats.mapped} mapped</span>
-                                <span className="text-[8px] font-bold text-amber-600 bg-amber-50 px-1.5 py-0.5 rounded-md">{stats.notMapped} unmapped</span>
+                      <>
+                        {Object.entries(
+                          batchQRCodes.reduce((acc: any, qr: any) => {
+                            if (!acc[qr.batchId]) acc[qr.batchId] = { total: 0, mapped: 0, notMapped: 0 };
+                            acc[qr.batchId].total++;
+                            if (qr.status === 'mapped') acc[qr.batchId].mapped++;
+                            else acc[qr.batchId].notMapped++;
+                            return acc;
+                          }, {})
+                        ).map(([batchId, stats]: [string, any]) => (
+                          <div key={batchId} className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden" data-testid={`row-batch-households-${batchId}`}>
+                            <div className="flex">
+                              <div className="w-1 flex-shrink-0 bg-blue-500" />
+                              <div className="flex-1 flex items-center justify-between p-3 min-w-0">
+                                <div className="min-w-0">
+                                  <h4 className="text-[11px] font-black text-gray-900 truncate">{batchId}</h4>
+                                  <div className="flex items-center gap-1.5 mt-0.5">
+                                    <span className="text-[8px] font-bold text-gray-500 bg-gray-50 px-1.5 py-0.5 rounded-md">{stats.total} total</span>
+                                    <span className="text-[8px] font-bold text-green-600 bg-green-50 px-1.5 py-0.5 rounded-md">{stats.mapped} mapped</span>
+                                    <span className="text-[8px] font-bold text-amber-600 bg-amber-50 px-1.5 py-0.5 rounded-md">{stats.notMapped} unmapped</span>
+                                  </div>
+                                </div>
+                                <button
+                                  onClick={() => setDownloadDialogBatch(batchId)}
+                                  data-testid={`button-download-batch-households-${batchId}`}
+                                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-green-600 hover:bg-green-700 text-white text-[9px] font-bold uppercase tracking-wider shadow-sm active:scale-95 transition-all flex-shrink-0 ml-2"
+                                >
+                                  <Download className="h-3 w-3" />
+                                  PDF
+                                </button>
                               </div>
                             </div>
+                            {/* Download dialog for this batch */}
+                            {downloadDialogBatch === batchId && (
+                              <div className="border-t border-gray-100 p-3 bg-gray-50 space-y-2">
+                                <p className="text-[10px] font-bold text-gray-600 text-center">Download QR Cards</p>
+                                <div className="flex gap-2">
+                                  <button
+                                    onClick={() => { window.open(`/api/qr-codes/batch/${batchId}/pdf`, '_blank'); setDownloadDialogBatch(null); }}
+                                    className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 text-[9px] font-bold uppercase tracking-wider active:scale-95 transition-all"
+                                  >
+                                    <Download className="h-3 w-3" />
+                                    All ({stats.total})
+                                  </button>
+                                  <button
+                                    onClick={() => { window.open(`/api/qr-codes/batch/${batchId}/unmapped-pdf`, '_blank'); setDownloadDialogBatch(null); }}
+                                    disabled={stats.notMapped === 0}
+                                    className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl bg-green-600 hover:bg-green-700 disabled:opacity-50 text-white text-[9px] font-bold uppercase tracking-wider active:scale-95 transition-all"
+                                  >
+                                    <Download className="h-3 w-3" />
+                                    Unmapped ({stats.notMapped})
+                                  </button>
+                                </div>
+                                <button
+                                  onClick={() => setDownloadDialogBatch(null)}
+                                  className="w-full text-[9px] font-bold text-gray-400 uppercase tracking-wider py-1"
+                                >
+                                  Cancel
+                                </button>
+                              </div>
+                            )}
+                          </div>
+                        ))}
+
+                        {/* Sticky: Download All Unmapped across all batches */}
+                        {qrStats && qrStats.unmapped > 0 && (
+                          <div className="sticky bottom-0 pt-2 pb-2 bg-gradient-to-t from-gray-50 to-transparent">
                             <button
-                              onClick={() => window.open(`/api/qr-codes/batch/${batchId}/pdf`, '_blank')}
-                              data-testid={`button-download-batch-households-${batchId}`}
-                              className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-green-600 hover:bg-green-700 text-white text-[9px] font-bold uppercase tracking-wider shadow-sm active:scale-95 transition-all flex-shrink-0 ml-2"
+                              onClick={() => window.open('/api/qr-codes/unmapped/pdf', '_blank')}
+                              className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white text-[11px] font-bold uppercase tracking-wider shadow-lg active:scale-95 transition-all"
                             >
-                              <Download className="h-3 w-3" />
-                              PDF
+                              <Download className="h-4 w-4" />
+                              Download All Unmapped QR Codes ({qrStats.unmapped})
                             </button>
                           </div>
-                        </div>
-                      ))
+                        )}
+                      </>
                     )}
                   </div>
                 )}
@@ -4645,7 +4819,7 @@ export default function ManagerDashboard() {
                                 id="fw-name"
                                 value={newFieldWorkerName}
                                 onChange={(e) => setNewFieldWorkerName(e.target.value)}
-                                placeholder={t("staff.fullName")}
+                                placeholder={tt("staff.fullName")}
                                 data-testid="input-fieldworker-name"
                                 className="rounded-xl border-gray-200 h-10 text-sm"
                               />
@@ -4656,7 +4830,7 @@ export default function ManagerDashboard() {
                                 id="fw-phone"
                                 value={newFieldWorkerPhone}
                                 onChange={(e) => setNewFieldWorkerPhone(e.target.value)}
-                                placeholder={t("staff.mobileNumber")}
+                                placeholder={tt("staff.mobileNumber")}
                                 data-testid="input-fieldworker-phone"
                                 className="rounded-xl border-gray-200 h-10 text-sm"
                               />
@@ -4667,7 +4841,7 @@ export default function ManagerDashboard() {
                               className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-green-600 hover:bg-green-700 disabled:opacity-50 text-white text-[11px] font-bold uppercase tracking-wider shadow-md active:scale-95 transition-all"
                               data-testid="button-submit-fieldworker"
                             >
-                              {createFieldWorkerMutation.isPending ? t('manager.creating') : "Create Field Worker"}
+                              {createFieldWorkerMutation.isPending ? tt('manager.creating') : "Create Field Worker"}
                             </button>
                           </div>
                         </DialogContent>
@@ -4728,7 +4902,7 @@ export default function ManagerDashboard() {
                         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 space-y-3">
                           <label className="text-[10px] font-black text-gray-500 uppercase tracking-wider block">New Announcement</label>
                           <Textarea
-                            placeholder={t("manager.typeAnnouncement")}
+                            placeholder={tt("manager.typeAnnouncement")}
                             className="min-h-[80px] rounded-xl border-gray-200 text-sm"
                             id="announcement-message"
                             value={announcementMessage}
@@ -4736,12 +4910,12 @@ export default function ManagerDashboard() {
                           />
                           <Select value={announcementTarget} onValueChange={setAnnouncementTarget}>
                             <SelectTrigger className="rounded-xl border-gray-200 h-10 text-sm">
-                              <SelectValue placeholder={t("manager.selectAudience")} />
+                              <SelectValue placeholder={tt("manager.selectAudience")} />
                             </SelectTrigger>
                             <SelectContent>
-                              <SelectItem value="all">{t('app.all')}</SelectItem>
-                              <SelectItem value="collectors">{t('manager.collectors')}</SelectItem>
-                              <SelectItem value="generators">{t('manager.households')}</SelectItem>
+                              <SelectItem value="all">{tt('app.all')}</SelectItem>
+                              <SelectItem value="collectors">{tt('manager.collectors')}</SelectItem>
+                              <SelectItem value="generators">{tt('manager.households')}</SelectItem>
                             </SelectContent>
                           </Select>
                           <Button
@@ -4785,7 +4959,7 @@ export default function ManagerDashboard() {
                             ))
                           ) : (
                             <div className="text-center py-12">
-                              <p className="text-[11px] font-bold text-gray-400 uppercase tracking-widest">{t("announcements.checkLater")}</p>
+                              <p className="text-[11px] font-bold text-gray-400 uppercase tracking-widest">{tt("announcements.checkLater")}</p>
                             </div>
                           )}
                         </div>
@@ -4842,7 +5016,7 @@ export default function ManagerDashboard() {
                     {showVehicleForm && (
                       <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 space-y-3">
                         <label className="text-[10px] font-black text-gray-500 uppercase tracking-wider block">
-                          {editingVehicle ? t('manager.editVehicle') : "Add New Vehicle"}
+                          {editingVehicle ? tt('manager.editVehicle') : "Add New Vehicle"}
                         </label>
                         <div>
                           <label className="text-[10px] font-black text-gray-400 uppercase tracking-wider mb-1 block">Registration Number *</label>
@@ -4911,7 +5085,7 @@ export default function ManagerDashboard() {
                             }}
                             className="flex-1 px-4 py-2.5 rounded-xl bg-green-600 hover:bg-green-700 disabled:opacity-50 text-white text-[11px] font-bold uppercase tracking-wider shadow-sm active:scale-95 transition-all"
                           >
-                            {(addVehicleMutation.isPending || updateVehicleMutation.isPending) ? t('app.saving') : (editingVehicle ? "Update" : "Add Vehicle")}
+                            {(addVehicleMutation.isPending || updateVehicleMutation.isPending) ? tt('app.saving') : (editingVehicle ? "Update" : "Add Vehicle")}
                           </button>
                         </div>
                       </div>
@@ -5022,21 +5196,21 @@ export default function ManagerDashboard() {
                       <button onClick={() => setActiveMoreScreen(null)} className="p-1.5 rounded-full hover:bg-gray-100">
                         <ArrowLeft className="h-5 w-5 text-gray-600" />
                       </button>
-                      <h2 className="text-sm font-black uppercase tracking-tight text-gray-900">Village Settings</h2>
+                      <h2 className="text-sm font-black uppercase tracking-tight text-gray-900">{tt('manager.villageSettings')}</h2>
                     </div>
 
                     <div className="bg-white rounded-2xl ring-1 ring-black/5 shadow-sm overflow-hidden">
                       {/* Village name */}
                       <div className="px-4 py-3 border-b border-gray-100">
-                        <p className="text-[10px] uppercase tracking-widest text-gray-400 font-bold">{t('navigation.villages')}</p>
-                        <p className="text-sm font-bold text-gray-900 mt-0.5">{villageData?.name || t('app.loading')}</p>
+                        <p className="text-[10px] uppercase tracking-widest text-gray-400 font-bold">{tt('navigation.villages')}</p>
+                        <p className="text-sm font-bold text-gray-900 mt-0.5">{villageData?.name || tt('app.loading')}</p>
                         <p className="text-xs text-gray-500">{user?.villageId}</p>
                       </div>
 
                       {/* Weight Required Toggle */}
                       <div className="px-4 py-4 border-b border-gray-100 flex items-center justify-between">
                         <div className="flex-1 min-w-0 pr-4">
-                          <p className="font-semibold text-gray-900 text-sm">⚖️ Household Weight Entry</p>
+                          <p className="font-semibold text-gray-900 text-sm">⚖️ {label.household} Weight Entry</p>
                           <p className="text-xs text-gray-400 mt-0.5">When enabled, collectors must enter estimated waste weight (kg) during each collection</p>
                         </div>
                         <button
@@ -5295,6 +5469,7 @@ export default function ManagerDashboard() {
                   <HouseholdPerformance
                     onBack={() => setActiveMoreScreen(null)}
                     villageId={user?.villageId || ""}
+                    unitType={villageData?.unitType}
                   />
                 )}
 
@@ -5326,7 +5501,7 @@ export default function ManagerDashboard() {
                   <StaffScreen
                     onBack={() => setActiveMoreScreen(null)}
                     staffType="helper"
-                    title={t('manager.helpers')}
+                    title={tt('manager.helpers')}
                   />
                 )}
 
@@ -5335,7 +5510,7 @@ export default function ManagerDashboard() {
                   <StaffScreen
                     onBack={() => setActiveMoreScreen(null)}
                     staffType="segregator"
-                    title={t('manager.segregators')}
+                    title={tt('manager.segregators')}
                   />
                 )}
 
@@ -5366,9 +5541,9 @@ export default function ManagerDashboard() {
                 const filteredIssues = allIssues.filter(issue => filters.status === "all" || issue.status === filters.status);
 
                 const statusConfig: Record<string, { dot: string; bg: string; text: string; border: string; label: string }> = {
-                  open: { dot: 'bg-red-500', bg: 'bg-red-50', text: 'text-red-700', border: 'border-red-200', label: t('manager.open') },
-                  in_progress: { dot: 'bg-amber-500', bg: 'bg-amber-50', text: 'text-amber-700', border: 'border-amber-200', label: t('manager.inProgress') },
-                  resolved: { dot: 'bg-green-500', bg: 'bg-green-50', text: 'text-green-700', border: 'border-green-200', label: t('manager.resolved') },
+                  open: { dot: 'bg-red-500', bg: 'bg-red-50', text: 'text-red-700', border: 'border-red-200', label: tt('manager.open') },
+                  in_progress: { dot: 'bg-amber-500', bg: 'bg-amber-50', text: 'text-amber-700', border: 'border-amber-200', label: tt('manager.inProgress') },
+                  resolved: { dot: 'bg-green-500', bg: 'bg-green-50', text: 'text-green-700', border: 'border-green-200', label: tt('manager.resolved') },
                 };
 
                 const stripColor = (s: string) => s === 'open' ? 'bg-red-500' : s === 'in_progress' ? 'bg-amber-400' : 'bg-green-500';
@@ -5378,10 +5553,10 @@ export default function ManagerDashboard() {
                     {/* Status Filter Pills */}
                     <div className="flex items-center gap-2 overflow-x-auto pb-1 px-1 -mx-1">
                       {[
-                        { key: 'all', label: t('app.all'), count: allIssues.length, dot: 'bg-gray-400' },
-                        { key: 'open', label: t('manager.open'), count: openCount, dot: 'bg-red-500' },
-                        { key: 'in_progress', label: t('manager.inProgress'), count: progressCount, dot: 'bg-amber-500' },
-                        { key: 'resolved', label: t('manager.resolved'), count: resolvedCount, dot: 'bg-green-500' },
+                        { key: 'all', label: tt('app.all'), count: allIssues.length, dot: 'bg-gray-400' },
+                        { key: 'open', label: tt('manager.open'), count: openCount, dot: 'bg-red-500' },
+                        { key: 'in_progress', label: tt('manager.inProgress'), count: progressCount, dot: 'bg-amber-500' },
+                        { key: 'resolved', label: tt('manager.resolved'), count: resolvedCount, dot: 'bg-green-500' },
                       ].map(pill => (
                         <button
                           key={pill.key}
@@ -5490,7 +5665,7 @@ export default function ManagerDashboard() {
                           className="text-[10px] font-black uppercase tracking-widest text-gray-400 hover:text-gray-600 transition-colors py-2 px-4"
                           data-testid="button-load-more-issues"
                         >
-                          {isFetchingNextIssuesPage ? t('app.loading') : `${t('app.viewAll')} · ${totalIssuesCount - allIssues.length} ${t('manager.remaining')}`}
+                          {isFetchingNextIssuesPage ? tt('app.loading') : `${tt('app.viewAll')} · ${totalIssuesCount - allIssues.length} ${tt('manager.remaining')}`}
                         </button>
                       </div>
                     )}
@@ -5510,9 +5685,10 @@ export default function ManagerDashboard() {
                 updateFilter={updateFilter}
                 reportData={reportData}
                 isLoading={isReportLoading}
-                villageName={villageData?.name || t('navigation.villages')}
+                villageName={villageData?.name || tt('navigation.villages')}
                 villageId={user?.villageId || ""}
-                managerName={user?.name || t('roles.manager')}
+                managerName={user?.name || tt('roles.manager')}
+                unitType={villageData?.unitType}
               />
             )}
 
@@ -5556,7 +5732,7 @@ export default function ManagerDashboard() {
       < Dialog open={showPasswordDialog} onOpenChange={setShowPasswordDialog} >
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>{t("app.changePassword")}</DialogTitle>
+            <DialogTitle>{tt("app.changePassword")}</DialogTitle>
           </DialogHeader>
           <form
             onSubmit={(e) => {
@@ -5568,7 +5744,7 @@ export default function ManagerDashboard() {
               const confirmPassword = formData.get("confirmPassword") as string;
 
               if (newPassword !== confirmPassword) {
-                toast({ title: t("validation.passwordsDoNotMatch"), variant: "destructive" });
+                toast({ title: tt("validation.passwordsDoNotMatch"), variant: "destructive" });
                 return;
               }
               changePasswordMutation.mutate({ currentPassword, newPassword });
@@ -5576,19 +5752,19 @@ export default function ManagerDashboard() {
             className="space-y-4"
           >
             <div>
-              <Label htmlFor="currentPassword">{t("profile.currentPassword")}</Label>
+              <Label htmlFor="currentPassword">{tt("profile.currentPassword")}</Label>
               <Input id="currentPassword" name="currentPassword" type="password" required />
             </div>
             <div>
-              <Label htmlFor="newPassword">{t("profile.newPassword")}</Label>
+              <Label htmlFor="newPassword">{tt("profile.newPassword")}</Label>
               <Input id="newPassword" name="newPassword" type="password" required />
             </div>
             <div>
-              <Label htmlFor="confirmPassword">{t("profile.confirmPassword")}</Label>
+              <Label htmlFor="confirmPassword">{tt("profile.confirmPassword")}</Label>
               <Input id="confirmPassword" name="confirmPassword" type="password" required />
             </div>
             <Button type="submit" disabled={changePasswordMutation.isPending}>
-              {changePasswordMutation.isPending ? t("app.changing") : t("app.changePassword")}
+              {changePasswordMutation.isPending ? tt("app.changing") : tt("app.changePassword")}
             </Button>
           </form>
         </DialogContent>
@@ -5619,8 +5795,8 @@ export default function ManagerDashboard() {
 
                 if ((status === 'in_progress' || status === 'resolved') && !proofPhotoFile) {
                   toast({
-                    title: t('app.error'),
-                    description: t('manager.proofPhotoDesc'),
+                    title: tt('app.error'),
+                    description: tt('manager.proofPhotoDesc'),
                     variant: "destructive"
                   });
                   return;
@@ -5674,7 +5850,7 @@ export default function ManagerDashboard() {
                 <Textarea
                   name="managerReply"
                   defaultValue={selectedIssue.managerReply || ""}
-                  placeholder={t("manager.addResponse")}
+                  placeholder={tt("manager.addResponse")}
                   rows={7}
                   className="rounded-xl border-gray-200 resize-none text-sm"
                 />
@@ -5709,7 +5885,7 @@ export default function ManagerDashboard() {
               {/* Submit */}
               <div className="pt-2">
                 <Button type="submit" disabled={updateIssueMutation.isPending} className="w-full rounded-xl h-11 text-xs font-bold bg-green-600 hover:bg-green-700 text-white">
-                  {updateIssueMutation.isPending ? t('manager.updating') : "Update Issue"}
+                  {updateIssueMutation.isPending ? tt('manager.updating') : "Update Issue"}
                 </Button>
               </div>
             </form>
@@ -5721,17 +5897,17 @@ export default function ManagerDashboard() {
       < Dialog open={showWardForm} onOpenChange={setShowWardForm} >
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
-            <DialogTitle>{t('villages.addWard')}</DialogTitle>
+            <DialogTitle>{tt('villages.addWard')}</DialogTitle>
           </DialogHeader>
           <form
             onSubmit={(e) => {
               e.preventDefault();
               if (!newWard.trim()) {
-                toast({ title: t('app.error'), variant: "destructive" });
+                toast({ title: tt('app.error'), variant: "destructive" });
                 return;
               }
               if (wards.includes(newWard.trim())) {
-                toast({ title: t('app.error'), variant: "destructive" });
+                toast({ title: tt('app.error'), variant: "destructive" });
                 return;
               }
               addWardMutation.mutate(newWard.trim());
@@ -5739,12 +5915,12 @@ export default function ManagerDashboard() {
             className="space-y-4"
           >
             <div>
-              <Label htmlFor="ward-name">{t('villages.wardName')} *</Label>
+              <Label htmlFor="ward-name">{tt('villages.wardName')} *</Label>
               <Input
                 id="ward-name"
                 value={newWard}
                 onChange={(e) => setNewWard(e.target.value)}
-                placeholder={t("villages.wardName")}
+                placeholder={tt("villages.wardName")}
                 required
               />
             </div>
@@ -5765,7 +5941,7 @@ export default function ManagerDashboard() {
                 className="flex-1"
                 disabled={addWardMutation.isPending}
               >
-                {addWardMutation.isPending ? t('manager.adding') : "Add Ward"}
+                {addWardMutation.isPending ? tt('manager.adding') : "Add Ward"}
               </Button>
             </div>
           </form>
@@ -5779,7 +5955,7 @@ export default function ManagerDashboard() {
         >
           <div className="flex flex-col h-full bg-background">
             <header className="px-4 border-b flex items-center justify-between bg-green-50 min-h-[50px] sticky top-0 z-10">
-              <h1 className="text-sm font-black uppercase tracking-tight text-gray-900">Household Details</h1>
+              <h1 className="text-sm font-black uppercase tracking-tight text-gray-900">{tt('manager.householdDetails')}</h1>
               <button onClick={() => setShowHouseholdDetails(false)} className="p-2 rounded-full hover:bg-white/50 transition-colors">
                 <X className="h-5 w-5 text-gray-600" />
               </button>
@@ -5790,12 +5966,12 @@ export default function ManagerDashboard() {
                 <div className="grid gap-2 md:grid-cols-2">
                   <div className="space-y-1">
                     <section>
-                      <Label className="text-muted-foreground">Household UID</Label>
+                      <Label className="text-muted-foreground">{label.household} UID</Label>
                       <p className="text-md font-mono font-bold">{`GEN-${viewingHousehold.uid}`}</p>
                     </section>
 
                     <section>
-                      <Label className="text-muted-foreground">Head Name</Label>
+                      <Label className="text-muted-foreground">{label.headName}</Label>
                       <p className="text-md font-semibold">{viewingHousehold.headName}</p>
                     </section>
 
@@ -5818,7 +5994,7 @@ export default function ManagerDashboard() {
                     </section>
 
                     <section>
-                      <Label className="text-muted-foreground">House Number</Label>
+                      <Label className="text-muted-foreground">{label.houseNumber}</Label>
                       <p className="text-md">{viewingHousehold.houseNumber || "N/A"}</p>
                     </section>
 
@@ -5839,7 +6015,7 @@ export default function ManagerDashboard() {
                       <div className="bg-white rounded-xl shadow-sm">
                         <img
                           src={`/api/qr-codes/${viewingHousehold.uid}/image`}
-                          alt={t('generator.qrCode')}
+                          alt={tt('generator.qrCode')}
                           className="w-48 h-48 object-contain"
                         />
                       </div>
@@ -5862,7 +6038,7 @@ export default function ManagerDashboard() {
                         }}
                       >
                         <Trash2 className="mr-2 h-5 w-5" />
-                        Delete Household
+                        Delete {label.household}
                       </Button>
                     </>
                   </div>
@@ -5876,7 +6052,7 @@ export default function ManagerDashboard() {
       < Dialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm} >
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>{t('app.delete')}</DialogTitle>
+            <DialogTitle>{tt('app.delete')}</DialogTitle>
             <DialogDescription>
               Are you sure you want to delete this household? This action cannot be undone.
               {(() => {
@@ -5890,7 +6066,7 @@ export default function ManagerDashboard() {
                     <div className="mt-4 p-3 bg-destructive/10 text-destructive rounded-lg border border-destructive/20">
                       <p className="font-semibold">Collection History:</p>
                       <ul className="list-disc list-inside text-sm mt-1">
-                        <li>{t('manager.totalCollections')}: {hhCollections.length}</li>
+                        <li>{tt('manager.totalCollections')}: {hhCollections.length}</li>
                         <li>Last collection: {new Date(lastCollection.collectionDate).toLocaleDateString()}</li>
                       </ul>
                       <p className="text-xs mt-2 italic text-destructive/80">
@@ -5904,13 +6080,13 @@ export default function ManagerDashboard() {
             </DialogDescription>
           </DialogHeader>
           <div className="flex gap-2 justify-end mt-4">
-            <Button variant="outline" onClick={() => setShowDeleteConfirm(false)}>{t('app.cancel')}</Button>
+            <Button variant="outline" onClick={() => setShowDeleteConfirm(false)}>{tt('app.cancel')}</Button>
             <Button
               variant="destructive"
               onClick={() => deletingHousehold && deleteHouseholdMutation.mutate(deletingHousehold.id)}
               disabled={deleteHouseholdMutation.isPending}
             >
-              {deleteHouseholdMutation.isPending ? t('manager.deleting') : "Confirm Delete"}
+              {deleteHouseholdMutation.isPending ? tt('manager.deleting') : "Confirm Delete"}
             </Button>
           </div>
         </DialogContent>

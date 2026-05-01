@@ -44,8 +44,8 @@ export default function HomePage() {
   const [, setLocation] = useLocation();
 
   useSEO({
-    title: "GreenPath - Waste Collection Management Platform",
-    description: "Digital waste management for communities. QR-based household tracking, offline-first collection, real-time analytics, and governance - from doorstep to processing.",
+    title: "GreenPath - Digital Waste Governance Platform",
+    description: "Digital waste governance for villages, apartments, municipalities, and campuses. QR-based tracking, offline-first collection, real-time analytics - from doorstep to processing.",
     path: "/",
   });
 
@@ -90,7 +90,7 @@ export default function HomePage() {
                   Build transparency across managers, collectors, and citizens.
                 </p> */}
                 <p className="text-lg md:text-xl text-slate-600 leading-relaxed mb-8 max-w-xl">
-                  GreenPath introduced household-level digital traceability into decentralized waste workflows, enabling supervisors to identify service gaps and drive accountability-based follow-ups.
+                  GreenPath introduced household-level digital traceability into decentralized waste workflows, enabling supervisors to identify service gaps and drive accountability-based follow-ups. Built for villages, apartments, municipalities, and campuses.
                 </p>
               </AnimateOnScroll>
 
@@ -476,7 +476,7 @@ export default function HomePage() {
               {/* <StatsCounter value={95} suffix="%" label="Source Segregation" dark /> */}
               <div className="text-center"><div className="text-3xl font-extrabold text-white mb-2">Improved</div><div className="text-sm text-slate-400">Segregation Discipline</div></div>
               <StatsCounter value={3} suffix="+" label="Active Deployments" dark />
-              <StatsCounter value={8} suffix="+" label="Panchayats Expanding" dark />
+              <StatsCounter value={8} suffix="+" label="Deployments Expanding" dark />
             </div>
           </AnimateOnScroll>
 
@@ -621,9 +621,9 @@ export default function HomePage() {
               </AnimateOnScroll>
             ))} */}
             {[
-              { val: "3+", label: "Village-level operational deployments", subtext: "Active use of digital household tracking and monitoring workflows" },
-              { val: "8+", label: "Emerging municipal pilot discussions", subtext: "Exploratory engagements and readiness assessments for digital workflow adoption" },
-              { val: "2", label: "Apartment community implementations in preparation", subtext: "Structured onboarding of residential waste collection monitoring systems" },
+              { val: "3+", label: "Community-level operational deployments", subtext: "Active use of digital household tracking and monitoring workflows" },
+              { val: "8+", label: "Emerging pilot discussions", subtext: "Exploratory engagements and readiness assessments for digital workflow adoption" },
+              { val: "2", label: "Community implementations in preparation", subtext: "Structured onboarding of residential waste collection monitoring systems" },
               { val: "1", label: "Unified digital platform architecture", subtext: "Single scalable system designed to support multi-location governance and reporting" },
             ].map((item, i) => (
               <AnimateOnScroll key={item.label} delay={i * 100}>

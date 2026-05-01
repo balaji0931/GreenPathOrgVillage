@@ -10,9 +10,9 @@ export function registerVillageRoutes(app: Express, requireAuth: any, requireRol
   // Village routes
   app.post('/api/villages', requireAuth, requireRole(['admin']), async (req, res) => {
     try {
-      const { villageName, managerName, managerPhone, paymentsEnabled } = req.body;
+      const { villageName, managerName, managerPhone, paymentsEnabled, unitType, maxHouseholds } = req.body;
 
-      const result = await createVillageWithManager({ villageName, managerName, managerPhone, paymentsEnabled });
+      const result = await createVillageWithManager({ villageName, managerName, managerPhone, paymentsEnabled, unitType, maxHouseholds });
 
       logAction(result.village?.villageId, req.session.userId!, 'created', 'village', result.village?.villageId, {
         villageName,

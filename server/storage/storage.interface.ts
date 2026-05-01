@@ -146,6 +146,8 @@ export interface IStorage {
     assignVillageToModerator(assignment: InsertModeratorVillageAssignment): Promise<ModeratorVillageAssignment>;
     removeVillageFromModerator(moderatorId: string, villageId: string): Promise<void>;
     getModeratorVillages(moderatorId: string): Promise<any[]>;
+    getModeratorOverviewStats(villageIds: string[], date: string): Promise<any>;
+    getVillageAttendanceDaily(villageId: string, date: string, workerType: string): Promise<any>;
 
     // Website feedback operations
     createWebsiteFeedback(feedback: InsertWebsiteFeedback): Promise<WebsiteFeedback>;
@@ -166,6 +168,9 @@ export interface IStorage {
     updateQRCodeStatus(uid: string, status: string, householdId?: number): Promise<QRCode>;
     getNextBatchId(villageId: string): Promise<string>;
     getNextQRCodeUid(villageId: string, count: number): Promise<string[]>;
+    getQRCodeCountByVillage(villageId: string): Promise<number>;
+    getUnmappedQRCodesByVillage(villageId: string): Promise<QRCode[]>;
+    getUnmappedQRCodesByBatch(batchId: string): Promise<QRCode[]>;
 
     // Field worker operations
     getFieldWorkersByVillage(villageId: string): Promise<any[]>;

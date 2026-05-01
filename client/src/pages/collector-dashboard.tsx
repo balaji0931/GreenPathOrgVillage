@@ -3,6 +3,7 @@ import * as React from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { translateEnum } from '../i18n/enumTranslations';
+import { useTerminology } from '@/hooks/useTerminology';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -178,6 +179,9 @@ export default function CollectorDashboard() {
     enabled: !!user?.villageId,
   });
 
+  // Derive terminology labels based on organization type
+  const { tt, label } = useTerminology(villageData?.unitType);
+
   // Fetch current shift state (for Shift tab)
   const { data: shiftState, refetch: refetchShiftState } = useQuery<any>({
     queryKey: ["/api/attendance/my-shift"],
@@ -203,7 +207,7 @@ export default function CollectorDashboard() {
       setShiftScanResult(result);
       refetchShiftState();
       toast({
-        title: result.eventType === 'shift_start' ? t('collector.shiftStarted') : t('collector.shiftEnded'),
+        title: result.eventType === 'shift_start' ? tt('collector.shiftStarted') : tt('collector.shiftEnded'),
         description: `Shift #${result.shiftNumber} ${result.eventType === 'shift_start' ? 'started' : 'ended'} at ${result.centerName} (${result.distance}m away)`,
       });
     },
@@ -213,12 +217,12 @@ export default function CollectorDashboard() {
           error: 'too_far',
           distance: error.distance,
           maxDistance: error.maxDistance,
-          message: t('collector.tooFarFromCenter'),
+          message: tt('collector.tooFarFromCenter'),
         });
       } else {
         toast({
-          title: t('app.error'),
-          description: t('app.error'),
+          title: tt('app.error'),
+          description: tt('app.error'),
           variant: "destructive",
         });
       }
@@ -243,8 +247,8 @@ export default function CollectorDashboard() {
 
       if (!qrToken) {
         toast({
-          title: t('app.error'),
-          description: t('app.error'),
+          title: tt('app.error'),
+          description: tt('app.error'),
           variant: "destructive",
         });
         return;
@@ -266,8 +270,8 @@ export default function CollectorDashboard() {
       });
     } catch (error: any) {
       toast({
-        title: t('app.error'),
-        description: t('app.error'),
+        title: tt('app.error'),
+        description: tt('app.error'),
         variant: "destructive",
       });
     }
@@ -347,7 +351,7 @@ export default function CollectorDashboard() {
         playTone(1318, 0.30, 0.35); // E6 - held slightly longer
       } catch (_) { }
 
-      toast({ title: '✅', description: t('collector.collectionRecorded') });
+      toast({ title: '✅', description: tt('collector.collectionRecorded') });
 
       // Invalidate queries (triggers automatic refetch)
       queryClient.invalidateQueries({ queryKey: ["/api/waste-collections"] });
@@ -359,15 +363,15 @@ export default function CollectorDashboard() {
       // Handle duplicate collection error (apiRequest throws Error with "409: ..." message)
       if (errorMsg.startsWith('409')) {
         toast({
-          title: t('app.error'),
-          description: t('collector.alreadyCollected'),
+          title: tt('app.error'),
+          description: tt('collector.alreadyCollected'),
           variant: "destructive",
         });
       } else {
         console.error('[Collection Submit Error]', errorMsg);
         toast({
-          title: t('app.error'),
-          description: t('collector.collectionFailed'),
+          title: tt('app.error'),
+          description: tt('collector.collectionFailed'),
           variant: "destructive",
         });
       }
@@ -382,8 +386,8 @@ export default function CollectorDashboard() {
     },
     onSuccess: () => {
       toast({
-        title: t('app.success'),
-        description: t('app.changePassword'),
+        title: tt('app.success'),
+        description: tt('app.changePassword'),
       });
       setShowPasswordModal(false);
       setNewPassword("");
@@ -391,8 +395,8 @@ export default function CollectorDashboard() {
     },
     onError: (_error: unknown) => {
       toast({
-        title: t('app.error'),
-        description: t('collector.changePasswordError'),
+        title: tt('app.error'),
+        description: tt('collector.changePasswordError'),
         variant: "destructive",
       });
     },
@@ -426,8 +430,8 @@ export default function CollectorDashboard() {
           photoUrl = uploadResult.url;
         } catch (uploadError) {
           toast({
-            title: t('app.error'),
-            description: t('app.error'),
+            title: tt('app.error'),
+            description: tt('app.error'),
             variant: "destructive",
           });
           photoUrl = null;
@@ -465,14 +469,14 @@ export default function CollectorDashboard() {
         photoFile: null,
       });
       toast({
-        title: t('app.success'),
-        description: t('collector.issueReportedSuccess'),
+        title: tt('app.success'),
+        description: tt('collector.issueReportedSuccess'),
       });
     },
     onError: (_error: unknown) => {
       toast({
-        title: t('app.error'),
-        description: t('collector.issueReportedError'),
+        title: tt('app.error'),
+        description: tt('collector.issueReportedError'),
         variant: "destructive",
       });
     },
@@ -538,8 +542,8 @@ export default function CollectorDashboard() {
       }
     } catch (error) {
       toast({
-        title: t('app.error'),
-        description: t('app.error'),
+        title: tt('app.error'),
+        description: tt('app.error'),
         variant: "destructive",
       });
     }
@@ -556,8 +560,8 @@ export default function CollectorDashboard() {
       setSelectedCollection(todaysCollection);
       setShowCollectionDetails(true);
       toast({
-        title: t('app.error'),
-        description: t('collector.alreadyCollected'),
+        title: tt('app.error'),
+        description: tt('collector.alreadyCollected'),
       });
     } else {
       setShowCollectionModal(true);
@@ -625,8 +629,8 @@ export default function CollectorDashboard() {
       setIsRecording(true);
     } catch (error) {
       toast({
-        title: t('app.error'),
-        description: t('app.error'),
+        title: tt('app.error'),
+        description: tt('app.error'),
         variant: "destructive",
       });
     }
@@ -689,8 +693,8 @@ export default function CollectorDashboard() {
     // Check for duplicate collection (both online and offline)
     if (await checkDuplicateCollection(scannedHousehold.uid)) {
       toast({
-        title: t('app.error'),
-        description: t('collector.alreadyCollected'),
+        title: tt('app.error'),
+        description: tt('collector.alreadyCollected'),
         variant: "destructive",
       });
       setIsSubmitLocked(false); // Unlock since we're not proceeding
@@ -774,8 +778,8 @@ export default function CollectorDashboard() {
         } catch (uploadError) {
           // If upload fails but we're online, store offline as fallback
           toast({
-            title: t('app.error'),
-            description: t('collector.collectionSavedOffline'),
+            title: tt('app.error'),
+            description: tt('collector.collectionSavedOffline'),
             variant: "default",
           });
           await handleOfflineSubmission(collectionData, snapshotPhotoFile, snapshotVoiceFile);
@@ -789,8 +793,8 @@ export default function CollectorDashboard() {
       setIsSubmitLocked(false);
     } catch (error) {
       toast({
-        title: t('app.error'),
-        description: t('app.error'),
+        title: tt('app.error'),
+        description: tt('app.error'),
         variant: "destructive",
       });
       setIsSubmitLocked(false);
@@ -847,15 +851,15 @@ export default function CollectorDashboard() {
           playTone(1318, 0.30, 0.35);
         } catch (_) { }
 
-        toast({ title: '✅', description: t('collector.collectionSavedOffline') });
+        toast({ title: '✅', description: tt('collector.collectionSavedOffline') });
         setRefreshTrigger(prev => prev + 1);
       } else {
         throw new Error(result.error || 'Failed to store offline');
       }
     } catch (error) {
       toast({
-        title: t('app.error'),
-        description: t('app.error'),
+        title: tt('app.error'),
+        description: tt('app.error'),
         variant: "destructive",
       });
     }
@@ -864,8 +868,8 @@ export default function CollectorDashboard() {
   const handleChangePassword = () => {
     if (newPassword !== confirmPassword) {
       toast({
-        title: t('app.error'),
-        description: t('collector.passwordsMismatch'),
+        title: tt('app.error'),
+        description: tt('collector.passwordsMismatch'),
         variant: "destructive",
       });
       return;
@@ -873,8 +877,8 @@ export default function CollectorDashboard() {
 
     if (newPassword.length < 6) {
       toast({
-        title: t('app.error'),
-        description: t('collector.passwordTooShort'),
+        title: tt('app.error'),
+        description: tt('collector.passwordTooShort'),
         variant: "destructive",
       });
       return;
@@ -891,7 +895,7 @@ export default function CollectorDashboard() {
     // Validation
     if (!trimmedTitle || !newIssue.category || !trimmedDescription) {
       toast({
-        title: t('app.error'),
+        title: tt('app.error'),
         description:
           "Please fill in all required fields (Title, Category, Description)",
         variant: "destructive",
@@ -901,8 +905,8 @@ export default function CollectorDashboard() {
 
     if (trimmedTitle.length < 3) {
       toast({
-        title: t('app.error'),
-        description: t('app.minimumChars'),
+        title: tt('app.error'),
+        description: tt('app.minimumChars'),
         variant: "destructive",
       });
       return;
@@ -910,8 +914,8 @@ export default function CollectorDashboard() {
 
     if (trimmedDescription.length < 10) {
       toast({
-        title: t('app.error'),
-        description: t('app.minimum10Chars'),
+        title: tt('app.error'),
+        description: tt('app.minimum10Chars'),
         variant: "destructive",
       });
       return;
@@ -922,8 +926,8 @@ export default function CollectorDashboard() {
       const maxSize = 5 * 1024 * 1024; // 5MB
       if (newIssue.photoFile.size > maxSize) {
         toast({
-          title: t('app.error'),
-          description: t('app.error'),
+          title: tt('app.error'),
+          description: tt('app.error'),
           variant: "destructive",
         });
         return;
@@ -1001,15 +1005,15 @@ export default function CollectorDashboard() {
             <div className="collector-daily-stats grid grid-cols-3 gap-2.5" key={`stats-${collectionsToday.length}`}>
               <div className="bg-gradient-to-br from-blue-500 to-blue-600 p-3 rounded-2xl shadow-md shadow-blue-200/50">
                 <div className="text-2xl font-black text-white">{households?.length || 0}</div>
-                <div className="text-[9px] text-blue-100 font-semibold uppercase tracking-wider mt-0.5">{t("collector.totalAssigned")}</div>
+                <div className="text-[9px] text-blue-100 font-semibold uppercase tracking-wider mt-0.5">{tt("collector.totalAssigned")}</div>
               </div>
               <div className="bg-gradient-to-br from-emerald-500 to-green-700 p-3 rounded-2xl shadow-md shadow-green-200/50">
                 <div className="text-2xl font-black text-white">{collectionsToday.length}</div>
-                <div className="text-[9px] text-green-100 font-semibold uppercase tracking-wider mt-0.5">{t("collector.collected")}</div>
+                <div className="text-[9px] text-green-100 font-semibold uppercase tracking-wider mt-0.5">{tt("collector.collected")}</div>
               </div>
               <div className="bg-gradient-to-br from-violet-500 to-purple-600 p-3 rounded-2xl shadow-md shadow-purple-200/50">
                 <div className="text-2xl font-black text-white">{villageTodayData?.collectedToday ?? '—'}</div>
-                <div className="text-[9px] text-purple-100 font-semibold uppercase tracking-wider mt-0.5">{t("collector.villageTotal")}</div>
+                <div className="text-[9px] text-purple-100 font-semibold uppercase tracking-wider mt-0.5">{tt("collector.villageTotal")}</div>
               </div>
             </div>
 
@@ -1019,16 +1023,16 @@ export default function CollectorDashboard() {
                 <div className="flex items-center justify-between">
                   <div className="flex items-center">
                     <div className="w-2 h-2 bg-red-500 rounded-full mr-2"></div>
-                    <span className="text-sm font-medium text-red-700">{t("collector.offlineMode")}</span>
+                    <span className="text-sm font-medium text-red-700">{tt("collector.offlineMode")}</span>
                   </div>
                   {pendingCount > 0 && (
                     <Badge variant="destructive" className="text-xs">
-                      {pendingCount} {t("collector.pendingSyncCount")}
+                      {pendingCount} {tt("collector.pendingSyncCount")}
                     </Badge>
                   )}
                 </div>
                 <p className="text-xs text-red-600 mt-1">
-                  {t('collector.offlineModeDesc')}
+                  {tt('collector.offlineModeDesc')}
                 </p>
               </div>
             )}
@@ -1039,10 +1043,10 @@ export default function CollectorDashboard() {
                   <div>
                     <div className="flex items-center">
                       <div className="w-2 h-2 bg-blue-500 rounded-full mr-2"></div>
-                      <span className="text-sm font-medium text-blue-700">{t("collector.pendingSyncCount")}</span>
+                      <span className="text-sm font-medium text-blue-700">{tt("collector.pendingSyncCount")}</span>
                     </div>
                     <p className="text-xs text-blue-600 mt-1">
-                      {pendingCount} {t('collector.collectionsToday')}
+                      {pendingCount} {tt('collector.collectionsToday')}
                     </p>
                   </div>
                   <Button
@@ -1052,20 +1056,20 @@ export default function CollectorDashboard() {
                       const result = await syncPendingData();
                       if (result.success) {
                         toast({
-                          title: t('app.success'),
-                          description: t('collector.syncSuccess'),
+                          title: tt('app.success'),
+                          description: tt('collector.syncSuccess'),
                         });
-                      } else if (result.error === t('app.loading')) {
+                      } else if (result.error === tt('app.loading')) {
                         toast({
-                          title: t('app.loading'),
-                          description: t('app.loading'),
+                          title: tt('app.loading'),
+                          description: tt('app.loading'),
                           variant: "default",
                         });
                       }
                     }}
                     className="bg-blue-600 hover:bg-blue-700 text-xs"
                   >
-                    {isSyncing ? t("collector.syncing") : t("collector.syncNow")}
+                    {isSyncing ? tt("collector.syncing") : tt("collector.syncNow")}
                   </Button>
                 </div>
               </div>
@@ -1075,7 +1079,7 @@ export default function CollectorDashboard() {
             <div className="relative">
               <Search className="absolute left-3.5 top-1/2 transform -translate-y-1/2 text-gray-300" size={18} />
               <Input
-                placeholder={t("collector.enterHouseholdId") || "Search by name, ID, or house no..."}
+                placeholder={tt("collector.enterHouseholdId") || "Search by name, ID, or house no..."}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="pl-11 text-sm rounded-2xl border-gray-200 bg-white shadow-sm h-11 focus:ring-2 focus:ring-green-200 focus:border-green-400"
@@ -1085,7 +1089,7 @@ export default function CollectorDashboard() {
             {/* Household List */}
             <div className="collector-recent-collections" key={`household-list-${refreshTrigger}-${collectionsToday.length}`}>
               <h3 className="text-xs font-black text-gray-400 uppercase tracking-widest mb-2 px-1">
-                {searchQuery ? `${t('app.search')} (${filteredHouseholds.length})` : t('navigation.households')}
+                {searchQuery ? `${tt('app.search')} (${filteredHouseholds.length})` : tt('navigation.households')}
               </h3>
               {(searchQuery ? filteredHouseholds : households || []).length > 0 ? (
                 <div className="space-y-2">
@@ -1136,7 +1140,7 @@ export default function CollectorDashboard() {
                     <Home className="text-gray-300" size={28} />
                   </div>
                   <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">
-                    {searchQuery ? t('collector.noHouseholdFound') : t('collector.noHouseholdFound')}
+                    {searchQuery ? tt('collector.noHouseholdFound') : tt('collector.noHouseholdFound')}
                   </p>
                 </div>
               )}
@@ -1175,10 +1179,10 @@ export default function CollectorDashboard() {
                     shiftState.attendanceStatus === 'half_day' ? 'text-yellow-700' :
                       'text-red-700'
                     }`}>
-                    {shiftState.attendanceStatus === 'present' ? t('attendance.present') :
-                      shiftState.attendanceStatus === 'half_day' ? t('attendance.halfDay') : t('attendance.absent')}
+                    {shiftState.attendanceStatus === 'present' ? tt('attendance.present') :
+                      shiftState.attendanceStatus === 'half_day' ? tt('attendance.halfDay') : tt('attendance.absent')}
                   </p>
-                  <p className="text-[10px] text-gray-400">{t("roles.manager")}</p>
+                  <p className="text-[10px] text-gray-400">{tt("roles.manager")}</p>
                 </div>
               </div>
             )}
@@ -1189,8 +1193,8 @@ export default function CollectorDashboard() {
               <div className="text-center space-y-6 pt-8">
                 <div className="bg-gray-50 rounded-2xl p-6">
                   <Clock className="h-12 w-12 text-gray-300 mx-auto mb-3" />
-                  <p className="text-lg font-bold text-gray-700">{t("collector.noActiveShift")}</p>
-                  <p className="text-sm text-gray-400 mt-1">{t("collector.scanToStartShift")}</p>
+                  <p className="text-lg font-bold text-gray-700">{tt("collector.noActiveShift")}</p>
+                  <p className="text-sm text-gray-400 mt-1">{tt("collector.scanToStartShift")}</p>
                 </div>
 
                 <button
@@ -1199,14 +1203,14 @@ export default function CollectorDashboard() {
                   className="w-full py-5 bg-green-500 hover:bg-green-700 active:bg-green-700 text-white rounded-2xl text-lg font-bold flex items-center justify-center gap-3 transition-all shadow-lg shadow-green-200"
                 >
                   <Camera className="h-7 w-7" />
-                  {shiftScanMutation.isPending ? t('collector.syncing') : t('collector.startShift')}
+                  {shiftScanMutation.isPending ? tt('collector.syncing') : tt('collector.startShift')}
                 </button>
               </div>
             ) : shiftState.isShiftActive ? (
               // Shift active - show status + end button
               <div className="space-y-4">
                 <div className="bg-green-50 border-2 border-green-200 rounded-2xl p-5 text-center">
-                  <div className="text-xs font-bold text-green-700 uppercase tracking-widest mb-1">{t("collector.onDuty")}</div>
+                  <div className="text-xs font-bold text-green-700 uppercase tracking-widest mb-1">{tt("collector.onDuty")}</div>
                   <p className="text-lg font-bold text-green-700">
                     Shift #{shiftState.currentShiftNumber} · Started at{' '}
                     {new Date(shiftState.shifts[shiftState.shifts.length - 1]?.startedAt).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true })}
@@ -1219,7 +1223,7 @@ export default function CollectorDashboard() {
                   className="w-full py-5 bg-red-500 hover:bg-red-600 active:bg-red-700 text-white rounded-2xl text-lg font-bold flex items-center justify-center gap-3 transition-all shadow-lg shadow-red-200"
                 >
                   <Camera className="h-7 w-7" />
-                  {shiftScanMutation.isPending ? t('collector.syncing') : t('collector.endShift')}
+                  {shiftScanMutation.isPending ? tt('collector.syncing') : tt('collector.endShift')}
                 </button>
 
                 {/* Can also start another shift */}
@@ -1241,7 +1245,7 @@ export default function CollectorDashboard() {
                   className="w-full py-4 bg-green-100 hover:bg-green-200 text-green-700 rounded-2xl text-base font-bold flex items-center justify-center gap-3 transition-all border-2 border-green-300"
                 >
                   <Camera className="h-6 w-6" />
-                  {t("collector.startShift")}
+                  {tt("collector.startShift")}
                 </button>
               </div>
             )}
@@ -1250,7 +1254,7 @@ export default function CollectorDashboard() {
             {shiftScanResult?.error === 'too_far' && (
               <div className="bg-red-50 border-2 border-red-200 rounded-2xl p-4 text-center">
                 <XCircle className="h-10 w-10 text-red-500 mx-auto mb-2" />
-                <p className="text-base font-bold text-red-700">{t("collector.shiftScanFailed")}</p>
+                <p className="text-base font-bold text-red-700">{tt("collector.shiftScanFailed")}</p>
                 <p className="text-sm text-red-600 mt-1">
                   You are <span className="font-bold">{shiftScanResult.distance}m</span> away
                 </p>
@@ -1269,7 +1273,7 @@ export default function CollectorDashboard() {
             {/* Shift Timeline */}
             {shiftState?.shifts?.length > 0 && (
               <div className="mt-4">
-                <p className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-3">{t('collector.shiftStatus')}</p>
+                <p className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-3">{tt('collector.shiftStatus')}</p>
                 <div className="space-y-2">
                   {shiftState.shifts.map((shift: any) => (
                     <div key={shift.shiftNumber} className="bg-white border border-gray-200 rounded-xl p-3 flex items-center justify-between">
@@ -1282,7 +1286,7 @@ export default function CollectorDashboard() {
                           {' → '}
                           {shift.endedAt
                             ? new Date(shift.endedAt).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true })
-                            : t('collector.active')}
+                            : tt('collector.active')}
                         </p>
                       </div>
                       <div className="text-right">
@@ -1318,13 +1322,13 @@ export default function CollectorDashboard() {
         {activeTab === 'announcements' && (
           <div className="space-y-4 p-4">
             <div className="flex items-center justify-between">
-              <h2 className="text-lg font-bold">{t('announcements.title')}</h2>
+              <h2 className="text-lg font-bold">{tt('announcements.title')}</h2>
             </div>
 
             {announcementsLoading ? (
               <div className="text-center py-8">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-700 mx-auto"></div>
-                <p className="text-sm text-gray-500 mt-2">{t('app.loading')}...</p>
+                <p className="text-sm text-gray-500 mt-2">{tt('app.loading')}...</p>
               </div>
             ) : announcements && announcements.length > 0 ? (
               <div className="space-y-3">
@@ -1334,14 +1338,14 @@ export default function CollectorDashboard() {
                       <div className="flex items-start justify-between">
                         <p className="text-sm font-medium text-gray-900 flex-1 pr-2">{announcement.message}</p>
                         <Badge variant="secondary" className="text-xs whitespace-nowrap">
-                          {t('app.new')}
+                          {tt('app.new')}
                         </Badge>
                       </div>
 
                       <div className="flex items-center justify-between text-xs text-gray-500">
                         <div className="flex items-center space-x-2">
                           <Bell className="w-3 h-3" />
-                          <span className="font-medium">{t('announcements.title')}</span>
+                          <span className="font-medium">{tt('announcements.title')}</span>
                         </div>
                         <div className="flex items-center space-x-2">
                           <Clock className="w-3 h-3" />
@@ -1355,8 +1359,8 @@ export default function CollectorDashboard() {
             ) : (
               <div className="text-center py-12">
                 <Bell className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-gray-900 mb-2">{t('app.noData')}</h3>
-                <p className="text-gray-500 mb-4">{t('announcements.checkLater')}</p>
+                <h3 className="text-lg font-medium text-gray-900 mb-2">{tt('app.noData')}</h3>
+                <p className="text-gray-500 mb-4">{tt('announcements.checkLater')}</p>
               </div>
             )}
           </div>
@@ -1366,24 +1370,24 @@ export default function CollectorDashboard() {
         {activeTab === 'issues' && (
           <div className="space-y-4 p-4">
             <div className="flex items-center justify-between">
-              <h2 className="text-lg font-bold">{t('issues.title')}</h2>
+              <h2 className="text-lg font-bold">{tt('issues.title')}</h2>
               <Button
                 onClick={() => setShowIssueModal(true)}
                 className="h-10 flex space-y-1 bg-red-50 text-red-700 hover:bg-red-100"
                 variant="outline"
               >
                 <Plus className="w-6 h-6" />
-                <span className="text-xs">{t('issues.reportIssue')}</span>
+                <span className="text-xs">{tt('issues.reportIssue')}</span>
               </Button>
             </div>
 
             {/* Filter Tabs */}
             <div className="flex justify-evenly space-x-2 overflow-x-auto pb-2">
               {[
-                { key: 'All', label: t('app.all') },
-                { key: 'Open', label: t('issues.open') },
-                { key: t('issues.inProgress'), label: t('issues.inProgress') },
-                { key: t('issues.resolved'), label: t('issues.resolved') }
+                { key: 'All', label: tt('app.all') },
+                { key: 'Open', label: tt('issues.open') },
+                { key: tt('issues.inProgress'), label: tt('issues.inProgress') },
+                { key: tt('issues.resolved'), label: tt('issues.resolved') }
               ].map((filter) => (
                 <Button
                   key={filter.key}
@@ -1402,7 +1406,7 @@ export default function CollectorDashboard() {
             {issuesLoading ? (
               <div className="text-center py-8">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-700 mx-auto"></div>
-                <p className="text-sm text-gray-500 mt-2">{t("app.loading")}...</p>
+                <p className="text-sm text-gray-500 mt-2">{tt("app.loading")}...</p>
               </div>
             ) : issues && issues.length > 0 ? (
               <div className="space-y-3">
@@ -1411,8 +1415,8 @@ export default function CollectorDashboard() {
                     // Filter by status
                     let statusMatch = true;
                     if (issueFilter === 'Open') statusMatch = issue.status === 'open';
-                    else if (issueFilter === t('issues.inProgress')) statusMatch = issue.status === 'in_progress';
-                    else if (issueFilter === t('issues.resolved')) statusMatch = issue.status === 'resolved';
+                    else if (issueFilter === tt('issues.inProgress')) statusMatch = issue.status === 'in_progress';
+                    else if (issueFilter === tt('issues.resolved')) statusMatch = issue.status === 'resolved';
 
 
                     return statusMatch;
@@ -1432,8 +1436,8 @@ export default function CollectorDashboard() {
                             }
                             className="text-xs whitespace-nowrap"
                           >
-                            {issue.status === 'open' ? t('issues.open') :
-                              issue.status === 'in_progress' ? t('issues.inProgress') : t('issues.resolved')}
+                            {issue.status === 'open' ? tt('issues.open') :
+                              issue.status === 'in_progress' ? tt('issues.inProgress') : tt('issues.resolved')}
                           </Badge>
                         </div>
 
@@ -1452,7 +1456,7 @@ export default function CollectorDashboard() {
                           <div className="mt-2">
                             <img
                               src={issue.photoUrl}
-                              alt={t('collector.issuePhoto')}
+                              alt={tt('collector.issuePhoto')}
                               className="w-full h-32 object-cover rounded-lg cursor-pointer"
                               onClick={() => window.open(issue.photoUrl, '_blank')}
                             />
@@ -1463,16 +1467,16 @@ export default function CollectorDashboard() {
                           <div className="mt-3 p-3 bg-green-50 rounded-lg border-l-4 border-green-400">
                             <div className="flex items-center space-x-2 mb-1">
                               <CheckCircle className="w-4 h-4 text-green-700" />
-                              <p className="text-xs font-semibold text-green-800">{t("collector.managerResponse")}:</p>
+                              <p className="text-xs font-semibold text-green-800">{tt("collector.managerResponse")}:</p>
                             </div>
                             <p className="text-xs text-green-700 leading-relaxed">{issue.managerReply}</p>
                             {/* Show manager's proof photo if available */}
                             {issue.managerProofPhotoUrl && (
                               <div className="mt-2">
-                                <p className="text-xs font-medium text-green-800 mb-1">{t("collector.managerResponseProof")}:</p>
+                                <p className="text-xs font-medium text-green-800 mb-1">{tt("collector.managerResponseProof")}:</p>
                                 <img
                                   src={issue.managerProofPhotoUrl}
-                                  alt={t('collector.managerProofPhoto')}
+                                  alt={tt('collector.managerProofPhoto')}
                                   className="w-16 h-16 object-cover rounded cursor-pointer"
                                   onClick={() => window.open(issue.managerProofPhotoUrl, "_blank")}
                                 />
@@ -1494,20 +1498,20 @@ export default function CollectorDashboard() {
                 <AlertCircle className="w-16 h-16 text-gray-300 mx-auto mb-4" />
                 {issueFilter === 'All' ? (
                   <>
-                    <h3 className="text-lg font-medium text-gray-900 mb-2">{t("collector.noIssuesFound")}</h3>
-                    <p className="text-gray-500 mb-4">{t("collector.noIssuesFoundDesc")}</p>
+                    <h3 className="text-lg font-medium text-gray-900 mb-2">{tt("collector.noIssuesFound")}</h3>
+                    <p className="text-gray-500 mb-4">{tt("collector.noIssuesFoundDesc")}</p>
                     <Button
                       onClick={() => setShowIssueModal(true)}
                       className="bg-red-600 hover:bg-red-700"
                     >
                       <Plus className="w-4 h-4 mr-2" />
-                      {t("collector.reportIssue")}
+                      {tt("collector.reportIssue")}
                     </Button>
                   </>
                 ) : (
                   <>
-                    <h3 className="text-lg font-medium text-gray-900 mb-2">{t('collector.noIssuesFound')}</h3>
-                    <p className="text-gray-500 mb-4">{t('collector.noIssuesFoundDesc')}</p>
+                    <h3 className="text-lg font-medium text-gray-900 mb-2">{tt('collector.noIssuesFound')}</h3>
+                    <p className="text-gray-500 mb-4">{tt('collector.noIssuesFoundDesc')}</p>
                     <Button
                       onClick={() => setIssueFilter('All')}
                       variant="outline"
@@ -1531,7 +1535,7 @@ export default function CollectorDashboard() {
           <div className="p-4 space-y-4">
             <Card>
               <CardHeader>
-                <CardTitle className="text-lg">{t("collector.profile")}</CardTitle>
+                <CardTitle className="text-lg">{tt("collector.profile")}</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="text-center">
@@ -1547,7 +1551,7 @@ export default function CollectorDashboard() {
 
             <Card>
               <CardHeader>
-                <CardTitle className="text-lg">{t('navigation.settings')}</CardTitle>
+                <CardTitle className="text-lg">{tt('navigation.settings')}</CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
                 <Button
@@ -1556,13 +1560,13 @@ export default function CollectorDashboard() {
                   onClick={() => setShowPasswordModal(true)}
                 >
                   <Settings className="mr-3" size={20} />
-                  {t('auth.changePassword')}
+                  {tt('auth.changePassword')}
                 </Button>
 
                 <div className="flex items-center justify-between w-full px-1">
                   <div className="flex items-center gap-3 text-sm font-medium text-gray-700">
                     <Globe size={20} className="text-gray-500" />
-                    {t('generator.language')}
+                    {tt('generator.language')}
                   </div>
                   <LanguageSwitcher />
                 </div>
@@ -1573,7 +1577,7 @@ export default function CollectorDashboard() {
                   onClick={() => logout()}
                 >
                   <LogOut className="mr-3" size={20} />
-                  {t('auth.logout')}
+                  {tt('auth.logout')}
                 </Button>
               </CardContent>
             </Card>
@@ -1585,7 +1589,7 @@ export default function CollectorDashboard() {
       <Dialog open={showScanner} onOpenChange={setShowScanner}>
         <DialogContent className="max-w-sm">
           <DialogHeader>
-            <DialogTitle>{t('collections.scanQR')}</DialogTitle>
+            <DialogTitle>{tt('collections.scanQR')}</DialogTitle>
           </DialogHeader>
           <QRScanner onScan={handleQRScan} onClose={() => setShowScanner(false)} />
         </DialogContent>
@@ -1615,7 +1619,7 @@ export default function CollectorDashboard() {
             {/* 1. Collection Status - FIRST QUESTION */}
             <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4">
               <p className="text-xs font-black text-gray-500 uppercase tracking-widest mb-3 text-center">
-                {t('collections.wasteCollectionStatus')}
+                {tt('collections.wasteCollectionStatus')}
               </p>
               <div className="flex gap-3">
                 <button
@@ -1625,7 +1629,7 @@ export default function CollectorDashboard() {
                     : 'bg-green-50 text-green-700 border-2 border-green-200'
                     }`}
                 >
-                  <CheckCircle size={18} /> {t('collections.collected')}
+                  <CheckCircle size={18} /> {tt('collections.collected')}
                 </button>
                 <button
                   onClick={() => setCollectionForm({ ...collectionForm, wasteAccepted: false })}
@@ -1634,7 +1638,7 @@ export default function CollectorDashboard() {
                     : 'bg-red-50 text-red-700 border-2 border-red-200'
                     }`}
                 >
-                  <XCircle size={18} /> {t('collections.notCollected')}
+                  <XCircle size={18} /> {tt('collections.notCollected')}
                 </button>
               </div>
             </div>
@@ -1643,13 +1647,13 @@ export default function CollectorDashboard() {
             {collectionForm.wasteAccepted === false && (
               <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4">
                 <p className="text-xs font-black text-gray-500 uppercase tracking-widest mb-2 text-center">
-                  {t('collections.reasonNotCollecting')}
+                  {tt('collections.reasonNotCollecting')}
                 </p>
                 <Select
                   value={collectionForm.notCollectedReason}
                   onValueChange={(value) => {
                     const updates: any = { notCollectedReason: value };
-                    if (value === t('enums.notCollectedReasons.wasteNotSegregated')) {
+                    if (value === tt('enums.notCollectedReasons.wasteNotSegregated')) {
                       updates.wasteSegregated = false;
                       updates.segregationRating = 2;
                     }
@@ -1657,7 +1661,7 @@ export default function CollectorDashboard() {
                   }}
                 >
                   <SelectTrigger className="rounded-2xl h-12 text-sm font-semibold">
-                    <SelectValue placeholder={t('collections.selectReason')} />
+                    <SelectValue placeholder={tt('collections.selectReason')} />
                   </SelectTrigger>
                   <SelectContent>
                     {NOT_COLLECTED_REASONS.map((reason) => (
@@ -1668,13 +1672,13 @@ export default function CollectorDashboard() {
               </div>
             )}
 
-            {/* Show segregation sections: when collected OR when not-collected reason is t('enums.notCollectedReasons.wasteNotSegregated') */}
+            {/* Show segregation sections: when collected OR when not-collected reason is tt('enums.notCollectedReasons.wasteNotSegregated') */}
             {(collectionForm.wasteAccepted === true || (collectionForm.wasteAccepted === false && collectionForm.notCollectedReason === 'Waste Not segregated')) && (
               <>
                 {/* Waste Segregated? */}
                 <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4">
                   <p className="text-xs font-black text-gray-500 uppercase tracking-widest mb-3 text-center">
-                    {t('collections.wasteProperlySegregated')}
+                    {tt('collections.wasteProperlySegregated')}
                   </p>
                   <div className="flex gap-3">
                     <button
@@ -1684,7 +1688,7 @@ export default function CollectorDashboard() {
                         : 'bg-green-50 text-green-700 border-2 border-green-200'
                         }`}
                     >
-                      ✅ {t('app.yes')}
+                      ✅ {tt('app.yes')}
                     </button>
                     <button
                       onClick={() => setCollectionForm({ ...collectionForm, wasteSegregated: false, segregationRating: 2 })}
@@ -1693,7 +1697,7 @@ export default function CollectorDashboard() {
                         : 'bg-red-50 text-red-700 border-2 border-red-200'
                         }`}
                     >
-                      ❌ {t('app.no')}
+                      ❌ {tt('app.no')}
                     </button>
                   </div>
                 </div>
@@ -1701,7 +1705,7 @@ export default function CollectorDashboard() {
                 {/* Star Rating */}
                 <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4">
                   <p className="text-xs font-black text-gray-500 uppercase tracking-widest mb-3 text-center">
-                    {t('collections.howGoodSegregation')}
+                    {tt('collections.howGoodSegregation')}
                   </p>
                   <div className="flex justify-center gap-2.5">
                     {[1, 2, 3, 4, 5].map((rating) => (
@@ -1728,15 +1732,15 @@ export default function CollectorDashboard() {
                 {/* Waste Types */}
                 <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4">
                   <p className="text-xs font-black text-gray-500 uppercase tracking-widest mb-3 text-center">
-                    {t('collections.typeOfWasteRecieved')}
+                    {tt('collections.typeOfWasteRecieved')}
                   </p>
                   <div className="flex flex-wrap gap-2 justify-center">
                     {[
-                      { key: 'wet', label: t('enums.wet'), emoji: '🟢', bg: '#22c55e' },
-                      { key: 'dry', label: t('enums.dry'), emoji: '🔵', bg: '#3b82f6' },
-                      { key: 'sanitary', label: t('enums.sanitary'), emoji: '🟣', bg: '#a855f7' },
-                      { key: 'special_care', label: t('enums.specialCare'), emoji: '🟡', bg: '#eab308' },
-                      { key: 'mixed', label: t('enums.mixed'), emoji: '⚫', bg: '#6b7280' },
+                      { key: 'wet', label: tt('enums.wet'), emoji: '🟢', bg: '#22c55e' },
+                      { key: 'dry', label: tt('enums.dry'), emoji: '🔵', bg: '#3b82f6' },
+                      { key: 'sanitary', label: tt('enums.sanitary'), emoji: '🟣', bg: '#a855f7' },
+                      { key: 'special_care', label: tt('enums.specialCare'), emoji: '🟡', bg: '#eab308' },
+                      { key: 'mixed', label: tt('enums.mixed'), emoji: '⚫', bg: '#6b7280' },
                     ].map(({ key, label, emoji, bg }) => (
                       <button
                         key={key}
@@ -1758,7 +1762,7 @@ export default function CollectorDashboard() {
                 {villageData?.weightRequired && (
                   <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4">
                     <p className="text-xs font-black text-gray-500 uppercase tracking-widest mb-2 text-center">
-                      {t('collector.collectionForm')}
+                      {tt('collector.collectionForm')}
                     </p>
                     <Input
                       type="number"
@@ -1777,10 +1781,10 @@ export default function CollectorDashboard() {
             {/* 6. Photo */}
             <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4">
               <p className="text-xs font-black text-gray-500 uppercase tracking-widest mb-3 text-center">
-                📸 Photo {isPhotoRequired ? t('collector.photoRequired') : t('app.optional')}
+                📸 Photo {isPhotoRequired ? tt('collector.photoRequired') : tt('app.optional')}
               </p>
               {isPhotoRequired && collectionForm.segregationRating <= 3 && collectionForm.segregationRating > 0 && (
-                <p className="text-[10px] text-red-500 text-center mb-2 font-semibold">{t("collector.photoRequired")}</p>
+                <p className="text-[10px] text-red-500 text-center mb-2 font-semibold">{tt("collector.photoRequired")}</p>
               )}
               <div className="relative">
                 <input
@@ -1802,12 +1806,12 @@ export default function CollectorDashboard() {
                   {collectionForm.photoFile ? (
                     <>
                       <CheckCircle className="h-10 w-10 text-green-500 mx-auto mb-1" />
-                      <p className="text-sm font-bold text-green-700">{t("collector.photoTaken")} ✓</p>
+                      <p className="text-sm font-bold text-green-700">{tt("collector.photoTaken")} ✓</p>
                     </>
                   ) : (
                     <>
                       <Camera className="h-10 w-10 text-gray-300 mx-auto mb-1" />
-                      <p className="text-sm font-bold text-gray-500">{t("collector.takePhoto")}</p>
+                      <p className="text-sm font-bold text-gray-500">{tt("collector.takePhoto")}</p>
                     </>
                   )}
                 </div>
@@ -1817,7 +1821,7 @@ export default function CollectorDashboard() {
             {/* 7. Voice / Remarks */}
             <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4">
               <p className="text-xs font-black text-gray-500 uppercase tracking-widest mb-3 text-center">
-                💬 {t('collections.remarks')} ({t('app.optional')})
+                💬 {tt('collections.remarks')} ({tt('app.optional')})
               </p>
               <button
                 onClick={isRecording ? stopVoiceRecording : startVoiceRecording}
@@ -1829,12 +1833,12 @@ export default function CollectorDashboard() {
                     : 'bg-blue-50 text-blue-600 border-2 border-blue-200'
                   }`}
               >
-                {isRecording ? '🔴 ' + t('collections.stopRecording')
-                  : collectionForm.voiceRecording ? '✅ ' + t('collections.voiceRecorded')
-                    : '🎤 ' + t('collections.recordVoice')}
+                {isRecording ? '🔴 ' + tt('collections.stopRecording')
+                  : collectionForm.voiceRecording ? '✅ ' + tt('collections.voiceRecorded')
+                    : '🎤 ' + tt('collections.recordVoice')}
               </button>
               <Textarea
-                placeholder={t('collections.typeComments')}
+                placeholder={tt('collections.typeComments')}
                 rows={2}
                 value={collectionForm.remarks}
                 onChange={(e) => setCollectionForm({ ...collectionForm, remarks: e.target.value })}
@@ -1871,10 +1875,10 @@ export default function CollectorDashboard() {
               {false ? (
                 <>
                   <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent" />
-                  {isOnline ? t('collector.submittingForm') : t('app.saving')}
+                  {isOnline ? tt('collector.submittingForm') : tt('app.saving')}
                 </>
               ) : (
-                isOnline ? '✅ ' + t('collector.submitCollection') : '💾 ' + t('collector.collectionSavedOffline')
+                isOnline ? '✅ ' + tt('collector.submitCollection') : '💾 ' + tt('collector.collectionSavedOffline')
               )}
             </button>
           </div>
@@ -1886,7 +1890,7 @@ export default function CollectorDashboard() {
         <DialogContent className="w-[96vw] max-w-lg max-h-[90vh] overflow-y-auto p-4 mx-auto">
           <DialogHeader className="pb-4">
             <DialogTitle className="text-xl font-bold text-center text-gray-900">
-              🚨 {t('collector.reportIssue')}
+              🚨 {tt('collector.reportIssue')}
             </DialogTitle>
             <p className="text-sm text-gray-600 text-center mt-1">
               Help improve your community by reporting issues
@@ -1900,7 +1904,7 @@ export default function CollectorDashboard() {
                 htmlFor="title"
                 className="text-sm font-semibold text-gray-800 flex items-center"
               >
-                📝 {t('collector.issueTitle')} <span className="text-red-500 ml-1">*</span>
+                📝 {tt('collector.issueTitle')} <span className="text-red-500 ml-1">*</span>
               </Label>
               <Input
                 id="title"
@@ -1908,7 +1912,7 @@ export default function CollectorDashboard() {
                 onChange={(e) =>
                   setNewIssue({ ...newIssue, title: e.target.value })
                 }
-                placeholder={t("collector.issueTitlePlaceholder")}
+                placeholder={tt("collector.issueTitlePlaceholder")}
                 className="h-12 text-base border-2 focus:border-red-400"
                 maxLength={100}
               />
@@ -1931,7 +1935,7 @@ export default function CollectorDashboard() {
                 htmlFor="category"
                 className="text-sm font-semibold text-gray-800 flex items-center"
               >
-                🏷️ {t('collector.category')} <span className="text-red-500 ml-1">*</span>
+                🏷️ {tt('collector.category')} <span className="text-red-500 ml-1">*</span>
               </Label>
               <Select
                 value={newIssue.category}
@@ -1940,7 +1944,7 @@ export default function CollectorDashboard() {
                 }
               >
                 <SelectTrigger className="h-12 text-base border-2 focus:border-red-400">
-                  <SelectValue placeholder={t("collector.category")} />
+                  <SelectValue placeholder={tt("collector.category")} />
                 </SelectTrigger>
                 <SelectContent>
                   {ISSUE_CATEGORIES.map((category) => (
@@ -1962,7 +1966,7 @@ export default function CollectorDashboard() {
                 htmlFor="description"
                 className="text-sm font-semibold text-gray-800 flex items-center"
               >
-                📄 {t('collector.description')} <span className="text-red-500 ml-1">*</span>
+                📄 {tt('collector.description')} <span className="text-red-500 ml-1">*</span>
               </Label>
               <Textarea
                 id="description"
@@ -1970,7 +1974,7 @@ export default function CollectorDashboard() {
                 onChange={(e) =>
                   setNewIssue({ ...newIssue, description: e.target.value })
                 }
-                placeholder={t("collector.descriptionPlaceholder")}
+                placeholder={tt("collector.descriptionPlaceholder")}
                 rows={5}
                 className="text-base border-2 focus:border-red-400 resize-none"
                 maxLength={500}
@@ -1994,7 +1998,7 @@ export default function CollectorDashboard() {
                 htmlFor="photo"
                 className="text-sm font-semibold text-gray-800 flex items-center"
               >
-                📸 {t('collector.photoEvidence')} ({t('app.optional')})
+                📸 {tt('collector.photoEvidence')} ({tt('app.optional')})
               </Label>
               <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center">
                 <Input
@@ -2059,12 +2063,12 @@ export default function CollectorDashboard() {
                 {createIssueMutation.isPending ? (
                   <div className="flex items-center space-x-2">
                     <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
-                    <span>{t("collector.submittingIssue")}...</span>
+                    <span>{tt("collector.submittingIssue")}...</span>
                   </div>
                 ) : (
                   <div className="flex items-center space-x-2">
                     <AlertTriangle className="w-5 h-5" />
-                    <span>{t("collector.submitIssue")}</span>
+                    <span>{tt("collector.submitIssue")}</span>
                   </div>
                 )}
               </Button>
@@ -2082,7 +2086,7 @@ export default function CollectorDashboard() {
                 className="w-full h-12 border-2 text-base font-medium"
                 disabled={createIssueMutation.isPending}
               >
-                {t('app.cancel')}
+                {tt('app.cancel')}
               </Button>
             </div>
           </div>
@@ -2094,25 +2098,25 @@ export default function CollectorDashboard() {
       <Dialog open={showPasswordModal} onOpenChange={setShowPasswordModal}>
         <DialogContent className="max-w-sm">
           <DialogHeader>
-            <DialogTitle>{t('app.changePassword')}</DialogTitle>
+            <DialogTitle>{tt('app.changePassword')}</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
             <div>
-              <Label>{t('app.newPassword')}</Label>
+              <Label>{tt('app.newPassword')}</Label>
               <Input
                 type="password"
                 value={newPassword}
                 onChange={(e) => setNewPassword(e.target.value)}
-                placeholder={t("app.newPassword")}
+                placeholder={tt("app.newPassword")}
               />
             </div>
             <div>
-              <Label>{t('app.confirmPassword')}</Label>
+              <Label>{tt('app.confirmPassword')}</Label>
               <Input
                 type="password"
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
-                placeholder={t("app.confirmPassword")}
+                placeholder={tt("app.confirmPassword")}
               />
             </div>
             <Button
@@ -2123,10 +2127,10 @@ export default function CollectorDashboard() {
               {changePasswordMutation.isPending ? (
                 <>
                   <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent mr-2" />
-                  {t('app.changing')}...
+                  {tt('app.changing')}...
                 </>
               ) : (
-                t("app.changePassword")
+                tt("app.changePassword")
               )}
             </Button>
           </div>
@@ -2137,11 +2141,11 @@ export default function CollectorDashboard() {
       <Dialog open={showConfirmSubmit} onOpenChange={setShowConfirmSubmit}>
         <DialogContent className="max-w-sm">
           <DialogHeader>
-            <DialogTitle className="text-center text-xl">{t('collector.confirmSubmission')}</DialogTitle>
+            <DialogTitle className="text-center text-xl">{tt('collector.confirmSubmission')}</DialogTitle>
           </DialogHeader>
           <div className="text-center space-y-4">
             <div className="text-lg">
-              📋 {t('collector.confirmSubmissionText')}
+              📋 {tt('collector.confirmSubmissionText')}
             </div>
             <div className="p-3 bg-blue-50 rounded-lg">
               <div className="font-bold text-lg">{scannedHousehold?.headName || ""}</div>
@@ -2153,7 +2157,7 @@ export default function CollectorDashboard() {
                 onClick={() => setShowConfirmSubmit(false)}
                 className="flex-1 py-3 text-lg bg-red-100 border-red-300 text-red-700 hover:bg-red-200"
               >
-                ❌ {t('app.cancel')}
+                ❌ {tt('app.cancel')}
               </Button>
               <Button
                 onClick={() => {
@@ -2166,7 +2170,7 @@ export default function CollectorDashboard() {
                 className="flex-1 py-3 text-lg bg-green-700 hover:bg-green-700 text-white disabled:opacity-60 disabled:cursor-not-allowed"
                 disabled={isSubmitLocked}
               >
-                ✅ {t('collector.okSubmit')}
+                ✅ {tt('collector.okSubmit')}
               </Button>
 
 
@@ -2179,7 +2183,7 @@ export default function CollectorDashboard() {
       <Dialog open={showCollectionDetails} onOpenChange={setShowCollectionDetails}>
         <DialogContent className="max-w-sm max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle className="text-center">{t('collector.collectionDetails')}</DialogTitle>
+            <DialogTitle className="text-center">{tt('collector.collectionDetails')}</DialogTitle>
           </DialogHeader>
 
           {selectedCollection && (
@@ -2189,22 +2193,22 @@ export default function CollectorDashboard() {
                 <div className="text-2xl mb-2">✅</div>
                 <p className="font-bold text-lg">{scannedHousehold?.headName || ""}</p>
                 <p className="text-sm text-gray-600">{scannedHousehold?.uid}</p>
-                <p className="text-xs text-green-700 font-medium">{t('collector.alreadyCollectedToday')}</p>
+                <p className="text-xs text-green-700 font-medium">{tt('collector.alreadyCollectedToday')}</p>
               </div>
 
               {/* Collection Info */}
               <div className="bg-white border rounded-lg p-4 space-y-3">
                 <div className="grid grid-cols-2 gap-3 text-sm">
                   <div>
-                    <div className="text-gray-600">{t('collector.status')}:</div>
+                    <div className="text-gray-600">{tt('collector.status')}:</div>
                     <div className="font-medium">{translateEnum('collectionStatus', selectedCollection.status)}</div>
                   </div>
                   <div>
-                    <div className="text-gray-600">{t('collector.time')}:</div>
+                    <div className="text-gray-600">{tt('collector.time')}:</div>
                     <div className="font-medium">{new Date(selectedCollection.collectionDate || selectedCollection.createdAt).toLocaleTimeString()}</div>
                   </div>
                   <div>
-                    <div className="text-gray-600">{t('collector.segregationRating')}:</div>
+                    <div className="text-gray-600">{tt('collector.segregationRating')}:</div>
                     <div className="font-medium">{selectedCollection.segregationRating}/5 ⭐</div>
                   </div>
                 </div>
@@ -2213,21 +2217,21 @@ export default function CollectorDashboard() {
 
                 {selectedCollection.remarks && (
                   <div>
-                    <div className="text-gray-600 text-sm mb-1">{t('collector.remarks')}:</div>
+                    <div className="text-gray-600 text-sm mb-1">{tt('collector.remarks')}:</div>
                     <div className="text-sm bg-gray-50 p-2 rounded">{selectedCollection.remarks}</div>
                   </div>
                 )}
 
                 {selectedCollection.photoUrl && (
                   <div>
-                    <div className="text-gray-600 text-sm mb-1">{t('collector.collectionPhoto')}:</div>
+                    <div className="text-gray-600 text-sm mb-1">{tt('collector.collectionPhoto')}:</div>
                     <img src={selectedCollection.photoUrl} alt="Collection photo" className="w-full rounded-lg" />
                   </div>
                 )}
 
                 {selectedCollection.voiceUrl && (
                   <div>
-                    <div className="text-gray-600 text-sm mb-1">{t('collector.voiceRecording')}:</div>
+                    <div className="text-gray-600 text-sm mb-1">{tt('collector.voiceRecording')}:</div>
                     <audio controls className="w-full">
                       <source src={selectedCollection.voiceUrl} type="audio/wav" />
                       Your browser does not support audio playback.

@@ -83,9 +83,21 @@
   },
   "roles": {
     "admin": "एडमिन",
-    "manager": "मैनेजर",
+    "manager": {
+      "gram_panchayat": "मैनेजर",
+      "municipality": "मैनेजर",
+      "apartment": "मैनेजर",
+      "township": "मैनेजर",
+      "institution_campus": "मैनेजर"
+    },
     "collector": "कचरा कलेक्टर",
-    "generator": "घर (हाउसहोल्ड)"
+    "generator": {
+      "gram_panchayat": "घर (हाउसहोल्ड)",
+      "municipality": "प्रॉपर्टी (प्रॉपर्टी)",
+      "apartment": "फ्लैट (फ्लैट)",
+      "township": "प्लॉट (प्लॉट)",
+      "institution_campus": "यूनिट (यूनिट)"
+    }
   },
   "dashboard": {
     "welcome": "स्वागत है",
@@ -98,14 +110,20 @@
   },
   "navigation": {
     "dashboard": "डैशबोर्ड",
-    "households": "हाउसहोल्ड्स",
+    "households": {
+      "gram_panchayat": "हाउसहोल्ड्स",
+      "municipality": "प्रॉपर्टी",
+      "apartment": "फ्लैट",
+      "township": "प्लॉट",
+      "institution_campus": "यूनिट"
+    },
     "collectors": "कलेक्टर्स",
     "collections": "कलेक्शन्स",
     "issues": "इश्यू",
     "feedback": "फीडबैक",
     "reports": "रिपोर्ट्स",
     "announcements": "अनाउंसमेंट",
-    "villages": "गाँव",
+    "villages": "संगठन",
     "managers": "मैनेजर्स",
     "profile": "प्रोफ़ाइल",
     "settings": "सेटिंग्स",
@@ -121,22 +139,76 @@
     "todayProgress": "आज की प्रोग्रेस",
     "scannedToday": "आज स्कैन किए",
     "totalAssigned": "टोटल असाइन्ड",
-    "villageTotal": "गाँव टोटल",
+    "villageTotal": {
+      "gram_panchayat": "गाँव टोटल",
+      "municipality": "ज़ोन टोटल",
+      "apartment": "सोसाइटी टोटल",
+      "township": "टाउनशिप टोटल",
+      "institution_campus": "कैंपस टोटल"
+    },
     "collectionsToday": "आज कलेक्शन हुए",
     "offlinePending": "ऑफलाइन पेंडिंग",
     "scanQrCode": "QR कोड स्कैन करो",
-    "scanQrToStart": "कलेक्शन शुरू करने के लिए घर का QR कोड स्कैन करो",
-    "pointCamera": "कैमरा घर के QR कोड की तरफ करो",
-    "enterHouseholdId": "हाउसहोल्ड ID डालो",
-    "typeHouseholdId": "हाउसहोल्ड ID टाइप करो...",
-    "lookupHousehold": "हाउसहोल्ड ढूंढो",
+    "scanQrToStart": {
+      "gram_panchayat": "कलेक्शन शुरू करने के लिए घर का QR कोड स्कैन करो",
+      "municipality": "कलेक्शन शुरू करने के लिए प्रॉपर्टी का QR कोड स्कैन करो",
+      "apartment": "कलेक्शन शुरू करने के लिए फ्लैट का QR कोड स्कैन करो",
+      "township": "कलेक्शन शुरू करने के लिए प्लॉट का QR कोड स्कैन करो",
+      "institution_campus": "कलेक्शन शुरू करने के लिए यूनिट का QR कोड स्कैन करो"
+    },
+    "pointCamera": {
+      "gram_panchayat": "कैमरा घर के QR कोड की तरफ करो",
+      "municipality": "कैमरा प्रॉपर्टी के QR कोड की तरफ करो",
+      "apartment": "कैमरा फ्लैट के QR कोड की तरफ करो",
+      "township": "कैमरा प्लॉट के QR कोड की तरफ करो",
+      "institution_campus": "कैमरा यूनिट के QR कोड की तरफ करो"
+    },
+    "enterHouseholdId": {
+      "gram_panchayat": "हाउसहोल्ड ID डालो",
+      "municipality": "प्रॉपर्टी ID डालो",
+      "apartment": "फ्लैट ID डालो",
+      "township": "प्लॉट ID डालो",
+      "institution_campus": "यूनिट ID डालो"
+    },
+    "typeHouseholdId": {
+      "gram_panchayat": "हाउसहोल्ड ID टाइप करो...",
+      "municipality": "प्रॉपर्टी ID टाइप करो...",
+      "apartment": "फ्लैट ID टाइप करो...",
+      "township": "प्लॉट ID टाइप करो...",
+      "institution_campus": "यूनिट ID टाइप करो..."
+    },
+    "lookupHousehold": {
+      "gram_panchayat": "हाउसहोल्ड ढूंढो",
+      "municipality": "प्रॉपर्टी ढूंढो",
+      "apartment": "फ्लैट ढूंढो",
+      "township": "प्लॉट ढूंढो",
+      "institution_campus": "यूनिट ढूंढो"
+    },
     "lookingUp": "ढूंढ रहे हैं...",
-    "noHouseholdFound": "इस ID का कोई हाउसहोल्ड नहीं मिला",
+    "noHouseholdFound": {
+      "gram_panchayat": "इस ID का कोई हाउसहोल्ड नहीं मिला",
+      "municipality": "इस ID का कोई प्रॉपर्टी नहीं मिला",
+      "apartment": "इस ID का कोई फ्लैट नहीं मिला",
+      "township": "इस ID का कोई प्लॉट नहीं मिला",
+      "institution_campus": "इस ID का कोई यूनिट नहीं मिला"
+    },
     "qrScanError": "QR स्कैन एरर",
     "invalidQrCode": "QR कोड सही नहीं है",
-    "householdNotFound": "हाउसहोल्ड नहीं मिला",
+    "householdNotFound": {
+      "gram_panchayat": "हाउसहोल्ड नहीं मिला",
+      "municipality": "प्रॉपर्टी नहीं मिला",
+      "apartment": "फ्लैट नहीं मिला",
+      "township": "प्लॉट नहीं मिला",
+      "institution_campus": "यूनिट नहीं मिला"
+    },
     "alreadyCollectedToday": "आज पहले से कलेक्शन हो चुका है",
-    "alreadyCollectedTodayDesc": "इस घर का आज का कलेक्शन पहले ही रिकॉर्ड हो चुका है",
+    "alreadyCollectedTodayDesc": {
+      "gram_panchayat": "इस घर का आज का कलेक्शन पहले ही रिकॉर्ड हो चुका है",
+      "municipality": "इस प्रॉपर्टी का आज का कलेक्शन पहले ही रिकॉर्ड हो चुका है",
+      "apartment": "इस फ्लैट का आज का कलेक्शन पहले ही रिकॉर्ड हो चुका है",
+      "township": "इस प्लॉट का आज का कलेक्शन पहले ही रिकॉर्ड हो चुका है",
+      "institution_campus": "इस यूनिट का आज का कलेक्शन पहले ही रिकॉर्ड हो चुका है"
+    },
     "collectionForm": "कलेक्शन फॉर्म",
     "collectionFor": "कलेक्शन - ",
     "wasteCollectionStatus": "कचरा कलेक्शन स्टेटस",
@@ -177,9 +249,27 @@
     "startScanning": "कलेक्शन रिकॉर्ड करने के लिए QR कोड स्कैन करो",
     "viewDetails": "डिटेल्स देखो",
     "collectionDetails": "कलेक्शन डिटेल्स",
-    "household": "हाउसहोल्ड",
-    "houseNumber": "मकान नंबर",
-    "ward": "वार्ड",
+    "household": {
+      "gram_panchayat": "हाउसहोल्ड",
+      "municipality": "प्रॉपर्टी",
+      "apartment": "फ्लैट",
+      "township": "प्लॉट",
+      "institution_campus": "यूनिट"
+    },
+    "houseNumber": {
+      "gram_panchayat": "मकान नंबर",
+      "municipality": "डोर नंबर",
+      "apartment": "फ्लैट नंबर",
+      "township": "प्लॉट नंबर",
+      "institution_campus": "यूनिट नंबर"
+    },
+    "ward": {
+      "gram_panchayat": "वार्ड",
+      "municipality": "सब-वार्ड",
+      "apartment": "विंग / ब्लॉक",
+      "township": "सेक्टर",
+      "institution_campus": "बिल्डिंग"
+    },
     "time": "टाइम",
     "status": "स्टेटस",
     "collectionPhoto": "कलेक्शन फ़ोटो",
@@ -197,7 +287,7 @@
     "submitIssue": "इश्यू सबमिट करो",
     "submittingIssue": "सबमिट हो रहा है...",
     "issueSubmitted": "इश्यू रिपोर्ट हो गई",
-    "issueSubmittedDesc": "आपकी इश्यू गाँव मैनेजर को भेज दी गई है",
+    "issueSubmittedDesc": "आपकी समस्या मैनेजर को भेज दी गई है",
     "issueSubmitFailed": "इश्यू सबमिट नहीं हो पाई",
     "noIssuesFound": "अभी कोई इश्यू रिपोर्ट नहीं हुई",
     "noIssuesFoundDesc": "कलेक्शन के दौरान कोई प्रॉब्लम हो तो रिपोर्ट करो",
@@ -234,7 +324,7 @@
     "noActiveShift": "कोई एक्टिव शिफ्ट नहीं है",
     "shiftDuration": "शिफ्ट ड्यूरेशन",
     "collectionsInShift": "शिफ्ट में कलेक्शन",
-    "attendanceNotEnabled": "आपके गाँव में अटेंडेंस ट्रैकिंग एनेबल नहीं है",
+    "attendanceNotEnabled": "आपके संगठन में अटेंडेंस ट्रैकिंग सक्षम नहीं है",
     "changePasswordError": "पासवर्ड बदलने में विफल। फिर से कोशिश करें।",
     "issueReportedError": "समस्या रिपोर्ट करने में विफल। फिर से कोशिश करें।",
     "issueReportedSuccess": "आपकी समस्या सफलतापूर्वक रिपोर्ट हो गई!",
@@ -245,7 +335,8 @@
     "issuePhoto": "समस्या का फोटो",
     "managerProofPhoto": "मैनेजर का प्रूफ फोटो",
     "active": "एक्टिव",
-    "tooFarFromCenter": "आप सेंटर से बहुत दूर हैं"
+    "tooFarFromCenter": "आप सेंटर से बहुत दूर हैं",
+    "collectionRecorded": "कलेक्शन रिकॉर्ड किया गया"
   },
   "generator": {
     "home": "होम",
@@ -255,11 +346,35 @@
     "profile": "प्रोफ़ाइल",
     "bills": "बिल",
     "welcomeBack": "वापस स्वागत है",
-    "householdInfo": "हाउसहोल्ड जानकारी",
-    "headOfHousehold": "घर का मुखिया",
+    "householdInfo": {
+      "gram_panchayat": "हाउसहोल्ड जानकारी",
+      "municipality": "प्रॉपर्टी जानकारी",
+      "apartment": "फ्लैट जानकारी",
+      "township": "प्लॉट जानकारी",
+      "institution_campus": "यूनिट जानकारी"
+    },
+    "headOfHousehold": {
+      "gram_panchayat": "घर का मुखिया",
+      "municipality": "प्रॉपर्टी ओनर",
+      "apartment": "फ्लैट ओनर",
+      "township": "प्लॉट ओनर",
+      "institution_campus": "यूनिट हेड"
+    },
     "uid": "UID",
-    "houseNumber": "मकान नंबर",
-    "ward": "वार्ड",
+    "houseNumber": {
+      "gram_panchayat": "मकान नंबर",
+      "municipality": "डोर नंबर",
+      "apartment": "फ्लैट नंबर",
+      "township": "प्लॉट नंबर",
+      "institution_campus": "यूनिट नंबर"
+    },
+    "ward": {
+      "gram_panchayat": "वार्ड",
+      "municipality": "सब-वार्ड",
+      "apartment": "विंग / ब्लॉक",
+      "township": "सेक्टर",
+      "institution_campus": "बिल्डिंग"
+    },
     "address": "पता",
     "phone": "फ़ोन",
     "lastCollection": "पिछला कलेक्शन",
@@ -285,7 +400,7 @@
     "qrCodeDesc": "कलेक्शन के टाइम कलेक्टर को ये QR कोड दिखाओ",
     "downloadQrCode": "QR कोड डाउनलोड करो",
     "qrNotGenerated": "QR कोड अभी बना नहीं है",
-    "contactManager": "अपने गाँव मैनेजर से बात करो",
+    "contactManager": "अपने मैनेजर से संपर्क करें",
     "reportIssue": "इश्यू रिपोर्ट करो",
     "issueTitle": "इश्यू का टाइटल",
     "issueTitlePlaceholder": "जैसे: 3 दिन से कचरा कलेक्ट नहीं हुआ",
@@ -296,7 +411,7 @@
     "submitIssue": "इश्यू सबमिट करो",
     "submittingIssue": "सबमिट हो रहा है...",
     "issueSubmitted": "इश्यू रिपोर्ट हो गई",
-    "issueSubmittedDesc": "आपकी इश्यू गाँव मैनेजर को भेज दी गई है",
+    "issueSubmittedDesc": "आपकी समस्या मैनेजर को भेज दी गई है",
     "issueSubmitFailed": "इश्यू सबमिट नहीं हो पाई",
     "yourIssues": "आपकी इश्यू",
     "noIssuesYet": "अभी कोई इश्यू रिपोर्ट नहीं हुई",
@@ -326,41 +441,137 @@
     "issuePhoto": "समस्या का फोटो"
   },
   "manager": {
-    "householdsManagement": "हाउसहोल्ड मैनेजमेंट",
-    "manageHouseholdsQR": "हाउसहोल्ड और QR कोड मैनेज करो",
+    "householdsManagement": {
+      "gram_panchayat": "हाउसहोल्ड मैनेजमेंट",
+      "municipality": "प्रॉपर्टी मैनेजमेंट",
+      "apartment": "फ्लैट मैनेजमेंट",
+      "township": "प्लॉट मैनेजमेंट",
+      "institution_campus": "यूनिट मैनेजमेंट"
+    },
+    "manageHouseholdsQR": {
+      "gram_panchayat": "हाउसहोल्ड और QR कोड मैनेज करो",
+      "municipality": "प्रॉपर्टी और QR कोड मैनेज करो",
+      "apartment": "फ्लैट और QR कोड मैनेज करो",
+      "township": "प्लॉट और QR कोड मैनेज करो",
+      "institution_campus": "यूनिट और QR कोड मैनेज करो"
+    },
     "viewAll": "सब देखो",
-    "addHousehold": "हाउसहोल्ड जोड़ो",
+    "addHousehold": {
+      "gram_panchayat": "हाउसहोल्ड जोड़ो",
+      "municipality": "प्रॉपर्टी जोड़ो",
+      "apartment": "फ्लैट जोड़ो",
+      "township": "प्लॉट जोड़ो",
+      "institution_campus": "यूनिट जोड़ो"
+    },
     "downloadQR": "QR डाउनलोड",
     "qrCodeAvailable": "QR कोड बना है",
-    "addMultipleHouseholds": "कई हाउसहोल्ड जोड़ो",
-    "createMultipleDesc": "एक साथ कई हाउसहोल्ड बनाओ, QR कोड अपने आप बन जाएगा",
+    "addMultipleHouseholds": {
+      "gram_panchayat": "कई हाउसहोल्ड जोड़ो",
+      "municipality": "कई प्रॉपर्टी जोड़ो",
+      "apartment": "कई फ्लैट जोड़ो",
+      "township": "कई प्लॉट जोड़ो",
+      "institution_campus": "कई यूनिट जोड़ो"
+    },
+    "createMultipleDesc": {
+      "gram_panchayat": "एक साथ कई हाउसहोल्ड बनाओ, QR कोड अपने आप बन जाएगा",
+      "municipality": "एक साथ कई प्रॉपर्टी बनाओ, QR कोड अपने आप बन जाएगा",
+      "apartment": "एक साथ कई फ्लैट बनाओ, QR कोड अपने आप बन जाएगा",
+      "township": "एक साथ कई प्लॉट बनाओ, QR कोड अपने आप बन जाएगा",
+      "institution_campus": "एक साथ कई यूनिट बनाओ, QR कोड अपने आप बन जाएगा"
+    },
     "addRow": "रो जोड़ो",
-    "createHouseholds": "हाउसहोल्ड बनाओ",
+    "createHouseholds": {
+      "gram_panchayat": "हाउसहोल्ड बनाओ",
+      "municipality": "प्रॉपर्टी बनाओ",
+      "apartment": "फ्लैट बनाओ",
+      "township": "प्लॉट बनाओ",
+      "institution_campus": "यूनिट बनाओ"
+    },
     "creating": "बन रहे हैं...",
-    "headNameRequired": "मुखिया का नाम *",
-    "houseNumberRequired": "मकान नंबर *",
+    "headNameRequired": {
+      "gram_panchayat": "मुखिया का नाम *",
+      "municipality": "ओनर का नाम *",
+      "apartment": "ओनर का नाम *",
+      "township": "ओनर का नाम *",
+      "institution_campus": "हेड का नाम *"
+    },
+    "houseNumberRequired": {
+      "gram_panchayat": "मकान नंबर *",
+      "municipality": "डोर नंबर *",
+      "apartment": "फ्लैट नंबर *",
+      "township": "प्लॉट नंबर *",
+      "institution_campus": "यूनिट नंबर *"
+    },
     "phoneRequired": "फ़ोन *",
     "addressOptional": "पता (ज़रूरी नहीं)",
-    "enterHeadName": "मुखिया का नाम डालो",
-    "houseNumber": "मकान नंबर",
+    "enterHeadName": {
+      "gram_panchayat": "मुखिया का नाम डालो",
+      "municipality": "ओनर का नाम डालो",
+      "apartment": "ओनर का नाम डालो",
+      "township": "ओनर का नाम डालो",
+      "institution_campus": "हेड का नाम डालो"
+    },
+    "houseNumber": {
+      "gram_panchayat": "मकान नंबर",
+      "municipality": "डोर नंबर",
+      "apartment": "फ्लैट नंबर",
+      "township": "प्लॉट नंबर",
+      "institution_campus": "यूनिट नंबर"
+    },
     "phoneNumber": "फ़ोन नंबर",
     "fullAddress": "पूरा पता",
-    "clickAddRow": "हाउसहोल्ड जोड़ने के लिए \"रो जोड़ो\" पर क्लिक करो",
+    "clickAddRow": {
+      "gram_panchayat": "हाउसहोल्ड जोड़ने के लिए \"रो जोड़ो\" पर क्लिक करो",
+      "municipality": "प्रॉपर्टी जोड़ने के लिए \"रो जोड़ो\" पर क्लिक करो",
+      "apartment": "फ्लैट जोड़ने के लिए \"रो जोड़ो\" पर क्लिक करो",
+      "township": "प्लॉट जोड़ने के लिए \"रो जोड़ो\" पर क्लिक करो",
+      "institution_campus": "यूनिट जोड़ने के लिए \"रो जोड़ो\" पर क्लिक करो"
+    },
     "downloadQRCodes": "QR कोड डाउनलोड",
-    "downloadQRDesc": "हाउसहोल्ड QR कोड PDF में डाउनलोड करो",
+    "downloadQRDesc": {
+      "gram_panchayat": "हाउसहोल्ड QR कोड PDF में डाउनलोड करो",
+      "municipality": "प्रॉपर्टी QR कोड PDF में डाउनलोड करो",
+      "apartment": "फ्लैट QR कोड PDF में डाउनलोड करो",
+      "township": "प्लॉट QR कोड PDF में डाउनलोड करो",
+      "institution_campus": "यूनिट QR कोड PDF में डाउनलोड करो"
+    },
     "selectAll": "सब सेलेक्ट करो",
     "generating": "बन रहा है...",
     "downloadPDF": "PDF डाउनलोड",
     "noQRAvailable": "अभी कोई QR कोड नहीं बना",
-    "addHouseholdsForQR": "QR कोड अपने आप बनने के लिए हाउसहोल्ड जोड़ो",
+    "addHouseholdsForQR": {
+      "gram_panchayat": "QR कोड अपने आप बनने के लिए हाउसहोल्ड जोड़ो",
+      "municipality": "QR कोड अपने आप बनने के लिए प्रॉपर्टी जोड़ो",
+      "apartment": "QR कोड अपने आप बनने के लिए फ्लैट जोड़ो",
+      "township": "QR कोड अपने आप बनने के लिए प्लॉट जोड़ो",
+      "institution_campus": "QR कोड अपने आप बनने के लिए यूनिट जोड़ो"
+    },
     "collectionsManagement": "कलेक्शन मैनेजमेंट",
-    "viewHouseholdStatus": "हाउसहोल्ड कलेक्शन स्टेटस देखो",
+    "viewHouseholdStatus": {
+      "gram_panchayat": "हाउसहोल्ड कलेक्शन स्टेटस देखो",
+      "municipality": "प्रॉपर्टी कलेक्शन स्टेटस देखो",
+      "apartment": "फ्लैट कलेक्शन स्टेटस देखो",
+      "township": "प्लॉट कलेक्शन स्टेटस देखो",
+      "institution_campus": "यूनिट कलेक्शन स्टेटस देखो"
+    },
     "collections": "कलेक्शन",
     "needsAttention": "ध्यान चाहिए",
     "searchFilter": "सर्च और फ़िल्टर",
-    "searchPlaceholder": "नाम, UID, या मकान नंबर से ढूंढो...",
+    "searchPlaceholder": {
+      "gram_panchayat": "नाम, UID, या मकान नंबर से ढूंढो...",
+      "municipality": "नाम, UID, या डोर नंबर से ढूंढो...",
+      "apartment": "नाम, UID, या फ्लैट नंबर से ढूंढो...",
+      "township": "नाम, UID, या प्लॉट नंबर से ढूंढो...",
+      "institution_campus": "नाम, UID, या यूनिट नंबर से ढूंढो..."
+    },
     "clear": "क्लियर",
-    "totalHouseholds": "टोटल हाउसहोल्ड",
+    "totalHouseholds": {
+      "gram_panchayat": "टोटल हाउसहोल्ड",
+      "municipality": "टोटल प्रॉपर्टी",
+      "apartment": "टोटल फ्लैट",
+      "township": "टोटल प्लॉट",
+      "institution_campus": "टोटल यूनिट"
+    },
     "registered": "रजिस्टर्ड",
     "collectionsToday": "आज के कलेक्शन",
     "selectedDate": "चुनी हुई तारीख",
@@ -369,13 +580,25 @@
     "allTime": "पूरे टाइम के",
     "avgSegregation": "एवरेज सेग्रीगेशन",
     "rating": "रेटिंग",
-    "householdCollectionStatus": "हाउसहोल्ड कलेक्शन स्टेटस",
+    "householdCollectionStatus": {
+      "gram_panchayat": "हाउसहोल्ड कलेक्शन स्टेटस",
+      "municipality": "प्रॉपर्टी कलेक्शन स्टेटस",
+      "apartment": "फ्लैट कलेक्शन स्टेटस",
+      "township": "प्लॉट कलेक्शन स्टेटस",
+      "institution_campus": "यूनिट कलेक्शन स्टेटस"
+    },
     "collected": "✅ कलेक्टेड",
     "pending": "⏳ पेंडिंग",
     "doneBefore": "📅 पहले हो चुका",
     "never": "❌ कभी नहीं",
     "collectionDetails": "कलेक्शन डिटेल्स",
-    "householdId": "हाउसहोल्ड ID",
+    "householdId": {
+      "gram_panchayat": "हाउसहोल्ड ID",
+      "municipality": "प्रॉपर्टी ID",
+      "apartment": "फ्लैट ID",
+      "township": "प्लॉट ID",
+      "institution_campus": "यूनिट ID"
+    },
     "collectionFor": "कलेक्शन —",
     "collector": "कलेक्टर",
     "time": "टाइम",
@@ -392,20 +615,50 @@
     "performingWell": "अच्छा परफॉर्म कर रहे हैं",
     "avgPerformance": "एवरेज परफॉर्मेंस",
     "performanceScore": "परफॉर्मेंस स्कोर",
-    "householdsNeedingAttention": "जिन हाउसहोल्ड पर तुरंत ध्यान चाहिए",
-    "attentionDesc": "पिछले 10 कलेक्शन में 3+ मिस्ड या 4 स्टार से कम रेटिंग वाले हाउसहोल्ड",
+    "householdsNeedingAttention": {
+      "gram_panchayat": "जिन हाउसहोल्ड पर तुरंत ध्यान चाहिए",
+      "municipality": "जिन प्रॉपर्टी पर तुरंत ध्यान चाहिए",
+      "apartment": "जिन फ्लैट पर तुरंत ध्यान चाहिए",
+      "township": "जिन प्लॉट पर तुरंत ध्यान चाहिए",
+      "institution_campus": "जिन यूनिट पर तुरंत ध्यान चाहिए"
+    },
+    "attentionDesc": {
+      "gram_panchayat": "पिछले 10 कलेक्शन में 3+ मिस्ड या 4 स्टार से कम रेटिंग वाले हाउसहोल्ड",
+      "municipality": "पिछले 10 कलेक्शन में 3+ मिस्ड या 4 स्टार से कम रेटिंग वाले प्रॉपर्टी",
+      "apartment": "पिछले 10 कलेक्शन में 3+ मिस्ड या 4 स्टार से कम रेटिंग वाले फ्लैट",
+      "township": "पिछले 10 कलेक्शन में 3+ मिस्ड या 4 स्टार से कम रेटिंग वाले प्लॉट",
+      "institution_campus": "पिछले 10 कलेक्शन में 3+ मिस्ड या 4 स्टार से कम रेटिंग वाले यूनिट"
+    },
     "problemCollections": "प्रॉब्लम कलेक्शन",
     "outOf": "में से",
     "issues": "इश्यू",
     "totalCollections2": "टोटल कलेक्शन",
-    "allHouseholdsWell": "सब हाउसहोल्ड अच्छा परफॉर्म कर रहे हैं!",
-    "wellPerformingHouseholds": "अच्छा परफॉर्म करने वाले हाउसहोल्ड",
-    "goodComplianceDesc": "अच्छी कलेक्शन कंप्लायंस और रेटिंग वाले हाउसहोल्ड",
+    "allHouseholdsWell": {
+      "gram_panchayat": "सब हाउसहोल्ड अच्छा परफॉर्म कर रहे हैं!",
+      "municipality": "सब प्रॉपर्टी अच्छा परफॉर्म कर रहे हैं!",
+      "apartment": "सब फ्लैट अच्छा परफॉर्म कर रहे हैं!",
+      "township": "सब प्लॉट अच्छा परफॉर्म कर रहे हैं!",
+      "institution_campus": "सब यूनिट अच्छा परफॉर्म कर रहे हैं!"
+    },
+    "wellPerformingHouseholds": {
+      "gram_panchayat": "अच्छा परफॉर्म करने वाले हाउसहोल्ड",
+      "municipality": "अच्छा परफॉर्म करने वाले प्रॉपर्टी",
+      "apartment": "अच्छा परफॉर्म करने वाले फ्लैट",
+      "township": "अच्छा परफॉर्म करने वाले प्लॉट",
+      "institution_campus": "अच्छा परफॉर्म करने वाले यूनिट"
+    },
+    "goodComplianceDesc": {
+      "gram_panchayat": "अच्छी कलेक्शन कंप्लायंस और रेटिंग वाले हाउसहोल्ड",
+      "municipality": "अच्छी कलेक्शन कंप्लायंस और रेटिंग वाले प्रॉपर्टी",
+      "apartment": "अच्छी कलेक्शन कंप्लायंस और रेटिंग वाले फ्लैट",
+      "township": "अच्छी कलेक्शन कंप्लायंस और रेटिंग वाले प्लॉट",
+      "institution_campus": "अच्छी कलेक्शन कंप्लायंस और रेटिंग वाले यूनिट"
+    },
     "goodRatings": "अच्छी रेटिंग",
     "problemCollectionsOnly": "सिर्फ प्रॉब्लम कलेक्शन",
     "excellent": "🟢 एक्सीलेंट",
     "issuesManagement": "इश्यू मैनेजमेंट",
-    "manageVillageIssues": "गाँव की इश्यू मैनेज करो",
+    "manageVillageIssues": "समस्याएं प्रबंधित करें",
     "filterByStatus": "स्टेटस से फ़िल्टर",
     "allIssues": "सब इश्यू",
     "open": "ओपन",
@@ -435,7 +688,13 @@
     "comprehensiveInsights": "परफॉर्मेंस इनसाइट्स और ट्रेंड्स",
     "dailyReports": "डेली रिपोर्ट्स",
     "collectionEfficiency": "कलेक्शन एफिशिएंसी",
-    "households": "हाउसहोल्ड",
+    "households": {
+      "gram_panchayat": "हाउसहोल्ड",
+      "municipality": "प्रॉपर्टी",
+      "apartment": "फ्लैट",
+      "township": "प्लॉट",
+      "institution_campus": "यूनिट"
+    },
     "averageSegregationRating": "एवरेज सेग्रीगेशन रेटिंग",
     "outOf5Stars": "5.0 स्टार्स में से",
     "dailyCollectionTrend": "डेली कलेक्शन ट्रेंड (पिछले 7 दिन)",
@@ -453,8 +712,20 @@
     "selectDate": "तारीख चुनो",
     "today": "आज",
     "avgSegregationRating": "एवरेज सेग्रीगेशन रेटिंग",
-    "totalHouses": "टोटल मकान",
-    "registeredHouseholds": "रजिस्टर्ड हाउसहोल्ड",
+    "totalHouses": {
+      "gram_panchayat": "टोटल मकान",
+      "municipality": "टोटल मकान",
+      "apartment": "टोटल मकान",
+      "township": "टोटल मकान",
+      "institution_campus": "टोटल मकान"
+    },
+    "registeredHouseholds": {
+      "gram_panchayat": "रजिस्टर्ड हाउसहोल्ड",
+      "municipality": "रजिस्टर्ड प्रॉपर्टी",
+      "apartment": "रजिस्टर्ड फ्लैट",
+      "township": "रजिस्टर्ड प्लॉट",
+      "institution_campus": "रजिस्टर्ड यूनिट"
+    },
     "collectionsCompleted": "कलेक्शन पूरे हुए",
     "remaining": "बाकी",
     "yetToCollect": "अभी कलेक्ट करना बाकी",
@@ -464,7 +735,7 @@
     "collectorPerformanceToday": "आज का कलेक्टर परफॉर्मेंस",
     "collectionTimeline": "कलेक्शन टाइमलाइन",
     "announcements": "अनाउंसमेंट",
-    "sendUpdates": "अपने गाँव को अपडेट भेजो",
+    "sendUpdates": "अपने संगठन को अपडेट भेजें",
     "message": "मैसेज",
     "typeAnnouncement": "अपना अनाउंसमेंट टाइप करें...",
     "targetAudience": "किसको भेजना है",
@@ -478,15 +749,33 @@
     "userInfo": "यूज़र जानकारी",
     "settings": "सेटिंग्स",
     "logout": "लॉगआउट",
-    "villageManager": "गाँव मैनेजर",
+    "villageManager": {
+      "gram_panchayat": "गाँव मैनेजर",
+      "municipality": "ज़ोन मैनेजर",
+      "apartment": "सोसाइटी मैनेजर",
+      "township": "टाउनशिप मैनेजर",
+      "institution_campus": "कैंपस मैनेजर"
+    },
     "clickToViewFeedbacks": "फीडबैक देखने के लिए क्लिक करो",
     "collectorFeedbacks": "कलेक्टर फीडबैक",
     "filterFeedbacks": "फीडबैक फ़िल्टर",
     "allFeedbacks": "सब",
-    "fromHousehold": "हाउसहोल्ड से",
+    "fromHousehold": {
+      "gram_panchayat": "हाउसहोल्ड से",
+      "municipality": "प्रॉपर्टी से",
+      "apartment": "फ्लैट से",
+      "township": "प्लॉट से",
+      "institution_campus": "यूनिट से"
+    },
     "toCollector": "कलेक्टर को",
     "noFeedbackYet": "चुनी हुई तारीख में कोई फीडबैक डेटा नहीं है",
-    "feedbackFromHouseholds": "हाउसहोल्ड से कलेक्टर्स को फीडबैक",
+    "feedbackFromHouseholds": {
+      "gram_panchayat": "हाउसहोल्ड से कलेक्टर्स को फीडबैक",
+      "municipality": "प्रॉपर्टी से कलेक्टर्स को फीडबैक",
+      "apartment": "फ्लैट से कलेक्टर्स को फीडबैक",
+      "township": "प्लॉट से कलेक्टर्स को फीडबैक",
+      "institution_campus": "यूनिट से कलेक्टर्स को फीडबैक"
+    },
     "downloadPdfReport": "PDF रिपोर्ट डाउनलोड",
     "generatingPdf": "बन रहा है...",
     "pdfDownloaded": "डेली रिपोर्ट PDF डाउनलोड हो गई!",
@@ -506,7 +795,13 @@
     "peakCollectionHours": "पीक कलेक्शन टाइम",
     "hourlyDistribution": "घंटे के हिसाब से कलेक्शन",
     "peakWindow": "पीक विंडो",
-    "wardWiseBreakdown": "वार्ड-वाइज़ ब्रेकडाउन",
+    "wardWiseBreakdown": {
+      "gram_panchayat": "वार्ड-वाइज़ ब्रेकडाउन",
+      "municipality": "सब-वार्ड-वाइज़ ब्रेकडाउन",
+      "apartment": "विंग / ब्लॉक-वाइज़ ब्रेकडाउन",
+      "township": "सेक्टर-वाइज़ ब्रेकडाउन",
+      "institution_campus": "बिल्डिंग-वाइज़ ब्रेकडाउन"
+    },
     "nonCollected": "कलेक्ट नहीं हुआ",
     "wasteMaterialLogs": "वेस्ट मटेरियल लॉग्स",
     "wasteDiversionRate": "वेस्ट डाइवर्ज़न रेट",
@@ -539,8 +834,20 @@
     "fieldWorkers": "फील्ड वर्कर",
     "generateQr": "QR बैच जनरेट करें",
     "helpers": "हेल्पर",
-    "householdDetails": "घर की जानकारी",
-    "householdPerformance": "घर का परफॉर्मेंस",
+    "householdDetails": {
+      "gram_panchayat": "घर की जानकारी",
+      "municipality": "प्रॉपर्टी की जानकारी",
+      "apartment": "फ्लैट की जानकारी",
+      "township": "प्लॉट की जानकारी",
+      "institution_campus": "यूनिट की जानकारी"
+    },
+    "householdPerformance": {
+      "gram_panchayat": "घर का परफॉर्मेंस",
+      "municipality": "प्रॉपर्टी का परफॉर्मेंस",
+      "apartment": "फ्लैट का परफॉर्मेंस",
+      "township": "प्लॉट का परफॉर्मेंस",
+      "institution_campus": "यूनिट का परफॉर्मेंस"
+    },
     "management": "मैनेजमेंट",
     "markAttendance": "अटेंडेंस लगाएं",
     "paymentLedger": "पेमेंट लेजर",
@@ -552,16 +859,51 @@
     "selectVehicle": "वाहन चुनें",
     "vehicleManagement": "वाहन मैनेजमेंट",
     "viewShifts": "शिफ्ट देखें",
-    "villageSettings": "गाँव सेटिंग्स",
-    "wardsManagement": "वार्ड मैनेजमेंट",
+    "villageSettings": {
+      "gram_panchayat": "गाँव सेटिंग्स",
+      "municipality": "ज़ोन सेटिंग्स",
+      "apartment": "सोसाइटी सेटिंग्स",
+      "township": "टाउनशिप सेटिंग्स",
+      "institution_campus": "कैंपस सेटिंग्स"
+    },
+    "wardsManagement": {
+      "gram_panchayat": "वार्ड मैनेजमेंट",
+      "municipality": "सब-वार्ड मैनेजमेंट",
+      "apartment": "विंग / ब्लॉक मैनेजमेंट",
+      "township": "सेक्टर मैनेजमेंट",
+      "institution_campus": "बिल्डिंग मैनेजमेंट"
+    },
     "deleting": "हटा रहे हैं...",
     "peakHours": "पीक कलेक्शन टाइम",
-    "wardBreakdown": "वार्ड-वाइज़ ब्रेकडाउन",
+    "wardBreakdown": {
+      "gram_panchayat": "वार्ड-वाइज़ ब्रेकडाउन",
+      "municipality": "सब-वार्ड-वाइज़ ब्रेकडाउन",
+      "apartment": "विंग / ब्लॉक-वाइज़ ब्रेकडाउन",
+      "township": "सेक्टर-वाइज़ ब्रेकडाउन",
+      "institution_campus": "बिल्डिंग-वाइज़ ब्रेकडाउन"
+    },
     "landfill": "लैंडफिल",
-    "diversionRate": "वेस्ट डायवर्ज़न रेट"
+    "diversionRate": "वेस्ट डायवर्ज़न रेट",
+    "wards": {
+      "gram_panchayat": "वार्ड",
+      "municipality": "सब-वार्ड",
+      "apartment": "विंग",
+      "township": "सेक्टर",
+      "institution_campus": "बिल्डिंग"
+    },
+    "reports": "रिपोर्ट्स",
+    "more": "और",
+    "dashboard": "डैशबोर्ड",
+    "vehicles": "वाहन"
   },
   "householdPerformance": {
-    "title": "हाउसहोल्ड परफॉर्मेंस",
+    "title": {
+      "gram_panchayat": "हाउसहोल्ड परफॉर्मेंस",
+      "municipality": "प्रॉपर्टी परफॉर्मेंस",
+      "apartment": "फ्लैट परफॉर्मेंस",
+      "township": "प्लॉट परफॉर्मेंस",
+      "institution_campus": "यूनिट परफॉर्मेंस"
+    },
     "attention": "ध्यान चाहिए",
     "good": "अच्छा",
     "noData": "डेटा नहीं",
@@ -570,8 +912,20 @@
     "mixedWaste": "मिक्स्ड वेस्ट",
     "inactive": "इनएक्टिव",
     "never": "कभी नहीं",
-    "allWards": "सब वार्ड",
-    "noHouseholdsInCategory": "इस कैटेगरी में कोई हाउसहोल्ड नहीं",
+    "allWards": {
+      "gram_panchayat": "सब वार्ड",
+      "municipality": "सब सब-वार्ड",
+      "apartment": "सब विंग / ब्लॉक",
+      "township": "सब सेक्टर",
+      "institution_campus": "सब बिल्डिंग"
+    },
+    "noHouseholdsInCategory": {
+      "gram_panchayat": "इस कैटेगरी में कोई हाउसहोल्ड नहीं",
+      "municipality": "इस कैटेगरी में कोई प्रॉपर्टी नहीं",
+      "apartment": "इस कैटेगरी में कोई फ्लैट नहीं",
+      "township": "इस कैटेगरी में कोई प्लॉट नहीं",
+      "institution_campus": "इस कैटेगरी में कोई यूनिट नहीं"
+    },
     "neverCollected": "कभी कलेक्शन नहीं हुआ",
     "lastToday": "आज",
     "lastYesterday": "कल",
@@ -583,17 +937,47 @@
     "last30Days": "पिछले 30 दिन",
     "needsAttention": "ध्यान चाहिए",
     "goodStanding": "अच्छी स्थिति",
-    "meetingThresholds": "ये हाउसहोल्ड सब थ्रेशोल्ड पूरे कर रहा है",
+    "meetingThresholds": {
+      "gram_panchayat": "ये हाउसहोल्ड सब थ्रेशोल्ड पूरे कर रहा है",
+      "municipality": "ये प्रॉपर्टी सब थ्रेशोल्ड पूरे कर रहा है",
+      "apartment": "ये फ्लैट सब थ्रेशोल्ड पूरे कर रहा है",
+      "township": "ये प्लॉट सब थ्रेशोल्ड पूरे कर रहा है",
+      "institution_campus": "ये यूनिट सब थ्रेशोल्ड पूरे कर रहा है"
+    },
     "noCollectionData": "कलेक्शन डेटा नहीं",
-    "noRecordedCollections": "इस हाउसहोल्ड का कोई कलेक्शन रिकॉर्ड नहीं है",
+    "noRecordedCollections": {
+      "gram_panchayat": "इस हाउसहोल्ड का कोई कलेक्शन रिकॉर्ड नहीं है",
+      "municipality": "इस प्रॉपर्टी का कोई कलेक्शन रिकॉर्ड नहीं है",
+      "apartment": "इस फ्लैट का कोई कलेक्शन रिकॉर्ड नहीं है",
+      "township": "इस प्लॉट का कोई कलेक्शन रिकॉर्ड नहीं है",
+      "institution_campus": "इस यूनिट का कोई कलेक्शन रिकॉर्ड नहीं है"
+    },
     "visit": "विज़िट",
     "call": "कॉल",
     "noLocationData": "लोकेशन डेटा नहीं",
-    "noLocationDataDesc": "इस हाउसहोल्ड का कोई पता या लोकेशन नहीं है",
+    "noLocationDataDesc": {
+      "gram_panchayat": "इस हाउसहोल्ड का कोई पता या लोकेशन नहीं है",
+      "municipality": "इस प्रॉपर्टी का कोई पता या लोकेशन नहीं है",
+      "apartment": "इस फ्लैट का कोई पता या लोकेशन नहीं है",
+      "township": "इस प्लॉट का कोई पता या लोकेशन नहीं है",
+      "institution_campus": "इस यूनिट का कोई पता या लोकेशन नहीं है"
+    },
     "noPhoneNumber": "फ़ोन नंबर नहीं",
-    "noPhoneNumberDesc": "इस हाउसहोल्ड का कोई फ़ोन नंबर नहीं है",
+    "noPhoneNumberDesc": {
+      "gram_panchayat": "इस हाउसहोल्ड का कोई फ़ोन नंबर नहीं है",
+      "municipality": "इस प्रॉपर्टी का कोई फ़ोन नंबर नहीं है",
+      "apartment": "इस फ्लैट का कोई फ़ोन नंबर नहीं है",
+      "township": "इस प्लॉट का कोई फ़ोन नंबर नहीं है",
+      "institution_campus": "इस यूनिट का कोई फ़ोन नंबर नहीं है"
+    },
     "monitoringThresholds": "मॉनिटरिंग थ्रेशोल्ड",
-    "configureThresholds": "हाउसहोल्ड को कब फ्लैग करना है ये सेट करो।",
+    "configureThresholds": {
+      "gram_panchayat": "हाउसहोल्ड को कब फ्लैग करना है ये सेट करो।",
+      "municipality": "प्रॉपर्टी को कब फ्लैग करना है ये सेट करो।",
+      "apartment": "फ्लैट को कब फ्लैग करना है ये सेट करो।",
+      "township": "प्लॉट को कब फ्लैग करना है ये सेट करो।",
+      "institution_campus": "यूनिट को कब फ्लैग करना है ये सेट करो।"
+    },
     "minAvgRating": "कम से कम एवरेज सेग्रीगेशन रेटिंग (1-5)",
     "maxMixed7Days": "7 दिन में ज्यादा से ज्यादा मिक्स्ड वेस्ट",
     "maxInactiveDays": "ज्यादा से ज्यादा इनएक्टिव दिन",
@@ -808,7 +1192,13 @@
     "activateCycle": "साइकल एक्टिवेट करो",
     "activateBillingCycle": "बिलिंग साइकल एक्टिवेट करो",
     "noBillingCycle": "{{month}} के लिए बिलिंग साइकल नहीं है",
-    "activateDesc": "सब हाउसहोल्ड के बिल बनाने के लिए बिलिंग साइकल एक्टिवेट करो।",
+    "activateDesc": {
+      "gram_panchayat": "सब हाउसहोल्ड के बिल बनाने के लिए बिलिंग साइकल एक्टिवेट करो।",
+      "municipality": "सब प्रॉपर्टी के बिल बनाने के लिए बिलिंग साइकल एक्टिवेट करो।",
+      "apartment": "सब फ्लैट के बिल बनाने के लिए बिलिंग साइकल एक्टिवेट करो।",
+      "township": "सब प्लॉट के बिल बनाने के लिए बिलिंग साइकल एक्टिवेट करो।",
+      "institution_campus": "सब यूनिट के बिल बनाने के लिए बिलिंग साइकल एक्टिवेट करो।"
+    },
     "billingCycleActivated": "बिलिंग साइकल एक्टिवेट हो गया",
     "billsGenerated": "{{count}} बिल बने। एक्सपेक्टेड रेवेन्यू: ₹{{amount}}",
     "activationFailed": "एक्टिवेशन फेल",
@@ -822,7 +1212,13 @@
     "activating": "एक्टिवेट हो रहा है...",
     "activateAndGenerate": "एक्टिवेट करो और {{count}} बिल बनाओ",
     "loadingPreview": "प्रीव्यू लोड हो रहा है...",
-    "householdLedger": "हाउसहोल्ड लेजर",
+    "householdLedger": {
+      "gram_panchayat": "हाउसहोल्ड लेजर",
+      "municipality": "प्रॉपर्टी लेजर",
+      "apartment": "फ्लैट लेजर",
+      "township": "प्लॉट लेजर",
+      "institution_campus": "यूनिट लेजर"
+    },
     "searchNameHouse": "नाम, मकान# ढूंढो...",
     "paid": "पेड",
     "pay": "पे करो",
@@ -846,7 +1242,13 @@
     "bulkPaymentDesc": "{{count}} बिल पेड मार्क हो गए",
     "bulkPaymentFailed": "बल्क पेमेंट फेल",
     "bulkPaymentFailedDesc": "बल्क पेमेंट प्रोसेस नहीं हो पाई। फिर से ट्राई करो।",
-    "householdPaymentHistory": "हाउसहोल्ड पेमेंट हिस्ट्री",
+    "householdPaymentHistory": {
+      "gram_panchayat": "हाउसहोल्ड पेमेंट हिस्ट्री",
+      "municipality": "प्रॉपर्टी पेमेंट हिस्ट्री",
+      "apartment": "फ्लैट पेमेंट हिस्ट्री",
+      "township": "प्लॉट पेमेंट हिस्ट्री",
+      "institution_campus": "यूनिट पेमेंट हिस्ट्री"
+    },
     "scanQrToPay": "पे करने के लिए QR स्कैन करो",
     "creatingPayment": "पेमेंट बन रही है...",
     "creatingPaymentOrder": "पेमेंट ऑर्डर बन रहा है...",
@@ -898,8 +1300,14 @@
     "webhookUrl": "Webhook URL",
     "webhookUrlDesc": "ये URL अपने {{provider}} डैशबोर्ड → Webhooks सेक्शन में पेस्ट करो:",
     "mdrConvenienceFee": "MDR / कन्वीनियंस फीस",
-    "villageAbsorbs": "गाँव भरेगा (~2%)",
-    "householdPaysExtra": "हाउसहोल्ड एक्स्ट्रा देगा",
+    "villageAbsorbs": "संगठन वहन करेगा (~2%)",
+    "householdPaysExtra": {
+      "gram_panchayat": "हाउसहोल्ड एक्स्ट्रा देगा",
+      "municipality": "प्रॉपर्टी एक्स्ट्रा देगा",
+      "apartment": "फ्लैट एक्स्ट्रा देगा",
+      "township": "प्लॉट एक्स्ट्रा देगा",
+      "institution_campus": "यूनिट एक्स्ट्रा देगा"
+    },
     "mdrPercent": "MDR %",
     "saveAndEncrypt": "सेव और एन्क्रिप्ट करो",
     "gatewayConfigSaved": "गेटवे कॉन्फ़िग सेव हो गया",
@@ -910,8 +1318,14 @@
     "removeGatewayConfirm": "{{provider}} हटाना है?",
     "removeGatewayDesc": "ये पेमेंट गेटवे हट जाएगा।",
     "missing": "ये डालना बाकी है: {{fields}}",
-    "householdPaysMdr": "हाउसहोल्ड +{{percent}}%",
-    "villageAbsorbsMdr": "गाँव भरेगा",
+    "householdPaysMdr": {
+      "gram_panchayat": "हाउसहोल्ड +{{percent}}%",
+      "municipality": "प्रॉपर्टी +{{percent}}%",
+      "apartment": "फ्लैट +{{percent}}%",
+      "township": "प्लॉट +{{percent}}%",
+      "institution_campus": "यूनिट +{{percent}}%"
+    },
+    "villageAbsorbsMdr": "संगठन वहन करेगा",
     "editConfig": "कॉन्फ़िग एडिट करो",
     "billingCycleHistory": "बिलिंग साइकल हिस्ट्री",
     "noBillingCycles": "अभी कोई बिलिंग साइकल नहीं।",
@@ -945,7 +1359,7 @@
   },
   "myBills": {
     "noBills": "कोई बिल नहीं",
-    "notLinkedToHousehold": "आपका अकाउंट अभी किसी हाउसहोल्ड से लिंक नहीं है।",
+    "notLinkedToHousehold": "आपका अकाउंट अभी लिंक नहीं हुआ है।",
     "outstandingFees": "बाकी कचरा कलेक्शन फीस",
     "monthsDue": "{{count}} महीने बाकी",
     "payNow": "अभी पे करो",
@@ -987,12 +1401,42 @@
     "paymentFailedTryAgain": "कुछ गड़बड़ हो गई। फिर से ट्राई करो।"
   },
   "households": {
-    "title": "हाउसहोल्ड",
-    "addHousehold": "हाउसहोल्ड जोड़ो",
+    "title": {
+      "gram_panchayat": "हाउसहोल्ड",
+      "municipality": "प्रॉपर्टी",
+      "apartment": "फ्लैट",
+      "township": "प्लॉट",
+      "institution_campus": "यूनिट"
+    },
+    "addHousehold": {
+      "gram_panchayat": "हाउसहोल्ड जोड़ो",
+      "municipality": "प्रॉपर्टी जोड़ो",
+      "apartment": "फ्लैट जोड़ो",
+      "township": "प्लॉट जोड़ो",
+      "institution_campus": "यूनिट जोड़ो"
+    },
     "bulkUpload": "बल्क अपलोड",
-    "householdName": "हाउसहोल्ड नाम",
-    "houseNumber": "मकान नंबर",
-    "headName": "घर का मुखिया",
+    "householdName": {
+      "gram_panchayat": "हाउसहोल्ड नाम",
+      "municipality": "प्रॉपर्टी नाम",
+      "apartment": "फ्लैट नाम",
+      "township": "प्लॉट नाम",
+      "institution_campus": "यूनिट नाम"
+    },
+    "houseNumber": {
+      "gram_panchayat": "मकान नंबर",
+      "municipality": "डोर नंबर",
+      "apartment": "फ्लैट नंबर",
+      "township": "प्लॉट नंबर",
+      "institution_campus": "यूनिट नंबर"
+    },
+    "headName": {
+      "gram_panchayat": "घर का मुखिया",
+      "municipality": "प्रॉपर्टी ओनर",
+      "apartment": "फ्लैट ओनर",
+      "township": "प्लॉट ओनर",
+      "institution_campus": "यूनिट हेड"
+    },
     "phone": "फ़ोन नंबर",
     "address": "पता",
     "qrCode": "QR कोड",
@@ -1001,7 +1445,13 @@
     "inactive": "इनएक्टिव",
     "generateQR": "QR कोड बनाओ",
     "downloadQR": "QR कोड डाउनलोड",
-    "totalHouseholds": "टोटल हाउसहोल्ड",
+    "totalHouseholds": {
+      "gram_panchayat": "टोटल हाउसहोल्ड",
+      "municipality": "टोटल प्रॉपर्टी",
+      "apartment": "टोटल फ्लैट",
+      "township": "टोटल प्लॉट",
+      "institution_campus": "टोटल यूनिट"
+    },
     "uploadCSV": "CSV फ़ाइल अपलोड",
     "csvTemplate": "CSV टेम्पलेट डाउनलोड"
   },
@@ -1054,7 +1504,13 @@
     "provideFeedback": "फीडबैक दो",
     "rating": "रेटिंग",
     "comments": "कमेंट्स",
-    "fromHousehold": "हाउसहोल्ड से",
+    "fromHousehold": {
+      "gram_panchayat": "हाउसहोल्ड से",
+      "municipality": "प्रॉपर्टी से",
+      "apartment": "फ्लैट से",
+      "township": "प्लॉट से",
+      "institution_campus": "यूनिट से"
+    },
     "toCollector": "कलेक्टर को",
     "feedbackDate": "फीडबैक तारीख",
     "positiveComments": "अच्छे कमेंट्स",
@@ -1076,7 +1532,13 @@
     "performanceMetrics": "परफॉर्मेंस मेट्रिक्स",
     "segregationRates": "सेग्रीगेशन रेट्स",
     "collectorPerformance": "कलेक्टर परफॉर्मेंस",
-    "householdParticipation": "हाउसहोल्ड पार्टिसिपेशन",
+    "householdParticipation": {
+      "gram_panchayat": "हाउसहोल्ड पार्टिसिपेशन",
+      "municipality": "प्रॉपर्टी पार्टिसिपेशन",
+      "apartment": "फ्लैट पार्टिसिपेशन",
+      "township": "प्लॉट पार्टिसिपेशन",
+      "institution_campus": "यूनिट पार्टिसिपेशन"
+    },
     "wasteComposition": "वेस्ट कम्पोज़िशन",
     "environmentalImpact": "एनवायरनमेंटल इम्पैक्ट",
     "applyFilters": "फ़िल्टर लगाओ",
@@ -1090,7 +1552,13 @@
     "allUsers": "सबको",
     "managers": "सिर्फ मैनेजर्स",
     "collectors": "सिर्फ कलेक्टर्स",
-    "households": "सिर्फ हाउसहोल्ड",
+    "households": {
+      "gram_panchayat": "सिर्फ हाउसहोल्ड",
+      "municipality": "सिर्फ प्रॉपर्टी",
+      "apartment": "सिर्फ फ्लैट",
+      "township": "सिर्फ प्लॉट",
+      "institution_campus": "सिर्फ यूनिट"
+    },
     "publishDate": "पब्लिश तारीख",
     "expiryDate": "एक्सपायरी तारीख",
     "urgent": "अर्जेंट",
@@ -1099,18 +1567,30 @@
     "checkLater": "बाद में ज़रूरी अपडेट्स के लिए चेक करो"
   },
   "villages": {
-    "title": "गाँव",
-    "addVillage": "गाँव जोड़ो",
-    "villageName": "गाँव का नाम",
-    "villageId": "गाँव ID",
+    "title": "संगठन",
+    "addVillage": "संगठन जोड़ें",
+    "villageName": "संगठन का नाम",
+    "villageId": "संगठन ID",
     "managerName": "मैनेजर का नाम",
     "managerPhone": "मैनेजर का फ़ोन",
-    "totalVillages": "टोटल गाँव",
-    "activeVillages": "एक्टिव गाँव",
-    "villageStats": "गाँव स्टैटिस्टिक्स",
-    "createVillage": "गाँव बनाओ",
-    "addWard": "नया वार्ड/उप-गाँव जोड़ें",
-    "wardName": "वार्ड/उप-गाँव का नाम"
+    "totalVillages": "कुल संगठन",
+    "activeVillages": "सक्रिय संगठन",
+    "villageStats": "संगठन सांख्यिकी",
+    "createVillage": "संगठन बनाएं",
+    "addWard": {
+      "gram_panchayat": "नया वार्ड/उप-गाँव जोड़ें",
+      "municipality": "नया सब-वार्ड/उप-ज़ोन जोड़ें",
+      "apartment": "नया विंग / ब्लॉक/उप-सोसाइटी जोड़ें",
+      "township": "नया सेक्टर/उप-टाउनशिप जोड़ें",
+      "institution_campus": "नया बिल्डिंग/उप-कैंपस जोड़ें"
+    },
+    "wardName": {
+      "gram_panchayat": "वार्ड/उप-गाँव का नाम",
+      "municipality": "सब-वार्ड/उप-ज़ोन का नाम",
+      "apartment": "विंग / ब्लॉक/उप-सोसाइटी का नाम",
+      "township": "सेक्टर/उप-टाउनशिप का नाम",
+      "institution_campus": "बिल्डिंग/उप-कैंपस का नाम"
+    }
   },
   "profile": {
     "title": "प्रोफ़ाइल",
@@ -1126,14 +1606,26 @@
     "updateProfile": "प्रोफ़ाइल अपडेट करो"
   },
   "filters": {
-    "selectVillage": "गाँव चुनो",
+    "selectVillage": "संगठन चुनें",
     "selectCollector": "कलेक्टर चुनो",
-    "selectHousehold": "हाउसहोल्ड चुनो",
+    "selectHousehold": {
+      "gram_panchayat": "हाउसहोल्ड चुनो",
+      "municipality": "प्रॉपर्टी चुनो",
+      "apartment": "फ्लैट चुनो",
+      "township": "प्लॉट चुनो",
+      "institution_campus": "यूनिट चुनो"
+    },
     "startDate": "शुरू तारीख",
     "endDate": "आखिरी तारीख",
-    "allVillages": "सब गाँव",
+    "allVillages": "सभी संगठन",
     "allCollectors": "सब कलेक्टर्स",
-    "allHouseholds": "सब हाउसहोल्ड"
+    "allHouseholds": {
+      "gram_panchayat": "सब हाउसहोल्ड",
+      "municipality": "सब प्रॉपर्टी",
+      "apartment": "सब फ्लैट",
+      "township": "सब प्लॉट",
+      "institution_campus": "सब यूनिट"
+    }
   },
   "messages": {
     "noData": "कोई डेटा नहीं है",
@@ -1201,5 +1693,87 @@
     "excellent": "बहुत बढ़िया",
     "poor": "खराब",
     "veryPoor": "बहुत खराब"
+  },
+  "terminology": {
+    "gram_panchayat": {
+      "org": "गाँव",
+      "orgPlural": "गाँव",
+      "household": "घर",
+      "householdPlural": "घर",
+      "headName": "मुखिया",
+      "houseNumber": "मकान नंबर",
+      "ward": "वार्ड",
+      "wardPlural": "वार्ड",
+      "collector": "कचरा कलेक्टर",
+      "collectorPlural": "कचरा कलेक्टर",
+      "familySize": "परिवार का आकार",
+      "address": "पता",
+      "session": "वाहन सेशन",
+      "sessionPlural": "वाहन सेशन"
+    },
+    "municipality": {
+      "org": "वार्ड / ज़ोन",
+      "orgPlural": "वार्ड / ज़ोन",
+      "household": "प्रॉपर्टी",
+      "householdPlural": "प्रॉपर्टी",
+      "headName": "प्रॉपर्टी ओनर",
+      "houseNumber": "डोर नंबर",
+      "ward": "सब-वार्ड",
+      "wardPlural": "सब-वार्ड",
+      "collector": "सैनिटरी वर्कर",
+      "collectorPlural": "सैनिटरी वर्कर",
+      "familySize": "निवासी",
+      "address": "पता",
+      "session": "वाहन सेशन",
+      "sessionPlural": "वाहन सेशन"
+    },
+    "apartment": {
+      "org": "सोसाइटी",
+      "orgPlural": "सोसाइटी",
+      "household": "फ्लैट",
+      "householdPlural": "फ्लैट",
+      "headName": "फ्लैट ओनर",
+      "houseNumber": "फ्लैट नंबर",
+      "ward": "विंग / ब्लॉक",
+      "wardPlural": "विंग / ब्लॉक",
+      "collector": "हाउसकीपिंग स्टाफ",
+      "collectorPlural": "हाउसकीपिंग स्टाफ",
+      "familySize": "निवासी",
+      "address": "फ्लोर & विंग",
+      "session": "कलेक्शन सेशन",
+      "sessionPlural": "कलेक्शन सेशन"
+    },
+    "township": {
+      "org": "टाउनशिप",
+      "orgPlural": "टाउनशिप",
+      "household": "प्लॉट",
+      "householdPlural": "प्लॉट",
+      "headName": "प्लॉट ओनर",
+      "houseNumber": "प्लॉट नंबर",
+      "ward": "सेक्टर",
+      "wardPlural": "सेक्टर",
+      "collector": "कलेक्शन स्टाफ",
+      "collectorPlural": "कलेक्शन स्टाफ",
+      "familySize": "निवासी",
+      "address": "स्ट्रीट / ब्लॉक",
+      "session": "वाहन सेशन",
+      "sessionPlural": "वाहन सेशन"
+    },
+    "institution_campus": {
+      "org": "कैंपस",
+      "orgPlural": "कैंपस",
+      "household": "यूनिट",
+      "householdPlural": "यूनिट",
+      "headName": "यूनिट हेड",
+      "houseNumber": "यूनिट नंबर",
+      "ward": "बिल्डिंग",
+      "wardPlural": "बिल्डिंग",
+      "collector": "फैसिलिटी स्टाफ",
+      "collectorPlural": "फैसिलिटी स्टाफ",
+      "familySize": "निवासी",
+      "address": "बिल्डिंग & फ्लोर",
+      "session": "कलेक्शन सेशन",
+      "sessionPlural": "कलेक्शन सेशन"
+    }
   }
 }

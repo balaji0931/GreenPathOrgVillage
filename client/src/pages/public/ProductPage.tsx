@@ -122,7 +122,7 @@ const modules = [
 ];
 
 const roles = [
-  { role: "Moderator", desc: "Oversees multiple villages, manages managers across deployments, sends cross-village announcements", icon: Shield, img: "/images/illustrations/role-admin.png" },
+  { role: "Moderator", desc: "Oversees multiple communities, manages managers across deployments, sends cross-community announcements", icon: Shield, img: "/images/illustrations/role-admin.png" },
   { role: "Manager", desc: "Registers households, generates QR batches, assigns collectors, monitors operations and analytics", icon: Users, img: "/images/illustrations/role-manager.png" },
   { role: "Collector", desc: "Scans QR codes, records waste type, rates segregation quality, adds photo/voice evidence", icon: Smartphone, img: "/images/illustrations/role-collector.png" },
   { role: "Fieldworker", desc: "Maps households by scanning premapped QR codes, captures GPS locations, mobile-only workflow", icon: MapPin, img: "/images/illustrations/role-fieldworker.png" },
@@ -476,7 +476,7 @@ export default function ProductPage() {
                     {[
                       "Target specific audiences - all, managers, collectors, generators",
                       "Attach photos for visual announcements",
-                      "Cross-village broadcasts by moderators",
+                      "Cross-community broadcasts by moderators",
                       "Auto-display on household and collector dashboards",
                     ].map((item) => (
                       <li key={item} className="flex items-start gap-2 text-sm text-slate-600">
@@ -702,7 +702,7 @@ export default function ProductPage() {
                 </h2>
                 <p className="text-lg text-slate-600 leading-relaxed mb-8">
                   GreenPath works where internet doesn't. Collectors in rural
-                  panchayats and peri-urban zones operate with intermittent
+                  panchayats, apartments, and communities operate with intermittent
                   connectivity. Our offline-first architecture ensures:
                 </p>
                 <ul className="space-y-4">
@@ -871,7 +871,7 @@ export default function ProductPage() {
         </div>
       </section>
 
-      {/* Configurable Villages */}
+      {/* Configurable Communities */}
       <section className="py-10 md:py-14">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid md:grid-cols-2 gap-12 items-center">
@@ -881,7 +881,7 @@ export default function ProductPage() {
                 <div className="relative gentle-float">
                   <img
                     src="/images/illustrations/feature-configurable.png"
-                    alt="Village-level configuration settings"
+                    alt="Community-level configuration settings"
                     className="w-full max-w-[420px] mx-auto h-auto"
                     style={{ filter: "drop-shadow(0 15px 30px rgba(5,150,105,0.12))" }}
                   />
@@ -895,18 +895,18 @@ export default function ProductPage() {
                   CONFIGURABLE
                 </span>
                 <h2 className="text-3xl md:text-4xl font-bold text-slate-900 tracking-tight mb-6">
-                  Every village operates differently
+                  Every community operates differently
                 </h2>
                 <p className="text-lg text-slate-600 leading-relaxed mb-8">
                   Each deployment can be configured to match local requirements.
-                  Toggle features on or off per village - no one-size-fits-all.
+                  Toggle features on or off per community - no one-size-fits-all.
                 </p>
                 <ul className="space-y-4">
                   {[
-                    "Toggle photo upload requirements per village",
+                    "Toggle photo upload requirements per community",
                     "Enable or disable GPS location services",
                     "Configure ward structure (single or multi-ward)",
-                    "Set collection schedules per village",
+                    "Set collection schedules per community",
                     "Role-based access - each stakeholder sees only what's relevant",
                   ].map((item) => (
                     <li key={item} className="flex items-start gap-3">

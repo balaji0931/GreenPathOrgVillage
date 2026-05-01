@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
 import type { Village } from "@shared/schema";
+import { useTerminology } from '@/hooks/useTerminology';
 import { useIsMobileWithLoading } from "@/hooks/use-mobile";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -74,6 +75,9 @@ export default function FieldWorkerDashboard() {
       fetch(`/api/villages/${user?.villageId}`).then((res) => res.json()),
   });
 
+  // Derive terminology labels based on organization type + language
+  const { label } = useTerminology((village as any)?.unitType);
+
   // Fetch household types for the village
   const { data: householdTypeOptions } = useQuery<{ typeCode: string; displayName: string }[]>({
     queryKey: ['household-types', user?.villageId],
@@ -123,7 +127,7 @@ export default function FieldWorkerDashboard() {
       } else {
         toast({
           title: "Already Mapped",
-          description: "This QR code is already mapped to a household.",
+          description: `This QR code is already mapped.`,
           variant: "destructive",
         });
       }
@@ -131,7 +135,7 @@ export default function FieldWorkerDashboard() {
     onError: (_error: unknown) => {
       toast({
         title: "QR Code Not Found",
-        description: "This QR code does not exist or doesn't belong to your village.",
+        description: "This QR code does not exist or doesn't belong to your organization.",
         variant: "destructive",
       });
     }
@@ -152,7 +156,7 @@ export default function FieldWorkerDashboard() {
     onError: (_error: unknown) => {
       toast({
         title: "Mapping Failed",
-        description: "Failed to map household to QR code. Please try again.",
+        description: "Failed to map. Please try again.",
         variant: "destructive",
       });
     }
@@ -252,10 +256,10 @@ export default function FieldWorkerDashboard() {
   };
 
   const requiredFields: { key: keyof HouseholdForm; label: string }[] = [
-    { key: "headName", label: "Head of household name" },
+    { key: "headName", label: label.headName },
     { key: "phone", label: "Phone number" },
-    { key: "houseNumber", label: "House number" },
-    { key: "ward", label: "Ward" },
+    { key: "houseNumber", label: label.houseNumber },
+    { key: "ward", label: label.ward },
   ];
 
   const handlePreview = () => {
@@ -405,8 +409,8 @@ export default function FieldWorkerDashboard() {
                   <div className="flex items-center gap-3 text-green-700">
                     <CheckCircle className="h-6 w-6" />
                     <div>
-                      <p className="font-medium">Household Mapped Successfully!</p>
-                      <p className="text-sm text-green-600">The QR code is now linked to the household.</p>
+                      <p className="font-medium">Mapped Successfully!</p>
+                      <p className="text-sm text-green-600">The QR code has been linked successfully.</p>
                     </div>
                   </div>
                 </CardContent>
@@ -417,7 +421,7 @@ export default function FieldWorkerDashboard() {
               <CardHeader className="pb-3">
                 <CardTitle className="flex items-center gap-2 text-lg">
                   <MapPin className="h-5 w-5 text-green-600" />
-                  Map Household
+                  {`Map ${label.household}`}
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
@@ -470,7 +474,7 @@ export default function FieldWorkerDashboard() {
                 <h3 className="font-medium text-blue-900 mb-2">How to Map</h3>
                 <ol className="text-sm text-blue-800 space-y-1 list-decimal list-inside">
                   <li>Scan the printed QR code or enter its UID</li>
-                  <li>Fill in household details</li>
+                  <li>{`Fill in ${label.household.toLowerCase()} details`}</li>
                   <li>Preview and confirm the mapping</li>
                 </ol>
               </CardContent>
@@ -506,7 +510,7 @@ export default function FieldWorkerDashboard() {
                   <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
                     <MapPinned className="h-5 w-5 text-gray-400" />
                     <div>
-                      <p className="text-xs text-gray-500">Village</p>
+                      <p className="text-xs text-gray-500">{label.org}</p>
                       <p className="font-medium">{user?.villageId || 'Not assigned'}</p>
                     </div>
                   </div>
@@ -587,7 +591,7 @@ export default function FieldWorkerDashboard() {
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2">
                 <Home className="h-5 w-5" />
-                Household Details
+                {`${label.household} Details`}
               </DialogTitle>
             </DialogHeader>
             <div className="space-y-4">
@@ -600,7 +604,7 @@ export default function FieldWorkerDashboard() {
                 <div className="space-y-1">
                   <Label htmlFor="headName" className="flex items-center gap-1">
                     <User className="h-4 w-4" />
-                    Head of Household <span className="text-red-500">*</span>
+                    {label.headName} <span className="text-red-500">*</span>
                   </Label>
                   <Input
                     id="headName"
@@ -629,7 +633,7 @@ export default function FieldWorkerDashboard() {
                 <div className="space-y-1">
                   <Label htmlFor="houseNumber" className="flex items-center gap-1">
                     <Home className="h-4 w-4" />
-                    House Number <span className="text-red-500">*</span>
+                    {label.houseNumber} <span className="text-red-500">*</span>
                   </Label>
                   <Input
                     id="houseNumber"
@@ -643,14 +647,14 @@ export default function FieldWorkerDashboard() {
                 <div className="space-y-1">
                   <Label htmlFor="ward" className="flex items-center gap-1">
                     <MapPinned className="h-4 w-4" />
-                    Ward <span className="text-red-500">*</span>
+                    {label.ward} <span className="text-red-500">*</span>
                   </Label>
                   <Select
                     value={householdForm.ward}
                     onValueChange={(value) => setHouseholdForm({ ...householdForm, ward: value })}
                   >
                     <SelectTrigger data-testid="select-ward">
-                      <SelectValue placeholder="Select ward" />
+                      <SelectValue placeholder={`Select ${label.ward.toLowerCase()}`} />
                     </SelectTrigger>
                     <SelectContent>
                       {wardOptions.map((ward) => (
@@ -663,7 +667,7 @@ export default function FieldWorkerDashboard() {
                 <div className="space-y-1">
                   <Label htmlFor="householdType" className="flex items-center gap-1">
                     <Home className="h-4 w-4" />
-                    Household Type <span className="text-red-500">*</span>
+                    {`${label.household} Type`} <span className="text-red-500">*</span>
                   </Label>
                   <Select
                     value={householdForm.householdType}
@@ -690,7 +694,7 @@ export default function FieldWorkerDashboard() {
                 <div className="space-y-1">
                   <Label htmlFor="familySize" className="flex items-center gap-1">
                     <Users className="h-4 w-4" />
-                    Family Size
+                    {label.familySize}
                   </Label>
                   <Input
                     id="familySize"
@@ -780,7 +784,7 @@ export default function FieldWorkerDashboard() {
 
               <div className="space-y-2 text-sm">
                 <div className="flex justify-between py-2 border-b">
-                  <span className="text-gray-500">Head of Household</span>
+                  <span className="text-gray-500">{label.headName}</span>
                   <span className="font-medium">{householdForm.headName}</span>
                 </div>
                 {householdForm.phone && (
@@ -791,27 +795,27 @@ export default function FieldWorkerDashboard() {
                 )}
                 {householdForm.houseNumber && (
                   <div className="flex justify-between py-2 border-b">
-                    <span className="text-gray-500">House Number</span>
+                    <span className="text-gray-500">{label.houseNumber}</span>
                     <span className="font-medium">{householdForm.houseNumber}</span>
                   </div>
                 )}
                 <div className="flex justify-between py-2 border-b">
-                  <span className="text-gray-500">Ward</span>
+                  <span className="text-gray-500">{label.ward}</span>
                   <span className="font-medium">{householdForm.ward}</span>
                 </div>
                 <div className="flex justify-between py-2 border-b">
-                  <span className="text-gray-500">Household Type</span>
+                  <span className="text-gray-500">{label.household} Type</span>
                   <span className="font-medium">
                     {householdTypeOptions?.find(t => t.typeCode === householdForm.householdType)?.displayName || householdForm.householdType}
                   </span>
                 </div>
                 <div className="flex justify-between py-2 border-b">
-                  <span className="text-gray-500">Family Size</span>
+                  <span className="text-gray-500">{label.familySize}</span>
                   <span className="font-medium">{householdForm.familySize}</span>
                 </div>
                 {householdForm.address && (
                   <div className="flex justify-between py-2 border-b">
-                    <span className="text-gray-500">Address</span>
+                    <span className="text-gray-500">{label.address}</span>
                     <span className="font-medium">{householdForm.address}</span>
                   </div>
                 )}
@@ -908,7 +912,7 @@ export default function FieldWorkerDashboard() {
             {/* Header */}
             <div className="flex justify-between items-center px-3">
               <h2 className="text-lg font-semibold">
-                Household Location
+                {label.household} Location
               </h2>
               <Button
                 variant="ghost"

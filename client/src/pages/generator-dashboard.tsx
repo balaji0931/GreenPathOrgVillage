@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { translateEnum } from '../i18n/enumTranslations';
+import { useTerminology } from '@/hooks/useTerminology';
 import { MyBillsTab } from "@/components/my-bills-tab";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -74,6 +75,7 @@ export default function GeneratorDashboard() {
   const { user, logout } = useAuth();
   const { toast } = useToast();
   const { t } = useTranslation();
+  const { tt, label } = useTerminology((villageDetails as any)?.unitType);
 
   const [activeTab, setActiveTab] = useState("home");
   const [showIssueModal, setShowIssueModal] = useState(false);
@@ -161,13 +163,13 @@ export default function GeneratorDashboard() {
       if (success) {
         refetchPushStatus();
         toast({
-          title: t('app.success'),
-          description: t('app.success'),
+          title: tt('app.success'),
+          description: tt('app.success'),
         });
       } else {
         toast({
-          title: t('app.error'),
-          description: t('app.error'),
+          title: tt('app.error'),
+          description: tt('app.error'),
           variant: "destructive",
         });
       }
@@ -214,8 +216,8 @@ export default function GeneratorDashboard() {
           photoUrl = uploadResult.url;
         } catch (uploadError) {
           toast({
-            title: t('app.error'),
-            description: t('app.error'),
+            title: tt('app.error'),
+            description: tt('app.error'),
             variant: "destructive",
           });
           photoUrl = null;
@@ -253,14 +255,14 @@ export default function GeneratorDashboard() {
         photoFile: null,
       });
       toast({
-        title: t('app.success'),
-        description: t('generator.issueReportedSuccess'),
+        title: tt('app.success'),
+        description: tt('generator.issueReportedSuccess'),
       });
     },
     onError: (_error: unknown) => {
       toast({
-        title: t('app.error'),
-        description: t('app.error'),
+        title: tt('app.error'),
+        description: tt('app.error'),
         variant: "destructive",
       });
     },
@@ -294,14 +296,14 @@ export default function GeneratorDashboard() {
       setShowFeedbackModal(false);
       setCollectorFeedback({ collectionId: null, rating: 0, remarks: "" });
       toast({
-        title: t('app.success'),
-        description: t('app.success'),
+        title: tt('app.success'),
+        description: tt('app.success'),
       });
     },
     onError: (_error: unknown) => {
       toast({
-        title: t('app.error'),
-        description: t('app.error'),
+        title: tt('app.error'),
+        description: tt('app.error'),
         variant: "destructive",
       });
     },
@@ -315,8 +317,8 @@ export default function GeneratorDashboard() {
     },
     onSuccess: () => {
       toast({
-        title: t('app.success'),
-        description: t('app.success'),
+        title: tt('app.success'),
+        description: tt('app.success'),
       });
       setShowPasswordModal(false);
       setNewPassword("");
@@ -324,8 +326,8 @@ export default function GeneratorDashboard() {
     },
     onError: (_error: unknown) => {
       toast({
-        title: t('app.error'),
-        description: t('app.error'),
+        title: tt('app.error'),
+        description: tt('app.error'),
         variant: "destructive",
       });
     },
@@ -339,8 +341,8 @@ export default function GeneratorDashboard() {
     // Validation
     if (!trimmedTitle || !newIssue.category || !trimmedDescription) {
       toast({
-        title: t('app.error'),
-        description: t('app.error'),
+        title: tt('app.error'),
+        description: tt('app.error'),
         variant: "destructive",
       });
       return;
@@ -348,8 +350,8 @@ export default function GeneratorDashboard() {
 
     if (trimmedTitle.length < 3) {
       toast({
-        title: t('app.error'),
-        description: t('app.minimumChars'),
+        title: tt('app.error'),
+        description: tt('app.minimumChars'),
         variant: "destructive",
       });
       return;
@@ -357,8 +359,8 @@ export default function GeneratorDashboard() {
 
     if (trimmedDescription.length < 10) {
       toast({
-        title: t('app.error'),
-        description: t('app.minimum10Chars'),
+        title: tt('app.error'),
+        description: tt('app.minimum10Chars'),
         variant: "destructive",
       });
       return;
@@ -369,8 +371,8 @@ export default function GeneratorDashboard() {
       const maxSize = 5 * 1024 * 1024; // 5MB
       if (newIssue.photoFile.size > maxSize) {
         toast({
-          title: t('app.error'),
-          description: t('app.error'),
+          title: tt('app.error'),
+          description: tt('app.error'),
           variant: "destructive",
         });
         return;
@@ -387,8 +389,8 @@ export default function GeneratorDashboard() {
   const handleSubmitFeedback = () => {
     if (!collectorFeedback.rating || !collectorFeedback.collectionId) {
       toast({
-        title: t('app.error'),
-        description: t('app.error'),
+        title: tt('app.error'),
+        description: tt('app.error'),
         variant: "destructive",
       });
       return;
@@ -404,8 +406,8 @@ export default function GeneratorDashboard() {
   const handleChangePassword = () => {
     if (newPassword !== confirmPassword) {
       toast({
-        title: t('app.error'),
-        description: t('app.error'),
+        title: tt('app.error'),
+        description: tt('app.error'),
         variant: "destructive",
       });
       return;
@@ -413,8 +415,8 @@ export default function GeneratorDashboard() {
 
     if (newPassword.length < 6) {
       toast({
-        title: t('app.error'),
-        description: t('app.error'),
+        title: tt('app.error'),
+        description: tt('app.error'),
         variant: "destructive",
       });
       return;
@@ -482,7 +484,7 @@ export default function GeneratorDashboard() {
                     localStorage.setItem('greenpath-push-banner-dismissed', 'true');
                   }}
                   className="absolute top-2 right-2 text-gray-400 hover:text-gray-600 p-1"
-                  aria-label={t('app.close')}
+                  aria-label={tt('app.close')}
                 >
                   ✕
                 </button>
@@ -491,9 +493,9 @@ export default function GeneratorDashboard() {
                     <Bell className="w-5 h-5 text-blue-600" />
                   </div>
                   <div className="flex-1">
-                    <p className="text-sm font-semibold text-gray-800">{t('generator.pushNotifications')}</p>
+                    <p className="text-sm font-semibold text-gray-800">{tt('generator.pushNotifications')}</p>
                     <p className="text-xs text-gray-500 mt-0.5 mb-2">
-                      {t('generator.notificationsDesc')}
+                      {tt('generator.notificationsDesc')}
                     </p>
                     <Button
                       size="sm"
@@ -510,7 +512,7 @@ export default function GeneratorDashboard() {
                         });
                       }}
                     >
-                      {togglePushMutation.isPending ? t('app.loading') : '🔔 ' + t('generator.enableNotifications')}
+                      {togglePushMutation.isPending ? tt('app.loading') : '🔔 ' + tt('generator.enableNotifications')}
                     </Button>
                   </div>
                 </div>
@@ -522,7 +524,7 @@ export default function GeneratorDashboard() {
                 <CardTitle className="flex items-center justify-between text-lg">
                   <div className="flex items-center">
                     <Bell className="w-5 h-5 mr-2 text-blue-600" />
-                    {t('announcements.title')}
+                    {tt('announcements.title')}
                   </div>
                   {announcements && announcements.length > 3 && (
                     <Button
@@ -531,7 +533,7 @@ export default function GeneratorDashboard() {
                       onClick={() => setActiveTab("announcements")}
                       className="text-xs"
                     >
-                      {t('app.viewAll')}
+                      {tt('app.viewAll')}
                     </Button>
                   )}
                 </CardTitle>
@@ -565,7 +567,7 @@ export default function GeneratorDashboard() {
                                 <div className="mt-2">
                                   <img
                                     src={announcement.photoUrl}
-                                    alt={t('announcements.title')}
+                                    alt={tt('announcements.title')}
                                     className="max-w-full h-24 object-cover rounded border"
                                   />
                                 </div>
@@ -599,7 +601,7 @@ export default function GeneratorDashboard() {
                 ) : (
                   <div className="text-center py-4">
                     <Bell className="w-8 h-8 text-gray-300 mx-auto mb-2" />
-                    <p className="text-gray-500 text-sm">{t('app.noData')}</p>
+                    <p className="text-gray-500 text-sm">{tt('app.noData')}</p>
                   </div>
                 )}
               </CardContent>
@@ -608,7 +610,7 @@ export default function GeneratorDashboard() {
             {/* Quick Actions */}
             <Card>
               <CardHeader className="pb-3">
-                <CardTitle className="text-lg">{t('app.quickActions')}</CardTitle>
+                <CardTitle className="text-lg">{tt('app.quickActions')}</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-1 gap-3">
@@ -618,7 +620,7 @@ export default function GeneratorDashboard() {
                     variant="outline"
                   >
                     <BarChart3 className="w-6 h-6" />
-                    <span className="text-xs">{t('reports.title')}</span>
+                    <span className="text-xs">{tt('reports.title')}</span>
                   </Button> */}
 
                   <Button
@@ -627,7 +629,7 @@ export default function GeneratorDashboard() {
                     variant="outline"
                   >
                     <Plus className="w-6 h-6" />
-                    <span className="text-xs">{t('issues.reportIssue')}</span>
+                    <span className="text-xs">{tt('issues.reportIssue')}</span>
                   </Button>
                 </div>
               </CardContent>
@@ -636,7 +638,7 @@ export default function GeneratorDashboard() {
             {/* Recent Activity */}
             <Card className="generator-collection-stats">
               <CardHeader className="pb-3">
-                <CardTitle className="text-lg">{t('collections.title')}</CardTitle>
+                <CardTitle className="text-lg">{tt('collections.title')}</CardTitle>
               </CardHeader>
               <CardContent>
                 {historyLoading ? (
@@ -661,7 +663,7 @@ export default function GeneratorDashboard() {
                               ).toLocaleDateString()}
                             </p>
                             <p className="text-xs text-gray-600">
-                              {t('app.rating')}:{" "}
+                              {tt('app.rating')}:{" "}
                               {collection.segregationRating
                                 ? `${collection.segregationRating}/5`
                                 : "N/A"}
@@ -683,7 +685,7 @@ export default function GeneratorDashboard() {
                 ) : (
                   <div className="text-center py-4">
                     <Trash2 className="w-8 h-8 text-gray-300 mx-auto mb-2" />
-                    <p className="text-gray-500 text-sm">{t('app.noData')}</p>
+                    <p className="text-gray-500 text-sm">{tt('app.noData')}</p>
                   </div>
                 )}
               </CardContent>
@@ -698,14 +700,14 @@ export default function GeneratorDashboard() {
               <CardHeader className="pb-3">
                 <CardTitle className="flex items-center text-lg">
                   <TrendingUp className="w-5 h-5 mr-2 text-green-600" />
-                  {t('generator.collectionHistory')}
+                  {tt('generator.collectionHistory')}
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
                   <div>
                     <div className="flex justify-between text-sm mb-2">
-                      <span>{t('generator.collectionHistory')}</span>
+                      <span>{tt('generator.collectionHistory')}</span>
                       <span>{monthlyStats.thisMonthCollections}/30</span>
                     </div>
                     <Progress
@@ -716,7 +718,7 @@ export default function GeneratorDashboard() {
 
                   <div>
                     <div className="flex justify-between text-sm mb-2">
-                      <span>{t('generator.segregationRating')}</span>
+                      <span>{tt('generator.segregationRating')}</span>
                       <span>{monthlyStats.avgSegregationRating}/5.0</span>
                     </div>
                     <Progress
@@ -736,19 +738,19 @@ export default function GeneratorDashboard() {
               <CardHeader className="pb-3">
                 <CardTitle className="flex items-center text-lg">
                   <TrendingUp className="w-5 h-5 mr-2 text-blue-600" />
-                  {t('generator.collectionHistory')}
+                  {tt('generator.collectionHistory')}
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <p className="text-sm text-gray-600">{t('generator.collectionHistory')}</p>
+                    <p className="text-sm text-gray-600">{tt('generator.collectionHistory')}</p>
                     <p className="text-2xl font-bold text-gray-900">
                       {monthlyStats.totalCollections}
                     </p>
                   </div>
                   <div>
-                    <p className="text-sm text-gray-600">{t('generator.segregationRating')}</p>
+                    <p className="text-sm text-gray-600">{tt('generator.segregationRating')}</p>
                     <p className="text-2xl font-bold text-gray-900">
                       {monthlyStats.avgSegregationRating}
                     </p>
@@ -762,14 +764,14 @@ export default function GeneratorDashboard() {
               <CardHeader className="pb-3">
                 <CardTitle className="flex items-center text-lg">
                   <BarChart3 className="w-5 h-5 mr-2 text-blue-600" />
-                  {t('generator.collectionHistory')}
+                  {tt('generator.collectionHistory')}
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="h-32 bg-gray-100 rounded-lg flex items-center justify-center">
                   <div className="text-center">
                     <PieChart className="w-8 h-8 text-gray-400 mx-auto mb-2" />
-                    <p className="text-sm text-gray-500">{t('app.noData')}</p>
+                    <p className="text-sm text-gray-500">{tt('app.noData')}</p>
                   </div>
                 </div>
               </CardContent>
@@ -780,11 +782,11 @@ export default function GeneratorDashboard() {
         {activeTab === "collections" && (
           <div className="space-y-4 p-4">
             <div className="flex items-center justify-between">
-              <h2 className="text-lg font-bold">{t('generator.collectionHistory')}</h2>
+              <h2 className="text-lg font-bold">{tt('generator.collectionHistory')}</h2>
               <div className="relative">
                 <Search className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
                 <Input
-                  placeholder={t("app.search") + "..."}
+                  placeholder={tt("app.search") + "..."}
                   className="pl-9 h-8 w-32"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
@@ -841,13 +843,13 @@ export default function GeneratorDashboard() {
 
                           <div className="space-y-1 text-xs text-gray-600">
                             <p>
-                              {t('generator.segregationRating')}:{" "}
+                              {tt('generator.segregationRating')}:{" "}
                               {collection.segregationRating
                                 ? `${collection.segregationRating}/5 ⭐`
-                                : t('app.noData')}
+                                : tt('app.noData')}
                             </p>
                             {collection.remarks && (
-                              <p>{t('generator.collectorRemarks')}: {collection.remarks}</p>
+                              <p>{tt('generator.collectorRemarks')}: {collection.remarks}</p>
                             )}
                           </div>
                         </div>
@@ -868,7 +870,7 @@ export default function GeneratorDashboard() {
                             className="text-xs h-7"
                           >
                             <Star className="w-3 h-3 mr-1" />
-                            {t('feedback.title')}
+                            {tt('feedback.title')}
                           </Button>
 
                           {collection.photoUrl && (
@@ -881,7 +883,7 @@ export default function GeneratorDashboard() {
                               className="text-xs h-7"
                             >
                               <Eye className="w-3 h-3 mr-1" />
-                              {t('generator.collectionPhoto')}
+                              {tt('generator.collectionPhoto')}
                             </Button>
                           )}
                         </div>
@@ -900,7 +902,7 @@ export default function GeneratorDashboard() {
                         className="w-full"
                       >
                         <Eye className="w-4 h-4 mr-2" />
-                        {t('app.viewAll')} ({collectionHistory.length} {t('app.total')})
+                        {tt('app.viewAll')} ({collectionHistory.length} {tt('app.total')})
                       </Button>
                     </div>
                   )}
@@ -916,7 +918,7 @@ export default function GeneratorDashboard() {
                         className="w-full"
                       >
                         <History className="w-4 h-4 mr-2" />
-                        {t('generator.viewMore')}
+                        {tt('generator.viewMore')}
                       </Button>
                     </div>
                   )}
@@ -924,7 +926,7 @@ export default function GeneratorDashboard() {
             ) : (
               <div className="text-center py-8">
                 <History className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-                <p className="text-gray-500">{t('generator.noCollectionsYet')}</p>
+                <p className="text-gray-500">{tt('generator.noCollectionsYet')}</p>
               </div>
             )}
           </div>
@@ -933,14 +935,14 @@ export default function GeneratorDashboard() {
         {activeTab === "announcements" && (
           <div className="space-y-4 p-4">
             <div className="flex items-center justify-between">
-              <h2 className="text-lg font-bold">{t('announcements.title')}</h2>
+              <h2 className="text-lg font-bold">{tt('announcements.title')}</h2>
             </div>
 
             {announcementsLoading ? (
               <div className="text-center py-8">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600 mx-auto"></div>
                 <p className="text-sm text-gray-500 mt-2">
-                  {t('app.loading')}...
+                  {tt('app.loading')}...
                 </p>
               </div>
             ) : announcements && announcements.length > 0 ? (
@@ -959,7 +961,7 @@ export default function GeneratorDashboard() {
                           variant="secondary"
                           className="text-xs whitespace-nowrap"
                         >
-                          {t('app.new')}
+                          {tt('app.new')}
                         </Badge>
                       </div>
 
@@ -967,7 +969,7 @@ export default function GeneratorDashboard() {
                         <div className="flex items-center space-x-2">
                           <Bell className="w-3 h-3" />
                           <span className="font-medium">
-                            {t('announcements.title')}
+                            {tt('announcements.title')}
                           </span>
                         </div>
                         <div className="flex items-center space-x-2">
@@ -987,10 +989,10 @@ export default function GeneratorDashboard() {
               <div className="text-center py-12">
                 <Bell className="w-16 h-16 text-gray-300 mx-auto mb-4" />
                 <h3 className="text-lg font-medium text-gray-900 mb-2">
-                  {t('generator.noAnnouncements')}
+                  {tt('generator.noAnnouncements')}
                 </h3>
                 <p className="text-gray-500 mb-4">
-                  {t('generator.checkLater')}
+                  {tt('generator.checkLater')}
                 </p>
               </div>
             )}
@@ -1000,20 +1002,20 @@ export default function GeneratorDashboard() {
         {activeTab === "issues" && (
           <div className="space-y-4 p-4">
             <div className="flex items-center justify-between">
-              <h2 className="text-lg font-bold">{t('navigation.issues')}</h2>
+              <h2 className="text-lg font-bold">{tt('navigation.issues')}</h2>
               <Button
                 size="sm"
                 onClick={() => setShowIssueModal(true)}
                 className="bg-red-600 hover:bg-red-700"
               >
                 <Plus className="w-4 h-4 mr-1" />
-                {t('generator.reportIssue')}
+                {tt('generator.reportIssue')}
               </Button>
             </div>
 
             {/* Filter Tabs */}
             <div className="flex space-x-2 overflow-x-auto pb-2">
-              {[{key:"All",label:t("app.all")},{key:"Open",label:t("issues.open")},{key:t('issues.inProgress'),label:t("issues.inProgress")},{key:t('issues.resolved'),label:t("issues.resolved")}].map((filter) => (
+              {[{key:"All",label:tt("app.all")},{key:"Open",label:tt("issues.open")},{key:tt('issues.inProgress'),label:tt("issues.inProgress")},{key:tt('issues.resolved'),label:tt("issues.resolved")}].map((filter) => (
                 <Button
                   key={filter.key}
                   variant={issueFilter === filter.key ? "default" : "outline"}
@@ -1029,7 +1031,7 @@ export default function GeneratorDashboard() {
             {issuesLoading ? (
               <div className="text-center py-8">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600 mx-auto"></div>
-                <p className="text-sm text-gray-500 mt-2">{t('app.loading')}...</p>
+                <p className="text-sm text-gray-500 mt-2">{tt('app.loading')}...</p>
               </div>
             ) : issues && issues.length > 0 ? (
               <div className="space-y-3">
@@ -1037,9 +1039,9 @@ export default function GeneratorDashboard() {
                   .filter((issue: any) => {
                     if (issueFilter === "All") return true;
                     if (issueFilter === "Open") return issue.status === "open";
-                    if (issueFilter === t('issues.inProgress'))
+                    if (issueFilter === tt('issues.inProgress'))
                       return issue.status === "in_progress";
-                    if (issueFilter === t('issues.resolved'))
+                    if (issueFilter === tt('issues.resolved'))
                       return issue.status === "resolved";
                     return true;
                   })
@@ -1068,7 +1070,7 @@ export default function GeneratorDashboard() {
                             }
                             className="text-xs whitespace-nowrap"
                           >
-                            {issue.status === 'open' ? t('issues.open') : issue.status === 'in_progress' ? t('issues.inProgress') : t('issues.resolved')}
+                            {issue.status === 'open' ? tt('issues.open') : issue.status === 'in_progress' ? tt('issues.inProgress') : tt('issues.resolved')}
                           </Badge>
                         </div>
 
@@ -1091,7 +1093,7 @@ export default function GeneratorDashboard() {
                           <div className="mt-2">
                             <img
                               src={issue.photoUrl}
-                              alt={t('generator.issuePhoto')}
+                              alt={tt('generator.issuePhoto')}
                               className="w-full h-32 object-cover rounded-lg"
                               onClick={() =>
                                 window.open(issue.photoUrl, "_blank")
@@ -1105,7 +1107,7 @@ export default function GeneratorDashboard() {
                             <div className="flex items-center space-x-2 mb-1">
                               <CheckCircle className="w-4 h-4 text-green-600" />
                               <p className="text-xs font-semibold text-green-800">
-                                {t('generator.managerResponse')}:
+                                {tt('generator.managerResponse')}:
                               </p>
                             </div>
                             <p className="text-xs text-green-700 leading-relaxed">
@@ -1114,10 +1116,10 @@ export default function GeneratorDashboard() {
                             {/* Show manager's proof photo if available */}
                             {issue.managerProofPhotoUrl && (
                               <div className="mt-2">
-                                <p className="text-xs font-medium text-green-800 mb-1">{t('generator.managerResponseProof')}:</p>
+                                <p className="text-xs font-medium text-green-800 mb-1">{tt('generator.managerResponseProof')}:</p>
                                 <img
                                   src={issue.managerProofPhotoUrl}
-                                  alt={t('generator.managerResponseProof')}
+                                  alt={tt('generator.managerResponseProof')}
                                   className="w-16 h-16 object-cover rounded cursor-pointer"
                                   onClick={() => window.open(issue.managerProofPhotoUrl, "_blank")}
                                 />
@@ -1141,26 +1143,26 @@ export default function GeneratorDashboard() {
                 {issueFilter === "All" ? (
                   <>
                     <h3 className="text-lg font-medium text-gray-900 mb-2">
-                      {t('generator.noIssuesYet')}
+                      {tt('generator.noIssuesYet')}
                     </h3>
                     <p className="text-gray-500 mb-4">
-                      {t('generator.noIssuesYetDesc')}
+                      {tt('generator.noIssuesYetDesc')}
                     </p>
                     <Button
                       onClick={() => setShowIssueModal(true)}
                       className="bg-red-600 hover:bg-red-700"
                     >
                       <Plus className="w-4 h-4 mr-2" />
-                      {t('generator.reportIssue')}
+                      {tt('generator.reportIssue')}
                     </Button>
                   </>
                 ) : (
                   <>
                     <h3 className="text-lg font-medium text-gray-900 mb-2">
-                      {t('generator.noIssuesYet')}
+                      {tt('generator.noIssuesYet')}
                     </h3>
                     <p className="text-gray-500 mb-4">
-                      {t('generator.noIssuesYetDesc')}
+                      {tt('generator.noIssuesYetDesc')}
                     </p>
                     <Button
                       onClick={() => setIssueFilter("All")}
@@ -1178,27 +1180,27 @@ export default function GeneratorDashboard() {
         {activeTab === "qr-code" && (
           <div className="space-y-4 p-4">
             <div className="flex items-center justify-between">
-              <h2 className="text-lg font-bold">{t('generator.yourQrCode')}</h2>
+              <h2 className="text-lg font-bold">{tt('generator.yourQrCode')}</h2>
             </div>
 
             {householdLoading ? (
               <div className="text-center py-12">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600 mx-auto mb-4"></div>
                 <h3 className="text-lg font-medium text-gray-900 mb-2">
-                  {t('app.loading')}
+                  {tt('app.loading')}
                 </h3>
                 <p className="text-gray-500">
-                  {t('app.loading')}
+                  {tt('app.loading')}
                 </p>
               </div>
             ) : householdError ? (
               <div className="text-center py-12">
                 <XCircle className="w-16 h-16 text-red-300 mx-auto mb-4" />
                 <h3 className="text-lg font-medium text-gray-900 mb-2">
-                  {t('app.error')}
+                  {tt('app.error')}
                 </h3>
                 <p className="text-gray-500 mb-4">
-                  {t('app.error')}
+                  {tt('app.error')}
                 </p>
                 <Button
                   onClick={() => queryClient.invalidateQueries({ queryKey: ["/api/generator/household"] })}
@@ -1215,7 +1217,7 @@ export default function GeneratorDashboard() {
                   <CardHeader className="pb-3">
                     <CardTitle className="flex items-center text-lg">
                       <QrCode className="w-5 h-5 mr-2 text-green-600" />
-                      {t('generator.yourQrCode')}
+                      {tt('generator.yourQrCode')}
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="text-center space-y-4">
@@ -1223,7 +1225,7 @@ export default function GeneratorDashboard() {
                       <div className="p-4 bg-white border-2 border-gray-200 rounded-lg shadow-sm">
                         <img
                           src={`/api/qr-codes/${householdData.uid}/image`}
-                          alt={t('generator.yourQrCode')}
+                          alt={tt('generator.yourQrCode')}
                           className="w-48 h-48 mx-auto"
                         />
                       </div>
@@ -1258,7 +1260,7 @@ export default function GeneratorDashboard() {
                                 style="width:40mm; margin-bottom:-2mm;"
                               />
                               <div style="font-size:10pt; color:#555; margin-bottom:4mm;">
-                                Waste Management System
+                                GreenPath
                               </div>
                               <div style="width:45mm; height:45mm; display:flex; align-items:center; justify-content:center;">
                                 <img 
@@ -1267,10 +1269,10 @@ export default function GeneratorDashboard() {
                                 />
                               </div>
                               <div style="font-size:11pt; font-weight:400; margin-bottom:2mm;">
-                                House UID: GEN-${householdData.uid}
+                                ${label.household} UID: GEN-${householdData.uid}
                               </div>
                               <div style="font-size:11pt; margin-bottom:3mm;">
-                                Head: ${householdData.headName}
+                                ${label.headName}: ${householdData.headName}
                               </div>
                               <div style="font-size:9pt; color:#555;">
                                 Login &amp; manage at:
@@ -1301,20 +1303,20 @@ export default function GeneratorDashboard() {
 
                             document.body.removeChild(cardElement);
 
-                            toast({ title: t('app.success'), description: t('generator.downloadQrCode') });
+                            toast({ title: tt('app.success'), description: tt('generator.downloadQrCode') });
                           } catch {
-                            toast({ title: 'Error', description: t('app.error'), variant: 'destructive' });
+                            toast({ title: 'Error', description: tt('app.error'), variant: 'destructive' });
                           }
                         }}
                       >
                         <Download className="w-4 h-4 mr-2" />
-                        {t('generator.downloadQrCode')}
+                        {tt('generator.downloadQrCode')}
                       </Button>
 
                       <div className="space-y-2 text-center">
                         <div className="p-3 bg-green-50 rounded-lg border-l-4 border-green-400">
                           <p className="text-sm text-green-800 font-medium">
-                            📱 {t('generator.qrCodeDesc')}
+                            📱 {tt('generator.qrCodeDesc')}
                           </p>
                         </div>
                       </div>
@@ -1327,43 +1329,43 @@ export default function GeneratorDashboard() {
                   <CardHeader className="pb-3">
                     <CardTitle className="flex items-center text-lg">
                       <Home className="w-5 h-5 mr-2 text-blue-600" />
-                      {t('generator.householdInfo')}
+                      {tt('generator.householdInfo')}
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-3">
                     <div className="grid grid-cols-1 gap-3">
                       <div className="p-3 bg-gray-50 rounded-lg">
-                        <Label className="text-xs text-gray-600">{t('generator.headOfHousehold')}</Label>
+                        <Label className="text-xs text-gray-600">{tt('generator.headOfHousehold')}</Label>
                         <p className="font-medium text-gray-900">{householdData.headName}</p>
                       </div>
 
                       <div className="p-3 bg-gray-50 rounded-lg">
-                        <Label className="text-xs text-gray-600">{t('generator.uid')}</Label>
+                        <Label className="text-xs text-gray-600">{tt('generator.uid')}</Label>
                         <p className="font-medium text-gray-900">{householdData.uid}</p>
                       </div>
 
                       <div className="p-3 bg-gray-50 rounded-lg">
-                        <Label className="text-xs text-gray-600">{t('generator.houseNumber')}</Label>
-                        <p className="font-medium text-gray-900">{householdData.houseNumber || t('app.noData')}</p>
+                        <Label className="text-xs text-gray-600">{tt('generator.houseNumber')}</Label>
+                        <p className="font-medium text-gray-900">{householdData.houseNumber || tt('app.noData')}</p>
                       </div>
 
                       {householdData.phone && (
                         <div className="p-3 bg-gray-50 rounded-lg">
-                          <Label className="text-xs text-gray-600">{t('generator.phone')}</Label>
+                          <Label className="text-xs text-gray-600">{tt('generator.phone')}</Label>
                           <p className="font-medium text-gray-900">{householdData.phone}</p>
                         </div>
                       )}
 
                       {householdData.address && (
                         <div className="p-3 bg-gray-50 rounded-lg">
-                          <Label className="text-xs text-gray-600">{t('generator.address')}</Label>
+                          <Label className="text-xs text-gray-600">{tt('generator.address')}</Label>
                           <p className="font-medium text-gray-900">{householdData.address}</p>
                         </div>
                       )}
 
                       <div className="p-3 bg-gray-50 rounded-lg">
-                        <Label className="text-xs text-gray-600">{t('generator.householdInfo')}</Label>
-                        <p className="font-medium text-gray-900">{householdData.familySize || 1} {t('generator.members')}</p>
+                        <Label className="text-xs text-gray-600">{tt('generator.householdInfo')}</Label>
+                        <p className="font-medium text-gray-900">{householdData.familySize || 1} {tt('generator.members')}</p>
                       </div>
                     </div>
                   </CardContent>
@@ -1374,29 +1376,29 @@ export default function GeneratorDashboard() {
                   <CardHeader className="pb-3">
                     <CardTitle className="flex items-center text-lg">
                       <Bell className="w-5 h-5 mr-2 text-orange-600" />
-                      {t('generator.qrCodeDesc')}
+                      {tt('generator.qrCodeDesc')}
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
                     <div className="space-y-3 text-sm">
                       <div className="flex items-start space-x-3">
                         <div className="w-6 h-6 bg-green-100 text-green-600 rounded-full flex items-center justify-center text-xs font-bold">1</div>
-                        <p className="text-gray-700">{t('generator.qrCodeDesc')}</p>
+                        <p className="text-gray-700">{tt('generator.qrCodeDesc')}</p>
                       </div>
 
                       <div className="flex items-start space-x-3">
                         <div className="w-6 h-6 bg-green-100 text-green-600 rounded-full flex items-center justify-center text-xs font-bold">2</div>
-                        <p className="text-gray-700">{t('generator.qrCodeDesc')}</p>
+                        <p className="text-gray-700">{tt('generator.qrCodeDesc')}</p>
                       </div>
 
                       <div className="flex items-start space-x-3">
                         <div className="w-6 h-6 bg-green-100 text-green-600 rounded-full flex items-center justify-center text-xs font-bold">3</div>
-                        <p className="text-gray-700">{t('generator.segregationRating')}</p>
+                        <p className="text-gray-700">{tt('generator.segregationRating')}</p>
                       </div>
 
                       <div className="flex items-start space-x-3">
                         <div className="w-6 h-6 bg-green-100 text-green-600 rounded-full flex items-center justify-center text-xs font-bold">4</div>
-                        <p className="text-gray-700">{t('generator.collectionHistory')}</p>
+                        <p className="text-gray-700">{tt('generator.collectionHistory')}</p>
                       </div>
                     </div>
                   </CardContent>
@@ -1406,10 +1408,10 @@ export default function GeneratorDashboard() {
               <div className="text-center py-12">
                 <Home className="w-16 h-16 text-gray-300 mx-auto mb-4" />
                 <h3 className="text-lg font-medium text-gray-900 mb-2">
-                  {t('app.noData')}
+                  {tt('app.noData')}
                 </h3>
                 <p className="text-gray-500">
-                  {t('generator.contactManager')}
+                  {tt('generator.contactManager')}
                 </p>
               </div>
             )}
@@ -1431,24 +1433,24 @@ export default function GeneratorDashboard() {
               <CardHeader className="pb-3">
                 <CardTitle className="flex items-center text-lg">
                   <User className="w-5 h-5 mr-2" />
-                  {t('generator.profile')}
+                  {tt('generator.profile')}
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
                 <div>
-                  <Label className="text-xs text-gray-600">{t('generator.profile')}</Label>
+                  <Label className="text-xs text-gray-600">{tt('generator.profile')}</Label>
                   <p className="font-medium">{user?.name}</p>
                 </div>
                 <div>
-                  <Label className="text-xs text-gray-600">{t('auth.userId')}</Label>
+                  <Label className="text-xs text-gray-600">{tt('auth.userId')}</Label>
                   <p className="font-medium">{user?.userId}</p>
                 </div>
                 <div>
-                  <Label className="text-xs text-gray-600">{t('navigation.villages')}</Label>
+                  <Label className="text-xs text-gray-600">{tt('navigation.villages')}</Label>
                   <p className="font-medium">{user?.villageId}</p>
                 </div>
                 <div>
-                  <Label className="text-xs text-gray-600">{t('generator.profile')}</Label>
+                  <Label className="text-xs text-gray-600">{tt('generator.profile')}</Label>
                   <Badge variant="secondary">{user?.role}</Badge>
                 </div>
               </CardContent>
@@ -1459,7 +1461,7 @@ export default function GeneratorDashboard() {
               <CardHeader className="pb-3">
                 <CardTitle className="flex items-center text-lg">
                   <Settings className="w-5 h-5 mr-2" />
-                  {t('navigation.settings')}
+                  {tt('navigation.settings')}
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
@@ -1469,7 +1471,7 @@ export default function GeneratorDashboard() {
                   onClick={() => setShowPasswordModal(true)}
                 >
                   <Settings className="mr-3" size={20} />
-                  {t('auth.changePassword')}
+                  {tt('auth.changePassword')}
                 </Button>
 
                 {(villageDetails as any)?.proximityAlertsEnabled && (
@@ -1506,7 +1508,7 @@ export default function GeneratorDashboard() {
                   onClick={() => logout()}
                 >
                   <LogOut className="w-4 h-4 mr-2" />
-                  {t('auth.logout')}
+                  {tt('auth.logout')}
                 </Button>
               </CardContent>
             </Card>
@@ -1518,13 +1520,13 @@ export default function GeneratorDashboard() {
       <div className="fixed bottom-0 left-1/2 transform -translate-x-1/2 w-full max-w-md bg-white border-t border-gray-200 px-2 py-2 rounded-lg">
         <div className="flex justify-around">
           {[
-            { id: "home", icon: Home, class: "generator-home-tab", label: t('generator.home') },
-            (villageDetails as any)?.paymentsEnabled && { id: "bills", icon: IndianRupee, class: "generator-bills-tab", label: t('generator.bills') },
+            { id: "home", icon: Home, class: "generator-home-tab", label: tt('generator.home') },
+            (villageDetails as any)?.paymentsEnabled && { id: "bills", icon: IndianRupee, class: "generator-bills-tab", label: tt('generator.bills') },
             // { id: "reports", icon: BarChart3, class: "generator-collection-stats", label: "Reports" },
-            { id: "collections", icon: FileText, class: "generator-collections-tab", label: t('generator.collections') },
-            { id: "qr-code", icon: QrCode, class: "generator-qr-tab", label: t('generator.qrCode') },
-            { id: "issues", icon: AlertTriangle, class: "generator-issues-tab", label: t('generator.issues') },
-            { id: "profile", icon: User, class: "generator-profile-tab", label: t('generator.profile') },
+            { id: "collections", icon: FileText, class: "generator-collections-tab", label: tt('generator.collections') },
+            { id: "qr-code", icon: QrCode, class: "generator-qr-tab", label: tt('generator.qrCode') },
+            { id: "issues", icon: AlertTriangle, class: "generator-issues-tab", label: tt('generator.issues') },
+            { id: "profile", icon: User, class: "generator-profile-tab", label: tt('generator.profile') },
           ].filter(Boolean).map((tab: any) => (
             <button
               key={tab.id}
@@ -1545,10 +1547,10 @@ export default function GeneratorDashboard() {
         <DialogContent className="w-[96vw] max-w-lg max-h-[90vh] overflow-y-auto p-4 mx-auto">
           <DialogHeader className="pb-4">
             <DialogTitle className="text-xl font-bold text-center text-gray-900">
-              🚨 {t('generator.reportIssue')}
+              🚨 {tt('generator.reportIssue')}
             </DialogTitle>
             <p className="text-sm text-gray-600 text-center mt-1">
-              {t('generator.noIssuesYetDesc')}
+              {tt('generator.noIssuesYetDesc')}
             </p>
           </DialogHeader>
 
@@ -1559,7 +1561,7 @@ export default function GeneratorDashboard() {
                 htmlFor="title"
                 className="text-sm font-semibold text-gray-800 flex items-center"
               >
-                📝 {t('generator.issueTitle')} <span className="text-red-500 ml-1">*</span>
+                📝 {tt('generator.issueTitle')} <span className="text-red-500 ml-1">*</span>
               </Label>
               <Input
                 id="title"
@@ -1567,7 +1569,7 @@ export default function GeneratorDashboard() {
                 onChange={(e) =>
                   setNewIssue({ ...newIssue, title: e.target.value })
                 }
-                placeholder={t("generator.issueTitlePlaceholder")}
+                placeholder={tt("generator.issueTitlePlaceholder")}
                 className="h-12 text-base border-2 focus:border-red-400"
                 maxLength={100}
               />
@@ -1578,7 +1580,7 @@ export default function GeneratorDashboard() {
                 {newIssue.title.trim().length < 3 &&
                   newIssue.title.length > 0 && (
                     <p className="text-xs text-red-500">
-                      {t('app.minimumChars')}
+                      {tt('app.minimumChars')}
                     </p>
                   )}
               </div>
@@ -1590,7 +1592,7 @@ export default function GeneratorDashboard() {
                 htmlFor="category"
                 className="text-sm font-semibold text-gray-800 flex items-center"
               >
-                🏷️ {t('generator.category')} <span className="text-red-500 ml-1">*</span>
+                🏷️ {tt('generator.category')} <span className="text-red-500 ml-1">*</span>
               </Label>
               <Select
                 value={newIssue.category}
@@ -1599,7 +1601,7 @@ export default function GeneratorDashboard() {
                 }
               >
                 <SelectTrigger className="h-12 text-base border-2 focus:border-red-400">
-                  <SelectValue placeholder={t("generator.category")} />
+                  <SelectValue placeholder={tt("generator.category")} />
                 </SelectTrigger>
                 <SelectContent>
                   {ISSUE_CATEGORIES.map((category) => (
@@ -1621,7 +1623,7 @@ export default function GeneratorDashboard() {
                 htmlFor="description"
                 className="text-sm font-semibold text-gray-800 flex items-center"
               >
-                📄 {t('generator.description')} <span className="text-red-500 ml-1">*</span>
+                📄 {tt('generator.description')} <span className="text-red-500 ml-1">*</span>
               </Label>
               <Textarea
                 id="description"
@@ -1629,7 +1631,7 @@ export default function GeneratorDashboard() {
                 onChange={(e) =>
                   setNewIssue({ ...newIssue, description: e.target.value })
                 }
-                placeholder={t("generator.descriptionPlaceholder")}
+                placeholder={tt("generator.descriptionPlaceholder")}
                 rows={5}
                 className="text-base border-2 focus:border-red-400 resize-none"
                 maxLength={500}
@@ -1641,7 +1643,7 @@ export default function GeneratorDashboard() {
                 {newIssue.description.trim().length < 10 &&
                   newIssue.description.length > 0 && (
                     <p className="text-xs text-red-500">
-                      {t('app.minimum10Chars')}
+                      {tt('app.minimum10Chars')}
                     </p>
                   )}
               </div>
@@ -1653,7 +1655,7 @@ export default function GeneratorDashboard() {
                 htmlFor="photo"
                 className="text-sm font-semibold text-gray-800 flex items-center"
               >
-                📸 {t('generator.photoEvidence')} ({t('app.optional')})
+                📸 {tt('generator.photoEvidence')} ({tt('app.optional')})
               </Label>
               <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center">
                 <Input
@@ -1681,7 +1683,7 @@ export default function GeneratorDashboard() {
                         📷 {newIssue.photoFile.name}
                       </p>
                       <p className="text-xs text-gray-500">
-                        {t('app.tapToChange')}
+                        {tt('app.tapToChange')}
                       </p>
                     </div>
                   ) : (
@@ -1690,10 +1692,10 @@ export default function GeneratorDashboard() {
                         <Upload className="w-8 h-8 text-gray-400" />
                       </div>
                       <p className="text-sm font-medium text-gray-700">
-                        {t('app.tapToUpload')}
+                        {tt('app.tapToUpload')}
                       </p>
                       <p className="text-xs text-gray-500">
-                        {t('app.photosHelp')}
+                        {tt('app.photosHelp')}
                       </p>
                     </div>
                   )}
@@ -1718,12 +1720,12 @@ export default function GeneratorDashboard() {
                 {createIssueMutation.isPending ? (
                   <div className="flex items-center space-x-2">
                     <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
-                    <span>{t('generator.submittingIssue')}...</span>
+                    <span>{tt('generator.submittingIssue')}...</span>
                   </div>
                 ) : (
                   <div className="flex items-center space-x-2">
                     <AlertTriangle className="w-5 h-5" />
-                    <span>{t('generator.submitIssue')}</span>
+                    <span>{tt('generator.submitIssue')}</span>
                   </div>
                 )}
               </Button>
@@ -1741,7 +1743,7 @@ export default function GeneratorDashboard() {
                 className="w-full h-12 border-2 text-base font-medium"
                 disabled={createIssueMutation.isPending}
               >
-                {t('app.cancel')}
+                {tt('app.cancel')}
               </Button>
             </div>
           </div>
@@ -1753,10 +1755,10 @@ export default function GeneratorDashboard() {
         <DialogContent className="w-[96vw] max-w-lg max-h-[90vh] overflow-y-auto p-4 mx-auto">
           <DialogHeader className="pb-4">
             <DialogTitle className="text-xl font-bold text-center text-gray-900">
-              ⭐ {t('feedback.title')}
+              ⭐ {tt('feedback.title')}
             </DialogTitle>
             <p className="text-sm text-gray-600 text-center mt-1">
-              {t('feedback.title')}
+              {tt('feedback.title')}
             </p>
           </DialogHeader>
 
@@ -1765,13 +1767,13 @@ export default function GeneratorDashboard() {
             {selectedCollection && (
               <div className="p-3 bg-gray-50 rounded-lg">
                 <p className="text-sm font-medium text-gray-800">
-                  {t('generator.collectionDate')}:{" "}
+                  {tt('generator.collectionDate')}:{" "}
                   {new Date(
                     selectedCollection.collectionDate,
                   ).toLocaleDateString()}
                 </p>
                 <p className="text-xs text-gray-600">
-                  {t('generator.status')}: {translateEnum('collectionStatus', selectedCollection.status)} | {t('generator.segregationRating')}:{" "}
+                  {tt('generator.status')}: {translateEnum('collectionStatus', selectedCollection.status)} | {tt('generator.segregationRating')}:{" "}
                   {selectedCollection.segregationRating || "N/A"}/5
                 </p>
               </div>
@@ -1780,7 +1782,7 @@ export default function GeneratorDashboard() {
             {/* Star Rating */}
             <div className="space-y-2">
               <Label className="text-sm font-semibold text-gray-800 flex items-center">
-                ⭐ {t('app.rating')} <span className="text-red-500 ml-1">*</span>
+                ⭐ {tt('app.rating')} <span className="text-red-500 ml-1">*</span>
               </Label>
               <div className="flex justify-center space-x-2 mt-2 p-4 bg-gray-50 rounded-lg">
                 {[1, 2, 3, 4, 5].map((star) => (
@@ -1803,12 +1805,12 @@ export default function GeneratorDashboard() {
               </div>
               <div className="text-center">
                 <p className="text-sm text-gray-600">
-                  {collectorFeedback.rating === 0 && t('generator.tapStarToRate')}
-                  {collectorFeedback.rating === 1 && '😞 ' + t('collections.veryPoor')}
-                  {collectorFeedback.rating === 2 && '😐 ' + t('collections.poor')}
-                  {collectorFeedback.rating === 3 && '😊 ' + t('collections.average')}
-                  {collectorFeedback.rating === 4 && '😄 ' + t('collections.good')}
-                  {collectorFeedback.rating === 5 && '🤩 ' + t('collections.excellent')}
+                  {collectorFeedback.rating === 0 && tt('generator.tapStarToRate')}
+                  {collectorFeedback.rating === 1 && '😞 ' + tt('collections.veryPoor')}
+                  {collectorFeedback.rating === 2 && '😐 ' + tt('collections.poor')}
+                  {collectorFeedback.rating === 3 && '😊 ' + tt('collections.average')}
+                  {collectorFeedback.rating === 4 && '😄 ' + tt('collections.good')}
+                  {collectorFeedback.rating === 5 && '🤩 ' + tt('collections.excellent')}
                 </p>
               </div>
             </div>
@@ -1819,7 +1821,7 @@ export default function GeneratorDashboard() {
                 htmlFor="remarks"
                 className="text-sm font-semibold text-gray-800 flex items-center"
               >
-                💬 {t('collector.remarks')} ({t('app.optional')})
+                💬 {tt('collector.remarks')} ({tt('app.optional')})
               </Label>
               <Textarea
                 id="remarks"
@@ -1830,7 +1832,7 @@ export default function GeneratorDashboard() {
                     remarks: e.target.value,
                   })
                 }
-                placeholder={t("collector.typeComments")}
+                placeholder={tt("collector.typeComments")}
                 rows={4}
                 className="text-base border-2 focus:border-blue-400 resize-none"
                 maxLength={300}
@@ -1853,12 +1855,12 @@ export default function GeneratorDashboard() {
                 {createFeedbackMutation.isPending ? (
                   <div className="flex items-center space-x-2">
                     <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
-                    <span>{t('app.submitting')}...</span>
+                    <span>{tt('app.submitting')}...</span>
                   </div>
                 ) : (
                   <div className="flex items-center space-x-2">
                     <Star className="w-5 h-5" />
-                    <span>{t('app.submit')}</span>
+                    <span>{tt('app.submit')}</span>
                   </div>
                 )}
               </Button>
@@ -1875,7 +1877,7 @@ export default function GeneratorDashboard() {
                 className="w-full h-12 border-2 text-base font-medium"
                 disabled={createFeedbackMutation.isPending}
               >
-                {t('app.cancel')}
+                {tt('app.cancel')}
               </Button>
             </div>
           </div>
@@ -1886,25 +1888,25 @@ export default function GeneratorDashboard() {
       <Dialog open={showPasswordModal} onOpenChange={setShowPasswordModal}>
         <DialogContent className="max-w-sm">
           <DialogHeader>
-            <DialogTitle>{t('app.changePassword')}</DialogTitle>
+            <DialogTitle>{tt('app.changePassword')}</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
             <div>
-              <Label>{t('app.newPassword')}</Label>
+              <Label>{tt('app.newPassword')}</Label>
               <Input
                 type="password"
                 value={newPassword}
                 onChange={(e) => setNewPassword(e.target.value)}
-                placeholder={t("app.newPassword")}
+                placeholder={tt("app.newPassword")}
               />
             </div>
             <div>
-              <Label>{t('app.confirmPassword')}</Label>
+              <Label>{tt('app.confirmPassword')}</Label>
               <Input
                 type="password"
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
-                placeholder={t("app.confirmPassword")}
+                placeholder={tt("app.confirmPassword")}
               />
             </div>
             <Button
@@ -1915,10 +1917,10 @@ export default function GeneratorDashboard() {
               {changePasswordMutation.isPending ? (
                 <>
                   <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent mr-2" />
-                  {t('app.changing')}...
+                  {tt('app.changing')}...
                 </>
               ) : (
-                t('app.changePassword')
+                tt('app.changePassword')
               )}
             </Button>
           </div>

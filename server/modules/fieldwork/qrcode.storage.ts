@@ -106,3 +106,30 @@ export async function getNextQRCodeUid(villageId: string, count: number): Promis
     }
     return uids;
 }
+
+/** Count total QR codes for a village (lightweight, no data fetch) */
+export async function getQRCodeCountByVillage(villageId: string): Promise<number> {
+    const [result] = await db
+        .select({ count: sql<number>`count(*)::int` })
+        .from(qrCodes)
+        .where(eq(qrCodes.villageId, villageId));
+    return result?.count || 0;
+}
+
+/** Get all unmapped QR codes across all batches for a village */
+export async function getUnmappedQRCodesByVillage(villageId: string): Promise<QRCode[]> {
+    return await db
+        .select()
+        .from(qrCodes)
+        .where(sql`${qrCodes.villageId} = ${villageId} AND ${qrCodes.status} = 'notMapped'`)
+        .orderBy(qrCodes.uid);
+}
+
+/** Get unmapped QR codes for a specific batch */
+export async function getUnmappedQRCodesByBatch(batchId: string): Promise<QRCode[]> {
+    return await db
+        .select()
+        .from(qrCodes)
+        .where(sql`${qrCodes.batchId} = ${batchId} AND ${qrCodes.status} = 'notMapped'`)
+        .orderBy(qrCodes.uid);
+}

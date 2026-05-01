@@ -83,9 +83,21 @@
   },
   "roles": {
     "admin": "ಅಡ್ಮಿನ್",
-    "manager": "ಮ್ಯಾನೇಜರ್",
+    "manager": {
+      "gram_panchayat": "ಮ್ಯಾನೇಜರ್",
+      "municipality": "ಮ್ಯಾನೇಜರ್",
+      "apartment": "ಮ್ಯಾನೇಜರ್",
+      "township": "ಮ್ಯಾನೇಜರ್",
+      "institution_campus": "ಮ್ಯಾನೇಜರ್"
+    },
     "collector": "ಕಸ ಕಲೆಕ್ಟರ್",
-    "generator": "ಮನೆ (ಹೌಸ್ಹೋಲ್ಡ್)"
+    "generator": {
+      "gram_panchayat": "ಮನೆ (ಹೌಸ್ಹೋಲ್ಡ್)",
+      "municipality": "ಪ್ರಾಪರ್ಟಿ (ಪ್ರಾಪರ್ಟಿ)",
+      "apartment": "ಫ್ಲಾಟ್ (ಫ್ಲಾಟ್)",
+      "township": "ಪ್ಲಾಟ್ (ಪ್ಲಾಟ್)",
+      "institution_campus": "ಯೂನಿಟ್ (ಯೂನಿಟ್)"
+    }
   },
   "dashboard": {
     "welcome": "ಸ್ವಾಗತ",
@@ -98,14 +110,20 @@
   },
   "navigation": {
     "dashboard": "ಡ್ಯಾಶ್ಬೋರ್ಡ್",
-    "households": "ಹೌಸ್ಹೋಲ್ಡ್ಸ್",
+    "households": {
+      "gram_panchayat": "ಹೌಸ್ಹೋಲ್ಡ್ಸ್",
+      "municipality": "ಪ್ರಾಪರ್ಟಿಗಳು",
+      "apartment": "ಫ್ಲಾಟ್‌ಗಳು",
+      "township": "ಪ್ಲಾಟ್‌ಗಳು",
+      "institution_campus": "ಯೂನಿಟ್‌ಗಳು"
+    },
     "collectors": "ಕಲೆಕ್ಟರ್ಸ್",
     "collections": "ಕಲೆಕ್ಷನ್ಸ್",
     "issues": "ಇಶ್ಯೂಸ್",
     "feedback": "ಫೀಡ್ಬ್ಯಾಕ್",
     "reports": "ರಿಪೋರ್ಟ್ಸ್",
     "announcements": "ಅನೌನ್ಸ್ಮೆಂಟ್",
-    "villages": "ಗ್ರಾಮಗಳು",
+    "villages": "ಸಂಸ್ಥೆಗಳು",
     "managers": "ಮ್ಯಾನೇಜರ್ಸ್",
     "profile": "ಪ್ರೊಫೈಲ್",
     "settings": "ಸೆಟ್ಟಿಂಗ್ಸ್",
@@ -121,22 +139,76 @@
     "todayProgress": "ಇವತ್ತಿನ ಪ್ರೋಗ್ರೆಸ್",
     "scannedToday": "ಇವತ್ತು ಸ್ಕ್ಯಾನ್ ಮಾಡಿದ್ದು",
     "totalAssigned": "ಟೋಟಲ್ ಅಸೈನ್ ಆಗಿರೋದು",
-    "villageTotal": "ಗ್ರಾಮ ಟೋಟಲ್",
+    "villageTotal": {
+      "gram_panchayat": "ಗ್ರಾಮ ಟೋಟಲ್",
+      "municipality": "ಝೋನ್ ಟೋಟಲ್",
+      "apartment": "ಸೊಸೈಟಿ ಟೋಟಲ್",
+      "township": "ಟೌನ್‌ಶಿಪ್ ಟೋಟಲ್",
+      "institution_campus": "ಕ್ಯಾಂಪಸ್ ಟೋಟಲ್"
+    },
     "collectionsToday": "ಇವತ್ತು ಕಲೆಕ್ಷನ್ ಆಗಿರೋದು",
     "offlinePending": "ಆಫ್ಲೈನ್ ಪೆಂಡಿಂಗ್",
     "scanQrCode": "QR ಕೋಡ್ ಸ್ಕ್ಯಾನ್ ಮಾಡಿ",
-    "scanQrToStart": "ಕಲೆಕ್ಷನ್ ಶುರು ಮಾಡೋಕೆ ಮನೆಯ QR ಕೋಡ್ ಸ್ಕ್ಯಾನ್ ಮಾಡಿ",
-    "pointCamera": "ಕ್ಯಾಮೆರಾನಾ ಮನೆಯ QR ಕೋಡ್ ಕಡೆ ತೋರಿಸಿ",
-    "enterHouseholdId": "ಹೌಸ್ಹೋಲ್ಡ್ ID ಹಾಕಿ",
-    "typeHouseholdId": "ಹೌಸ್ಹೋಲ್ಡ್ ID ಟೈಪ್ ಮಾಡಿ...",
-    "lookupHousehold": "ಹೌಸ್ಹೋಲ್ಡ್ ಹುಡುಕಿ",
+    "scanQrToStart": {
+      "gram_panchayat": "ಕಲೆಕ್ಷನ್ ಶುರು ಮಾಡೋಕೆ ಮನೆಯ QR ಕೋಡ್ ಸ್ಕ್ಯಾನ್ ಮಾಡಿ",
+      "municipality": "ಕಲೆಕ್ಷನ್ ಶುರು ಮಾಡೋಕೆ ಪ್ರಾಪರ್ಟಿ QR ಕೋಡ್ ಸ್ಕ್ಯಾನ್ ಮಾಡಿ",
+      "apartment": "ಕಲೆಕ್ಷನ್ ಶುರು ಮಾಡೋಕೆ ಫ್ಲಾಟ್ QR ಕೋಡ್ ಸ್ಕ್ಯಾನ್ ಮಾಡಿ",
+      "township": "ಕಲೆಕ್ಷನ್ ಶುರು ಮಾಡೋಕೆ ಪ್ಲಾಟ್ QR ಕೋಡ್ ಸ್ಕ್ಯಾನ್ ಮಾಡಿ",
+      "institution_campus": "ಕಲೆಕ್ಷನ್ ಶುರು ಮಾಡೋಕೆ ಯೂನಿಟ್ QR ಕೋಡ್ ಸ್ಕ್ಯಾನ್ ಮಾಡಿ"
+    },
+    "pointCamera": {
+      "gram_panchayat": "ಕ್ಯಾಮೆರಾನಾ ಮನೆಯ QR ಕೋಡ್ ಕಡೆ ತೋರಿಸಿ",
+      "municipality": "ಕ್ಯಾಮೆರಾನಾ ಪ್ರಾಪರ್ಟಿ QR ಕೋಡ್ ಕಡೆ ತೋರಿಸಿ",
+      "apartment": "ಕ್ಯಾಮೆರಾನಾ ಫ್ಲಾಟ್ QR ಕೋಡ್ ಕಡೆ ತೋರಿಸಿ",
+      "township": "ಕ್ಯಾಮೆರಾನಾ ಪ್ಲಾಟ್ QR ಕೋಡ್ ಕಡೆ ತೋರಿಸಿ",
+      "institution_campus": "ಕ್ಯಾಮೆರಾನಾ ಯೂನಿಟ್ QR ಕೋಡ್ ಕಡೆ ತೋರಿಸಿ"
+    },
+    "enterHouseholdId": {
+      "gram_panchayat": "ಹೌಸ್ಹೋಲ್ಡ್ ID ಹಾಕಿ",
+      "municipality": "ಪ್ರಾಪರ್ಟಿ ID ಹಾಕಿ",
+      "apartment": "ಫ್ಲಾಟ್ ID ಹಾಕಿ",
+      "township": "ಪ್ಲಾಟ್ ID ಹಾಕಿ",
+      "institution_campus": "ಯೂನಿಟ್ ID ಹಾಕಿ"
+    },
+    "typeHouseholdId": {
+      "gram_panchayat": "ಹೌಸ್ಹೋಲ್ಡ್ ID ಟೈಪ್ ಮಾಡಿ...",
+      "municipality": "ಪ್ರಾಪರ್ಟಿ ID ಟೈಪ್ ಮಾಡಿ...",
+      "apartment": "ಫ್ಲಾಟ್ ID ಟೈಪ್ ಮಾಡಿ...",
+      "township": "ಪ್ಲಾಟ್ ID ಟೈಪ್ ಮಾಡಿ...",
+      "institution_campus": "ಯೂನಿಟ್ ID ಟೈಪ್ ಮಾಡಿ..."
+    },
+    "lookupHousehold": {
+      "gram_panchayat": "ಹೌಸ್ಹೋಲ್ಡ್ ಹುಡುಕಿ",
+      "municipality": "ಪ್ರಾಪರ್ಟಿ ಹುಡುಕಿ",
+      "apartment": "ಫ್ಲಾಟ್ ಹುಡುಕಿ",
+      "township": "ಪ್ಲಾಟ್ ಹುಡುಕಿ",
+      "institution_campus": "ಯೂನಿಟ್ ಹುಡುಕಿ"
+    },
     "lookingUp": "ಹುಡುಕ್ತಿದೆ...",
-    "noHouseholdFound": "ಈ ID ಇರೋ ಹೌಸ್ಹೋಲ್ಡ್ ಸಿಗ್ತಿಲ್ಲ",
+    "noHouseholdFound": {
+      "gram_panchayat": "ಈ ID ಇರೋ ಹೌಸ್ಹೋಲ್ಡ್ ಸಿಗ್ತಿಲ್ಲ",
+      "municipality": "ಈ ID ಇರೋ ಪ್ರಾಪರ್ಟಿ ಸಿಗ್ತಿಲ್ಲ",
+      "apartment": "ಈ ID ಇರೋ ಫ್ಲಾಟ್ ಸಿಗ್ತಿಲ್ಲ",
+      "township": "ಈ ID ಇರೋ ಪ್ಲಾಟ್ ಸಿಗ್ತಿಲ್ಲ",
+      "institution_campus": "ಈ ID ಇರೋ ಯೂನಿಟ್ ಸಿಗ್ತಿಲ್ಲ"
+    },
     "qrScanError": "QR ಸ್ಕ್ಯಾನ್ ಎರರ್",
     "invalidQrCode": "QR ಕೋಡ್ ತಪ್ಪಾಗಿದೆ",
-    "householdNotFound": "ಹೌಸ್ಹೋಲ್ಡ್ ಸಿಗ್ತಿಲ್ಲ",
+    "householdNotFound": {
+      "gram_panchayat": "ಹೌಸ್ಹೋಲ್ಡ್ ಸಿಗ್ತಿಲ್ಲ",
+      "municipality": "ಪ್ರಾಪರ್ಟಿ ಸಿಗ್ತಿಲ್ಲ",
+      "apartment": "ಫ್ಲಾಟ್ ಸಿಗ್ತಿಲ್ಲ",
+      "township": "ಪ್ಲಾಟ್ ಸಿಗ್ತಿಲ್ಲ",
+      "institution_campus": "ಯೂನಿಟ್ ಸಿಗ್ತಿಲ್ಲ"
+    },
     "alreadyCollectedToday": "ಇವತ್ತು ಆಗ್ಲೇ ಕಲೆಕ್ಷನ್ ಆಗಿದೆ",
-    "alreadyCollectedTodayDesc": "ಈ ಮನೆಗೆ ಇವತ್ತಿನ ಕಲೆಕ್ಷನ್ ರೆಕಾರ್ಡ್ ಆಗಿದೆ",
+    "alreadyCollectedTodayDesc": {
+      "gram_panchayat": "ಈ ಮನೆಗೆ ಇವತ್ತಿನ ಕಲೆಕ್ಷನ್ ರೆಕಾರ್ಡ್ ಆಗಿದೆ",
+      "municipality": "ಈ ಪ್ರಾಪರ್ಟಿಗೆ ಇವತ್ತಿನ ಕಲೆಕ್ಷನ್ ರೆಕಾರ್ಡ್ ಆಗಿದೆ",
+      "apartment": "ಈ ಫ್ಲಾಟ್ಗೆ ಇವತ್ತಿನ ಕಲೆಕ್ಷನ್ ರೆಕಾರ್ಡ್ ಆಗಿದೆ",
+      "township": "ಈ ಪ್ಲಾಟ್ಗೆ ಇವತ್ತಿನ ಕಲೆಕ್ಷನ್ ರೆಕಾರ್ಡ್ ಆಗಿದೆ",
+      "institution_campus": "ಈ ಯೂನಿಟ್ಗೆ ಇವತ್ತಿನ ಕಲೆಕ್ಷನ್ ರೆಕಾರ್ಡ್ ಆಗಿದೆ"
+    },
     "collectionForm": "ಕಲೆಕ್ಷನ್ ಫಾರ್ಮ್",
     "collectionFor": "ಕಲೆಕ್ಷನ್ —",
     "wasteCollectionStatus": "ಕಸದ ಕಲೆಕ್ಷನ್ ಸ್ಟೇಟಸ್",
@@ -177,9 +249,27 @@
     "startScanning": "ಕಲೆಕ್ಷನ್ ರೆಕಾರ್ಡ್ ಮಾಡೋಕೆ QR ಕೋಡ್ ಸ್ಕ್ಯಾನ್ ಮಾಡಿ",
     "viewDetails": "ಡೀಟೈಲ್ಸ್ ನೋಡಿ",
     "collectionDetails": "ಕಲೆಕ್ಷನ್ ಡೀಟೈಲ್ಸ್",
-    "household": "ಹೌಸ್ಹೋಲ್ಡ್",
-    "houseNumber": "ಮನೆ ನಂಬರ್",
-    "ward": "ವಾರ್ಡ್",
+    "household": {
+      "gram_panchayat": "ಹೌಸ್ಹೋಲ್ಡ್",
+      "municipality": "ಪ್ರಾಪರ್ಟಿ",
+      "apartment": "ಫ್ಲಾಟ್",
+      "township": "ಪ್ಲಾಟ್",
+      "institution_campus": "ಯೂನಿಟ್"
+    },
+    "houseNumber": {
+      "gram_panchayat": "ಮನೆ ನಂಬರ್",
+      "municipality": "ಡೋರ್ ನಂಬರ್",
+      "apartment": "ಫ್ಲಾಟ್ ನಂಬರ್",
+      "township": "ಪ್ಲಾಟ್ ನಂಬರ್",
+      "institution_campus": "ಯೂನಿಟ್ ನಂಬರ್"
+    },
+    "ward": {
+      "gram_panchayat": "ವಾರ್ಡ್",
+      "municipality": "ಸಬ್-ವಾರ್ಡ್",
+      "apartment": "ವಿಂಗ್ / ಬ್ಲಾಕ್",
+      "township": "ಸೆಕ್ಟರ್",
+      "institution_campus": "ಬಿಲ್ಡಿಂಗ್"
+    },
     "time": "ಟೈಮ್",
     "status": "ಸ್ಟೇಟಸ್",
     "collectionPhoto": "ಕಲೆಕ್ಷನ್ ಫೋಟೋ",
@@ -197,7 +287,7 @@
     "submitIssue": "ಇಶ್ಯೂ ಸಬ್ಮಿಟ್ ಮಾಡಿ",
     "submittingIssue": "ಸಬ್ಮಿಟ್ ಆಗ್ತಿದೆ...",
     "issueSubmitted": "ಇಶ್ಯೂ ರಿಪೋರ್ಟ್ ಆಯ್ತು",
-    "issueSubmittedDesc": "ನಿಮ್ಮ ಇಶ್ಯೂ ಗ್ರಾಮ ಮ್ಯಾನೇಜರ್ಗೆ ಹೋಗಿದೆ",
+    "issueSubmittedDesc": "ನಿಮ್ಮ ಇಶ್ಯೂ ಮ್ಯಾನೇಜರ್ಗೆ ಹೋಗಿದೆ",
     "issueSubmitFailed": "ಇಶ್ಯೂ ಸಬ್ಮಿಟ್ ಆಗ್ಲಿಲ್ಲ",
     "noIssuesFound": "ಇಲ್ಲಿವರೆಗೂ ಇಶ್ಯೂ ಏನು ರಿಪೋರ್ಟ್ ಆಗಿಲ್ಲ",
     "noIssuesFoundDesc": "ಕಲೆಕ್ಷನ್ ಟೈಮಲ್ಲಿ ಪ್ರಾಬ್ಲಮ್ ಇದ್ರೆ ರಿಪೋರ್ಟ್ ಮಾಡಿ",
@@ -234,7 +324,7 @@
     "noActiveShift": "ಆಕ್ಟಿವ್ ಶಿಫ್ಟ್ ಏನಿಲ್ಲ",
     "shiftDuration": "ಶಿಫ್ಟ್ ಡ್ಯುರೇಷನ್",
     "collectionsInShift": "ಶಿಫ್ಟ್ನಲ್ಲಿರೋ ಕಲೆಕ್ಷನ್ಸ್",
-    "attendanceNotEnabled": "ನಿಮ್ಮ ಗ್ರಾಮದಲ್ಲಿ ಅಟೆಂಡೆನ್ಸ್ ಟ್ರ್ಯಾಕಿಂಗ್ ಎನೇಬಲ್ ಆಗಿಲ್ಲ",
+    "attendanceNotEnabled": "ನಿಮ್ಮ ಸಂಸ್ಥೆಯಲ್ಲಿ ಅಟೆಂಡೆನ್ಸ್ ಟ್ರ್ಯಾಕಿಂಗ್ ಎನೇಬಲ್ ಆಗಿಲ್ಲ",
     "changePasswordError": "ಪಾಸ್‌ವರ್ಡ್ ಬದಲಾಯಿಸಲು ವಿಫಲವಾಯಿತು. ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಿ.",
     "issueReportedError": "ಸಮಸ್ಯೆ ರಿಪೋರ್ಟ್ ಮಾಡಲು ವಿಫಲವಾಯಿತು. ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಿ.",
     "issueReportedSuccess": "ನಿಮ್ಮ ಸಮಸ್ಯೆ ಯಶಸ್ವಿಯಾಗಿ ರಿಪೋರ್ಟ್ ಆಯಿತು!",
@@ -245,7 +335,8 @@
     "issuePhoto": "ಸಮಸ್ಯೆ ಫೋಟೋ",
     "managerProofPhoto": "ಮ್ಯಾನೇಜರ್ ಪ್ರೂಫ್ ಫೋಟೋ",
     "active": "ಆ್ಯಕ್ಟಿವ್",
-    "tooFarFromCenter": "ನೀವು ಸೆಂಟರ್‌ಗೆ ತುಂಬಾ ದೂರದಲ್ಲಿದ್ದೀರಿ"
+    "tooFarFromCenter": "ನೀವು ಸೆಂಟರ್‌ಗೆ ತುಂಬಾ ದೂರದಲ್ಲಿದ್ದೀರಿ",
+    "collectionRecorded": "ಕಲೆಕ್ಷನ್ ರೆಕಾರ್ಡ್ ಆಗಿದೆ"
   },
   "generator": {
     "home": "ಹೋಮ್",
@@ -255,11 +346,35 @@
     "profile": "ಪ್ರೊಫೈಲ್",
     "bills": "ಬಿಲ್ಸ್",
     "welcomeBack": "ಮತ್ತೆ ಸ್ವಾಗತ",
-    "householdInfo": "ಹೌಸ್ಹೋಲ್ಡ್ ಮಾಹಿತಿ",
-    "headOfHousehold": "ಮನೆ ಯಜಮಾನ",
+    "householdInfo": {
+      "gram_panchayat": "ಹೌಸ್ಹೋಲ್ಡ್ ಮಾಹಿತಿ",
+      "municipality": "ಪ್ರಾಪರ್ಟಿ ಮಾಹಿತಿ",
+      "apartment": "ಫ್ಲಾಟ್ ಮಾಹಿತಿ",
+      "township": "ಪ್ಲಾಟ್ ಮಾಹಿತಿ",
+      "institution_campus": "ಯೂನಿಟ್ ಮಾಹಿತಿ"
+    },
+    "headOfHousehold": {
+      "gram_panchayat": "ಮನೆ ಯಜಮಾನ",
+      "municipality": "ಪ್ರಾಪರ್ಟಿ ಓನರ್",
+      "apartment": "ಫ್ಲಾಟ್ ಓನರ್",
+      "township": "ಪ್ಲಾಟ್ ಓನರ್",
+      "institution_campus": "ಯೂನಿಟ್ ಹೆಡ್"
+    },
     "uid": "UID",
-    "houseNumber": "ಮನೆ ನಂಬರ್",
-    "ward": "ವಾರ್ಡ್",
+    "houseNumber": {
+      "gram_panchayat": "ಮನೆ ನಂಬರ್",
+      "municipality": "ಡೋರ್ ನಂಬರ್",
+      "apartment": "ಫ್ಲಾಟ್ ನಂಬರ್",
+      "township": "ಪ್ಲಾಟ್ ನಂಬರ್",
+      "institution_campus": "ಯೂನಿಟ್ ನಂಬರ್"
+    },
+    "ward": {
+      "gram_panchayat": "ವಾರ್ಡ್",
+      "municipality": "ಸಬ್-ವಾರ್ಡ್",
+      "apartment": "ವಿಂಗ್ / ಬ್ಲಾಕ್",
+      "township": "ಸೆಕ್ಟರ್",
+      "institution_campus": "ಬಿಲ್ಡಿಂಗ್"
+    },
     "address": "ಅಡ್ರೆಸ್",
     "phone": "ಫೋನ್",
     "lastCollection": "ಕೊನೆ ಕಲೆಕ್ಷನ್",
@@ -285,7 +400,7 @@
     "qrCodeDesc": "ಕಲೆಕ್ಷನ್ ಟೈಮಲ್ಲಿ ಕಲೆಕ್ಟರ್ಗೆ ಈ QR ಕೋಡ್ ತೋರಿಸಿ",
     "downloadQrCode": "QR ಕೋಡ್ ಡೌನ್ಲೋಡ್ ಮಾಡಿ",
     "qrNotGenerated": "QR ಕೋಡ್ ಇನ್ನು ರೆಡಿಯಾಗಿಲ್ಲ",
-    "contactManager": "ನಿಮ್ಮ ಗ್ರಾಮ ಮ್ಯಾನೇಜರ್ಗೆ ಕಾಂಟ್ಯಾಕ್ಟ್ ಮಾಡಿ",
+    "contactManager": "ನಿಮ್ಮ ಮ್ಯಾನೇಜರ್ಗೆ ಕಾಂಟ್ಯಾಕ್ಟ್ ಮಾಡಿ",
     "reportIssue": "ಇಶ್ಯೂ ರಿಪೋರ್ಟ್ ಮಾಡಿ",
     "issueTitle": "ಇಶ್ಯೂ ಟೈಟಲ್",
     "issueTitlePlaceholder": "ಉದಾ: 3 ದಿನದಿಂದ ಕಸ ಕಲೆಕ್ಟ್ ಆಗಿಲ್ಲ",
@@ -296,7 +411,7 @@
     "submitIssue": "ಇಶ್ಯೂ ಸಬ್ಮಿಟ್ ಮಾಡಿ",
     "submittingIssue": "ಸಬ್ಮಿಟ್ ಆಗ್ತಿದೆ...",
     "issueSubmitted": "ಇಶ್ಯೂ ರಿಪೋರ್ಟ್ ಆಯ್ತು",
-    "issueSubmittedDesc": "ನಿಮ್ಮ ಇಶ್ಯೂ ಗ್ರಾಮ ಮ್ಯಾನೇಜರ್ಗೆ ಹೋಗಿದೆ",
+    "issueSubmittedDesc": "ನಿಮ್ಮ ಇಶ್ಯೂ ಮ್ಯಾನೇಜರ್ಗೆ ಹೋಗಿದೆ",
     "issueSubmitFailed": "ಇಶ್ಯೂ ಸಬ್ಮಿಟ್ ಆಗ್ಲಿಲ್ಲ",
     "yourIssues": "ನಿಮ್ಮ ಇಶ್ಯೂಸ್",
     "noIssuesYet": "ಇಲ್ಲಿವರೆಗೂ ಇಶ್ಯೂ ಏನು ರಿಪೋರ್ಟ್ ಆಗಿಲ್ಲ",
@@ -326,41 +441,137 @@
     "issuePhoto": "ಸಮಸ್ಯೆ ಫೋಟೋ"
   },
   "manager": {
-    "householdsManagement": "ಹೌಸ್ಹೋಲ್ಡ್ ಮ್ಯಾನೇಜ್ಮೆಂಟ್",
-    "manageHouseholdsQR": "ಹೌಸ್ಹೋಲ್ಡ್ ಮತ್ತು QR ಕೋಡ್ಸ್ ಮ್ಯಾನೇಜ್ ಮಾಡಿ",
+    "householdsManagement": {
+      "gram_panchayat": "ಹೌಸ್ಹೋಲ್ಡ್ ಮ್ಯಾನೇಜ್ಮೆಂಟ್",
+      "municipality": "ಪ್ರಾಪರ್ಟಿ ಮ್ಯಾನೇಜ್ಮೆಂಟ್",
+      "apartment": "ಫ್ಲಾಟ್ ಮ್ಯಾನೇಜ್ಮೆಂಟ್",
+      "township": "ಪ್ಲಾಟ್ ಮ್ಯಾನೇಜ್ಮೆಂಟ್",
+      "institution_campus": "ಯೂನಿಟ್ ಮ್ಯಾನೇಜ್ಮೆಂಟ್"
+    },
+    "manageHouseholdsQR": {
+      "gram_panchayat": "ಹೌಸ್ಹೋಲ್ಡ್ ಮತ್ತು QR ಕೋಡ್ಸ್ ಮ್ಯಾನೇಜ್ ಮಾಡಿ",
+      "municipality": "ಪ್ರಾಪರ್ಟಿ ಮತ್ತು QR ಕೋಡ್ಸ್ ಮ್ಯಾನೇಜ್ ಮಾಡಿ",
+      "apartment": "ಫ್ಲಾಟ್ ಮತ್ತು QR ಕೋಡ್ಸ್ ಮ್ಯಾನೇಜ್ ಮಾಡಿ",
+      "township": "ಪ್ಲಾಟ್ ಮತ್ತು QR ಕೋಡ್ಸ್ ಮ್ಯಾನೇಜ್ ಮಾಡಿ",
+      "institution_campus": "ಯೂನಿಟ್ ಮತ್ತು QR ಕೋಡ್ಸ್ ಮ್ಯಾನೇಜ್ ಮಾಡಿ"
+    },
     "viewAll": "ಎಲ್ಲಾ ನೋಡಿ",
-    "addHousehold": "ಹೌಸ್ಹೋಲ್ಡ್ ಆಡ್ ಮಾಡಿ",
+    "addHousehold": {
+      "gram_panchayat": "ಹೌಸ್ಹೋಲ್ಡ್ ಆಡ್ ಮಾಡಿ",
+      "municipality": "ಪ್ರಾಪರ್ಟಿ ಆಡ್ ಮಾಡಿ",
+      "apartment": "ಫ್ಲಾಟ್ ಆಡ್ ಮಾಡಿ",
+      "township": "ಪ್ಲಾಟ್ ಆಡ್ ಮಾಡಿ",
+      "institution_campus": "ಯೂನಿಟ್ ಆಡ್ ಮಾಡಿ"
+    },
     "downloadQR": "QR ಡೌನ್ಲೋಡ್",
     "qrCodeAvailable": "QR ಕೋಡ್ ಇದೆ",
-    "addMultipleHouseholds": "ಬಹಳಷ್ಟು ಹೌಸ್ಹೋಲ್ಡ್ಸ್ ಆಡ್ ಮಾಡಿ",
-    "createMultipleDesc": "ಒಟ್ಟಿಗೆ ಬಹಳಷ್ಟು ಹೌಸ್ಹೋಲ್ಡ್ಸ್ ಕ್ರಿಯೇಟ್ ಮಾಡಿ, QR ಕೋಡ್ ಆಟೋಮ್ಯಾಟಿಕ್ ಆಗಿ ರೆಡಿಯಾಗುತ್ತೆ",
+    "addMultipleHouseholds": {
+      "gram_panchayat": "ಬಹಳಷ್ಟು ಹೌಸ್ಹೋಲ್ಡ್ಸ್ ಆಡ್ ಮಾಡಿ",
+      "municipality": "ಬಹಳಷ್ಟು ಪ್ರಾಪರ್ಟಿಗಳು ಆಡ್ ಮಾಡಿ",
+      "apartment": "ಬಹಳಷ್ಟು ಫ್ಲಾಟ್‌ಗಳು ಆಡ್ ಮಾಡಿ",
+      "township": "ಬಹಳಷ್ಟು ಪ್ಲಾಟ್‌ಗಳು ಆಡ್ ಮಾಡಿ",
+      "institution_campus": "ಬಹಳಷ್ಟು ಯೂನಿಟ್‌ಗಳು ಆಡ್ ಮಾಡಿ"
+    },
+    "createMultipleDesc": {
+      "gram_panchayat": "ಒಟ್ಟಿಗೆ ಬಹಳಷ್ಟು ಹೌಸ್ಹೋಲ್ಡ್ಸ್ ಕ್ರಿಯೇಟ್ ಮಾಡಿ, QR ಕೋಡ್ ಆಟೋಮ್ಯಾಟಿಕ್ ಆಗಿ ರೆಡಿಯಾಗುತ್ತೆ",
+      "municipality": "ಒಟ್ಟಿಗೆ ಬಹಳಷ್ಟು ಪ್ರಾಪರ್ಟಿಗಳು ಕ್ರಿಯೇಟ್ ಮಾಡಿ, QR ಕೋಡ್ ಆಟೋಮ್ಯಾಟಿಕ್ ಆಗಿ ರೆಡಿಯಾಗುತ್ತೆ",
+      "apartment": "ಒಟ್ಟಿಗೆ ಬಹಳಷ್ಟು ಫ್ಲಾಟ್‌ಗಳು ಕ್ರಿಯೇಟ್ ಮಾಡಿ, QR ಕೋಡ್ ಆಟೋಮ್ಯಾಟಿಕ್ ಆಗಿ ರೆಡಿಯಾಗುತ್ತೆ",
+      "township": "ಒಟ್ಟಿಗೆ ಬಹಳಷ್ಟು ಪ್ಲಾಟ್‌ಗಳು ಕ್ರಿಯೇಟ್ ಮಾಡಿ, QR ಕೋಡ್ ಆಟೋಮ್ಯಾಟಿಕ್ ಆಗಿ ರೆಡಿಯಾಗುತ್ತೆ",
+      "institution_campus": "ಒಟ್ಟಿಗೆ ಬಹಳಷ್ಟು ಯೂನಿಟ್‌ಗಳು ಕ್ರಿಯೇಟ್ ಮಾಡಿ, QR ಕೋಡ್ ಆಟೋಮ್ಯಾಟಿಕ್ ಆಗಿ ರೆಡಿಯಾಗುತ್ತೆ"
+    },
     "addRow": "ರೋ ಆಡ್ ಮಾಡಿ",
-    "createHouseholds": "ಹೌಸ್ಹೋಲ್ಡ್ಸ್ ಕ್ರಿಯೇಟ್ ಮಾಡಿ",
+    "createHouseholds": {
+      "gram_panchayat": "ಹೌಸ್ಹೋಲ್ಡ್ಸ್ ಕ್ರಿಯೇಟ್ ಮಾಡಿ",
+      "municipality": "ಪ್ರಾಪರ್ಟಿಗಳು ಕ್ರಿಯೇಟ್ ಮಾಡಿ",
+      "apartment": "ಫ್ಲಾಟ್‌ಗಳು ಕ್ರಿಯೇಟ್ ಮಾಡಿ",
+      "township": "ಪ್ಲಾಟ್‌ಗಳು ಕ್ರಿಯೇಟ್ ಮಾಡಿ",
+      "institution_campus": "ಯೂನಿಟ್‌ಗಳು ಕ್ರಿಯೇಟ್ ಮಾಡಿ"
+    },
     "creating": "ರೆಡಿಯಾಗ್ತಿದೆ...",
-    "headNameRequired": "ಮನೆ ಯಜಮಾನನ ಹೆಸರು *",
-    "houseNumberRequired": "ಮನೆ ನಂಬರ್ *",
+    "headNameRequired": {
+      "gram_panchayat": "ಮನೆ ಯಜಮಾನನ ಹೆಸರು *",
+      "municipality": "ಓನರ್ ಹೆಸರು *",
+      "apartment": "ಓನರ್ ಹೆಸರು *",
+      "township": "ಓನರ್ ಹೆಸರು *",
+      "institution_campus": "ಹೆಡ್ ಹೆಸರು *"
+    },
+    "houseNumberRequired": {
+      "gram_panchayat": "ಮನೆ ನಂಬರ್ *",
+      "municipality": "ಡೋರ್ ನಂಬರ್ *",
+      "apartment": "ಫ್ಲಾಟ್ ನಂಬರ್ *",
+      "township": "ಪ್ಲಾಟ್ ನಂಬರ್ *",
+      "institution_campus": "ಯೂನಿಟ್ ನಂಬರ್ *"
+    },
     "phoneRequired": "ಫೋನ್ *",
     "addressOptional": "ಅಡ್ರೆಸ್ (ಕಡ್ಡಾಯವಲ್ಲ)",
-    "enterHeadName": "ಮನೆ ಯಜಮಾನನ ಹೆಸರು ಹಾಕಿ",
-    "houseNumber": "ಮನೆ ನಂಬರ್",
+    "enterHeadName": {
+      "gram_panchayat": "ಮನೆ ಯಜಮಾನನ ಹೆಸರು ಹಾಕಿ",
+      "municipality": "ಓನರ್ ಹೆಸರು ಹಾಕಿ",
+      "apartment": "ಓನರ್ ಹೆಸರು ಹಾಕಿ",
+      "township": "ಓನರ್ ಹೆಸರು ಹಾಕಿ",
+      "institution_campus": "ಹೆಡ್ ಹೆಸರು ಹಾಕಿ"
+    },
+    "houseNumber": {
+      "gram_panchayat": "ಮನೆ ನಂಬರ್",
+      "municipality": "ಡೋರ್ ನಂಬರ್",
+      "apartment": "ಫ್ಲಾಟ್ ನಂಬರ್",
+      "township": "ಪ್ಲಾಟ್ ನಂಬರ್",
+      "institution_campus": "ಯೂನಿಟ್ ನಂಬರ್"
+    },
     "phoneNumber": "ಫೋನ್ ನಂಬರ್",
     "fullAddress": "ಪೂರ್ತಿ ಅಡ್ರೆಸ್",
-    "clickAddRow": "ಹೌಸ್ಹೋಲ್ಡ್ಸ್ ಆಡ್ ಮಾಡೋಕೆ \"ರೋ ಆಡ್ ಮಾಡಿ\" ಕ್ಲಿಕ್ ಮಾಡಿ",
+    "clickAddRow": {
+      "gram_panchayat": "ಹೌಸ್ಹೋಲ್ಡ್ಸ್ ಆಡ್ ಮಾಡೋಕೆ \"ರೋ ಆಡ್ ಮಾಡಿ\" ಕ್ಲಿಕ್ ಮಾಡಿ",
+      "municipality": "ಪ್ರಾಪರ್ಟಿಗಳು ಆಡ್ ಮಾಡೋಕೆ \"ರೋ ಆಡ್ ಮಾಡಿ\" ಕ್ಲಿಕ್ ಮಾಡಿ",
+      "apartment": "ಫ್ಲಾಟ್‌ಗಳು ಆಡ್ ಮಾಡೋಕೆ \"ರೋ ಆಡ್ ಮಾಡಿ\" ಕ್ಲಿಕ್ ಮಾಡಿ",
+      "township": "ಪ್ಲಾಟ್‌ಗಳು ಆಡ್ ಮಾಡೋಕೆ \"ರೋ ಆಡ್ ಮಾಡಿ\" ಕ್ಲಿಕ್ ಮಾಡಿ",
+      "institution_campus": "ಯೂನಿಟ್‌ಗಳು ಆಡ್ ಮಾಡೋಕೆ \"ರೋ ಆಡ್ ಮಾಡಿ\" ಕ್ಲಿಕ್ ಮಾಡಿ"
+    },
     "downloadQRCodes": "QR ಕೋಡ್ಸ್ ಡೌನ್ಲೋಡ್",
-    "downloadQRDesc": "ಹೌಸ್ಹೋಲ್ಡ್ QR ಕೋಡ್ಸ್ PDF ನಲ್ಲಿ ಡೌನ್ಲೋಡ್ ಮಾಡಿ",
+    "downloadQRDesc": {
+      "gram_panchayat": "ಹೌಸ್ಹೋಲ್ಡ್ QR ಕೋಡ್ಸ್ PDF ನಲ್ಲಿ ಡೌನ್ಲೋಡ್ ಮಾಡಿ",
+      "municipality": "ಪ್ರಾಪರ್ಟಿ QR ಕೋಡ್ಸ್ PDF ನಲ್ಲಿ ಡೌನ್ಲೋಡ್ ಮಾಡಿ",
+      "apartment": "ಫ್ಲಾಟ್ QR ಕೋಡ್ಸ್ PDF ನಲ್ಲಿ ಡೌನ್ಲೋಡ್ ಮಾಡಿ",
+      "township": "ಪ್ಲಾಟ್ QR ಕೋಡ್ಸ್ PDF ನಲ್ಲಿ ಡೌನ್ಲೋಡ್ ಮಾಡಿ",
+      "institution_campus": "ಯೂನಿಟ್ QR ಕೋಡ್ಸ್ PDF ನಲ್ಲಿ ಡೌನ್ಲೋಡ್ ಮಾಡಿ"
+    },
     "selectAll": "ಎಲ್ಲಾ ಸೆಲೆಕ್ಟ್ ಮಾಡಿ",
     "generating": "ರೆಡಿಯಾಗ್ತಿದೆ...",
     "downloadPDF": "PDF ಡೌನ್ಲೋಡ್",
     "noQRAvailable": "ಇನ್ನು QR ಕೋಡ್ ರೆಡಿಯಾಗಿಲ್ಲ",
-    "addHouseholdsForQR": "QR ಕೋಡ್ ಆಟೋಮ್ಯಾಟಿಕ್ ಆಗಿ ರೆಡಿಯಾಗೋಕೆ ಹೌಸ್ಹೋಲ್ಡ್ಸ್ ಆಡ್ ಮಾಡಿ",
+    "addHouseholdsForQR": {
+      "gram_panchayat": "QR ಕೋಡ್ ಆಟೋಮ್ಯಾಟಿಕ್ ಆಗಿ ರೆಡಿಯಾಗೋಕೆ ಹೌಸ್ಹೋಲ್ಡ್ಸ್ ಆಡ್ ಮಾಡಿ",
+      "municipality": "QR ಕೋಡ್ ಆಟೋಮ್ಯಾಟಿಕ್ ಆಗಿ ರೆಡಿಯಾಗೋಕೆ ಪ್ರಾಪರ್ಟಿಗಳು ಆಡ್ ಮಾಡಿ",
+      "apartment": "QR ಕೋಡ್ ಆಟೋಮ್ಯಾಟಿಕ್ ಆಗಿ ರೆಡಿಯಾಗೋಕೆ ಫ್ಲಾಟ್‌ಗಳು ಆಡ್ ಮಾಡಿ",
+      "township": "QR ಕೋಡ್ ಆಟೋಮ್ಯಾಟಿಕ್ ಆಗಿ ರೆಡಿಯಾಗೋಕೆ ಪ್ಲಾಟ್‌ಗಳು ಆಡ್ ಮಾಡಿ",
+      "institution_campus": "QR ಕೋಡ್ ಆಟೋಮ್ಯಾಟಿಕ್ ಆಗಿ ರೆಡಿಯಾಗೋಕೆ ಯೂನಿಟ್‌ಗಳು ಆಡ್ ಮಾಡಿ"
+    },
     "collectionsManagement": "ಕಲೆಕ್ಷನ್ ಮ್ಯಾನೇಜ್ಮೆಂಟ್",
-    "viewHouseholdStatus": "ಹೌಸ್ಹೋಲ್ಡ್ ಕಲೆಕ್ಷನ್ ಸ್ಟೇಟಸ್ ನೋಡಿ",
+    "viewHouseholdStatus": {
+      "gram_panchayat": "ಹೌಸ್ಹೋಲ್ಡ್ ಕಲೆಕ್ಷನ್ ಸ್ಟೇಟಸ್ ನೋಡಿ",
+      "municipality": "ಪ್ರಾಪರ್ಟಿ ಕಲೆಕ್ಷನ್ ಸ್ಟೇಟಸ್ ನೋಡಿ",
+      "apartment": "ಫ್ಲಾಟ್ ಕಲೆಕ್ಷನ್ ಸ್ಟೇಟಸ್ ನೋಡಿ",
+      "township": "ಪ್ಲಾಟ್ ಕಲೆಕ್ಷನ್ ಸ್ಟೇಟಸ್ ನೋಡಿ",
+      "institution_campus": "ಯೂನಿಟ್ ಕಲೆಕ್ಷನ್ ಸ್ಟೇಟಸ್ ನೋಡಿ"
+    },
     "collections": "ಕಲೆಕ್ಷನ್ಸ್",
     "needsAttention": "ಗಮನ ಬೇಕು",
     "searchFilter": "ಸರ್ಚ್ & ಫಿಲ್ಟರ್",
-    "searchPlaceholder": "ಹೆಸರು, UID, ಅಥವಾ ಮನೆ ನಂಬರ್ ಇಂದ ಹುಡುಕಿ...",
+    "searchPlaceholder": {
+      "gram_panchayat": "ಹೆಸರು, UID, ಅಥವಾ ಮನೆ ನಂಬರ್ ಇಂದ ಹುಡುಕಿ...",
+      "municipality": "ಹೆಸರು, UID, ಅಥವಾ ಡೋರ್ ನಂಬರ್ ಇಂದ ಹುಡುಕಿ...",
+      "apartment": "ಹೆಸರು, UID, ಅಥವಾ ಫ್ಲಾಟ್ ನಂಬರ್ ಇಂದ ಹುಡುಕಿ...",
+      "township": "ಹೆಸರು, UID, ಅಥವಾ ಪ್ಲಾಟ್ ನಂಬರ್ ಇಂದ ಹುಡುಕಿ...",
+      "institution_campus": "ಹೆಸರು, UID, ಅಥವಾ ಯೂನಿಟ್ ನಂಬರ್ ಇಂದ ಹುಡುಕಿ..."
+    },
     "clear": "ಕ್ಲಿಯರ್",
-    "totalHouseholds": "ಟೋಟಲ್ ಹೌಸ್ಹೋಲ್ಡ್ಸ್",
+    "totalHouseholds": {
+      "gram_panchayat": "ಟೋಟಲ್ ಹೌಸ್ಹೋಲ್ಡ್ಸ್",
+      "municipality": "ಟೋಟಲ್ ಪ್ರಾಪರ್ಟಿಗಳು",
+      "apartment": "ಟೋಟಲ್ ಫ್ಲಾಟ್‌ಗಳು",
+      "township": "ಟೋಟಲ್ ಪ್ಲಾಟ್‌ಗಳು",
+      "institution_campus": "ಟೋಟಲ್ ಯೂನಿಟ್‌ಗಳು"
+    },
     "registered": "ರಿಜಿಸ್ಟರ್ ಆಗಿರೋದು",
     "collectionsToday": "ಇವತ್ತಿನ ಕಲೆಕ್ಷನ್ಸ್",
     "selectedDate": "ಸೆಲೆಕ್ಟ್ ಮಾಡಿರೋ ದಿನಾಂಕ",
@@ -369,13 +580,25 @@
     "allTime": "ಎಲ್ಲಾ ಟೈಮ್",
     "avgSegregation": "ಆವರೇಜ್ ಸೆಗ್ರಿಗೇಶನ್",
     "rating": "ರೇಟಿಂಗ್",
-    "householdCollectionStatus": "ಹೌಸ್ಹೋಲ್ಡ್ ಕಲೆಕ್ಷನ್ ಸ್ಟೇಟಸ್",
+    "householdCollectionStatus": {
+      "gram_panchayat": "ಹೌಸ್ಹೋಲ್ಡ್ ಕಲೆಕ್ಷನ್ ಸ್ಟೇಟಸ್",
+      "municipality": "ಪ್ರಾಪರ್ಟಿ ಕಲೆಕ್ಷನ್ ಸ್ಟೇಟಸ್",
+      "apartment": "ಫ್ಲಾಟ್ ಕಲೆಕ್ಷನ್ ಸ್ಟೇಟಸ್",
+      "township": "ಪ್ಲಾಟ್ ಕಲೆಕ್ಷನ್ ಸ್ಟೇಟಸ್",
+      "institution_campus": "ಯೂನಿಟ್ ಕಲೆಕ್ಷನ್ ಸ್ಟೇಟಸ್"
+    },
     "collected": "✅ ಕಲೆಕ್ಟ್ ಆಗಿದೆ",
     "pending": "⏳ ಪೆಂಡಿಂಗ್",
     "doneBefore": "📅 ಮುಂಚೆನೇ ಆಗಿದೆ",
     "never": "❌ ಯಾವತ್ತೂ ಆಗಿಲ್ಲ",
     "collectionDetails": "ಕಲೆಕ್ಷನ್ ಡೀಟೈಲ್ಸ್",
-    "householdId": "ಹೌಸ್ಹೋಲ್ಡ್ ID",
+    "householdId": {
+      "gram_panchayat": "ಹೌಸ್ಹೋಲ್ಡ್ ID",
+      "municipality": "ಪ್ರಾಪರ್ಟಿ ID",
+      "apartment": "ಫ್ಲಾಟ್ ID",
+      "township": "ಪ್ಲಾಟ್ ID",
+      "institution_campus": "ಯೂನಿಟ್ ID"
+    },
     "collectionFor": "ಕಲೆಕ್ಷನ್ —",
     "collector": "ಕಲೆಕ್ಟರ್",
     "time": "ಟೈಮ್",
@@ -392,20 +615,50 @@
     "performingWell": "ಚೆನ್ನಾಗಿ ಪರ್ಫಾರ್ಮ್ ಮಾಡ್ತಿದ್ದಾರೆ",
     "avgPerformance": "ಆವರೇಜ್ ಪರ್ಫಾರ್ಮನ್ಸ್",
     "performanceScore": "ಪರ್ಫಾರ್ಮನ್ಸ್ ಸ್ಕೋರ್",
-    "householdsNeedingAttention": "ತಕ್ಷಣ ಗಮನಿಸಬೇಕಾದ ಹೌಸ್ಹೋಲ್ಡ್ಸ್",
-    "attentionDesc": "ಕೊನೆ 10 ಕಲೆಕ್ಷನ್ನಲ್ಲಿ 3+ ಮಿಸ್ ಆಗಿರೋ, ಅಥವಾ 4 ಸ್ಟಾರ್ಗಿಂತ ಕಮ್ಮಿ ರೇಟಿಂಗ್ ಇರೋ ಹೌಸ್ಹೋಲ್ಡ್ಸ್",
+    "householdsNeedingAttention": {
+      "gram_panchayat": "ತಕ್ಷಣ ಗಮನಿಸಬೇಕಾದ ಹೌಸ್ಹೋಲ್ಡ್ಸ್",
+      "municipality": "ತಕ್ಷಣ ಗಮನಿಸಬೇಕಾದ ಪ್ರಾಪರ್ಟಿಗಳು",
+      "apartment": "ತಕ್ಷಣ ಗಮನಿಸಬೇಕಾದ ಫ್ಲಾಟ್‌ಗಳು",
+      "township": "ತಕ್ಷಣ ಗಮನಿಸಬೇಕಾದ ಪ್ಲಾಟ್‌ಗಳು",
+      "institution_campus": "ತಕ್ಷಣ ಗಮನಿಸಬೇಕಾದ ಯೂನಿಟ್‌ಗಳು"
+    },
+    "attentionDesc": {
+      "gram_panchayat": "ಕೊನೆ 10 ಕಲೆಕ್ಷನ್ನಲ್ಲಿ 3+ ಮಿಸ್ ಆಗಿರೋ, ಅಥವಾ 4 ಸ್ಟಾರ್ಗಿಂತ ಕಮ್ಮಿ ರೇಟಿಂಗ್ ಇರೋ ಹೌಸ್ಹೋಲ್ಡ್ಸ್",
+      "municipality": "ಕೊನೆ 10 ಕಲೆಕ್ಷನ್ನಲ್ಲಿ 3+ ಮಿಸ್ ಆಗಿರೋ, ಅಥವಾ 4 ಸ್ಟಾರ್ಗಿಂತ ಕಮ್ಮಿ ರೇಟಿಂಗ್ ಇರೋ ಪ್ರಾಪರ್ಟಿಗಳು",
+      "apartment": "ಕೊನೆ 10 ಕಲೆಕ್ಷನ್ನಲ್ಲಿ 3+ ಮಿಸ್ ಆಗಿರೋ, ಅಥವಾ 4 ಸ್ಟಾರ್ಗಿಂತ ಕಮ್ಮಿ ರೇಟಿಂಗ್ ಇರೋ ಫ್ಲಾಟ್‌ಗಳು",
+      "township": "ಕೊನೆ 10 ಕಲೆಕ್ಷನ್ನಲ್ಲಿ 3+ ಮಿಸ್ ಆಗಿರೋ, ಅಥವಾ 4 ಸ್ಟಾರ್ಗಿಂತ ಕಮ್ಮಿ ರೇಟಿಂಗ್ ಇರೋ ಪ್ಲಾಟ್‌ಗಳು",
+      "institution_campus": "ಕೊನೆ 10 ಕಲೆಕ್ಷನ್ನಲ್ಲಿ 3+ ಮಿಸ್ ಆಗಿರೋ, ಅಥವಾ 4 ಸ್ಟಾರ್ಗಿಂತ ಕಮ್ಮಿ ರೇಟಿಂಗ್ ಇರೋ ಯೂನಿಟ್‌ಗಳು"
+    },
     "problemCollections": "ಪ್ರಾಬ್ಲಮ್ ಕಲೆಕ್ಷನ್ಸ್",
     "outOf": "ರಲ್ಲಿ",
     "issues": "ಇಶ್ಯೂಸ್",
     "totalCollections2": "ಟೋಟಲ್ ಕಲೆಕ್ಷನ್ಸ್",
-    "allHouseholdsWell": "ಎಲ್ಲಾ ಹೌಸ್ಹೋಲ್ಡ್ಸ್ ಚೆನ್ನಾಗಿ ಪರ್ಫಾರ್ಮ್ ಮಾಡ್ತಿದ್ದಾರೆ!",
-    "wellPerformingHouseholds": "ಚೆನ್ನಾಗಿ ಪರ್ಫಾರ್ಮ್ ಮಾಡ್ತಿರೋ ಹೌಸ್ಹೋಲ್ಡ್ಸ್",
-    "goodComplianceDesc": "ಒಳ್ಳೆ ಕಲೆಕ್ಷನ್ ಕಂಪ್ಲೈಯನ್ಸ್, ರೇಟಿಂಗ್ ಇರೋ ಹೌಸ್ಹೋಲ್ಡ್ಸ್",
+    "allHouseholdsWell": {
+      "gram_panchayat": "ಎಲ್ಲಾ ಹೌಸ್ಹೋಲ್ಡ್ಸ್ ಚೆನ್ನಾಗಿ ಪರ್ಫಾರ್ಮ್ ಮಾಡ್ತಿದ್ದಾರೆ!",
+      "municipality": "ಎಲ್ಲಾ ಪ್ರಾಪರ್ಟಿಗಳು ಚೆನ್ನಾಗಿ ಪರ್ಫಾರ್ಮ್ ಮಾಡ್ತಿದ್ದಾರೆ!",
+      "apartment": "ಎಲ್ಲಾ ಫ್ಲಾಟ್‌ಗಳು ಚೆನ್ನಾಗಿ ಪರ್ಫಾರ್ಮ್ ಮಾಡ್ತಿದ್ದಾರೆ!",
+      "township": "ಎಲ್ಲಾ ಪ್ಲಾಟ್‌ಗಳು ಚೆನ್ನಾಗಿ ಪರ್ಫಾರ್ಮ್ ಮಾಡ್ತಿದ್ದಾರೆ!",
+      "institution_campus": "ಎಲ್ಲಾ ಯೂನಿಟ್‌ಗಳು ಚೆನ್ನಾಗಿ ಪರ್ಫಾರ್ಮ್ ಮಾಡ್ತಿದ್ದಾರೆ!"
+    },
+    "wellPerformingHouseholds": {
+      "gram_panchayat": "ಚೆನ್ನಾಗಿ ಪರ್ಫಾರ್ಮ್ ಮಾಡ್ತಿರೋ ಹೌಸ್ಹೋಲ್ಡ್ಸ್",
+      "municipality": "ಚೆನ್ನಾಗಿ ಪರ್ಫಾರ್ಮ್ ಮಾಡ್ತಿರೋ ಪ್ರಾಪರ್ಟಿಗಳು",
+      "apartment": "ಚೆನ್ನಾಗಿ ಪರ್ಫಾರ್ಮ್ ಮಾಡ್ತಿರೋ ಫ್ಲಾಟ್‌ಗಳು",
+      "township": "ಚೆನ್ನಾಗಿ ಪರ್ಫಾರ್ಮ್ ಮಾಡ್ತಿರೋ ಪ್ಲಾಟ್‌ಗಳು",
+      "institution_campus": "ಚೆನ್ನಾಗಿ ಪರ್ಫಾರ್ಮ್ ಮಾಡ್ತಿರೋ ಯೂನಿಟ್‌ಗಳು"
+    },
+    "goodComplianceDesc": {
+      "gram_panchayat": "ಒಳ್ಳೆ ಕಲೆಕ್ಷನ್ ಕಂಪ್ಲೈಯನ್ಸ್, ರೇಟಿಂಗ್ ಇರೋ ಹೌಸ್ಹೋಲ್ಡ್ಸ್",
+      "municipality": "ಒಳ್ಳೆ ಕಲೆಕ್ಷನ್ ಕಂಪ್ಲೈಯನ್ಸ್, ರೇಟಿಂಗ್ ಇರೋ ಪ್ರಾಪರ್ಟಿಗಳು",
+      "apartment": "ಒಳ್ಳೆ ಕಲೆಕ್ಷನ್ ಕಂಪ್ಲೈಯನ್ಸ್, ರೇಟಿಂಗ್ ಇರೋ ಫ್ಲಾಟ್‌ಗಳು",
+      "township": "ಒಳ್ಳೆ ಕಲೆಕ್ಷನ್ ಕಂಪ್ಲೈಯನ್ಸ್, ರೇಟಿಂಗ್ ಇರೋ ಪ್ಲಾಟ್‌ಗಳು",
+      "institution_campus": "ಒಳ್ಳೆ ಕಲೆಕ್ಷನ್ ಕಂಪ್ಲೈಯನ್ಸ್, ರೇಟಿಂಗ್ ಇರೋ ಯೂನಿಟ್‌ಗಳು"
+    },
     "goodRatings": "ಒಳ್ಳೆ ರೇಟಿಂಗ್ಸ್",
     "problemCollectionsOnly": "ಪ್ರಾಬ್ಲಮ್ ಕಲೆಕ್ಷನ್ಸ್ ಮಾತ್ರ",
     "excellent": "🟢 ಎಕ್ಸಲೆಂಟ್",
     "issuesManagement": "ಇಶ್ಯೂ ಮ್ಯಾನೇಜ್ಮೆಂಟ್",
-    "manageVillageIssues": "ಗ್ರಾಮದ ಇಶ್ಯೂಸ್ ಮ್ಯಾನೇಜ್ ಮಾಡಿ",
+    "manageVillageIssues": "ಇಶ್ಯೂಸ್ ಮ್ಯಾನೇಜ್ ಮಾಡಿ",
     "filterByStatus": "ಸ್ಟೇಟಸ್ ಇಂದ ಫಿಲ್ಟರ್ ಮಾಡಿ",
     "allIssues": "ಎಲ್ಲಾ ಇಶ್ಯೂಸ್",
     "open": "ಓಪನ್",
@@ -435,7 +688,13 @@
     "comprehensiveInsights": "ಪರ್ಫಾರ್ಮನ್ಸ್ ಇನ್ಸೈಟ್ಸ್, ಟ್ರೆಂಡ್ಸ್",
     "dailyReports": "ಡೈಲಿ ರಿಪೋರ್ಟ್ಸ್",
     "collectionEfficiency": "ಕಲೆಕ್ಷನ್ ಎಫಿಷಿಯನ್ಸಿ",
-    "households": "ಹೌಸ್ಹೋಲ್ಡ್ಸ್",
+    "households": {
+      "gram_panchayat": "ಹೌಸ್ಹೋಲ್ಡ್ಸ್",
+      "municipality": "ಪ್ರಾಪರ್ಟಿಗಳು",
+      "apartment": "ಫ್ಲಾಟ್‌ಗಳು",
+      "township": "ಪ್ಲಾಟ್‌ಗಳು",
+      "institution_campus": "ಯೂನಿಟ್‌ಗಳು"
+    },
     "averageSegregationRating": "ಆವರೇಜ್ ಸೆಗ್ರಿಗೇಶನ್ ರೇಟಿಂಗ್",
     "outOf5Stars": "5.0 ಸ್ಟಾರ್ಸ್ನಲ್ಲಿ",
     "dailyCollectionTrend": "ಡೈಲಿ ಕಲೆಕ್ಷನ್ ಟ್ರೆಂಡ್ (ಕೊನೆ 7 ದಿನಗಳು)",
@@ -453,8 +712,20 @@
     "selectDate": "ದಿನಾಂಕ ಸೆಲೆಕ್ಟ್ ಮಾಡಿ",
     "today": "ಇವತ್ತು",
     "avgSegregationRating": "ಆವರೇಜ್ ಸೆಗ್ರಿಗೇಶನ್ ರೇಟಿಂಗ್",
-    "totalHouses": "ಟೋಟಲ್ ಮನೆಗಳು",
-    "registeredHouseholds": "ರಿಜಿಸ್ಟರ್ ಆಗಿರೋ ಹೌಸ್ಹೋಲ್ಡ್ಸ್",
+    "totalHouses": {
+      "gram_panchayat": "ಟೋಟಲ್ ಮನೆಗಳು",
+      "municipality": "ಟೋಟಲ್ ಪ್ರಾಪರ್ಟಿಗಳು",
+      "apartment": "ಟೋಟಲ್ ಫ್ಲಾಟ್‌ಗಳು",
+      "township": "ಟೋಟಲ್ ಪ್ಲಾಟ್‌ಗಳು",
+      "institution_campus": "ಟೋಟಲ್ ಯೂನಿಟ್‌ಗಳು"
+    },
+    "registeredHouseholds": {
+      "gram_panchayat": "ರಿಜಿಸ್ಟರ್ ಆಗಿರೋ ಹೌಸ್ಹೋಲ್ಡ್ಸ್",
+      "municipality": "ರಿಜಿಸ್ಟರ್ ಆಗಿರೋ ಪ್ರಾಪರ್ಟಿಗಳು",
+      "apartment": "ರಿಜಿಸ್ಟರ್ ಆಗಿರೋ ಫ್ಲಾಟ್‌ಗಳು",
+      "township": "ರಿಜಿಸ್ಟರ್ ಆಗಿರೋ ಪ್ಲಾಟ್‌ಗಳು",
+      "institution_campus": "ರಿಜಿಸ್ಟರ್ ಆಗಿರೋ ಯೂನಿಟ್‌ಗಳು"
+    },
     "collectionsCompleted": "ಕಲೆಕ್ಷನ್ಸ್ ಮುಗಿದಿದೆ",
     "remaining": "ಬಾಕಿ",
     "yetToCollect": "ಇನ್ನು ಕಲೆಕ್ಟ್ ಮಾಡ್ಬೇಕು",
@@ -464,7 +735,7 @@
     "collectorPerformanceToday": "ಇವತ್ತು ಕಲೆಕ್ಟರ್ ಪರ್ಫಾರ್ಮನ್ಸ್",
     "collectionTimeline": "ಕಲೆಕ್ಷನ್ ಟೈಮ್ಲೈನ್",
     "announcements": "ಅನೌನ್ಸ್ಮೆಂಟ್",
-    "sendUpdates": "ನಿಮ್ಮ ಗ್ರಾಮಕ್ಕೆ ಅಪ್ಡೇಟ್ ಕಳ್ಸಿ",
+    "sendUpdates": "ನಿಮ್ಮ ಸಂಸ್ಥೆಗೆ ಅಪ್ಡೇಟ್ ಕಳ್ಸಿ",
     "message": "ಮೆಸೇಜ್",
     "typeAnnouncement": "ನಿಮ್ಮ ಅನೌನ್ಸ್‌ಮೆಂಟ್ ಟೈಪ್ ಮಾಡಿ...",
     "targetAudience": "ಯಾರಿಗೆ ಕಳ್ಸ್ಬೇಕು",
@@ -478,15 +749,33 @@
     "userInfo": "ಯೂಸರ್ ಮಾಹಿತಿ",
     "settings": "ಸೆಟ್ಟಿಂಗ್ಸ್",
     "logout": "ಲಾಗೌಟ್",
-    "villageManager": "ಗ್ರಾಮ ಮ್ಯಾನೇಜರ್",
+    "villageManager": {
+      "gram_panchayat": "ಗ್ರಾಮ ಮ್ಯಾನೇಜರ್",
+      "municipality": "ಝೋನ್ ಮ್ಯಾನೇಜರ್",
+      "apartment": "ಸೊಸೈಟಿ ಮ್ಯಾನೇಜರ್",
+      "township": "ಟೌನ್‌ಶಿಪ್ ಮ್ಯಾನೇಜರ್",
+      "institution_campus": "ಕ್ಯಾಂಪಸ್ ಮ್ಯಾನೇಜರ್"
+    },
     "clickToViewFeedbacks": "ಫೀಡ್ಬ್ಯಾಕ್ ನೋಡೋಕೆ ಕ್ಲಿಕ್ ಮಾಡಿ",
     "collectorFeedbacks": "ಕಲೆಕ್ಟರ್ ಫೀಡ್ಬ್ಯಾಕ್",
     "filterFeedbacks": "ಫೀಡ್ಬ್ಯಾಕ್ ಫಿಲ್ಟರ್",
     "allFeedbacks": "ಎಲ್ಲಾ",
-    "fromHousehold": "ಹೌಸ್ಹೋಲ್ಡ್ ಇಂದ",
+    "fromHousehold": {
+      "gram_panchayat": "ಹೌಸ್ಹೋಲ್ಡ್ ಇಂದ",
+      "municipality": "ಪ್ರಾಪರ್ಟಿ ಇಂದ",
+      "apartment": "ಫ್ಲಾಟ್ ಇಂದ",
+      "township": "ಪ್ಲಾಟ್ ಇಂದ",
+      "institution_campus": "ಯೂನಿಟ್ ಇಂದ"
+    },
     "toCollector": "ಕಲೆಕ್ಟರ್ಗೆ",
     "noFeedbackYet": "ಸೆಲೆಕ್ಟ್ ಮಾಡಿರೋ ದಿನದಲ್ಲಿ ಫೀಡ್ಬ್ಯಾಕ್ ಡೇಟಾ ಇಲ್ಲ",
-    "feedbackFromHouseholds": "ಹೌಸ್ಹೋಲ್ಡ್ಸ್ ಇಂದ ಕಲೆಕ್ಟರ್ಸ್ಗೆ ಫೀಡ್ಬ್ಯಾಕ್",
+    "feedbackFromHouseholds": {
+      "gram_panchayat": "ಹೌಸ್ಹೋಲ್ಡ್ಸ್ ಇಂದ ಕಲೆಕ್ಟರ್ಸ್ಗೆ ಫೀಡ್ಬ್ಯಾಕ್",
+      "municipality": "ಪ್ರಾಪರ್ಟಿಗಳು ಇಂದ ಕಲೆಕ್ಟರ್ಸ್ಗೆ ಫೀಡ್ಬ್ಯಾಕ್",
+      "apartment": "ಫ್ಲಾಟ್‌ಗಳು ಇಂದ ಕಲೆಕ್ಟರ್ಸ್ಗೆ ಫೀಡ್ಬ್ಯಾಕ್",
+      "township": "ಪ್ಲಾಟ್‌ಗಳು ಇಂದ ಕಲೆಕ್ಟರ್ಸ್ಗೆ ಫೀಡ್ಬ್ಯಾಕ್",
+      "institution_campus": "ಯೂನಿಟ್‌ಗಳು ಇಂದ ಕಲೆಕ್ಟರ್ಸ್ಗೆ ಫೀಡ್ಬ್ಯಾಕ್"
+    },
     "downloadPdfReport": "PDF ರಿಪೋರ್ಟ್ ಡೌನ್ಲೋಡ್",
     "generatingPdf": "ರೆಡಿಯಾಗ್ತಿದೆ...",
     "pdfDownloaded": "ಡೈಲಿ ರಿಪೋರ್ಟ್ PDF ಡೌನ್ಲೋಡ್ ಆಯ್ತು!",
@@ -506,7 +795,13 @@
     "peakCollectionHours": "ಪೀಕ್ ಕಲೆಕ್ಷನ್ ಟೈಮ್",
     "hourlyDistribution": "ಗಂಟೆ ಪ್ರಕಾರ ಕಲೆಕ್ಷನ್ ವಿತರಣೆ",
     "peakWindow": "ಪೀಕ್ ವಿಂಡೋ",
-    "wardWiseBreakdown": "ವಾರ್ಡ್ ಪ್ರಕಾರ ಬ್ರೇಕ್ಡೌನ್",
+    "wardWiseBreakdown": {
+      "gram_panchayat": "ವಾರ್ಡ್ ಪ್ರಕಾರ ಬ್ರೇಕ್ಡೌನ್",
+      "municipality": "ಸಬ್-ವಾರ್ಡ್ ಪ್ರಕಾರ ಬ್ರೇಕ್ಡೌನ್",
+      "apartment": "ವಿಂಗ್ / ಬ್ಲಾಕ್ ಪ್ರಕಾರ ಬ್ರೇಕ್ಡೌನ್",
+      "township": "ಸೆಕ್ಟರ್ ಪ್ರಕಾರ ಬ್ರೇಕ್ಡೌನ್",
+      "institution_campus": "ಬಿಲ್ಡಿಂಗ್ ಪ್ರಕಾರ ಬ್ರೇಕ್ಡೌನ್"
+    },
     "nonCollected": "ಕಲೆಕ್ಟ್ ಆಗಿಲ್ಲ",
     "wasteMaterialLogs": "ವೇಸ್ಟ್ ಮೆಟೀರಿಯಲ್ ಲಾಗ್ಸ್",
     "wasteDiversionRate": "ವೇಸ್ಟ್ ಡೈವರ್ಶನ್ ರೇಟ್",
@@ -539,8 +834,20 @@
     "fieldWorkers": "ಫೀಲ್ಡ್ ವರ್ಕರ್‌ಗಳು",
     "generateQr": "QR ಬ್ಯಾಚ್ ಜನರೇಟ್",
     "helpers": "ಹೆಲ್ಪರ್‌ಗಳು",
-    "householdDetails": "ಮನೆ ವಿವರಗಳು",
-    "householdPerformance": "ಮನೆ ಕಾರ್ಯಕ್ಷಮತೆ",
+    "householdDetails": {
+      "gram_panchayat": "ಮನೆ ವಿವರಗಳು",
+      "municipality": "ಪ್ರಾಪರ್ಟಿ ವಿವರಗಳು",
+      "apartment": "ಫ್ಲಾಟ್ ವಿವರಗಳು",
+      "township": "ಪ್ಲಾಟ್ ವಿವರಗಳು",
+      "institution_campus": "ಯೂನಿಟ್ ವಿವರಗಳು"
+    },
+    "householdPerformance": {
+      "gram_panchayat": "ಮನೆ ಕಾರ್ಯಕ್ಷಮತೆ",
+      "municipality": "ಪ್ರಾಪರ್ಟಿ ಕಾರ್ಯಕ್ಷಮತೆ",
+      "apartment": "ಫ್ಲಾಟ್ ಕಾರ್ಯಕ್ಷಮತೆ",
+      "township": "ಪ್ಲಾಟ್ ಕಾರ್ಯಕ್ಷಮತೆ",
+      "institution_campus": "ಯೂನಿಟ್ ಕಾರ್ಯಕ್ಷಮತೆ"
+    },
     "management": "ಮ್ಯಾನೇಜ್‌ಮೆಂಟ್",
     "markAttendance": "ಅಟೆಂಡೆನ್ಸ್ ಹಾಕಿ",
     "paymentLedger": "ಪೇಮೆಂಟ್ ಲೆಡ್ಜರ್",
@@ -552,16 +859,51 @@
     "selectVehicle": "ವಾಹನ ಆಯ್ಕೆ ಮಾಡಿ",
     "vehicleManagement": "ವಾಹನ ಮ್ಯಾನೇಜ್‌ಮೆಂಟ್",
     "viewShifts": "ಶಿಫ್ಟ್‌ಗಳನ್ನು ನೋಡಿ",
-    "villageSettings": "ಹಳ್ಳಿ ಸೆಟ್ಟಿಂಗ್‌ಗಳು",
-    "wardsManagement": "ವಾರ್ಡ್ ಮ್ಯಾನೇಜ್‌ಮೆಂಟ್",
+    "villageSettings": {
+      "gram_panchayat": "ಹಳ್ಳಿ ಸೆಟ್ಟಿಂಗ್‌ಗಳು",
+      "municipality": "ಝೋನ್ ಸೆಟ್ಟಿಂಗ್‌ಗಳು",
+      "apartment": "ಸೊಸೈಟಿ ಸೆಟ್ಟಿಂಗ್‌ಗಳು",
+      "township": "ಟೌನ್‌ಶಿಪ್ ಸೆಟ್ಟಿಂಗ್‌ಗಳು",
+      "institution_campus": "ಕ್ಯಾಂಪಸ್ ಸೆಟ್ಟಿಂಗ್‌ಗಳು"
+    },
+    "wardsManagement": {
+      "gram_panchayat": "ವಾರ್ಡ್ ಮ್ಯಾನೇಜ್‌ಮೆಂಟ್",
+      "municipality": "ಸಬ್-ವಾರ್ಡ್ ಮ್ಯಾನೇಜ್‌ಮೆಂಟ್",
+      "apartment": "ವಿಂಗ್ / ಬ್ಲಾಕ್ ಮ್ಯಾನೇಜ್‌ಮೆಂಟ್",
+      "township": "ಸೆಕ್ಟರ್ ಮ್ಯಾನೇಜ್‌ಮೆಂಟ್",
+      "institution_campus": "ಬಿಲ್ಡಿಂಗ್ ಮ್ಯಾನೇಜ್‌ಮೆಂಟ್"
+    },
     "deleting": "ತೆಗೆಯುತ್ತಿದೆ...",
     "peakHours": "ಪೀಕ್ ಕಲೆಕ್ಷನ್ ಸಮಯ",
-    "wardBreakdown": "ವಾರ್ಡ್-ವೈಸ್ ಬ್ರೇಕ್‌ಡೌನ್",
+    "wardBreakdown": {
+      "gram_panchayat": "ವಾರ್ಡ್-ವೈಸ್ ಬ್ರೇಕ್‌ಡೌನ್",
+      "municipality": "ಸಬ್-ವಾರ್ಡ್-ವೈಸ್ ಬ್ರೇಕ್‌ಡೌನ್",
+      "apartment": "ವಿಂಗ್ / ಬ್ಲಾಕ್-ವೈಸ್ ಬ್ರೇಕ್‌ಡೌನ್",
+      "township": "ಸೆಕ್ಟರ್-ವೈಸ್ ಬ್ರೇಕ್‌ಡೌನ್",
+      "institution_campus": "ಬಿಲ್ಡಿಂಗ್-ವೈಸ್ ಬ್ರೇಕ್‌ಡೌನ್"
+    },
     "landfill": "ಲ್ಯಾಂಡ್‌ಫಿಲ್",
-    "diversionRate": "ವೇಸ್ಟ್ ಡೈವರ್ಷನ್ ರೇಟ್"
+    "diversionRate": "ವೇಸ್ಟ್ ಡೈವರ್ಷನ್ ರೇಟ್",
+    "wards": {
+      "gram_panchayat": "ವಾರ್ಡ್‌ಗಳು",
+      "municipality": "ಸಬ್-ವಾರ್ಡ್‌ಗಳು",
+      "apartment": "ವಿಂಗ್‌ಗಳು",
+      "township": "ಸೆಕ್ಟರ್‌ಗಳು",
+      "institution_campus": "ಬಿಲ್ಡಿಂಗ್‌ಗಳು"
+    },
+    "reports": "ರಿಪೋರ್ಟ್ಸ್",
+    "more": "ಮೋರ್",
+    "dashboard": "ಡ್ಯಾಶ್ಬೋರ್ಡ್",
+    "vehicles": "ವೆಹಿಕಲ್ಸ್"
   },
   "householdPerformance": {
-    "title": "ಹೌಸ್ಹೋಲ್ಡ್ ಪರ್ಫಾರ್ಮನ್ಸ್",
+    "title": {
+      "gram_panchayat": "ಹೌಸ್ಹೋಲ್ಡ್ ಪರ್ಫಾರ್ಮನ್ಸ್",
+      "municipality": "ಪ್ರಾಪರ್ಟಿ ಪರ್ಫಾರ್ಮನ್ಸ್",
+      "apartment": "ಫ್ಲಾಟ್ ಪರ್ಫಾರ್ಮನ್ಸ್",
+      "township": "ಪ್ಲಾಟ್ ಪರ್ಫಾರ್ಮನ್ಸ್",
+      "institution_campus": "ಯೂನಿಟ್ ಪರ್ಫಾರ್ಮನ್ಸ್"
+    },
     "attention": "ಗಮನ ಬೇಕು",
     "good": "ಚೆನ್ನಾಗಿದೆ",
     "noData": "ಡೇಟಾ ಇಲ್ಲ",
@@ -570,8 +912,20 @@
     "mixedWaste": "ಮಿಕ್ಸೆಡ್ ವೇಸ್ಟ್",
     "inactive": "ಇನ್ಆಕ್ಟಿವ್",
     "never": "ಯಾವತ್ತೂ ಇಲ್ಲ",
-    "allWards": "ಎಲ್ಲಾ ವಾರ್ಡ್ಸ್",
-    "noHouseholdsInCategory": "ಈ ಕ್ಯಾಟಗರಿಲ್ಲಿ ಹೌಸ್ಹೋಲ್ಡ್ಸ್ ಇಲ್ಲ",
+    "allWards": {
+      "gram_panchayat": "ಎಲ್ಲಾ ವಾರ್ಡ್ಸ್",
+      "municipality": "ಎಲ್ಲಾ ಸಬ್-ವಾರ್ಡ್ಸ್",
+      "apartment": "ಎಲ್ಲಾ ವಿಂಗ್ / ಬ್ಲಾಕ್ಸ್",
+      "township": "ಎಲ್ಲಾ ಸೆಕ್ಟರ್ಸ್",
+      "institution_campus": "ಎಲ್ಲಾ ಬಿಲ್ಡಿಂಗ್ಸ್"
+    },
+    "noHouseholdsInCategory": {
+      "gram_panchayat": "ಈ ಕ್ಯಾಟಗರಿಲ್ಲಿ ಹೌಸ್ಹೋಲ್ಡ್ಸ್ ಇಲ್ಲ",
+      "municipality": "ಈ ಕ್ಯಾಟಗರಿಲ್ಲಿ ಪ್ರಾಪರ್ಟಿಗಳು ಇಲ್ಲ",
+      "apartment": "ಈ ಕ್ಯಾಟಗರಿಲ್ಲಿ ಫ್ಲಾಟ್‌ಗಳು ಇಲ್ಲ",
+      "township": "ಈ ಕ್ಯಾಟಗರಿಲ್ಲಿ ಪ್ಲಾಟ್‌ಗಳು ಇಲ್ಲ",
+      "institution_campus": "ಈ ಕ್ಯಾಟಗರಿಲ್ಲಿ ಯೂನಿಟ್‌ಗಳು ಇಲ್ಲ"
+    },
     "neverCollected": "ಯಾವತ್ತೂ ಕಲೆಕ್ಷನ್ ಆಗಿಲ್ಲ",
     "lastToday": "ಇವತ್ತು",
     "lastYesterday": "ನಿನ್ನೆ",
@@ -583,17 +937,47 @@
     "last30Days": "ಕೊನೆ 30 ದಿನಗಳು",
     "needsAttention": "ಗಮನ ಬೇಕು",
     "goodStanding": "ಒಳ್ಳೆ ಸ್ಥಿತಿ",
-    "meetingThresholds": "ಈ ಹೌಸ್ಹೋಲ್ಡ್ ಎಲ್ಲಾ ಥ್ರೆಶೋಲ್ಡ್ಗಳನ್ನ ಮೀಟ್ ಮಾಡ್ತಿದೆ",
+    "meetingThresholds": {
+      "gram_panchayat": "ಈ ಹೌಸ್ಹೋಲ್ಡ್ ಎಲ್ಲಾ ಥ್ರೆಶೋಲ್ಡ್ಗಳನ್ನ ಮೀಟ್ ಮಾಡ್ತಿದೆ",
+      "municipality": "ಈ ಪ್ರಾಪರ್ಟಿ ಎಲ್ಲಾ ಥ್ರೆಶೋಲ್ಡ್ಗಳನ್ನ ಮೀಟ್ ಮಾಡ್ತಿದೆ",
+      "apartment": "ಈ ಫ್ಲಾಟ್ ಎಲ್ಲಾ ಥ್ರೆಶೋಲ್ಡ್ಗಳನ್ನ ಮೀಟ್ ಮಾಡ್ತಿದೆ",
+      "township": "ಈ ಪ್ಲಾಟ್ ಎಲ್ಲಾ ಥ್ರೆಶೋಲ್ಡ್ಗಳನ್ನ ಮೀಟ್ ಮಾಡ್ತಿದೆ",
+      "institution_campus": "ಈ ಯೂನಿಟ್ ಎಲ್ಲಾ ಥ್ರೆಶೋಲ್ಡ್ಗಳನ್ನ ಮೀಟ್ ಮಾಡ್ತಿದೆ"
+    },
     "noCollectionData": "ಕಲೆಕ್ಷನ್ ಡೇಟಾ ಇಲ್ಲ",
-    "noRecordedCollections": "ಈ ಹೌಸ್ಹೋಲ್ಡ್ಗೆ ಕಲೆಕ್ಷನ್ ಏನು ರೆಕಾರ್ಡ್ ಆಗಿಲ್ಲ",
+    "noRecordedCollections": {
+      "gram_panchayat": "ಈ ಹೌಸ್ಹೋಲ್ಡ್ಗೆ ಕಲೆಕ್ಷನ್ ಏನು ರೆಕಾರ್ಡ್ ಆಗಿಲ್ಲ",
+      "municipality": "ಈ ಪ್ರಾಪರ್ಟಿಗೆ ಕಲೆಕ್ಷನ್ ಏನು ರೆಕಾರ್ಡ್ ಆಗಿಲ್ಲ",
+      "apartment": "ಈ ಫ್ಲಾಟ್ಗೆ ಕಲೆಕ್ಷನ್ ಏನು ರೆಕಾರ್ಡ್ ಆಗಿಲ್ಲ",
+      "township": "ಈ ಪ್ಲಾಟ್ಗೆ ಕಲೆಕ್ಷನ್ ಏನು ರೆಕಾರ್ಡ್ ಆಗಿಲ್ಲ",
+      "institution_campus": "ಈ ಯೂನಿಟ್ಗೆ ಕಲೆಕ್ಷನ್ ಏನು ರೆಕಾರ್ಡ್ ಆಗಿಲ್ಲ"
+    },
     "visit": "ವಿಸಿಟ್ ಮಾಡಿ",
     "call": "ಕಾಲ್ ಮಾಡಿ",
     "noLocationData": "ಲೊಕೇಶನ್ ಡೇಟಾ ಇಲ್ಲ",
-    "noLocationDataDesc": "ಈ ಹೌಸ್ಹೋಲ್ಡ್ಗೆ ಅಡ್ರೆಸ್, ಲೊಕೇಶನ್ ಇಲ್ಲ",
+    "noLocationDataDesc": {
+      "gram_panchayat": "ಈ ಹೌಸ್ಹೋಲ್ಡ್ಗೆ ಅಡ್ರೆಸ್, ಲೊಕೇಶನ್ ಇಲ್ಲ",
+      "municipality": "ಈ ಪ್ರಾಪರ್ಟಿಗೆ ಅಡ್ರೆಸ್, ಲೊಕೇಶನ್ ಇಲ್ಲ",
+      "apartment": "ಈ ಫ್ಲಾಟ್ಗೆ ಅಡ್ರೆಸ್, ಲೊಕೇಶನ್ ಇಲ್ಲ",
+      "township": "ಈ ಪ್ಲಾಟ್ಗೆ ಅಡ್ರೆಸ್, ಲೊಕೇಶನ್ ಇಲ್ಲ",
+      "institution_campus": "ಈ ಯೂನಿಟ್ಗೆ ಅಡ್ರೆಸ್, ಲೊಕೇಶನ್ ಇಲ್ಲ"
+    },
     "noPhoneNumber": "ಫೋನ್ ನಂಬರ್ ಇಲ್ಲ",
-    "noPhoneNumberDesc": "ಈ ಹೌಸ್ಹೋಲ್ಡ್ಗೆ ಫೋನ್ ನಂಬರ್ ಇಲ್ಲ",
+    "noPhoneNumberDesc": {
+      "gram_panchayat": "ಈ ಹೌಸ್ಹೋಲ್ಡ್ಗೆ ಫೋನ್ ನಂಬರ್ ಇಲ್ಲ",
+      "municipality": "ಈ ಪ್ರಾಪರ್ಟಿಗೆ ಫೋನ್ ನಂಬರ್ ಇಲ್ಲ",
+      "apartment": "ಈ ಫ್ಲಾಟ್ಗೆ ಫೋನ್ ನಂಬರ್ ಇಲ್ಲ",
+      "township": "ಈ ಪ್ಲಾಟ್ಗೆ ಫೋನ್ ನಂಬರ್ ಇಲ್ಲ",
+      "institution_campus": "ಈ ಯೂನಿಟ್ಗೆ ಫೋನ್ ನಂಬರ್ ಇಲ್ಲ"
+    },
     "monitoringThresholds": "ಮಾನಿಟರಿಂಗ್ ಥ್ರೆಶೋಲ್ಡ್ಸ್",
-    "configureThresholds": "ಹೌಸ್ಹೋಲ್ಡ್ನ ಯಾವಾಗ ಫ್ಲ್ಯಾಗ್ ಮಾಡ್ಬೇಕು ಅಂತ ಸೆಟ್ ಮಾಡಿ.",
+    "configureThresholds": {
+      "gram_panchayat": "ಹೌಸ್ಹೋಲ್ಡ್ನ ಯಾವಾಗ ಫ್ಲ್ಯಾಗ್ ಮಾಡ್ಬೇಕು ಅಂತ ಸೆಟ್ ಮಾಡಿ.",
+      "municipality": "ಪ್ರಾಪರ್ಟಿನ ಯಾವಾಗ ಫ್ಲ್ಯಾಗ್ ಮಾಡ್ಬೇಕು ಅಂತ ಸೆಟ್ ಮಾಡಿ.",
+      "apartment": "ಫ್ಲಾಟ್ನ ಯಾವಾಗ ಫ್ಲ್ಯಾಗ್ ಮಾಡ್ಬೇಕು ಅಂತ ಸೆಟ್ ಮಾಡಿ.",
+      "township": "ಪ್ಲಾಟ್ನ ಯಾವಾಗ ಫ್ಲ್ಯಾಗ್ ಮಾಡ್ಬೇಕು ಅಂತ ಸೆಟ್ ಮಾಡಿ.",
+      "institution_campus": "ಯೂನಿಟ್ನ ಯಾವಾಗ ಫ್ಲ್ಯಾಗ್ ಮಾಡ್ಬೇಕು ಅಂತ ಸೆಟ್ ಮಾಡಿ."
+    },
     "minAvgRating": "ಕನಿಷ್ಠ ಆವರೇಜ್ ಸೆಗ್ರಿಗೇಶನ್ ರೇಟಿಂಗ್ (1-5)",
     "maxMixed7Days": "7 ದಿನದಲ್ಲಿ ಗರಿಷ್ಠ ಮಿಕ್ಸೆಡ್ ವೇಸ್ಟ್",
     "maxInactiveDays": "ಗರಿಷ್ಠ ಇನ್ಆಕ್ಟಿವ್ ದಿನಗಳು",
@@ -808,7 +1192,13 @@
     "activateCycle": "ಸೈಕಲ್ ಆಕ್ಟಿವೇಟ್ ಮಾಡಿ",
     "activateBillingCycle": "ಬಿಲ್ಲಿಂಗ್ ಸೈಕಲ್ ಆಕ್ಟಿವೇಟ್ ಮಾಡಿ",
     "noBillingCycle": "{{month}} ಗೆ ಬಿಲ್ಲಿಂಗ್ ಸೈಕಲ್ ಇಲ್ಲ",
-    "activateDesc": "ಎಲ್ಲಾ ಹೌಸ್ಹೋಲ್ಡ್ಸ್ಗೆ ಬಿಲ್ಸ್ ರೆಡಿ ಮಾಡೋಕೆ ಬಿಲ್ಲಿಂಗ್ ಸೈಕಲ್ ಆಕ್ಟಿವೇಟ್ ಮಾಡಿ.",
+    "activateDesc": {
+      "gram_panchayat": "ಎಲ್ಲಾ ಹೌಸ್ಹೋಲ್ಡ್ಸ್ಗೆ ಬಿಲ್ಸ್ ರೆಡಿ ಮಾಡೋಕೆ ಬಿಲ್ಲಿಂಗ್ ಸೈಕಲ್ ಆಕ್ಟಿವೇಟ್ ಮಾಡಿ.",
+      "municipality": "ಎಲ್ಲಾ ಪ್ರಾಪರ್ಟಿಗಳುಗೆ ಬಿಲ್ಸ್ ರೆಡಿ ಮಾಡೋಕೆ ಬಿಲ್ಲಿಂಗ್ ಸೈಕಲ್ ಆಕ್ಟಿವೇಟ್ ಮಾಡಿ.",
+      "apartment": "ಎಲ್ಲಾ ಫ್ಲಾಟ್‌ಗಳುಗೆ ಬಿಲ್ಸ್ ರೆಡಿ ಮಾಡೋಕೆ ಬಿಲ್ಲಿಂಗ್ ಸೈಕಲ್ ಆಕ್ಟಿವೇಟ್ ಮಾಡಿ.",
+      "township": "ಎಲ್ಲಾ ಪ್ಲಾಟ್‌ಗಳುಗೆ ಬಿಲ್ಸ್ ರೆಡಿ ಮಾಡೋಕೆ ಬಿಲ್ಲಿಂಗ್ ಸೈಕಲ್ ಆಕ್ಟಿವೇಟ್ ಮಾಡಿ.",
+      "institution_campus": "ಎಲ್ಲಾ ಯೂನಿಟ್‌ಗಳುಗೆ ಬಿಲ್ಸ್ ರೆಡಿ ಮಾಡೋಕೆ ಬಿಲ್ಲಿಂಗ್ ಸೈಕಲ್ ಆಕ್ಟಿವೇಟ್ ಮಾಡಿ."
+    },
     "billingCycleActivated": "ಬಿಲ್ಲಿಂಗ್ ಸೈಕಲ್ ಆಕ್ಟಿವೇಟ್ ಆಯ್ತು",
     "billsGenerated": "{{count}} ಬಿಲ್ಸ್ ರೆಡಿಯಾಯ್ತು. ಎಕ್ಸ್ಪೆಕ್ಟೆಡ್ ರೆವೆನ್ಯೂ: ₹{{amount}}",
     "activationFailed": "ಆಕ್ಟಿವೇಟ್ ಆಗ್ಲಿಲ್ಲ",
@@ -822,7 +1212,13 @@
     "activating": "ಆಕ್ಟಿವೇಟ್ ಆಗ್ತಿದೆ...",
     "activateAndGenerate": "ಆಕ್ಟಿವೇಟ್ ಮಾಡಿ {{count}} ಬಿಲ್ಸ್ ರೆಡಿ ಮಾಡಿ",
     "loadingPreview": "ಪ್ರಿವ್ಯೂ ಲೋಡ್ ಆಗ್ತಿದೆ...",
-    "householdLedger": "ಹೌಸ್ಹೋಲ್ಡ್ ಲೆಡ್ಜರ್",
+    "householdLedger": {
+      "gram_panchayat": "ಹೌಸ್ಹೋಲ್ಡ್ ಲೆಡ್ಜರ್",
+      "municipality": "ಪ್ರಾಪರ್ಟಿ ಲೆಡ್ಜರ್",
+      "apartment": "ಫ್ಲಾಟ್ ಲೆಡ್ಜರ್",
+      "township": "ಪ್ಲಾಟ್ ಲೆಡ್ಜರ್",
+      "institution_campus": "ಯೂನಿಟ್ ಲೆಡ್ಜರ್"
+    },
     "searchNameHouse": "ಹೆಸರು, ಮನೆ ನಂಬರ್ ಸರ್ಚ್ ಮಾಡಿ...",
     "paid": "ಪೇಡ್",
     "pay": "ಪೇ ಮಾಡಿ",
@@ -846,7 +1242,13 @@
     "bulkPaymentDesc": "{{count}} ಬಿಲ್ಸ್ ಪೇಡ್ ಅಂತ ಮಾರ್ಕ್ ಆಯ್ತು",
     "bulkPaymentFailed": "ಬಲ್ಕ್ ಪೇಮೆಂಟ್ ಫೇಲ್",
     "bulkPaymentFailedDesc": "ಬಲ್ಕ್ ಪೇಮೆಂಟ್ ಪ್ರೊಸೆಸ್ ಆಗ್ಲಿಲ್ಲ. ಮತ್ತೆ ಟ್ರೈ ಮಾಡಿ.",
-    "householdPaymentHistory": "ಹೌಸ್ಹೋಲ್ಡ್ ಪೇಮೆಂಟ್ ಹಿಸ್ಟರಿ",
+    "householdPaymentHistory": {
+      "gram_panchayat": "ಹೌಸ್ಹೋಲ್ಡ್ ಪೇಮೆಂಟ್ ಹಿಸ್ಟರಿ",
+      "municipality": "ಪ್ರಾಪರ್ಟಿ ಪೇಮೆಂಟ್ ಹಿಸ್ಟರಿ",
+      "apartment": "ಫ್ಲಾಟ್ ಪೇಮೆಂಟ್ ಹಿಸ್ಟರಿ",
+      "township": "ಪ್ಲಾಟ್ ಪೇಮೆಂಟ್ ಹಿಸ್ಟರಿ",
+      "institution_campus": "ಯೂನಿಟ್ ಪೇಮೆಂಟ್ ಹಿಸ್ಟರಿ"
+    },
     "scanQrToPay": "ಪೇ ಮಾಡೋಕೆ QR ಸ್ಕ್ಯಾನ್ ಮಾಡಿ",
     "creatingPayment": "ಪೇಮೆಂಟ್ ರೆಡಿಯಾಗ್ತಿದೆ...",
     "creatingPaymentOrder": "ಪೇಮೆಂಟ್ ಆರ್ಡರ್ ರೆಡಿಯಾಗ್ತಿದೆ...",
@@ -898,8 +1300,14 @@
     "webhookUrl": "Webhook URL",
     "webhookUrlDesc": "ಈ URL ಅನ್ನ ನಿಮ್ಮ {{provider}} ಡ್ಯಾಶ್ಬೋರ್ಡ್ನಲ್ಲಿ → Webhooks ಸೆಕ್ಷನ್ನಲ್ಲಿ ಪೇಸ್ಟ್ ಮಾಡಿ:",
     "mdrConvenienceFee": "MDR / ಕನ್ವೀನಿಯನ್ಸ್ ಫೀ",
-    "villageAbsorbs": "ಗ್ರಾಮ ತಡ್ಕೋತ್ತೆ (~2%)",
-    "householdPaysExtra": "ಹೌಸ್ಹೋಲ್ಡ್ ಎಕ್ಸ್ಟ್ರಾ ಕೊಡ್ತಾರೆ",
+    "villageAbsorbs": "ಸಂಸ್ಥೆ ಅಬ್ಸಾರ್ಬ್ ಮಾಡುತ್ತೆ (~2%)",
+    "householdPaysExtra": {
+      "gram_panchayat": "ಹೌಸ್ಹೋಲ್ಡ್ ಎಕ್ಸ್ಟ್ರಾ ಕೊಡ್ತಾರೆ",
+      "municipality": "ಪ್ರಾಪರ್ಟಿ ಎಕ್ಸ್ಟ್ರಾ ಕೊಡ್ತಾರೆ",
+      "apartment": "ಫ್ಲಾಟ್ ಎಕ್ಸ್ಟ್ರಾ ಕೊಡ್ತಾರೆ",
+      "township": "ಪ್ಲಾಟ್ ಎಕ್ಸ್ಟ್ರಾ ಕೊಡ್ತಾರೆ",
+      "institution_campus": "ಯೂನಿಟ್ ಎಕ್ಸ್ಟ್ರಾ ಕೊಡ್ತಾರೆ"
+    },
     "mdrPercent": "MDR %",
     "saveAndEncrypt": "ಸೇವ್ & ಎನ್ಕ್ರಿಪ್ಟ್ ಮಾಡಿ",
     "gatewayConfigSaved": "ಗೇಟ್ವೇ ಕಾಂಫಿಗ್ ಸೇವ್ ಆಯ್ತು",
@@ -910,8 +1318,14 @@
     "removeGatewayConfirm": "{{provider}} ಅನ್ನ ಡಿಲೀಟ್ ಮಾಡ್ಬೇಕಾ?",
     "removeGatewayDesc": "ಈ ಪೇಮೆಂಟ್ ಗೇಟ್ವೇ ಡಿಲೀಟ್ ಆಗೋಗುತ್ತೆ.",
     "missing": "ಇದೆಲ್ಲ ಮಿಸ್ ಆಗ್ತಿದೆ: {{fields}}",
-    "householdPaysMdr": "ಹೌಸ್ಹೋಲ್ಡ್ +{{percent}}%",
-    "villageAbsorbsMdr": "ಗ್ರಾಮ ತಡ್ಕೋತ್ತೆ",
+    "householdPaysMdr": {
+      "gram_panchayat": "ಹೌಸ್ಹೋಲ್ಡ್ +{{percent}}%",
+      "municipality": "ಪ್ರಾಪರ್ಟಿ +{{percent}}%",
+      "apartment": "ಫ್ಲಾಟ್ +{{percent}}%",
+      "township": "ಪ್ಲಾಟ್ +{{percent}}%",
+      "institution_campus": "ಯೂನಿಟ್ +{{percent}}%"
+    },
+    "villageAbsorbsMdr": "ಸಂಸ್ಥೆ ಅಬ್ಸಾರ್ಬ್ ಮಾಡುತ್ತೆ",
     "editConfig": "ಕಾಂಫಿಗ್ ಎಡಿಟ್ ಮಾಡಿ",
     "billingCycleHistory": "ಬಿಲ್ಲಿಂಗ್ ಸೈಕಲ್ ಹಿಸ್ಟರಿ",
     "noBillingCycles": "ಇನ್ನು ಬಿಲ್ಲಿಂಗ್ ಸೈಕಲ್ ಇಲ್ಲ.",
@@ -945,7 +1359,7 @@
   },
   "myBills": {
     "noBills": "ಬಿಲ್ಸ್ ಇಲ್ಲ",
-    "notLinkedToHousehold": "ನಿಮ್ಮ ಅಕೌಂಟ್ ಇನ್ನು ಯಾವ ಹೌಸ್ಹೋಲ್ಡ್ಗೂ ಲಿಂಕ್ ಆಗಿಲ್ಲ.",
+    "notLinkedToHousehold": "ನಿಮ್ಮ ಅಕೌಂಟ್ ಇನ್ನು ಲಿಂಕ್ ಆಗಿಲ್ಲ.",
     "outstandingFees": "ಬಾಕಿಯಿರೋ ಕಸದ ಫೀಸ್",
     "monthsDue": "{{count}} ತಿಂಗಳು(ಗಳು) ಬಾಕಿ",
     "payNow": "ಈಗಲೇ ಪೇ ಮಾಡಿ",
@@ -987,12 +1401,42 @@
     "paymentFailedTryAgain": "ಏನೋ ತಪ್ಪಾಗಿದೆ. ಮತ್ತೆ ಟ್ರೈ ಮಾಡಿ."
   },
   "households": {
-    "title": "ಹೌಸ್ಹೋಲ್ಡ್ಸ್",
-    "addHousehold": "ಹೌಸ್ಹೋಲ್ಡ್ ಆಡ್ ಮಾಡಿ",
+    "title": {
+      "gram_panchayat": "ಹೌಸ್ಹೋಲ್ಡ್ಸ್",
+      "municipality": "ಪ್ರಾಪರ್ಟಿಗಳು",
+      "apartment": "ಫ್ಲಾಟ್‌ಗಳು",
+      "township": "ಪ್ಲಾಟ್‌ಗಳು",
+      "institution_campus": "ಯೂನಿಟ್‌ಗಳು"
+    },
+    "addHousehold": {
+      "gram_panchayat": "ಹೌಸ್ಹೋಲ್ಡ್ ಆಡ್ ಮಾಡಿ",
+      "municipality": "ಪ್ರಾಪರ್ಟಿ ಆಡ್ ಮಾಡಿ",
+      "apartment": "ಫ್ಲಾಟ್ ಆಡ್ ಮಾಡಿ",
+      "township": "ಪ್ಲಾಟ್ ಆಡ್ ಮಾಡಿ",
+      "institution_campus": "ಯೂನಿಟ್ ಆಡ್ ಮಾಡಿ"
+    },
     "bulkUpload": "ಬಲ್ಕ್ ಅಪ್ಲೋಡ್",
-    "householdName": "ಹೌಸ್ಹೋಲ್ಡ್ ಹೆಸರು",
-    "houseNumber": "ಮನೆ ನಂಬರ್",
-    "headName": "ಮನೆ ಯಜಮಾನ",
+    "householdName": {
+      "gram_panchayat": "ಹೌಸ್ಹೋಲ್ಡ್ ಹೆಸರು",
+      "municipality": "ಪ್ರಾಪರ್ಟಿ ಹೆಸರು",
+      "apartment": "ಫ್ಲಾಟ್ ಹೆಸರು",
+      "township": "ಪ್ಲಾಟ್ ಹೆಸರು",
+      "institution_campus": "ಯೂನಿಟ್ ಹೆಸರು"
+    },
+    "houseNumber": {
+      "gram_panchayat": "ಮನೆ ನಂಬರ್",
+      "municipality": "ಡೋರ್ ನಂಬರ್",
+      "apartment": "ಫ್ಲಾಟ್ ನಂಬರ್",
+      "township": "ಪ್ಲಾಟ್ ನಂಬರ್",
+      "institution_campus": "ಯೂನಿಟ್ ನಂಬರ್"
+    },
+    "headName": {
+      "gram_panchayat": "ಮನೆ ಯಜಮಾನ",
+      "municipality": "ಪ್ರಾಪರ್ಟಿ ಓನರ್",
+      "apartment": "ಫ್ಲಾಟ್ ಓನರ್",
+      "township": "ಪ್ಲಾಟ್ ಓನರ್",
+      "institution_campus": "ಯೂನಿಟ್ ಹೆಡ್"
+    },
     "phone": "ಫೋನ್ ನಂಬರ್",
     "address": "ಅಡ್ರೆಸ್",
     "qrCode": "QR ಕೋಡ್",
@@ -1001,7 +1445,13 @@
     "inactive": "ಇನ್ಆಕ್ಟಿವ್",
     "generateQR": "QR ಕೋಡ್ ರೆಡಿ ಮಾಡಿ",
     "downloadQR": "QR ಕೋಡ್ ಡೌನ್ಲೋಡ್",
-    "totalHouseholds": "ಟೋಟಲ್ ಹೌಸ್ಹೋಲ್ಡ್ಸ್",
+    "totalHouseholds": {
+      "gram_panchayat": "ಟೋಟಲ್ ಹೌಸ್ಹೋಲ್ಡ್ಸ್",
+      "municipality": "ಟೋಟಲ್ ಪ್ರಾಪರ್ಟಿಗಳು",
+      "apartment": "ಟೋಟಲ್ ಫ್ಲಾಟ್‌ಗಳು",
+      "township": "ಟೋಟಲ್ ಪ್ಲಾಟ್‌ಗಳು",
+      "institution_campus": "ಟೋಟಲ್ ಯೂನಿಟ್‌ಗಳು"
+    },
     "uploadCSV": "CSV ಫೈಲ್ ಅಪ್ಲೋಡ್",
     "csvTemplate": "CSV ಟೆಂಪ್ಲೇಟ್ ಡೌನ್ಲೋಡ್"
   },
@@ -1054,7 +1504,13 @@
     "provideFeedback": "ಫೀಡ್ಬ್ಯಾಕ್ ಕೊಡಿ",
     "rating": "ರೇಟಿಂಗ್",
     "comments": "ಕಮೆಂಟ್ಸ್",
-    "fromHousehold": "ಹೌಸ್ಹೋಲ್ಡ್ ಇಂದ",
+    "fromHousehold": {
+      "gram_panchayat": "ಹೌಸ್ಹೋಲ್ಡ್ ಇಂದ",
+      "municipality": "ಪ್ರಾಪರ್ಟಿ ಇಂದ",
+      "apartment": "ಫ್ಲಾಟ್ ಇಂದ",
+      "township": "ಪ್ಲಾಟ್ ಇಂದ",
+      "institution_campus": "ಯೂನಿಟ್ ಇಂದ"
+    },
     "toCollector": "ಕಲೆಕ್ಟರ್ಗೆ",
     "feedbackDate": "ಫೀಡ್ಬ್ಯಾಕ್ ದಿನಾಂಕ",
     "positiveComments": "ಒಳ್ಳೆ ಕಮೆಂಟ್ಸ್",
@@ -1076,7 +1532,13 @@
     "performanceMetrics": "ಪರ್ಫಾರ್ಮನ್ಸ್ ಮೆಟ್ರಿಕ್ಸ್",
     "segregationRates": "ಸೆಗ್ರಿಗೇಶನ್ ರೇಟ್ಸ್",
     "collectorPerformance": "ಕಲೆಕ್ಟರ್ ಪರ್ಫಾರ್ಮನ್ಸ್",
-    "householdParticipation": "ಹೌಸ್ಹೋಲ್ಡ್ ಪಾರ್ಟಿಸಿಪೇಶನ್",
+    "householdParticipation": {
+      "gram_panchayat": "ಹೌಸ್ಹೋಲ್ಡ್ ಪಾರ್ಟಿಸಿಪೇಶನ್",
+      "municipality": "ಪ್ರಾಪರ್ಟಿ ಪಾರ್ಟಿಸಿಪೇಶನ್",
+      "apartment": "ಫ್ಲಾಟ್ ಪಾರ್ಟಿಸಿಪೇಶನ್",
+      "township": "ಪ್ಲಾಟ್ ಪಾರ್ಟಿಸಿಪೇಶನ್",
+      "institution_campus": "ಯೂನಿಟ್ ಪಾರ್ಟಿಸಿಪೇಶನ್"
+    },
     "wasteComposition": "ಕಸದ ವಿಧಗಳು",
     "environmentalImpact": "ಪರಿಸರದ ಪ್ರಭಾವ",
     "applyFilters": "ಫಿಲ್ಟರ್ಸ್ ಅಪ್ಲೈ ಮಾಡಿ",
@@ -1090,7 +1552,13 @@
     "allUsers": "ಎಲ್ಲರಿಗೂ",
     "managers": "ಮ್ಯಾನೇಜರ್ಸ್ ಗೆ ಮಾತ್ರ",
     "collectors": "ಕಲೆಕ್ಟರ್ಸ್ ಗೆ ಮಾತ್ರ",
-    "households": "ಹೌಸ್ಹೋಲ್ಡ್ಸ್ ಗೆ ಮಾತ್ರ",
+    "households": {
+      "gram_panchayat": "ಹೌಸ್ಹೋಲ್ಡ್ಸ್ ಗೆ ಮಾತ್ರ",
+      "municipality": "ಪ್ರಾಪರ್ಟಿಗಳು ಗೆ ಮಾತ್ರ",
+      "apartment": "ಫ್ಲಾಟ್‌ಗಳು ಗೆ ಮಾತ್ರ",
+      "township": "ಪ್ಲಾಟ್‌ಗಳು ಗೆ ಮಾತ್ರ",
+      "institution_campus": "ಯೂನಿಟ್‌ಗಳು ಗೆ ಮಾತ್ರ"
+    },
     "publishDate": "ಪಬ್ಲಿಷ್ ದಿನಾಂಕ",
     "expiryDate": "ಎಕ್ಸ್ಪೈರ್ ದಿನಾಂಕ",
     "urgent": "ಅರ್ಜೆಂಟ್",
@@ -1099,18 +1567,30 @@
     "checkLater": "ಮುಖ್ಯವಾದ ಅಪ್ಡೇಟ್ಸ್ಗೆ ಆಮೇಲೆ ಚೆಕ್ ಮಾಡಿ"
   },
   "villages": {
-    "title": "ಗ್ರಾಮಗಳು",
-    "addVillage": "ಗ್ರಾಮ ಆಡ್ ಮಾಡಿ",
-    "villageName": "ಗ್ರಾಮದ ಹೆಸರು",
-    "villageId": "ಗ್ರಾಮ ID",
+    "title": "ಸಂಸ್ಥೆಗಳು",
+    "addVillage": "ಸಂಸ್ಥೆ ಆಡ್ ಮಾಡಿ",
+    "villageName": "ಸಂಸ್ಥೆ ಹೆಸರು",
+    "villageId": "ಸಂಸ್ಥೆ ID",
     "managerName": "ಮ್ಯಾನೇಜರ್ ಹೆಸರು",
     "managerPhone": "ಮ್ಯಾನೇಜರ್ ಫೋನ್",
-    "totalVillages": "ಟೋಟಲ್ ಗ್ರಾಮಗಳು",
-    "activeVillages": "ಆಕ್ಟಿವ್ ಗ್ರಾಮಗಳು",
-    "villageStats": "ಗ್ರಾಮದ ಸ್ಟ್ಯಾಟ್ಸ್",
-    "createVillage": "ಗ್ರಾಮ ಸೃಷ್ಟಿಸಿ",
-    "addWard": "ಹೊಸ ವಾರ್ಡ್/ಉಪ-ಹಳ್ಳಿ ಸೇರಿಸಿ",
-    "wardName": "ವಾರ್ಡ್/ಉಪ-ಹಳ್ಳಿ ಹೆಸರು"
+    "totalVillages": "ಟೋಟಲ್ ಸಂಸ್ಥೆಗಳು",
+    "activeVillages": "ಆಕ್ಟಿವ್ ಸಂಸ್ಥೆಗಳು",
+    "villageStats": "ಸಂಸ್ಥೆ ಸ್ಟ್ಯಾಟಿಸ್ಟಿಕ್ಸ್",
+    "createVillage": "ಸಂಸ್ಥೆ ಕ್ರಿಯೇಟ್ ಮಾಡಿ",
+    "addWard": {
+      "gram_panchayat": "ಹೊಸ ವಾರ್ಡ್/ಉಪ-ಹಳ್ಳಿ ಸೇರಿಸಿ",
+      "municipality": "ಹೊಸ ಸಬ್-ವಾರ್ಡ್/ಉಪ-ಝೋನ್ ಸೇರಿಸಿ",
+      "apartment": "ಹೊಸ ವಿಂಗ್ / ಬ್ಲಾಕ್/ಉಪ-ಸೊಸೈಟಿ ಸೇರಿಸಿ",
+      "township": "ಹೊಸ ಸೆಕ್ಟರ್/ಉಪ-ಟೌನ್‌ಶಿಪ್ ಸೇರಿಸಿ",
+      "institution_campus": "ಹೊಸ ಬಿಲ್ಡಿಂಗ್/ಉಪ-ಕ್ಯಾಂಪಸ್ ಸೇರಿಸಿ"
+    },
+    "wardName": {
+      "gram_panchayat": "ವಾರ್ಡ್/ಉಪ-ಹಳ್ಳಿ ಹೆಸರು",
+      "municipality": "ಸಬ್-ವಾರ್ಡ್/ಉಪ-ಝೋನ್ ಹೆಸರು",
+      "apartment": "ವಿಂಗ್ / ಬ್ಲಾಕ್/ಉಪ-ಸೊಸೈಟಿ ಹೆಸರು",
+      "township": "ಸೆಕ್ಟರ್/ಉಪ-ಟೌನ್‌ಶಿಪ್ ಹೆಸರು",
+      "institution_campus": "ಬಿಲ್ಡಿಂಗ್/ಉಪ-ಕ್ಯಾಂಪಸ್ ಹೆಸರು"
+    }
   },
   "profile": {
     "title": "ಪ್ರೊಫೈಲ್",
@@ -1126,14 +1606,26 @@
     "updateProfile": "ಪ್ರೊಫೈಲ್ ಅಪ್ಡೇಟ್ ಮಾಡಿ"
   },
   "filters": {
-    "selectVillage": "ಗ್ರಾಮ ಸೆಲೆಕ್ಟ್ ಮಾಡಿ",
+    "selectVillage": "ಸಂಸ್ಥೆ ಸೆಲೆಕ್ಟ್ ಮಾಡಿ",
     "selectCollector": "ಕಲೆಕ್ಟರ್ ಸೆಲೆಕ್ಟ್ ಮಾಡಿ",
-    "selectHousehold": "ಹೌಸ್ಹೋಲ್ಡ್ ಸೆಲೆಕ್ಟ್ ಮಾಡಿ",
+    "selectHousehold": {
+      "gram_panchayat": "ಹೌಸ್ಹೋಲ್ಡ್ ಸೆಲೆಕ್ಟ್ ಮಾಡಿ",
+      "municipality": "ಪ್ರಾಪರ್ಟಿ ಸೆಲೆಕ್ಟ್ ಮಾಡಿ",
+      "apartment": "ಫ್ಲಾಟ್ ಸೆಲೆಕ್ಟ್ ಮಾಡಿ",
+      "township": "ಪ್ಲಾಟ್ ಸೆಲೆಕ್ಟ್ ಮಾಡಿ",
+      "institution_campus": "ಯೂನಿಟ್ ಸೆಲೆಕ್ಟ್ ಮಾಡಿ"
+    },
     "startDate": "ಶುರುವಾಗೋ ದಿನಾಂಕ",
     "endDate": "ಮುಗಿಯೋ ದಿನಾಂಕ",
-    "allVillages": "ಎಲ್ಲಾ ಗ್ರಾಮಗಳು",
+    "allVillages": "ಎಲ್ಲಾ ಸಂಸ್ಥೆಗಳು",
     "allCollectors": "ಎಲ್ಲಾ ಕಲೆಕ್ಟರ್ಸ್",
-    "allHouseholds": "ಎಲ್ಲಾ ಹೌಸ್ಹೋಲ್ಡ್ಸ್"
+    "allHouseholds": {
+      "gram_panchayat": "ಎಲ್ಲಾ ಹೌಸ್ಹೋಲ್ಡ್ಸ್",
+      "municipality": "ಎಲ್ಲಾ ಪ್ರಾಪರ್ಟಿಗಳು",
+      "apartment": "ಎಲ್ಲಾ ಫ್ಲಾಟ್‌ಗಳು",
+      "township": "ಎಲ್ಲಾ ಪ್ಲಾಟ್‌ಗಳು",
+      "institution_campus": "ಎಲ್ಲಾ ಯೂನಿಟ್‌ಗಳು"
+    }
   },
   "messages": {
     "noData": "ಡೇಟಾ ಇಲ್ಲ",
@@ -1201,5 +1693,87 @@
     "excellent": "ಅತ್ಯಂತ ಒಳ್ಳೆಯದು",
     "poor": "ಕಡಿಮೆ",
     "veryPoor": "ತುಂಬಾ ಕಡಿಮೆ"
+  },
+  "terminology": {
+    "gram_panchayat": {
+      "org": "ಗ್ರಾಮ",
+      "orgPlural": "ಗ್ರಾಮಗಳು",
+      "household": "ಮನೆ",
+      "householdPlural": "ಮನೆಗಳು",
+      "headName": "ಮನೆಯ ಮುಖ್ಯಸ್ಥ",
+      "houseNumber": "ಮನೆ ನಂಬರ್",
+      "ward": "ವಾರ್ಡ್",
+      "wardPlural": "ವಾರ್ಡ್‌ಗಳು",
+      "collector": "ಕಸ ಕಲೆಕ್ಟರ್",
+      "collectorPlural": "ಕಸ ಕಲೆಕ್ಟರ್‌ಗಳು",
+      "familySize": "ಕುಟುಂಬ ಸೈಜ್",
+      "address": "ವಿಳಾಸ",
+      "session": "ವಾಹನ ಸೆಷನ್",
+      "sessionPlural": "ವಾಹನ ಸೆಷನ್‌ಗಳು"
+    },
+    "municipality": {
+      "org": "ವಾರ್ಡ್ / ಝೋನ್",
+      "orgPlural": "ವಾರ್ಡ್‌ಗಳು / ಝೋನ್‌ಗಳು",
+      "household": "ಪ್ರಾಪರ್ಟಿ",
+      "householdPlural": "ಪ್ರಾಪರ್ಟಿಗಳು",
+      "headName": "ಪ್ರಾಪರ್ಟಿ ಓನರ್",
+      "houseNumber": "ಡೋರ್ ನಂಬರ್",
+      "ward": "ಸಬ್-ವಾರ್ಡ್",
+      "wardPlural": "ಸಬ್-ವಾರ್ಡ್‌ಗಳು",
+      "collector": "ಸ್ಯಾನಿಟರಿ ವರ್ಕರ್",
+      "collectorPlural": "ಸ್ಯಾನಿಟರಿ ವರ್ಕರ್‌ಗಳು",
+      "familySize": "ನಿವಾಸಿಗಳು",
+      "address": "ವಿಳಾಸ",
+      "session": "ವಾಹನ ಸೆಷನ್",
+      "sessionPlural": "ವಾಹನ ಸೆಷನ್‌ಗಳು"
+    },
+    "apartment": {
+      "org": "ಸೊಸೈಟಿ",
+      "orgPlural": "ಸೊಸೈಟಿಗಳು",
+      "household": "ಫ್ಲಾಟ್",
+      "householdPlural": "ಫ್ಲಾಟ್‌ಗಳು",
+      "headName": "ಫ್ಲಾಟ್ ಓನರ್",
+      "houseNumber": "ಫ್ಲಾಟ್ ನಂಬರ್",
+      "ward": "ವಿಂಗ್ / ಬ್ಲಾಕ್",
+      "wardPlural": "ವಿಂಗ್‌ಗಳು / ಬ್ಲಾಕ್‌ಗಳು",
+      "collector": "ಹೌಸ್‌ಕೀಪಿಂಗ್ ಸ್ಟಾಫ್",
+      "collectorPlural": "ಹೌಸ್‌ಕೀಪಿಂಗ್ ಸ್ಟಾಫ್",
+      "familySize": "ನಿವಾಸಿಗಳು",
+      "address": "ಫ್ಲೋರ್ & ವಿಂಗ್",
+      "session": "ಕಲೆಕ್ಷನ್ ಸೆಷನ್",
+      "sessionPlural": "ಕಲೆಕ್ಷನ್ ಸೆಷನ್‌ಗಳು"
+    },
+    "township": {
+      "org": "ಟೌನ್‌ಶಿಪ್",
+      "orgPlural": "ಟೌನ್‌ಶಿಪ್‌ಗಳು",
+      "household": "ಪ್ಲಾಟ್",
+      "householdPlural": "ಪ್ಲಾಟ್‌ಗಳು",
+      "headName": "ಪ್ಲಾಟ್ ಓನರ್",
+      "houseNumber": "ಪ್ಲಾಟ್ ನಂಬರ್",
+      "ward": "ಸೆಕ್ಟರ್",
+      "wardPlural": "ಸೆಕ್ಟರ್‌ಗಳು",
+      "collector": "ಕಲೆಕ್ಷನ್ ಸ್ಟಾಫ್",
+      "collectorPlural": "ಕಲೆಕ್ಷನ್ ಸ್ಟಾಫ್",
+      "familySize": "ನಿವಾಸಿಗಳು",
+      "address": "ಸ್ಟ್ರೀಟ್ / ಬ್ಲಾಕ್",
+      "session": "ವಾಹನ ಸೆಷನ್",
+      "sessionPlural": "ವಾಹನ ಸೆಷನ್‌ಗಳು"
+    },
+    "institution_campus": {
+      "org": "ಕ್ಯಾಂಪಸ್",
+      "orgPlural": "ಕ್ಯಾಂಪಸ್‌ಗಳು",
+      "household": "ಯೂನಿಟ್",
+      "householdPlural": "ಯೂನಿಟ್‌ಗಳು",
+      "headName": "ಯೂನಿಟ್ ಹೆಡ್",
+      "houseNumber": "ಯೂನಿಟ್ ನಂಬರ್",
+      "ward": "ಬಿಲ್ಡಿಂಗ್",
+      "wardPlural": "ಬಿಲ್ಡಿಂಗ್‌ಗಳು",
+      "collector": "ಫೆಸಿಲಿಟಿ ಸ್ಟಾಫ್",
+      "collectorPlural": "ಫೆಸಿಲಿಟಿ ಸ್ಟಾಫ್",
+      "familySize": "ನಿವಾಸಿಗಳು",
+      "address": "ಬಿಲ್ಡಿಂಗ್ & ಫ್ಲೋರ್",
+      "session": "ಕಲೆಕ್ಷನ್ ಸೆಷನ್",
+      "sessionPlural": "ಕಲೆಕ್ಷನ್ ಸೆಷನ್‌ಗಳು"
+    }
   }
 }

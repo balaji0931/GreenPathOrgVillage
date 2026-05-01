@@ -83,9 +83,21 @@
   },
   "roles": {
     "admin": "அட்மின்",
-    "manager": "மேனேஜர்",
+    "manager": {
+      "gram_panchayat": "மேனேஜர்",
+      "municipality": "மேனேஜர்",
+      "apartment": "மேனேஜர்",
+      "township": "மேனேஜர்",
+      "institution_campus": "மேனேஜர்"
+    },
     "collector": "குப்பை கலெக்டர்",
-    "generator": "வீடு (ஹவுஸ்ஹோல்ட்)"
+    "generator": {
+      "gram_panchayat": "வீடு (ஹவுஸ்ஹோல்ட்)",
+      "municipality": "சொத்து (ஹவுஸ்ஹோல்ட்)",
+      "apartment": "ஃபிளாட் (ஹவுஸ்ஹோல்ட்)",
+      "township": "பிளாட் (ஹவுஸ்ஹோல்ட்)",
+      "institution_campus": "யூனிட் (ஹவுஸ்ஹோல்ட்)"
+    }
   },
   "dashboard": {
     "welcome": "வரவேற்கிறோம்",
@@ -98,14 +110,20 @@
   },
   "navigation": {
     "dashboard": "டேஷ்போர்ட்",
-    "households": "ஹவுஸ்ஹோல்ட்ஸ்",
+    "households": {
+      "gram_panchayat": "ஹவுஸ்ஹோல்ட்ஸ்",
+      "municipality": "ஹவுஸ்ஹோல்ட்ஸ்",
+      "apartment": "ஹவுஸ்ஹோல்ட்ஸ்",
+      "township": "ஹவுஸ்ஹோல்ட்ஸ்",
+      "institution_campus": "ஹவுஸ்ஹோல்ட்ஸ்"
+    },
     "collectors": "கலெக்டர்ஸ்",
     "collections": "கலெக்ஷன்ஸ்",
     "issues": "இஷ்யூஸ்",
     "feedback": "பீட்பேக்",
     "reports": "ரிப்போர்ட்ஸ்",
     "announcements": "அனௌன்ஸ்மென்ட்",
-    "villages": "கிராமங்கள்",
+    "villages": "நிறுவனங்கள்",
     "managers": "மேனேஜர்ஸ்",
     "profile": "புரொபைல்",
     "settings": "செட்டிங்ஸ்",
@@ -121,22 +139,76 @@
     "todayProgress": "இன்னைக்கு ப்ராக்ரஸ்",
     "scannedToday": "இன்னைக்கு ஸ்கேன் பண்ணது",
     "totalAssigned": "டோட்டல் அசைன் ஆனது",
-    "villageTotal": "கிராமம் டோட்டல்",
+    "villageTotal": {
+      "gram_panchayat": "கிராமம் டோட்டல்",
+      "municipality": "மண்டலம் டோட்டல்",
+      "apartment": "சொசைட்டி டோட்டல்",
+      "township": "டவுன்ஷிப் டோட்டல்",
+      "institution_campus": "கேம்பஸ் டோட்டல்"
+    },
     "collectionsToday": "இன்னைக்கு கலெக்ஷன் ஆனது",
     "offlinePending": "ஆப்லைன் பெண்டிங்",
     "scanQrCode": "QR கோடு ஸ்கேன் பண்ணு",
-    "scanQrToStart": "கலெக்ஷன் ஸ்டார்ட் பண்ண வீட்டு QR கோடு ஸ்கேன் பண்ணு",
-    "pointCamera": "காமெராவை வீட்டு QR கோடு பக்கம் காட்டு",
-    "enterHouseholdId": "ஹவுஸ்ஹோல்ட் ID போடு",
-    "typeHouseholdId": "ஹவுஸ்ஹோல்ட் ID டைப் பண்ணு...",
-    "lookupHousehold": "ஹவுஸ்ஹோல்ட் தேடு",
+    "scanQrToStart": {
+      "gram_panchayat": "கலெக்ஷன் ஸ்டார்ட் பண்ண வீட்டு QR கோடு ஸ்கேன் பண்ணு",
+      "municipality": "கலெக்ஷன் ஸ்டார்ட் பண்ண வீட்டு QR கோடு ஸ்கேன் பண்ணு",
+      "apartment": "கலெக்ஷன் ஸ்டார்ட் பண்ண வீட்டு QR கோடு ஸ்கேன் பண்ணு",
+      "township": "கலெக்ஷன் ஸ்டார்ட் பண்ண வீட்டு QR கோடு ஸ்கேன் பண்ணு",
+      "institution_campus": "கலெக்ஷன் ஸ்டார்ட் பண்ண வீட்டு QR கோடு ஸ்கேன் பண்ணு"
+    },
+    "pointCamera": {
+      "gram_panchayat": "காமெராவை வீட்டு QR கோடு பக்கம் காட்டு",
+      "municipality": "காமெராவை வீட்டு QR கோடு பக்கம் காட்டு",
+      "apartment": "காமெராவை வீட்டு QR கோடு பக்கம் காட்டு",
+      "township": "காமெராவை வீட்டு QR கோடு பக்கம் காட்டு",
+      "institution_campus": "காமெராவை வீட்டு QR கோடு பக்கம் காட்டு"
+    },
+    "enterHouseholdId": {
+      "gram_panchayat": "ஹவுஸ்ஹோல்ட் ID போடு",
+      "municipality": "ஹவுஸ்ஹோல்ட் ID போடு",
+      "apartment": "ஹவுஸ்ஹோல்ட் ID போடு",
+      "township": "ஹவுஸ்ஹோல்ட் ID போடு",
+      "institution_campus": "ஹவுஸ்ஹோல்ட் ID போடு"
+    },
+    "typeHouseholdId": {
+      "gram_panchayat": "ஹவுஸ்ஹோல்ட் ID டைப் பண்ணு...",
+      "municipality": "ஹவுஸ்ஹோல்ட் ID டைப் பண்ணு...",
+      "apartment": "ஹவுஸ்ஹோல்ட் ID டைப் பண்ணு...",
+      "township": "ஹவுஸ்ஹோல்ட் ID டைப் பண்ணு...",
+      "institution_campus": "ஹவுஸ்ஹோல்ட் ID டைப் பண்ணு..."
+    },
+    "lookupHousehold": {
+      "gram_panchayat": "ஹவுஸ்ஹோல்ட் தேடு",
+      "municipality": "ஹவுஸ்ஹோல்ட் தேடு",
+      "apartment": "ஹவுஸ்ஹோல்ட் தேடு",
+      "township": "ஹவுஸ்ஹோல்ட் தேடு",
+      "institution_campus": "ஹவுஸ்ஹோல்ட் தேடு"
+    },
     "lookingUp": "தேடுது...",
-    "noHouseholdFound": "இந்த ID ல எந்த ஹவுஸ்ஹோல்டும் இல்ல",
+    "noHouseholdFound": {
+      "gram_panchayat": "இந்த ID ல எந்த ஹவுஸ்ஹோல்டும் இல்ல",
+      "municipality": "இந்த ID ல எந்த ஹவுஸ்ஹோல்டும் இல்ல",
+      "apartment": "இந்த ID ல எந்த ஹவுஸ்ஹோல்டும் இல்ல",
+      "township": "இந்த ID ல எந்த ஹவுஸ்ஹோல்டும் இல்ல",
+      "institution_campus": "இந்த ID ல எந்த ஹவுஸ்ஹோல்டும் இல்ல"
+    },
     "qrScanError": "QR ஸ்கேன் எரர்",
     "invalidQrCode": "QR கோடு தப்பு",
-    "householdNotFound": "ஹவுஸ்ஹோல்ட் இல்ல",
+    "householdNotFound": {
+      "gram_panchayat": "ஹவுஸ்ஹோல்ட் இல்ல",
+      "municipality": "ஹவுஸ்ஹோல்ட் இல்ல",
+      "apartment": "ஹவுஸ்ஹோல்ட் இல்ல",
+      "township": "ஹவுஸ்ஹோல்ட் இல்ல",
+      "institution_campus": "ஹவுஸ்ஹோல்ட் இல்ல"
+    },
     "alreadyCollectedToday": "இன்னைக்கு ஏற்கனவே கலெக்ஷன் ஆயிடுச்சு",
-    "alreadyCollectedTodayDesc": "இந்த வீட்டுக்கு இன்னைக்கு கலெக்ஷன் ரெக்கார்ட் ஆயிடுச்சு",
+    "alreadyCollectedTodayDesc": {
+      "gram_panchayat": "இந்த வீட்டுக்கு இன்னைக்கு கலெக்ஷன் ரெக்கார்ட் ஆயிடுச்சு",
+      "municipality": "இந்த வீட்டுக்கு இன்னைக்கு கலெக்ஷன் ரெக்கார்ட் ஆயிடுச்சு",
+      "apartment": "இந்த வீட்டுக்கு இன்னைக்கு கலெக்ஷன் ரெக்கார்ட் ஆயிடுச்சு",
+      "township": "இந்த வீட்டுக்கு இன்னைக்கு கலெக்ஷன் ரெக்கார்ட் ஆயிடுச்சு",
+      "institution_campus": "இந்த வீட்டுக்கு இன்னைக்கு கலெக்ஷன் ரெக்கார்ட் ஆயிடுச்சு"
+    },
     "collectionForm": "கலெக்ஷன் பாரம்",
     "collectionFor": "கலெக்ஷன் —",
     "wasteCollectionStatus": "குப்பை கலெக்ஷன் ஸ்டேட்டஸ்",
@@ -177,9 +249,27 @@
     "startScanning": "கலெக்ஷன் ரெக்கார்ட் பண்ண QR கோடு ஸ்கேன் பண்ணு",
     "viewDetails": "டீடெயில்ஸ் பாரு",
     "collectionDetails": "கலெக்ஷன் டீடெயில்ஸ்",
-    "household": "ஹவுஸ்ஹோல்ட்",
-    "houseNumber": "வீட்டு நம்பர்",
-    "ward": "வார்டு",
+    "household": {
+      "gram_panchayat": "ஹவுஸ்ஹோல்ட்",
+      "municipality": "ஹவுஸ்ஹோல்ட்",
+      "apartment": "ஹவுஸ்ஹோல்ட்",
+      "township": "ஹவுஸ்ஹோல்ட்",
+      "institution_campus": "ஹவுஸ்ஹோல்ட்"
+    },
+    "houseNumber": {
+      "gram_panchayat": "வீட்டு நம்பர்",
+      "municipality": "வீட்டு நம்பர்",
+      "apartment": "வீட்டு நம்பர்",
+      "township": "வீட்டு நம்பர்",
+      "institution_campus": "வீட்டு நம்பர்"
+    },
+    "ward": {
+      "gram_panchayat": "வார்டு",
+      "municipality": "சப்-வார்டு",
+      "apartment": "விங் / பிளாக்",
+      "township": "செக்டார்",
+      "institution_campus": "பில்டிங்"
+    },
     "time": "டைம்",
     "status": "ஸ்டேட்டஸ்",
     "collectionPhoto": "கலெக்ஷன் போட்டோ",
@@ -197,7 +287,7 @@
     "submitIssue": "இஷ்யூ சப்மிட் பண்ணு",
     "submittingIssue": "சப்மிட் ஆகுது...",
     "issueSubmitted": "இஷ்யூ ரிப்போர்ட் ஆயிடுச்சு",
-    "issueSubmittedDesc": "உங்க இஷ்யூ கிராம மேனேஜர்க்கு போயிருச்சி",
+    "issueSubmittedDesc": "உங்கள் சிக்கல் மேலாளருக்கு அனுப்பப்பட்டது",
     "issueSubmitFailed": "இஷ்யூ சப்மிட் ஆகல",
     "noIssuesFound": "இதுவரைக்கும் இஷ்யூ ஒன்னும் ரிப்போர்ட் ஆகல",
     "noIssuesFoundDesc": "கலெக்ஷன் டைம்ல ப்ராப்ளம் இருந்தா ரிப்போர்ட் பண்ணு",
@@ -234,7 +324,7 @@
     "noActiveShift": "யாக்க்டிவ் ஷிப்ட் எதுவும் இல்ல",
     "shiftDuration": "ஷிப்ட் டியூரேஷன்",
     "collectionsInShift": "ஷிப்ட்ல கலெக்ஷன்ஸ்",
-    "attendanceNotEnabled": "உங்க கிராமத்துல அட்டெண்டன்ஸ் ட்ராக்கிங் எனேபிள் ஆகல",
+    "attendanceNotEnabled": "உங்கள் நிறுவனத்தில் வருகை கண்காணிப்பு இயக்கப்படவில்லை",
     "changePasswordError": "பாஸ்வேர்ட் மாற்றுவதில் தோல்வி. மீண்டும் முயற்சிக்கவும்.",
     "issueReportedError": "பிரச்சனை ரிப்போர்ட் செய்வதில் தோல்வி. மீண்டும் முயற்சிக்கவும்.",
     "issueReportedSuccess": "உங்கள் பிரச்சனை வெற்றிகரமாக ரிப்போர்ட் ஆனது!",
@@ -245,7 +335,8 @@
     "issuePhoto": "பிரச்சனை புகைப்படம்",
     "managerProofPhoto": "மேனேஜர் ஆதார புகைப்படம்",
     "active": "ஆக்டிவ்",
-    "tooFarFromCenter": "நீங்கள் சென்டரிற்கு மிகவும் தூரத்தில் உள்ளீர்கள்"
+    "tooFarFromCenter": "நீங்கள் சென்டரிற்கு மிகவும் தூரத்தில் உள்ளீர்கள்",
+    "collectionRecorded": "சேகரிப்பு பதிவு செய்யப்பட்டது"
   },
   "generator": {
     "home": "ஹோம்",
@@ -255,11 +346,35 @@
     "profile": "புரொபைல்",
     "bills": "பில்ஸ்",
     "welcomeBack": "திரும்ப வரவேற்கிறோம்",
-    "householdInfo": "ஹவுஸ்ஹோல்ட் தகவல்",
-    "headOfHousehold": "வீட்டு பெரியவர்",
+    "householdInfo": {
+      "gram_panchayat": "ஹவுஸ்ஹோல்ட் தகவல்",
+      "municipality": "ஹவுஸ்ஹோல்ட் தகவல்",
+      "apartment": "ஹவுஸ்ஹோல்ட் தகவல்",
+      "township": "ஹவுஸ்ஹோல்ட் தகவல்",
+      "institution_campus": "ஹவுஸ்ஹோல்ட் தகவல்"
+    },
+    "headOfHousehold": {
+      "gram_panchayat": "வீட்டு பெரியவர்",
+      "municipality": "வீட்டு பெரியவர்",
+      "apartment": "வீட்டு பெரியவர்",
+      "township": "வீட்டு பெரியவர்",
+      "institution_campus": "வீட்டு பெரியவர்"
+    },
     "uid": "UID",
-    "houseNumber": "வீட்டு நம்பர்",
-    "ward": "வார்டு",
+    "houseNumber": {
+      "gram_panchayat": "வீட்டு நம்பர்",
+      "municipality": "வீட்டு நம்பர்",
+      "apartment": "வீட்டு நம்பர்",
+      "township": "வீட்டு நம்பர்",
+      "institution_campus": "வீட்டு நம்பர்"
+    },
+    "ward": {
+      "gram_panchayat": "வார்டு",
+      "municipality": "சப்-வார்டு",
+      "apartment": "விங் / பிளாக்",
+      "township": "செக்டார்",
+      "institution_campus": "பில்டிங்"
+    },
     "address": "அட்ரஸ்",
     "phone": "போன்",
     "lastCollection": "கடைசி கலெக்ஷன்",
@@ -285,7 +400,7 @@
     "qrCodeDesc": "கலெக்ஷன் டைம்ல கலெக்டர்கிட்ட இந்த QR கோட காட்டுங்க",
     "downloadQrCode": "QR கோடு டவுன்லோட் பண்ணு",
     "qrNotGenerated": "QR கோடு இன்னும் ரெடி ஆகல",
-    "contactManager": "உங்க கிராம மேனேஜர காண்டாக்ட் பண்ணுங்க",
+    "contactManager": "உங்கள் மேலாளரை தொடர்பு கொள்ளுங்கள்",
     "reportIssue": "இஷ்யூ ரிப்போர்ட் பண்ணு",
     "issueTitle": "இஷ்யூ டைட்டில்",
     "issueTitlePlaceholder": "உதா: 3 நாளா குப்பை கலெக்ட் ஆகல",
@@ -296,7 +411,7 @@
     "submitIssue": "இஷ்யூ சப்மிட் பண்ணு",
     "submittingIssue": "சப்மிட் ஆகுது...",
     "issueSubmitted": "இஷ்யூ ரிப்போர்ட் ஆயிடுச்சு",
-    "issueSubmittedDesc": "உங்க இஷ்யூ கிராம மேனேஜர்க்கு போயிருச்சி",
+    "issueSubmittedDesc": "உங்கள் சிக்கல் மேலாளருக்கு அனுப்பப்பட்டது",
     "issueSubmitFailed": "இஷ்யூ சப்மிட் ஆகல",
     "yourIssues": "உங்க இஷ்யூஸ்",
     "noIssuesYet": "இதுவரைக்கும் இஷ்யூ ஒன்னும் ரிப்போர்ட் ஆகல",
@@ -326,41 +441,137 @@
     "issuePhoto": "பிரச்சனை புகைப்படம்"
   },
   "manager": {
-    "householdsManagement": "ஹவுஸ்ஹோல்ட் மேனேஜ்மென்ட்",
-    "manageHouseholdsQR": "ஹவுஸ்ஹோல்ட் மற்றும் QR கோட்ஸ் மேனேஜ் பண்ணு",
+    "householdsManagement": {
+      "gram_panchayat": "ஹவுஸ்ஹோல்ட் மேனேஜ்மென்ட்",
+      "municipality": "ஹவுஸ்ஹோல்ட் மேனேஜ்மென்ட்",
+      "apartment": "ஹவுஸ்ஹோல்ட் மேனேஜ்மென்ட்",
+      "township": "ஹவுஸ்ஹோல்ட் மேனேஜ்மென்ட்",
+      "institution_campus": "ஹவுஸ்ஹோல்ட் மேனேஜ்மென்ட்"
+    },
+    "manageHouseholdsQR": {
+      "gram_panchayat": "ஹவுஸ்ஹோல்ட் மற்றும் QR கோட்ஸ் மேனேஜ் பண்ணு",
+      "municipality": "ஹவுஸ்ஹோல்ட் மற்றும் QR கோட்ஸ் மேனேஜ் பண்ணு",
+      "apartment": "ஹவுஸ்ஹோல்ட் மற்றும் QR கோட்ஸ் மேனேஜ் பண்ணு",
+      "township": "ஹவுஸ்ஹோல்ட் மற்றும் QR கோட்ஸ் மேனேஜ் பண்ணு",
+      "institution_campus": "ஹவுஸ்ஹோல்ட் மற்றும் QR கோட்ஸ் மேனேஜ் பண்ணு"
+    },
     "viewAll": "எல்லாம் பாரு",
-    "addHousehold": "ஹவுஸ்ஹோல்ட் ஆட் பண்ணு",
+    "addHousehold": {
+      "gram_panchayat": "ஹவுஸ்ஹோல்ட் ஆட் பண்ணு",
+      "municipality": "ஹவுஸ்ஹோல்ட் ஆட் பண்ணு",
+      "apartment": "ஹவுஸ்ஹோல்ட் ஆட் பண்ணு",
+      "township": "ஹவுஸ்ஹோல்ட் ஆட் பண்ணு",
+      "institution_campus": "ஹவுஸ்ஹோல்ட் ஆட் பண்ணு"
+    },
     "downloadQR": "QR டவுன்லோட்",
     "qrCodeAvailable": "QR கோடு இருக்கு",
-    "addMultipleHouseholds": "நிறைய ஹவுஸ்ஹோல்ட்ஸ் ஆட் பண்ணு",
-    "createMultipleDesc": "ஒரே நேரத்துல நிறைய ஹவுஸ்ஹோல்ட்ஸ் கிரியேட் பண்ணு, QR கோடு ஆட்டோமேட்டிக்கா ரெடியாகும்",
+    "addMultipleHouseholds": {
+      "gram_panchayat": "நிறைய ஹவுஸ்ஹோல்ட்ஸ் ஆட் பண்ணு",
+      "municipality": "நிறைய ஹவுஸ்ஹோல்ட்ஸ் ஆட் பண்ணு",
+      "apartment": "நிறைய ஹவுஸ்ஹோல்ட்ஸ் ஆட் பண்ணு",
+      "township": "நிறைய ஹவுஸ்ஹோல்ட்ஸ் ஆட் பண்ணு",
+      "institution_campus": "நிறைய ஹவுஸ்ஹோல்ட்ஸ் ஆட் பண்ணு"
+    },
+    "createMultipleDesc": {
+      "gram_panchayat": "ஒரே நேரத்துல நிறைய ஹவுஸ்ஹோல்ட்ஸ் கிரியேட் பண்ணு, QR கோடு ஆட்டோமேட்டிக்கா ரெடியாகும்",
+      "municipality": "ஒரே நேரத்துல நிறைய ஹவுஸ்ஹோல்ட்ஸ் கிரியேட் பண்ணு, QR கோடு ஆட்டோமேட்டிக்கா ரெடியாகும்",
+      "apartment": "ஒரே நேரத்துல நிறைய ஹவுஸ்ஹோல்ட்ஸ் கிரியேட் பண்ணு, QR கோடு ஆட்டோமேட்டிக்கா ரெடியாகும்",
+      "township": "ஒரே நேரத்துல நிறைய ஹவுஸ்ஹோல்ட்ஸ் கிரியேட் பண்ணு, QR கோடு ஆட்டோமேட்டிக்கா ரெடியாகும்",
+      "institution_campus": "ஒரே நேரத்துல நிறைய ஹவுஸ்ஹோல்ட்ஸ் கிரியேட் பண்ணு, QR கோடு ஆட்டோமேட்டிக்கா ரெடியாகும்"
+    },
     "addRow": "ரோ ஆட் பண்ணு",
-    "createHouseholds": "ஹவுஸ்ஹோல்ட்ஸ் கிரியேட் பண்ணு",
+    "createHouseholds": {
+      "gram_panchayat": "ஹவுஸ்ஹோல்ட்ஸ் கிரியேட் பண்ணு",
+      "municipality": "ஹவுஸ்ஹோல்ட்ஸ் கிரியேட் பண்ணு",
+      "apartment": "ஹவுஸ்ஹோல்ட்ஸ் கிரியேட் பண்ணு",
+      "township": "ஹவுஸ்ஹோல்ட்ஸ் கிரியேட் பண்ணு",
+      "institution_campus": "ஹவுஸ்ஹோல்ட்ஸ் கிரியேட் பண்ணு"
+    },
     "creating": "ரெடியாகுது...",
-    "headNameRequired": "வீட்டு பெரியவர் பேர் *",
-    "houseNumberRequired": "வீட்டு நம்பர் *",
+    "headNameRequired": {
+      "gram_panchayat": "வீட்டு பெரியவர் பேர் *",
+      "municipality": "வீட்டு பெரியவர் பேர் *",
+      "apartment": "வீட்டு பெரியவர் பேர் *",
+      "township": "வீட்டு பெரியவர் பேர் *",
+      "institution_campus": "வீட்டு பெரியவர் பேர் *"
+    },
+    "houseNumberRequired": {
+      "gram_panchayat": "வீட்டு நம்பர் *",
+      "municipality": "வீட்டு நம்பர் *",
+      "apartment": "வீட்டு நம்பர் *",
+      "township": "வீட்டு நம்பர் *",
+      "institution_campus": "வீட்டு நம்பர் *"
+    },
     "phoneRequired": "போன் *",
     "addressOptional": "அட்ரஸ் (கட்டாயம் இல்ல)",
-    "enterHeadName": "வீட்டு பெரியவர் பேர் போடு",
-    "houseNumber": "வீட்டு நம்பர்",
+    "enterHeadName": {
+      "gram_panchayat": "வீட்டு பெரியவர் பேர் போடு",
+      "municipality": "வீட்டு பெரியவர் பேர் போடு",
+      "apartment": "வீட்டு பெரியவர் பேர் போடு",
+      "township": "வீட்டு பெரியவர் பேர் போடு",
+      "institution_campus": "வீட்டு பெரியவர் பேர் போடு"
+    },
+    "houseNumber": {
+      "gram_panchayat": "வீட்டு நம்பர்",
+      "municipality": "வீட்டு நம்பர்",
+      "apartment": "வீட்டு நம்பர்",
+      "township": "வீட்டு நம்பர்",
+      "institution_campus": "வீட்டு நம்பர்"
+    },
     "phoneNumber": "போன் நம்பர்",
     "fullAddress": "முழு அட்ரஸ்",
-    "clickAddRow": "ஹவுஸ்ஹோல்ட்ஸ் ஆட் பண்ண \"ரோ ஆட் பண்ணு\" கிளிக் பண்ணு",
+    "clickAddRow": {
+      "gram_panchayat": "ஹவுஸ்ஹோல்ட்ஸ் ஆட் பண்ண \"ரோ ஆட் பண்ணு\" கிளிக் பண்ணு",
+      "municipality": "ஹவுஸ்ஹோல்ட்ஸ் ஆட் பண்ண \"ரோ ஆட் பண்ணு\" கிளிக் பண்ணு",
+      "apartment": "ஹவுஸ்ஹோல்ட்ஸ் ஆட் பண்ண \"ரோ ஆட் பண்ணு\" கிளிக் பண்ணு",
+      "township": "ஹவுஸ்ஹோல்ட்ஸ் ஆட் பண்ண \"ரோ ஆட் பண்ணு\" கிளிக் பண்ணு",
+      "institution_campus": "ஹவுஸ்ஹோல்ட்ஸ் ஆட் பண்ண \"ரோ ஆட் பண்ணு\" கிளிக் பண்ணு"
+    },
     "downloadQRCodes": "QR கோட்ஸ் டவுன்லோட்",
-    "downloadQRDesc": "ஹவுஸ்ஹோல்ட் QR கோட்ஸ் PDF ல டவுன்லோட் பண்ணு",
+    "downloadQRDesc": {
+      "gram_panchayat": "ஹவுஸ்ஹோல்ட் QR கோட்ஸ் PDF ல டவுன்லோட் பண்ணு",
+      "municipality": "ஹவுஸ்ஹோல்ட் QR கோட்ஸ் PDF ல டவுன்லோட் பண்ணு",
+      "apartment": "ஹவுஸ்ஹோல்ட் QR கோட்ஸ் PDF ல டவுன்லோட் பண்ணு",
+      "township": "ஹவுஸ்ஹோல்ட் QR கோட்ஸ் PDF ல டவுன்லோட் பண்ணு",
+      "institution_campus": "ஹவுஸ்ஹோல்ட் QR கோட்ஸ் PDF ல டவுன்லோட் பண்ணு"
+    },
     "selectAll": "எல்லாம் செலக்ட் பண்ணு",
     "generating": "ரெடியாகுது...",
     "downloadPDF": "PDF டவுன்லோட்",
     "noQRAvailable": "இன்னும் QR கோடு ரெடியாகல",
-    "addHouseholdsForQR": "QR கோடு ஆட்டோமேட்டிக்கா ரெடியாக ஹவுஸ்ஹோல்ட்ஸ் ஆட் பண்ணு",
+    "addHouseholdsForQR": {
+      "gram_panchayat": "QR கோடு ஆட்டோமேட்டிக்கா ரெடியாக ஹவுஸ்ஹோல்ட்ஸ் ஆட் பண்ணு",
+      "municipality": "QR கோடு ஆட்டோமேட்டிக்கா ரெடியாக ஹவுஸ்ஹோல்ட்ஸ் ஆட் பண்ணு",
+      "apartment": "QR கோடு ஆட்டோமேட்டிக்கா ரெடியாக ஹவுஸ்ஹோல்ட்ஸ் ஆட் பண்ணு",
+      "township": "QR கோடு ஆட்டோமேட்டிக்கா ரெடியாக ஹவுஸ்ஹோல்ட்ஸ் ஆட் பண்ணு",
+      "institution_campus": "QR கோடு ஆட்டோமேட்டிக்கா ரெடியாக ஹவுஸ்ஹோல்ட்ஸ் ஆட் பண்ணு"
+    },
     "collectionsManagement": "கலெக்ஷன் மேனேஜ்மென்ட்",
-    "viewHouseholdStatus": "ஹவுஸ்ஹோல்ட் கலெக்ஷன் ஸ்டேட்டஸ் பாரு",
+    "viewHouseholdStatus": {
+      "gram_panchayat": "ஹவுஸ்ஹோல்ட் கலெக்ஷன் ஸ்டேட்டஸ் பாரு",
+      "municipality": "ஹவுஸ்ஹோல்ட் கலெக்ஷன் ஸ்டேட்டஸ் பாரு",
+      "apartment": "ஹவுஸ்ஹோல்ட் கலெக்ஷன் ஸ்டேட்டஸ் பாரு",
+      "township": "ஹவுஸ்ஹோல்ட் கலெக்ஷன் ஸ்டேட்டஸ் பாரு",
+      "institution_campus": "ஹவுஸ்ஹோல்ட் கலெக்ஷன் ஸ்டேட்டஸ் பாரு"
+    },
     "collections": "கலெக்ஷன்ஸ்",
     "needsAttention": "கவனம் தேவை",
     "searchFilter": "சர்ச் & பில்டர்",
-    "searchPlaceholder": "பேர், UID, இல்லனா வீட்டு நம்பர் வச்சு தேடு...",
+    "searchPlaceholder": {
+      "gram_panchayat": "பேர், UID, இல்லனா வீட்டு நம்பர் வச்சு தேடு...",
+      "municipality": "பேர், UID, இல்லனா வீட்டு நம்பர் வச்சு தேடு...",
+      "apartment": "பேர், UID, இல்லனா வீட்டு நம்பர் வச்சு தேடு...",
+      "township": "பேர், UID, இல்லனா வீட்டு நம்பர் வச்சு தேடு...",
+      "institution_campus": "பேர், UID, இல்லனா வீட்டு நம்பர் வச்சு தேடு..."
+    },
     "clear": "கிளியர்",
-    "totalHouseholds": "டோட்டல் ஹவுஸ்ஹோல்ட்ஸ்",
+    "totalHouseholds": {
+      "gram_panchayat": "டோட்டல் ஹவுஸ்ஹோல்ட்ஸ்",
+      "municipality": "டோட்டல் ஹவுஸ்ஹோல்ட்ஸ்",
+      "apartment": "டோட்டல் ஹவுஸ்ஹோல்ட்ஸ்",
+      "township": "டோட்டல் ஹவுஸ்ஹோல்ட்ஸ்",
+      "institution_campus": "டோட்டல் ஹவுஸ்ஹோல்ட்ஸ்"
+    },
     "registered": "ரிஜிஸ்டರ್ ஆனது",
     "collectionsToday": "இன்னைக்கு கலெக்ஷன்ஸ்",
     "selectedDate": "செலக்ட் பண்ண தேதி",
@@ -369,13 +580,25 @@
     "allTime": "எல்லா டைம்",
     "avgSegregation": "ஆவரேஜ் செக்ரிகேஷன்",
     "rating": "ரேட்டிங்",
-    "householdCollectionStatus": "ஹவுஸ்ஹோல்ட் கலெக்ஷன் ஸ்டேட்டஸ்",
+    "householdCollectionStatus": {
+      "gram_panchayat": "ஹவுஸ்ஹோல்ட் கலெக்ஷன் ஸ்டேட்டஸ்",
+      "municipality": "ஹவுஸ்ஹோல்ட் கலெக்ஷன் ஸ்டேட்டஸ்",
+      "apartment": "ஹவுஸ்ஹோல்ட் கலெக்ஷன் ஸ்டேட்டஸ்",
+      "township": "ஹவுஸ்ஹோல்ட் கலெக்ஷன் ஸ்டேட்டஸ்",
+      "institution_campus": "ஹவுஸ்ஹோல்ட் கலெக்ஷன் ஸ்டேட்டஸ்"
+    },
     "collected": "✅ கலெக்ட் ஆயிடுச்சு",
     "pending": "⏳ பெண்டிங்",
     "doneBefore": "📅 முன்னாடியே முடிஞ்சது",
     "never": "❌ எப்பவும் இல்ல",
     "collectionDetails": "கலெக்ஷன் டீடெயில்ஸ்",
-    "householdId": "ஹவுஸ்ஹோல்ட் ID",
+    "householdId": {
+      "gram_panchayat": "ஹவுஸ்ஹோல்ட் ID",
+      "municipality": "ஹவுஸ்ஹோல்ட் ID",
+      "apartment": "ஹவுஸ்ஹோல்ட் ID",
+      "township": "ஹவுஸ்ஹோல்ட் ID",
+      "institution_campus": "ஹவுஸ்ஹோல்ட் ID"
+    },
     "collectionFor": "கலெக்ஷன் —",
     "collector": "கலெக்டர்",
     "time": "டைம்",
@@ -392,20 +615,50 @@
     "performingWell": "நல்லா பெர்பார்ம் பண்றாங்க",
     "avgPerformance": "ஆவரேஜ் பெர்பார்மன்ஸ்",
     "performanceScore": "பெர்பார்மன்ஸ் ஸ்கோர்",
-    "householdsNeedingAttention": "உடனே கவனிக்க வேண்டிய ஹவுஸ்ஹோல்ட்ஸ்",
-    "attentionDesc": "கடைசி 10 கலெக்ஷன்ல 3+ மிஸ் ஆன, இல்லனா 4 ஸ்டார்க்கு கம்மியா ரேட்டிங் இருக்கிற ஹவுஸ்ஹோல்ட்ஸ்",
+    "householdsNeedingAttention": {
+      "gram_panchayat": "உடனே கவனிக்க வேண்டிய ஹவுஸ்ஹோல்ட்ஸ்",
+      "municipality": "உடனே கவனிக்க வேண்டிய ஹவுஸ்ஹோல்ட்ஸ்",
+      "apartment": "உடனே கவனிக்க வேண்டிய ஹவுஸ்ஹோல்ட்ஸ்",
+      "township": "உடனே கவனிக்க வேண்டிய ஹவுஸ்ஹோல்ட்ஸ்",
+      "institution_campus": "உடனே கவனிக்க வேண்டிய ஹவுஸ்ஹோல்ட்ஸ்"
+    },
+    "attentionDesc": {
+      "gram_panchayat": "கடைசி 10 கலெக்ஷன்ல 3+ மிஸ் ஆன, இல்லனா 4 ஸ்டார்க்கு கம்மியா ரேட்டிங் இருக்கிற ஹவுஸ்ஹோல்ட்ஸ்",
+      "municipality": "கடைசி 10 கலெக்ஷன்ல 3+ மிஸ் ஆன, இல்லனா 4 ஸ்டார்க்கு கம்மியா ரேட்டிங் இருக்கிற ஹவுஸ்ஹோல்ட்ஸ்",
+      "apartment": "கடைசி 10 கலெக்ஷன்ல 3+ மிஸ் ஆன, இல்லனா 4 ஸ்டார்க்கு கம்மியா ரேட்டிங் இருக்கிற ஹவுஸ்ஹோல்ட்ஸ்",
+      "township": "கடைசி 10 கலெக்ஷன்ல 3+ மிஸ் ஆன, இல்லனா 4 ஸ்டார்க்கு கம்மியா ரேட்டிங் இருக்கிற ஹவுஸ்ஹோல்ட்ஸ்",
+      "institution_campus": "கடைசி 10 கலெக்ஷன்ல 3+ மிஸ் ஆன, இல்லனா 4 ஸ்டார்க்கு கம்மியா ரேட்டிங் இருக்கிற ஹவுஸ்ஹோல்ட்ஸ்"
+    },
     "problemCollections": "ப்ராப்ளம் கலெக்ஷன்ஸ்",
     "outOf": "ல",
     "issues": "இஷ்யூஸ்",
     "totalCollections2": "டோட்டல் கலெக்ஷன்ஸ்",
-    "allHouseholdsWell": "எல்லா ஹவுஸ்ஹோல்ட்ஸும் நல்லா பெர்பார்ம் பண்றாங்க!",
-    "wellPerformingHouseholds": "நல்லா பெர்பார்ம் பண்ற ஹவுஸ்ஹோல்ட்ஸ்",
-    "goodComplianceDesc": "நல்ல கலெக்ஷன் கம்ப்ளையன்ஸ், ரேட்டிங் இருக்கிற ஹவுஸ்ஹோல்ட்ஸ்",
+    "allHouseholdsWell": {
+      "gram_panchayat": "எல்லா ஹவுஸ்ஹோல்ட்ஸும் நல்லா பெர்பார்ம் பண்றாங்க!",
+      "municipality": "எல்லா ஹவுஸ்ஹோல்ட்ஸும் நல்லா பெர்பார்ம் பண்றாங்க!",
+      "apartment": "எல்லா ஹவுஸ்ஹோல்ட்ஸும் நல்லா பெர்பார்ம் பண்றாங்க!",
+      "township": "எல்லா ஹவுஸ்ஹோல்ட்ஸும் நல்லா பெர்பார்ம் பண்றாங்க!",
+      "institution_campus": "எல்லா ஹவுஸ்ஹோல்ட்ஸும் நல்லா பெர்பார்ம் பண்றாங்க!"
+    },
+    "wellPerformingHouseholds": {
+      "gram_panchayat": "நல்லா பெர்பார்ம் பண்ற ஹவுஸ்ஹோல்ட்ஸ்",
+      "municipality": "நல்லா பெர்பார்ம் பண்ற ஹவுஸ்ஹோல்ட்ஸ்",
+      "apartment": "நல்லா பெர்பார்ம் பண்ற ஹவுஸ்ஹோல்ட்ஸ்",
+      "township": "நல்லா பெர்பார்ம் பண்ற ஹவுஸ்ஹோல்ட்ஸ்",
+      "institution_campus": "நல்லா பெர்பார்ம் பண்ற ஹவுஸ்ஹோல்ட்ஸ்"
+    },
+    "goodComplianceDesc": {
+      "gram_panchayat": "நல்ல கலெக்ஷன் கம்ப்ளையன்ஸ், ரேட்டிங் இருக்கிற ஹவுஸ்ஹோல்ட்ஸ்",
+      "municipality": "நல்ல கலெக்ஷன் கம்ப்ளையன்ஸ், ரேட்டிங் இருக்கிற ஹவுஸ்ஹோல்ட்ஸ்",
+      "apartment": "நல்ல கலெக்ஷன் கம்ப்ளையன்ஸ், ரேட்டிங் இருக்கிற ஹவுஸ்ஹோல்ட்ஸ்",
+      "township": "நல்ல கலெக்ஷன் கம்ப்ளையன்ஸ், ரேட்டிங் இருக்கிற ஹவுஸ்ஹோல்ட்ஸ்",
+      "institution_campus": "நல்ல கலெக்ஷன் கம்ப்ளையன்ஸ், ரேட்டிங் இருக்கிற ஹவுஸ்ஹோல்ட்ஸ்"
+    },
     "goodRatings": "நல்ல ரேட்டிங்ஸ்",
     "problemCollectionsOnly": "ப்ராப்ளம் கலெக்ஷன்ஸ் மட்டும்",
     "excellent": "🟢 எக்ஸலென்ட்",
     "issuesManagement": "இஷ்யூ மேனேஜ்மென்ட்",
-    "manageVillageIssues": "கிராம இஷ்யூஸ் மேனேஜ் பண்ணு",
+    "manageVillageIssues": "சிக்கல்களை நிர்வகிக்கவும்",
     "filterByStatus": "ஸ்டேட்டஸ் வச்சு பில்டர் பண்ணு",
     "allIssues": "எல்லா இஷ்யூஸ்",
     "open": "ஓபன்",
@@ -435,7 +688,13 @@
     "comprehensiveInsights": "பெர்பார்மன்ஸ் இன்சைட்ஸ், ட்ரெண்ட்ஸ்",
     "dailyReports": "டெய்லி ரிப்போர்ட்ஸ்",
     "collectionEfficiency": "கலெக்ஷன் எஃபிஷியன்சி",
-    "households": "ஹவுஸ்ஹோல்ட்ஸ்",
+    "households": {
+      "gram_panchayat": "ஹவுஸ்ஹோல்ட்ஸ்",
+      "municipality": "ஹவுஸ்ஹோல்ட்ஸ்",
+      "apartment": "ஹவுஸ்ஹோல்ட்ஸ்",
+      "township": "ஹவுஸ்ஹோல்ட்ஸ்",
+      "institution_campus": "ஹவுஸ்ஹோல்ட்ஸ்"
+    },
     "averageSegregationRating": "ஆவரேஜ் செக்ரிகேஷன் ரேட்டிங்",
     "outOf5Stars": "5.0 ஸ்டார்ஸ்ல",
     "dailyCollectionTrend": "டெய்லி கலெக்ஷன் ட்ரெண்ட் (கடைசி 7 நாட்கள்)",
@@ -453,8 +712,20 @@
     "selectDate": "தேதி செலக்ட் பண்ணு",
     "today": "இன்னைக்கு",
     "avgSegregationRating": "ஆவரேஜ் செக்ரிகேஷன் ரேட்டிங்",
-    "totalHouses": "டோட்டல் வீடுகள்",
-    "registeredHouseholds": "ரிஜிஸ்டರ್ ஆன ஹவுஸ்ஹோல்ட்ஸ்",
+    "totalHouses": {
+      "gram_panchayat": "டோட்டல் வீடுகள்",
+      "municipality": "டோட்டல் சொத்துகள்",
+      "apartment": "டோட்டல் ஃபிளாட்கள்",
+      "township": "டோட்டல் பிளாட்கள்",
+      "institution_campus": "டோட்டல் யூனிட்கள்"
+    },
+    "registeredHouseholds": {
+      "gram_panchayat": "ரிஜிஸ்டರ್ ஆன ஹவுஸ்ஹோல்ட்ஸ்",
+      "municipality": "ரிஜிஸ்டರ್ ஆன ஹவுஸ்ஹோல்ட்ஸ்",
+      "apartment": "ரிஜிஸ்டರ್ ஆன ஹவுஸ்ஹோல்ட்ஸ்",
+      "township": "ரிஜிஸ்டರ್ ஆன ஹவுஸ்ஹோல்ட்ஸ்",
+      "institution_campus": "ரிஜிஸ்டರ್ ஆன ஹவுஸ்ஹோல்ட்ஸ்"
+    },
     "collectionsCompleted": "கலெக்ஷன்ஸ் முடிஞ்சது",
     "remaining": "மீதி",
     "yetToCollect": "இன்னும் கலெக்ட் பண்ணனும்",
@@ -464,7 +735,7 @@
     "collectorPerformanceToday": "இன்னைக்கு கலெக்டர் பெர்பார்மன்ஸ்",
     "collectionTimeline": "கலெக்ஷன் டைம்லைன்",
     "announcements": "அனௌன்ஸ்மென்ட்",
-    "sendUpdates": "உங்க கிராமத்துக்கு அப்டேட் அனுப்பு",
+    "sendUpdates": "உங்கள் நிறுவனத்திற்கு அப்டேட் அனுப்பவும்",
     "message": "மெசேஜ்",
     "typeAnnouncement": "உங்கள் அறிவிப்பை டைப் செய்யுங்கள்...",
     "targetAudience": "யாருக்கு அனுப்பணும்",
@@ -478,15 +749,33 @@
     "userInfo": "யூசர் தகவல்",
     "settings": "செட்டிங்ஸ்",
     "logout": "லாகவுட்",
-    "villageManager": "கிராம மேனேஜர்",
+    "villageManager": {
+      "gram_panchayat": "கிராம மேனேஜர்",
+      "municipality": "கிராம மேனேஜர்",
+      "apartment": "கிராம மேனேஜர்",
+      "township": "கிராம மேனேஜர்",
+      "institution_campus": "கிராம மேனேஜர்"
+    },
     "clickToViewFeedbacks": "பீட்பேக் பார்க்க கிளிக் பண்ணு",
     "collectorFeedbacks": "கலெக்டர் பீட்பேக்",
     "filterFeedbacks": "பீட்பேக் பில்டர்",
     "allFeedbacks": "எல்லாம்",
-    "fromHousehold": "ஹவுஸ்ஹோல்ட்ல இருந்து",
+    "fromHousehold": {
+      "gram_panchayat": "ஹவுஸ்ஹோல்ட்ல இருந்து",
+      "municipality": "ஹவுஸ்ஹோல்ட்ல இருந்து",
+      "apartment": "ஹவுஸ்ஹோல்ட்ல இருந்து",
+      "township": "ஹவுஸ்ஹோல்ட்ல இருந்து",
+      "institution_campus": "ஹவுஸ்ஹோல்ட்ல இருந்து"
+    },
     "toCollector": "கலெக்டர்க்கு",
     "noFeedbackYet": "செலக்ட் பண்ண தேதில பீட்பேக் டேட்டா இல்ல",
-    "feedbackFromHouseholds": "ஹவுஸ்ஹோல்ட்ஸ்ல இருந்து கலெக்டர்ஸ்க்கு பீட்பேக்",
+    "feedbackFromHouseholds": {
+      "gram_panchayat": "ஹவுஸ்ஹோல்ட்ஸ்ல இருந்து கலெக்டர்ஸ்க்கு பீட்பேக்",
+      "municipality": "ஹவுஸ்ஹோல்ட்ஸ்ல இருந்து கலெக்டர்ஸ்க்கு பீட்பேக்",
+      "apartment": "ஹவுஸ்ஹோல்ட்ஸ்ல இருந்து கலெக்டர்ஸ்க்கு பீட்பேக்",
+      "township": "ஹவுஸ்ஹோல்ட்ஸ்ல இருந்து கலெக்டர்ஸ்க்கு பீட்பேக்",
+      "institution_campus": "ஹவுஸ்ஹோல்ட்ஸ்ல இருந்து கலெக்டர்ஸ்க்கு பீட்பேக்"
+    },
     "downloadPdfReport": "PDF ரிப்போர்ட் டவுன்லோட்",
     "generatingPdf": "ரெடியாகுது...",
     "pdfDownloaded": "டெய்லி ரிப்போர்ட் PDF டவுன்லோட் ஆயிடுச்சு!",
@@ -506,7 +795,13 @@
     "peakCollectionHours": "பீக் கலெக்ஷன் டைம்",
     "hourlyDistribution": "மணி நேர கலெக்ஷன் விநியோகம்",
     "peakWindow": "பீக் விண்டோ",
-    "wardWiseBreakdown": "வார்டு வாரியா பிரேக்டவுன்",
+    "wardWiseBreakdown": {
+      "gram_panchayat": "வார்டு வாரியா பிரேக்டவுன்",
+      "municipality": "சப்-வார்டு வாரியா பிரேக்டவுன்",
+      "apartment": "விங் / பிளாக் வாரியா பிரேக்டவுன்",
+      "township": "செக்டார் வாரியா பிரேக்டவுன்",
+      "institution_campus": "பில்டிங் வாரியா பிரேக்டவுன்"
+    },
     "nonCollected": "கலெக்ட் ஆகவில்லை",
     "wasteMaterialLogs": "வேஸ்ட் மெட்டீரியல் லாக்ஸ்",
     "wasteDiversionRate": "வேஸ்ட் டைவர்ஷன் ரேட்",
@@ -539,8 +834,20 @@
     "fieldWorkers": "ஃபீல்ட் வொர்க்கர்கள்",
     "generateQr": "QR பேட்ச் ஜெனரேட்",
     "helpers": "ஹெல்ப்பர்கள்",
-    "householdDetails": "வீட்டின் விவரங்கள்",
-    "householdPerformance": "வீட்டின் செயல்திறன்",
+    "householdDetails": {
+      "gram_panchayat": "வீட்டின் விவரங்கள்",
+      "municipality": "வீட்டின் விவரங்கள்",
+      "apartment": "வீட்டின் விவரங்கள்",
+      "township": "வீட்டின் விவரங்கள்",
+      "institution_campus": "வீட்டின் விவரங்கள்"
+    },
+    "householdPerformance": {
+      "gram_panchayat": "வீட்டின் செயல்திறன்",
+      "municipality": "வீட்டின் செயல்திறன்",
+      "apartment": "வீட்டின் செயல்திறன்",
+      "township": "வீட்டின் செயல்திறன்",
+      "institution_campus": "வீட்டின் செயல்திறன்"
+    },
     "management": "மேனேஜ்மென்ட்",
     "markAttendance": "அட்டெண்டன்ஸ் போடுங்கள்",
     "paymentLedger": "பேமெண்ட் லெட்ஜர்",
@@ -552,16 +859,51 @@
     "selectVehicle": "வாகனம் தேர்வு செய்யுங்கள்",
     "vehicleManagement": "வாகன மேனேஜ்மென்ட்",
     "viewShifts": "ஷிப்ட்கள் பாருங்கள்",
-    "villageSettings": "கிராம செட்டிங்ஸ்",
-    "wardsManagement": "வார்டு மேனேஜ்மென்ட்",
+    "villageSettings": {
+      "gram_panchayat": "கிராம செட்டிங்ஸ்",
+      "municipality": "கிராம செட்டிங்ஸ்",
+      "apartment": "கிராம செட்டிங்ஸ்",
+      "township": "கிராம செட்டிங்ஸ்",
+      "institution_campus": "கிராம செட்டிங்ஸ்"
+    },
+    "wardsManagement": {
+      "gram_panchayat": "வார்டு மேனேஜ்மென்ட்",
+      "municipality": "சப்-வார்டு மேனேஜ்மென்ட்",
+      "apartment": "விங் / பிளாக் மேனேஜ்மென்ட்",
+      "township": "செக்டார் மேனேஜ்மென்ட்",
+      "institution_campus": "பில்டிங் மேனேஜ்மென்ட்"
+    },
     "deleting": "நீக்குகிறது...",
     "peakHours": "பீக் கலெக்ஷன் நேரம்",
-    "wardBreakdown": "வார்டு வாரியான பிரிவு",
+    "wardBreakdown": {
+      "gram_panchayat": "வார்டு வாரியான பிரிவு",
+      "municipality": "சப்-வார்டு வாரியான பிரிவு",
+      "apartment": "விங் / பிளாக் வாரியான பிரிவு",
+      "township": "செக்டார் வாரியான பிரிவு",
+      "institution_campus": "பில்டிங் வாரியான பிரிவு"
+    },
     "landfill": "லேண்ட்ஃபில்",
-    "diversionRate": "வேஸ்ட் டைவர்ஷன் ரேட்"
+    "diversionRate": "வேஸ்ட் டைவர்ஷன் ரேட்",
+    "wards": {
+      "gram_panchayat": "வார்டுகள்",
+      "municipality": "சப்-வார்டுகள்",
+      "apartment": "விங்குகள்",
+      "township": "செக்டார்கள்",
+      "institution_campus": "பில்டிங்கள்"
+    },
+    "reports": "அறிக்கைகள்",
+    "more": "மேலும்",
+    "dashboard": "டாஷ்போர்ட்",
+    "vehicles": "வாகனங்கள்"
   },
   "householdPerformance": {
-    "title": "ஹவுஸ்ஹோல்ட் பெர்பார்மன்ஸ்",
+    "title": {
+      "gram_panchayat": "ஹவுஸ்ஹோல்ட் பெர்பார்மன்ஸ்",
+      "municipality": "ஹவுஸ்ஹோல்ட் பெர்பார்மன்ஸ்",
+      "apartment": "ஹவுஸ்ஹோல்ட் பெர்பார்மன்ஸ்",
+      "township": "ஹவுஸ்ஹோல்ட் பெர்பார்மன்ஸ்",
+      "institution_campus": "ஹவுஸ்ஹோல்ட் பெர்பார்மன்ஸ்"
+    },
     "attention": "கவனம் தேவை",
     "good": "நல்லா இருக்கு",
     "noData": "டேட்டா இல்ல",
@@ -570,8 +912,20 @@
     "mixedWaste": "மிக்சுடு வேஸ்ட்",
     "inactive": "இனாக்டிவ்",
     "never": "எப்பவும் இல்ல",
-    "allWards": "எல்லா வார்ட்ஸ்",
-    "noHouseholdsInCategory": "இந்த கேட்டகிரில ஹவுஸ்ஹோல்ட்ஸ் இல்ல",
+    "allWards": {
+      "gram_panchayat": "எல்லா வார்ட்ஸ்",
+      "municipality": "எல்லா வார்ட்ஸ்",
+      "apartment": "எல்லா வார்ட்ஸ்",
+      "township": "எல்லா வார்ட்ஸ்",
+      "institution_campus": "எல்லா வார்ட்ஸ்"
+    },
+    "noHouseholdsInCategory": {
+      "gram_panchayat": "இந்த கேட்டகிரில ஹவுஸ்ஹோல்ட்ஸ் இல்ல",
+      "municipality": "இந்த கேட்டகிரில ஹவுஸ்ஹோல்ட்ஸ் இல்ல",
+      "apartment": "இந்த கேட்டகிரில ஹவுஸ்ஹோல்ட்ஸ் இல்ல",
+      "township": "இந்த கேட்டகிரில ஹவுஸ்ஹோல்ட்ஸ் இல்ல",
+      "institution_campus": "இந்த கேட்டகிரில ஹவுஸ்ஹோல்ட்ஸ் இல்ல"
+    },
     "neverCollected": "எப்பவும் கலெக்ஷன் ஆகல",
     "lastToday": "இன்னைக்கு",
     "lastYesterday": "நேத்து",
@@ -583,17 +937,47 @@
     "last30Days": "கடைசி 30 நாட்கள்",
     "needsAttention": "கவனம் தேவை",
     "goodStanding": "நல்ல நிலை",
-    "meetingThresholds": "இந்த ஹவுஸ்ஹோல்ட் எல்லா த்ரெஷோல்ட்களையும் மீட் பண்ணுது",
+    "meetingThresholds": {
+      "gram_panchayat": "இந்த ஹவுஸ்ஹோல்ட் எல்லா த்ரெஷோல்ட்களையும் மீட் பண்ணுது",
+      "municipality": "இந்த ஹவுஸ்ஹோல்ட் எல்லா த்ரெஷோல்ட்களையும் மீட் பண்ணுது",
+      "apartment": "இந்த ஹவுஸ்ஹோல்ட் எல்லா த்ரெஷோல்ட்களையும் மீட் பண்ணுது",
+      "township": "இந்த ஹவுஸ்ஹோல்ட் எல்லா த்ரெஷோல்ட்களையும் மீட் பண்ணுது",
+      "institution_campus": "இந்த ஹவுஸ்ஹோல்ட் எல்லா த்ரெஷோல்ட்களையும் மீட் பண்ணுது"
+    },
     "noCollectionData": "கலெக்ஷன் டேட்டா இல்ல",
-    "noRecordedCollections": "இந்த ஹவுஸ்ஹோல்ட்க்கு கலெக்ஷன் ஒன்னும் ரெக்கார்ட் ஆகல",
+    "noRecordedCollections": {
+      "gram_panchayat": "இந்த ஹவுஸ்ஹோல்ட்க்கு கலெக்ஷன் ஒன்னும் ரெக்கார்ட் ஆகல",
+      "municipality": "இந்த ஹவுஸ்ஹோல்ட்க்கு கலெக்ஷன் ஒன்னும் ரெக்கார்ட் ஆகல",
+      "apartment": "இந்த ஹவுஸ்ஹோல்ட்க்கு கலெக்ஷன் ஒன்னும் ரெக்கார்ட் ஆகல",
+      "township": "இந்த ஹவுஸ்ஹோல்ட்க்கு கலெக்ஷன் ஒன்னும் ரெக்கார்ட் ஆகல",
+      "institution_campus": "இந்த ஹவுஸ்ஹோல்ட்க்கு கலெக்ஷன் ஒன்னும் ரெக்கார்ட் ஆகல"
+    },
     "visit": "விசிட் பண்ணு",
     "call": "கால் பண்ணு",
     "noLocationData": "லொகேஷன் டேட்டா இல்ல",
-    "noLocationDataDesc": "இந்த ஹவுஸ்ஹோல்ட்க்கு அட்ரஸ், லொகேஷன் இல்ல",
+    "noLocationDataDesc": {
+      "gram_panchayat": "இந்த ஹவுஸ்ஹோல்ட்க்கு அட்ரஸ், லொகேஷன் இல்ல",
+      "municipality": "இந்த ஹவுஸ்ஹோல்ட்க்கு அட்ரஸ், லொகேஷன் இல்ல",
+      "apartment": "இந்த ஹவுஸ்ஹோல்ட்க்கு அட்ரஸ், லொகேஷன் இல்ல",
+      "township": "இந்த ஹவுஸ்ஹோல்ட்க்கு அட்ரஸ், லொகேஷன் இல்ல",
+      "institution_campus": "இந்த ஹவுஸ்ஹோல்ட்க்கு அட்ரஸ், லொகேஷன் இல்ல"
+    },
     "noPhoneNumber": "போன் நம்பர் இல்ல",
-    "noPhoneNumberDesc": "இந்த ஹவுஸ்ஹோல்ட்க்கு போன் நம்பர் இல்ல",
+    "noPhoneNumberDesc": {
+      "gram_panchayat": "இந்த ஹவுஸ்ஹோல்ட்க்கு போன் நம்பர் இல்ல",
+      "municipality": "இந்த ஹவுஸ்ஹோல்ட்க்கு போன் நம்பர் இல்ல",
+      "apartment": "இந்த ஹவுஸ்ஹோல்ட்க்கு போன் நம்பர் இல்ல",
+      "township": "இந்த ஹவுஸ்ஹோல்ட்க்கு போன் நம்பர் இல்ல",
+      "institution_campus": "இந்த ஹவுஸ்ஹோல்ட்க்கு போன் நம்பர் இல்ல"
+    },
     "monitoringThresholds": "மானிட்டரிங் த்ரெஷோல்ட்ஸ்",
-    "configureThresholds": "ஹவுஸ்ஹோல்ட்ட எப்ப பிளாக் பண்ணனும்னு செட் பண்ணு.",
+    "configureThresholds": {
+      "gram_panchayat": "ஹவுஸ்ஹோல்ட்ட எப்ப பிளாக் பண்ணனும்னு செட் பண்ணு.",
+      "municipality": "ஹவுஸ்ஹோல்ட்ட எப்ப பிளாக் பண்ணனும்னு செட் பண்ணு.",
+      "apartment": "ஹவுஸ்ஹோல்ட்ட எப்ப பிளாக் பண்ணனும்னு செட் பண்ணு.",
+      "township": "ஹவுஸ்ஹோல்ட்ட எப்ப பிளாக் பண்ணனும்னு செட் பண்ணு.",
+      "institution_campus": "ஹவுஸ்ஹோல்ட்ட எப்ப பிளாக் பண்ணனும்னு செட் பண்ணு."
+    },
     "minAvgRating": "குறைந்தபட்ச ஆவரேஜ் செக்ரிகேஷன் ரேட்டிங் (1-5)",
     "maxMixed7Days": "7 நாள்ல அதிகபட்ச மிக்சுடு வேஸ்ட்",
     "maxInactiveDays": "அதிகபட்ச இனாக்டிவ் நாட்கள்",
@@ -808,7 +1192,13 @@
     "activateCycle": "சைக்கிள் ஆக்டிவேட் பண்ணு",
     "activateBillingCycle": "பில்லிங் சைக்கிள் ஆக்டிவேட் பண்ணு",
     "noBillingCycle": "{{month}} க்கு பில்லிங் சைக்கிள் இல்ல",
-    "activateDesc": "எல்லா ஹவுஸ்ஹோல்ட்ஸ்க்கும் பில்ஸ் ரெடி பண்ண பில்லிங் சைக்கிள் ஆக்டிவேட் பண்ணு.",
+    "activateDesc": {
+      "gram_panchayat": "எல்லா ஹவுஸ்ஹோல்ட்ஸ்க்கும் பில்ஸ் ரெடி பண்ண பில்லிங் சைக்கிள் ஆக்டிவேட் பண்ணு.",
+      "municipality": "எல்லா ஹவுஸ்ஹோல்ட்ஸ்க்கும் பில்ஸ் ரெடி பண்ண பில்லிங் சைக்கிள் ஆக்டிவேட் பண்ணு.",
+      "apartment": "எல்லா ஹவுஸ்ஹோல்ட்ஸ்க்கும் பில்ஸ் ரெடி பண்ண பில்லிங் சைக்கிள் ஆக்டிவேட் பண்ணு.",
+      "township": "எல்லா ஹவுஸ்ஹோல்ட்ஸ்க்கும் பில்ஸ் ரெடி பண்ண பில்லிங் சைக்கிள் ஆக்டிவேட் பண்ணு.",
+      "institution_campus": "எல்லா ஹவுஸ்ஹோல்ட்ஸ்க்கும் பில்ஸ் ரெடி பண்ண பில்லிங் சைக்கிள் ஆக்டிவேட் பண்ணு."
+    },
     "billingCycleActivated": "பில்லிங் சைக்கிள் ஆக்டிவேட் ஆயிடுச்சு",
     "billsGenerated": "{{count}} பில்ஸ் ரெடியாயிடுச்சு. எக்ஸ்பெக்டெட் ரெவென்யூ: ₹{{amount}}",
     "activationFailed": "ஆக்டிவேட் ஆகல",
@@ -822,7 +1212,13 @@
     "activating": "ஆக்டிவேட் ஆகுது...",
     "activateAndGenerate": "ஆக்டிவேட் பண்ணி {{count}} பில்ஸ் ரெடி பண்ணு",
     "loadingPreview": "பிரிவியூ லோடு ஆகுது...",
-    "householdLedger": "ஹவுஸ்ஹோல்ட் லெட்ஜர்",
+    "householdLedger": {
+      "gram_panchayat": "ஹவுஸ்ஹோல்ட் லெட்ஜர்",
+      "municipality": "ஹவுஸ்ஹோல்ட் லெட்ஜர்",
+      "apartment": "ஹவுஸ்ஹோல்ட் லெட்ஜர்",
+      "township": "ஹவுஸ்ஹோல்ட் லெட்ஜர்",
+      "institution_campus": "ஹவுஸ்ஹோல்ட் லெட்ஜர்"
+    },
     "searchNameHouse": "பேரு, வீடு# தேடு...",
     "paid": "பேட்",
     "pay": "பே பண்ணு",
@@ -846,7 +1242,13 @@
     "bulkPaymentDesc": "{{count}} பில்ஸ் பேட் ஆக மார்க் ஆயிடுச்சு",
     "bulkPaymentFailed": "பல்க் பேமெண்ட் பெயில்",
     "bulkPaymentFailedDesc": "பல்க் பேமெண்ட் ப்ராசஸ் ஆகல. மறுபடியும் ட்ரை பண்ணு.",
-    "householdPaymentHistory": "ஹவுஸ்ஹோல்ட் பேமெண்ட் ஹிஸ்டரி",
+    "householdPaymentHistory": {
+      "gram_panchayat": "ஹவுஸ்ஹோல்ட் பேமெண்ட் ஹிஸ்டரி",
+      "municipality": "ஹவுஸ்ஹோல்ட் பேமெண்ட் ஹிஸ்டரி",
+      "apartment": "ஹவுஸ்ஹோல்ட் பேமெண்ட் ஹிஸ்டரி",
+      "township": "ஹவுஸ்ஹோல்ட் பேமெண்ட் ஹிஸ்டரி",
+      "institution_campus": "ஹவுஸ்ஹோல்ட் பேமெண்ட் ஹிஸ்டரி"
+    },
     "scanQrToPay": "பே பண்ண QR ஸ்கேன் பண்ணு",
     "creatingPayment": "பேமெண்ட் ரெடியாகுது...",
     "creatingPaymentOrder": "பேமெண்ட் ஆர்டர் ரெடியாகுது...",
@@ -898,8 +1300,14 @@
     "webhookUrl": "Webhook URL",
     "webhookUrlDesc": "இந்த URL ஐ உங்க {{provider}} டேஷ்போர்ட்ல → Webhooks செக்ஷன்ல பேஸ்ட் பண்ணுங்க:",
     "mdrConvenienceFee": "MDR / கன்வீனியன்ஸ் பீ",
-    "villageAbsorbs": "கிராமம் ஏத்துக்கும் (~2%)",
-    "householdPaysExtra": "ஹவுஸ்ஹோல்ட் எக்ஸ்ட்ரா தருவாங்க",
+    "villageAbsorbs": "நிறுவனம் ஏற்கும் (~2%)",
+    "householdPaysExtra": {
+      "gram_panchayat": "ஹவுஸ்ஹோல்ட் எக்ஸ்ட்ரா தருவாங்க",
+      "municipality": "ஹவுஸ்ஹோல்ட் எக்ஸ்ட்ரா தருவாங்க",
+      "apartment": "ஹவுஸ்ஹோல்ட் எக்ஸ்ட்ரா தருவாங்க",
+      "township": "ஹவுஸ்ஹோல்ட் எக்ஸ்ட்ரா தருவாங்க",
+      "institution_campus": "ஹவுஸ்ஹோல்ட் எக்ஸ்ட்ரா தருவாங்க"
+    },
     "mdrPercent": "MDR %",
     "saveAndEncrypt": "சேவ் & என்கிரிப்ட் பண்ணு",
     "gatewayConfigSaved": "கேட்வே கான்பிக் சேவ் ஆயிடுச்சு",
@@ -910,8 +1318,14 @@
     "removeGatewayConfirm": "{{provider}} ஐ டெலீட் பண்ணனுமா?",
     "removeGatewayDesc": "இந்த பேமெண்ட் கேட்வே டெலீட் ஆகிடும்.",
     "missing": "இதெல்லாம் மிஸ் ஆகுது: {{fields}}",
-    "householdPaysMdr": "ஹவுஸ்ஹோல்ட் +{{percent}}%",
-    "villageAbsorbsMdr": "கிராமம் ஏத்துக்கும்",
+    "householdPaysMdr": {
+      "gram_panchayat": "ஹவுஸ்ஹோல்ட் +{{percent}}%",
+      "municipality": "ஹவுஸ்ஹோல்ட் +{{percent}}%",
+      "apartment": "ஹவுஸ்ஹோல்ட் +{{percent}}%",
+      "township": "ஹவுஸ்ஹோல்ட் +{{percent}}%",
+      "institution_campus": "ஹவுஸ்ஹோல்ட் +{{percent}}%"
+    },
+    "villageAbsorbsMdr": "நிறுவனம் ஏற்கும்",
     "editConfig": "கான்பிக் எடிட் பண்ணு",
     "billingCycleHistory": "பில்லிங் சைக்கிள் ஹிஸ்டரி",
     "noBillingCycles": "இன்னும் பில்லிங் சைக்கிள் இல்ல.",
@@ -945,7 +1359,7 @@
   },
   "myBills": {
     "noBills": "பில்ஸ் இல்ல",
-    "notLinkedToHousehold": "உங்க அக்கவுண்ட் இன்னும் எந்த ஹவுஸ்ஹோல்ட்கூடவும் லிங்க் ஆகல.",
+    "notLinkedToHousehold": "உங்கள் கணக்கு இன்னும் இணைக்கப்படவில்லை.",
     "outstandingFees": "பாக்கி குப்பை கலெக்ஷன் பீஸ்",
     "monthsDue": "{{count}} மாதம்(கள்) பாக்கி",
     "payNow": "இப்போ பே பண்ணு",
@@ -987,12 +1401,42 @@
     "paymentFailedTryAgain": "ஏதோ தப்பா போச்சு. மறுபடியும் ட்ரை பண்ணு."
   },
   "households": {
-    "title": "ஹவுஸ்ஹோல்ட்ஸ்",
-    "addHousehold": "ஹவுஸ்ஹோல்ட் ஆட் பண்ணு",
+    "title": {
+      "gram_panchayat": "ஹவுஸ்ஹோல்ட்ஸ்",
+      "municipality": "ஹவுஸ்ஹோல்ட்ஸ்",
+      "apartment": "ஹவுஸ்ஹோல்ட்ஸ்",
+      "township": "ஹவுஸ்ஹோல்ட்ஸ்",
+      "institution_campus": "ஹவுஸ்ஹோல்ட்ஸ்"
+    },
+    "addHousehold": {
+      "gram_panchayat": "ஹவுஸ்ஹோல்ட் ஆட் பண்ணு",
+      "municipality": "ஹவுஸ்ஹோல்ட் ஆட் பண்ணு",
+      "apartment": "ஹவுஸ்ஹோல்ட் ஆட் பண்ணு",
+      "township": "ஹவுஸ்ஹோல்ட் ஆட் பண்ணு",
+      "institution_campus": "ஹவுஸ்ஹோல்ட் ஆட் பண்ணு"
+    },
     "bulkUpload": "பல்க் அப்லோட்",
-    "householdName": "ஹவுஸ்ஹோல்ட் பேர்",
-    "houseNumber": "வீட்டு நம்பர்",
-    "headName": "வீட்டு பெரியவர்",
+    "householdName": {
+      "gram_panchayat": "ஹவுஸ்ஹோல்ட் பேர்",
+      "municipality": "ஹவுஸ்ஹோல்ட் பேர்",
+      "apartment": "ஹவுஸ்ஹோல்ட் பேர்",
+      "township": "ஹவுஸ்ஹோல்ட் பேர்",
+      "institution_campus": "ஹவுஸ்ஹோல்ட் பேர்"
+    },
+    "houseNumber": {
+      "gram_panchayat": "வீட்டு நம்பர்",
+      "municipality": "வீட்டு நம்பர்",
+      "apartment": "வீட்டு நம்பர்",
+      "township": "வீட்டு நம்பர்",
+      "institution_campus": "வீட்டு நம்பர்"
+    },
+    "headName": {
+      "gram_panchayat": "வீட்டு பெரியவர்",
+      "municipality": "வீட்டு பெரியவர்",
+      "apartment": "வீட்டு பெரியவர்",
+      "township": "வீட்டு பெரியவர்",
+      "institution_campus": "வீட்டு பெரியவர்"
+    },
     "phone": "போன் நம்பர்",
     "address": "அட்ரஸ்",
     "qrCode": "QR கோடு",
@@ -1001,7 +1445,13 @@
     "inactive": "இனாக்டிவ்",
     "generateQR": "QR கோடு ரெடி பண்ணு",
     "downloadQR": "QR கோடு டவுன்லோட்",
-    "totalHouseholds": "டோட்டல் ஹவுஸ்ஹோல்ட்ஸ்",
+    "totalHouseholds": {
+      "gram_panchayat": "டோட்டல் ஹவுஸ்ஹோல்ட்ஸ்",
+      "municipality": "டோட்டல் ஹவுஸ்ஹோல்ட்ஸ்",
+      "apartment": "டோட்டல் ஹவுஸ்ஹோல்ட்ஸ்",
+      "township": "டோட்டல் ஹவுஸ்ஹோல்ட்ஸ்",
+      "institution_campus": "டோட்டல் ஹவுஸ்ஹோல்ட்ஸ்"
+    },
     "uploadCSV": "CSV பைல் அப்லோட்",
     "csvTemplate": "CSV டெம்ப்ளேட் டவுன்லோட்"
   },
@@ -1054,7 +1504,13 @@
     "provideFeedback": "பீட்பேக் கொடுங்க",
     "rating": "ரேட்டிங்",
     "comments": "கமெண்ட்ஸ்",
-    "fromHousehold": "ஹவுஸ்ஹோல்ட்ல இருந்து",
+    "fromHousehold": {
+      "gram_panchayat": "ஹவுஸ்ஹோல்ட்ல இருந்து",
+      "municipality": "ஹவுஸ்ஹோல்ட்ல இருந்து",
+      "apartment": "ஹவுஸ்ஹோல்ட்ல இருந்து",
+      "township": "ஹவுஸ்ஹோல்ட்ல இருந்து",
+      "institution_campus": "ஹவுஸ்ஹோல்ட்ல இருந்து"
+    },
     "toCollector": "கலெக்டர்க்கு",
     "feedbackDate": "பீட்பேக் தேதி",
     "positiveComments": "நல்ல கமெண்ட்ஸ்",
@@ -1076,7 +1532,13 @@
     "performanceMetrics": "பெர்பார்மன்ஸ் மெட்ரிக்ஸ்",
     "segregationRates": "செக்ரிகேஷன் ரேட்ஸ்",
     "collectorPerformance": "கலெக்டர் பெர்பார்மன்ஸ்",
-    "householdParticipation": "ஹவுஸ்ஹோல்ட் பார்ட்டிசிபேஷன்",
+    "householdParticipation": {
+      "gram_panchayat": "ஹவுஸ்ஹோல்ட் பார்ட்டிசிபேஷன்",
+      "municipality": "ஹவுஸ்ஹோல்ட் பார்ட்டிசிபேஷன்",
+      "apartment": "ஹவுஸ்ஹோல்ட் பார்ட்டிசிபேஷன்",
+      "township": "ஹவுஸ்ஹோல்ட் பார்ட்டிசிபேஷன்",
+      "institution_campus": "ஹவுஸ்ஹோல்ட் பார்ட்டிசிபேஷன்"
+    },
     "wasteComposition": "குப்பை வகைகள்",
     "environmentalImpact": "சுற்றுச்சூழல் தாக்கம்",
     "applyFilters": "பில்டர்ஸ் அப்ளை பண்ணு",
@@ -1090,7 +1552,13 @@
     "allUsers": "எல்லாருக்கும்",
     "managers": "மேனேஜர்ஸ்க்கு மட்டும்",
     "collectors": "கலெக்டர்ஸ்க்கு மட்டும்",
-    "households": "ஹவுஸ்ஹோல்ட்ஸ்க்கு மட்டும்",
+    "households": {
+      "gram_panchayat": "ஹவுஸ்ஹோல்ட்ஸ்க்கு மட்டும்",
+      "municipality": "ஹவுஸ்ஹோல்ட்ஸ்க்கு மட்டும்",
+      "apartment": "ஹவுஸ்ஹோல்ட்ஸ்க்கு மட்டும்",
+      "township": "ஹவுஸ்ஹோல்ட்ஸ்க்கு மட்டும்",
+      "institution_campus": "ஹவுஸ்ஹோல்ட்ஸ்க்கு மட்டும்"
+    },
     "publishDate": "பப்ளிஷ் தேதி",
     "expiryDate": "எக்ஸ்பயர் தேதி",
     "urgent": "அர்ஜென்ட்",
@@ -1099,18 +1567,30 @@
     "checkLater": "முக்கியமான அப்டேட்ஸ்க்கு அப்பறம் செக் பண்ணுங்க"
   },
   "villages": {
-    "title": "கிராமங்கள்",
-    "addVillage": "கிராமம் ஆட் பண்ணு",
-    "villageName": "கிராமம் பேர்",
-    "villageId": "கிராமம் ID",
+    "title": "நிறுவனங்கள்",
+    "addVillage": "நிறுவனம் சேர்க்கவும்",
+    "villageName": "நிறுவன பெயர்",
+    "villageId": "நிறுவன ID",
     "managerName": "மேனேஜர் பேர்",
     "managerPhone": "மேனேஜர் போன்",
-    "totalVillages": "டோட்டல் கிராமங்கள்",
-    "activeVillages": "ஆக்டிவ் கிராமங்கள்",
-    "villageStats": "கிராமம் ஸ்டாட்ஸ்",
-    "createVillage": "கிராமம் ரெடி பண்ணு",
-    "addWard": "புதிய வார்டு/கிராமம் சேர்க்கவும்",
-    "wardName": "வார்டு/கிராமம் பெயர்"
+    "totalVillages": "மொத்த நிறுவனங்கள்",
+    "activeVillages": "செயலில் நிறுவனங்கள்",
+    "villageStats": "நிறுவன புள்ளிவிவரங்கள்",
+    "createVillage": "நிறுவனம் உருவாக்கவும்",
+    "addWard": {
+      "gram_panchayat": "புதிய வார்டு/கிராமம் சேர்க்கவும்",
+      "municipality": "புதிய சப்-வார்டு/மண்டலம் சேர்க்கவும்",
+      "apartment": "புதிய விங் / பிளாக்/சொசைட்டி சேர்க்கவும்",
+      "township": "புதிய செக்டார்/டவுன்ஷிப் சேர்க்கவும்",
+      "institution_campus": "புதிய பில்டிங்/கேம்பஸ் சேர்க்கவும்"
+    },
+    "wardName": {
+      "gram_panchayat": "வார்டு/கிராமம் பெயர்",
+      "municipality": "சப்-வார்டு/மண்டலம் பெயர்",
+      "apartment": "விங் / பிளாக்/சொசைட்டி பெயர்",
+      "township": "செக்டார்/டவுன்ஷிப் பெயர்",
+      "institution_campus": "பில்டிங்/கேம்பஸ் பெயர்"
+    }
   },
   "profile": {
     "title": "புரொபைல்",
@@ -1126,14 +1606,26 @@
     "updateProfile": "புரொபைல் அப்டேட் பண்ணு"
   },
   "filters": {
-    "selectVillage": "கிராமம் செலக்ட் பண்ணு",
+    "selectVillage": "நிறுவனத்தை தேர்ந்தெடுக்கவும்",
     "selectCollector": "கலெக்டர் செலக்ட் பண்ணு",
-    "selectHousehold": "ஹவுஸ்ஹோல்ட் செலக்ட் பண்ணு",
+    "selectHousehold": {
+      "gram_panchayat": "ஹவுஸ்ஹோல்ட் செலக்ட் பண்ணு",
+      "municipality": "ஹவுஸ்ஹோல்ட் செலக்ட் பண்ணு",
+      "apartment": "ஹவுஸ்ஹோல்ட் செலக்ட் பண்ணு",
+      "township": "ஹவுஸ்ஹோல்ட் செலக்ட் பண்ணு",
+      "institution_campus": "ஹவுஸ்ஹோல்ட் செலக்ட் பண்ணு"
+    },
     "startDate": "ஆரம்ப தேதி",
     "endDate": "கடைசி தேதி",
-    "allVillages": "எல்லா கிராமம்",
+    "allVillages": "அனைத்து நிறுவனங்கள்",
     "allCollectors": "எல்லா கலெக்டர்ஸ்",
-    "allHouseholds": "எல்லா ஹவுஸ்ஹோல்ட்ஸ்"
+    "allHouseholds": {
+      "gram_panchayat": "எல்லா ஹவுஸ்ஹோல்ட்ஸ்",
+      "municipality": "எல்லா ஹவுஸ்ஹோல்ட்ஸ்",
+      "apartment": "எல்லா ஹவுஸ்ஹோல்ட்ஸ்",
+      "township": "எல்லா ஹவுஸ்ஹோல்ட்ஸ்",
+      "institution_campus": "எல்லா ஹவுஸ்ஹோல்ட்ஸ்"
+    }
   },
   "messages": {
     "noData": "டேட்டா இல்ல",
@@ -1201,5 +1693,87 @@
     "excellent": "மிகச்சிறந்தது",
     "poor": "குறைவு",
     "veryPoor": "மிகவும் குறைவு"
+  },
+  "terminology": {
+    "gram_panchayat": {
+      "org": "கிராமம்",
+      "orgPlural": "கிராமங்கள்",
+      "household": "வீடு",
+      "householdPlural": "வீடுகள்",
+      "headName": "குடும்பத் தலைவர்",
+      "houseNumber": "வீட்டு எண்",
+      "ward": "வார்டு",
+      "wardPlural": "வார்டுகள்",
+      "collector": "கழிவு சேகரிப்பாளர்",
+      "collectorPlural": "கழிவு சேகரிப்பாளர்கள்",
+      "familySize": "குடும்ப அளவு",
+      "address": "முகவரி",
+      "session": "வாகன செஷன்",
+      "sessionPlural": "வாகன செஷன்கள்"
+    },
+    "municipality": {
+      "org": "வார்டு / மண்டலம்",
+      "orgPlural": "வார்டுகள் / மண்டலங்கள்",
+      "household": "சொத்து",
+      "householdPlural": "சொத்துகள்",
+      "headName": "சொத்து உரிமையாளர்",
+      "houseNumber": "கதவு எண்",
+      "ward": "சப்-வார்டு",
+      "wardPlural": "சப்-வார்டுகள்",
+      "collector": "சுகாதார பணியாளர்",
+      "collectorPlural": "சுகாதார பணியாளர்கள்",
+      "familySize": "குடியிருப்பாளர்கள்",
+      "address": "முகவரி",
+      "session": "வாகன செஷன்",
+      "sessionPlural": "வாகன செஷன்கள்"
+    },
+    "apartment": {
+      "org": "சொசைட்டி",
+      "orgPlural": "சொசைட்டிகள்",
+      "household": "ஃபிளாட்",
+      "householdPlural": "ஃபிளாட்கள்",
+      "headName": "ஃபிளாட் உரிமையாளர்",
+      "houseNumber": "ஃபிளாட் எண்",
+      "ward": "விங் / பிளாக்",
+      "wardPlural": "விங்குகள் / பிளாக்குகள்",
+      "collector": "ஹவுஸ்கீப்பிங் ஸ்டாஃப்",
+      "collectorPlural": "ஹவுஸ்கீப்பிங் ஸ்டாஃப்",
+      "familySize": "குடியிருப்பாளர்கள்",
+      "address": "தளம் & விங்",
+      "session": "கலெக்ஷன் செஷன்",
+      "sessionPlural": "கலெக்ஷன் செஷன்கள்"
+    },
+    "township": {
+      "org": "டவுன்ஷிப்",
+      "orgPlural": "டவுன்ஷிப்கள்",
+      "household": "பிளாட்",
+      "householdPlural": "பிளாட்கள்",
+      "headName": "பிளாட் உரிமையாளர்",
+      "houseNumber": "பிளாட் எண்",
+      "ward": "செக்டார்",
+      "wardPlural": "செக்டார்கள்",
+      "collector": "கலெக்ஷன் ஸ்டாஃப்",
+      "collectorPlural": "கலெக்ஷன் ஸ்டாஃப்",
+      "familySize": "குடியிருப்பாளர்கள்",
+      "address": "தெரு / பிளாக்",
+      "session": "வாகன செஷன்",
+      "sessionPlural": "வாகன செஷன்கள்"
+    },
+    "institution_campus": {
+      "org": "கேம்பஸ்",
+      "orgPlural": "கேம்பஸ்கள்",
+      "household": "யூனிட்",
+      "householdPlural": "யூனிட்கள்",
+      "headName": "யூனிட் ஹெட்",
+      "houseNumber": "யூனிட் எண்",
+      "ward": "பில்டிங்",
+      "wardPlural": "பில்டிங்கள்",
+      "collector": "ஃபெசிலிட்டி ஸ்டாஃப்",
+      "collectorPlural": "ஃபெசிலிட்டி ஸ்டாஃப்",
+      "familySize": "குடியிருப்பாளர்கள்",
+      "address": "பில்டிங் & தளம்",
+      "session": "கலெக்ஷன் செஷன்",
+      "sessionPlural": "கலெக்ஷன் செஷன்கள்"
+    }
   }
 }

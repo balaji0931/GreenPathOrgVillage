@@ -1,6 +1,7 @@
 import type { Express } from "express";
 import { storage } from "../../storage";
 import bcrypt from "bcrypt";
+import { format } from "date-fns";
 
 export function registerModeratorOperationsRoutes(app: Express, requireAuth: any, requireRole: any) {
     app.get('/api/moderator/villages', requireAuth, requireRole(['moderator']), async (req, res) => {
@@ -10,6 +11,65 @@ export function registerModeratorOperationsRoutes(app: Express, requireAuth: any
             res.json(villages);
         } catch (error) {
             res.status(500).json({ message: "Failed to get villages" });
+        }
+    });
+
+    // Overview stats using pre-aggregated dailyVillageStats (zero raw scans)
+    app.get('/api/moderator/overview-stats', requireAuth, requireRole(['moderator']), async (req, res) => {
+        try {
+            const moderatorId = req.session.userId!;
+            const villages = await storage.getModeratorVillages(moderatorId);
+            const villageIds = villages.map((v: any) => v.villageId);
+
+            const dateParam = req.query.date as string;
+            const date = dateParam || format(new Date(), 'yyyy-MM-dd');
+
+            const stats = await storage.getModeratorOverviewStats(villageIds, date);
+            res.json(stats);
+        } catch (error) {
+            res.status(500).json({ message: "Failed to get overview stats" });
+        }
+    });
+
+    // Village daily report - proxy to premium analytics with moderator access check
+    app.get('/api/moderator/village/:villageId/report', requireAuth, requireRole(['moderator']), async (req, res) => {
+        try {
+            const { villageId } = req.params;
+            const moderatorId = req.session.userId!;
+
+            // Verify moderator has access to this village
+            const assignedVillages = await storage.getModeratorVillages(moderatorId);
+            const isAssigned = assignedVillages.some((v: any) => v.villageId === villageId);
+            if (!isAssigned) {
+                return res.status(403).json({ message: "Access denied to this village" });
+            }
+
+            const date = (req.query.date as string) || format(new Date(), 'yyyy-MM-dd');
+            const data = await storage.getPremiumReportData(villageId, date);
+            res.json(data);
+        } catch (error) {
+            res.status(500).json({ message: "Failed to get village report" });
+        }
+    });
+
+    // Village attendance data - proxy for moderator (read-only)
+    app.get('/api/moderator/village/:villageId/attendance', requireAuth, requireRole(['moderator']), async (req, res) => {
+        try {
+            const { villageId } = req.params;
+            const moderatorId = req.session.userId!;
+
+            const assignedVillages = await storage.getModeratorVillages(moderatorId);
+            const isAssigned = assignedVillages.some((v: any) => v.villageId === villageId);
+            if (!isAssigned) {
+                return res.status(403).json({ message: "Access denied to this village" });
+            }
+
+            const date = (req.query.date as string) || format(new Date(), 'yyyy-MM-dd');
+            const workerType = (req.query.workerType as string) || 'collector';
+            const data = await storage.getVillageAttendanceDaily(villageId, date, workerType);
+            res.json(data);
+        } catch (error) {
+            res.status(500).json({ message: "Failed to get attendance data" });
         }
     });
 

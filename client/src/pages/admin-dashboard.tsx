@@ -22,6 +22,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import ActivityLog from "@/components/ActivityLog";
+import { UNIT_TYPES } from '@/constants/unitTypes';
 import { DataExportWizard } from "@/components/DataExportWizard";
 
 export default function AdminDashboard() {
@@ -31,12 +32,14 @@ export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState("villages");
 
   const [createdCredentials, setCreatedCredentials] = useState<any>(null);
-  const [villageList, setVillageList] = useState([{ villageName: "", managerName: "", managerPhone: "" }]);
+  const [villageList, setVillageList] = useState([{ villageName: "", managerName: "", managerPhone: "", unitType: "gram_panchayat" }]);
 
   const [newVillage, setNewVillage] = useState({
     villageName: "",
     managerName: "",
     managerPhone: "",
+    unitType: "gram_panchayat",
+    maxHouseholds: 0,
   });
 
   const [newModerator, setNewModerator] = useState({
@@ -112,17 +115,17 @@ export default function AdminDashboard() {
     onSuccess: (data) => {
       toast({
         title: "Success",
-        description: "Village and manager created successfully",
+        description: "Organization and manager created successfully",
       });
       setCreatedCredentials(data.manager.credentials);
-      setNewVillage({ villageName: "", managerName: "", managerPhone: "" });
+      setNewVillage({ villageName: "", managerName: "", managerPhone: "", unitType: "gram_panchayat", maxHouseholds: 0 });
       queryClient.invalidateQueries({ queryKey: ["/api/villages"] });
       queryClient.invalidateQueries({ queryKey: ["/api/managers"] });
     },
     onError: () => {
       toast({
         title: "Error",
-        description: "Failed to create village",
+        description: "Failed to create organization",
         variant: "destructive",
       });
     },
@@ -144,16 +147,16 @@ export default function AdminDashboard() {
     onSuccess: (results) => {
       toast({
         title: "Success",
-        description: `${results.length} villages created successfully`,
+        description: `${results.length} organizations created successfully`,
       });
-      setVillageList([{ villageName: "", managerName: "", managerPhone: "" }]);
+      setVillageList([{ villageName: "", managerName: "", managerPhone: "", unitType: "gram_panchayat" }]);
       queryClient.invalidateQueries({ queryKey: ["/api/villages"] });
       queryClient.invalidateQueries({ queryKey: ["/api/managers"] });
     },
     onError: () => {
       toast({
         title: "Error",
-        description: "Failed to create villages",
+        description: "Failed to create organizations",
         variant: "destructive",
       });
     },
@@ -315,7 +318,7 @@ export default function AdminDashboard() {
     onSuccess: () => {
       toast({
         title: "Success",
-        description: "Village deleted successfully",
+        description: "Organization deleted successfully",
       });
       queryClient.invalidateQueries({ queryKey: ["/api/villages"] });
       queryClient.invalidateQueries({ queryKey: ["/api/managers"] });
@@ -323,7 +326,7 @@ export default function AdminDashboard() {
     onError: () => {
       toast({
         title: "Error",
-        description: "Failed to delete village",
+        description: "Failed to delete organization",
         variant: "destructive",
       });
     },
@@ -448,14 +451,14 @@ export default function AdminDashboard() {
     onSuccess: () => {
       toast({
         title: "Success",
-        description: "Village location services settings updated successfully",
+        description: "Location services settings updated successfully",
       });
       queryClient.invalidateQueries({ queryKey: ["/api/villages"] });
     },
     onError: () => {
       toast({
         title: "Error",
-        description: "Failed to update village location services settings",
+        description: "Failed to update location services settings",
         variant: "destructive",
       });
     },
@@ -469,14 +472,14 @@ export default function AdminDashboard() {
     onSuccess: () => {
       toast({
         title: "Success",
-        description: "Village image upload settings updated successfully",
+        description: "Image upload settings updated successfully",
       });
       queryClient.invalidateQueries({ queryKey: ["/api/villages"] });
     },
     onError: () => {
       toast({
         title: "Error",
-        description: "Failed to update village image upload settings",
+        description: "Failed to update image upload settings",
         variant: "destructive",
       });
     },
@@ -490,7 +493,7 @@ export default function AdminDashboard() {
     onSuccess: () => {
       toast({
         title: "Success",
-        description: "Village proximity alerts settings updated successfully",
+        description: "Proximity alerts settings updated successfully",
       });
       queryClient.invalidateQueries({ queryKey: ["/api/villages"] });
     },
@@ -511,14 +514,14 @@ export default function AdminDashboard() {
     onSuccess: () => {
       toast({
         title: "Success",
-        description: "Village payments settings updated successfully",
+        description: "Payments settings updated successfully",
       });
       queryClient.invalidateQueries({ queryKey: ["/api/villages"] });
     },
     onError: () => {
       toast({
         title: "Error",
-        description: "Failed to update village payments settings",
+        description: "Failed to update payments settings",
         variant: "destructive",
       });
     },
@@ -532,14 +535,14 @@ export default function AdminDashboard() {
     onSuccess: () => {
       toast({
         title: "Success",
-        description: "Village attendance settings updated successfully",
+        description: "Attendance settings updated successfully",
       });
       queryClient.invalidateQueries({ queryKey: ["/api/villages"] });
     },
     onError: () => {
       toast({
         title: "Error",
-        description: "Failed to update village attendance settings",
+        description: "Failed to update attendance settings",
         variant: "destructive",
       });
     },
@@ -554,14 +557,14 @@ export default function AdminDashboard() {
     onSuccess: () => {
       toast({
         title: "Success",
-        description: "Village assigned to moderator successfully",
+        description: "Organization assigned to moderator successfully",
       });
       queryClient.invalidateQueries({ queryKey: ["/api/moderators"] });
     },
     onError: () => {
       toast({
         title: "Error",
-        description: "Failed to assign village to moderator",
+        description: "Failed to assign organization to moderator",
         variant: "destructive",
       });
     },
@@ -576,14 +579,14 @@ export default function AdminDashboard() {
     onSuccess: () => {
       toast({
         title: "Success",
-        description: "Village removed from moderator successfully",
+        description: "Organization removed from moderator successfully",
       });
       queryClient.invalidateQueries({ queryKey: ["/api/moderators"] });
     },
     onError: () => {
       toast({
         title: "Error",
-        description: "Failed to remove village from moderator",
+        description: "Failed to remove organization from moderator",
         variant: "destructive",
       });
     },
@@ -603,7 +606,7 @@ export default function AdminDashboard() {
     onSuccess: (results) => {
       toast({
         title: "Success",
-        description: `${results.length} villages assigned successfully`,
+        description: `${results.length} organizations assigned successfully`,
       });
       setBulkAssignVillages([]);
       queryClient.invalidateQueries({ queryKey: ["/api/moderators"] });
@@ -611,7 +614,7 @@ export default function AdminDashboard() {
     onError: () => {
       toast({
         title: "Error",
-        description: "Failed to assign villages",
+        description: "Failed to assign organizations",
         variant: "destructive",
       });
     },
@@ -642,7 +645,7 @@ export default function AdminDashboard() {
   });
 
   const addVillageToList = () => {
-    setVillageList([...villageList, { villageName: "", managerName: "", managerPhone: "" }]);
+    setVillageList([...villageList, { villageName: "", managerName: "", managerPhone: "", unitType: "gram_panchayat" }]);
   };
 
   const removeVillageFromList = (index: number) => {
@@ -681,7 +684,7 @@ export default function AdminDashboard() {
 
 
   const navigationItems = [
-    { id: "villages", label: "Villages", icon: Building2 },
+    { id: "villages", label: "Organizations", icon: Building2 },
     { id: "managers", label: "Managers", icon: Users },
     { id: "moderators", label: "Moderators", icon: UserPlus },
     { id: "announcements", label: "Announcements", icon: Bell },
@@ -698,30 +701,63 @@ export default function AdminDashboard() {
     <div className="space-y-4 sm:space-y-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h2 className="text-2xl sm:text-3xl font-bold">Village Management</h2>
-          <p className="text-muted-foreground">Create and manage villages</p>
+          <h2 className="text-2xl sm:text-3xl font-bold">Organization Management</h2>
+          <p className="text-muted-foreground">Create and manage organizations</p>
         </div>
         <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
           <Dialog>
             <DialogTrigger asChild>
               <Button className="w-full sm:w-auto">
                 <Plus className="h-4 w-4 mr-2" />
-                Add Village
+                Add Organization
               </Button>
             </DialogTrigger>
             <DialogContent className="max-w-[95vw] sm:max-w-md">
               <DialogHeader>
-                <DialogTitle>Add New Village</DialogTitle>
+                <DialogTitle>Add New Organization</DialogTitle>
               </DialogHeader>
               <div className="space-y-4">
                 <div>
-                  <Label htmlFor="villageName">Village Name</Label>
+                  <Label htmlFor="villageName">Organization Name</Label>
                   <Input
                     id="villageName"
                     value={newVillage.villageName}
                     onChange={(e) => setNewVillage({ ...newVillage, villageName: e.target.value })}
-                    placeholder="Enter village name"
+                    placeholder="Enter organization name"
                   />
+                </div>
+                <div>
+                  <Label htmlFor="unitType">Organization Type</Label>
+                  <Select
+                    value={newVillage.unitType}
+                    onValueChange={(value) => setNewVillage({ ...newVillage, unitType: value })}
+                  >
+                    <SelectTrigger id="unitType">
+                      <SelectValue placeholder="Select type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {UNIT_TYPES.map((ut) => (
+                        <SelectItem key={ut.code} value={ut.code}>
+                          <div className="flex flex-col">
+                            <span>{ut.name}</span>
+                            <span className="text-xs text-muted-foreground">{ut.helper}</span>
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label htmlFor="maxHouseholds">Max Households Allowed</Label>
+                  <Input
+                    id="maxHouseholds"
+                    type="number"
+                    min="0"
+                    value={newVillage.maxHouseholds}
+                    onChange={(e) => setNewVillage({ ...newVillage, maxHouseholds: parseInt(e.target.value) || 0 })}
+                    placeholder="e.g. 500"
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">Maximum QR codes (households) this org can create. Set 0 to block.</p>
                 </div>
                 <div>
                   <Label htmlFor="managerName">Manager Name</Label>
@@ -746,7 +782,7 @@ export default function AdminDashboard() {
                   disabled={createVillageMutation.isPending}
                   className="w-full"
                 >
-                  {createVillageMutation.isPending ? "Creating..." : "Create Village"}
+                  {createVillageMutation.isPending ? "Creating..." : "Create Organization"}
                 </Button>
               </div>
             </DialogContent>
@@ -761,13 +797,13 @@ export default function AdminDashboard() {
             </DialogTrigger>
             <DialogContent className="max-w-[95vw] sm:max-w-2xl max-h-[90vh] overflow-y-auto">
               <DialogHeader>
-                <DialogTitle>Add Multiple Villages</DialogTitle>
+                <DialogTitle>Add Multiple Organizations</DialogTitle>
               </DialogHeader>
               <div className="space-y-4">
                 {villageList.map((village, index) => (
                   <div key={index} className="border p-3 sm:p-4 rounded-lg">
                     <div className="flex justify-between items-center mb-2">
-                      <h4 className="font-medium text-sm sm:text-base">Village {index + 1}</h4>
+                      <h4 className="font-medium text-sm sm:text-base">Organization {index + 1}</h4>
                       {villageList.length > 1 && (
                         <Button
                           variant="ghost"
@@ -780,7 +816,7 @@ export default function AdminDashboard() {
                     </div>
                     <div className="grid grid-cols-1 gap-2">
                       <Input
-                        placeholder="Village Name"
+                        placeholder="Organization Name"
                         value={village.villageName}
                         onChange={(e) => updateVillageInList(index, 'villageName', e.target.value)}
                         className="text-sm"
@@ -803,14 +839,14 @@ export default function AdminDashboard() {
                 <div className="flex flex-col sm:flex-row gap-2">
                   <Button onClick={addVillageToList} variant="outline" className="flex-1">
                     <Plus className="h-4 w-4 mr-2" />
-                    Add Another Village
+                    Add Another Organization
                   </Button>
                   <Button
                     onClick={() => createMultipleVillagesMutation.mutate(villageList)}
                     disabled={createMultipleVillagesMutation.isPending}
                     className="flex-1"
                   >
-                    {createMultipleVillagesMutation.isPending ? "Creating..." : "Create All Villages"}
+                    {createMultipleVillagesMutation.isPending ? "Creating..." : "Create All Organizations"}
                   </Button>
                 </div>
               </div>
@@ -819,18 +855,20 @@ export default function AdminDashboard() {
         </div>
       </div>
 
-      {/* Villages Table */}
+      {/* Organizations Table */}
       <Card>
         <CardHeader className="p-3 sm:p-6">
-          <CardTitle className="text-lg sm:text-xl">All Villages</CardTitle>
+          <CardTitle className="text-lg sm:text-xl">All Organizations</CardTitle>
         </CardHeader>
         <CardContent className="p-3 sm:p-6 pt-0">
           <div className="overflow-x-auto">
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead className="text-xs sm:text-sm">Village ID</TableHead>
+                  <TableHead className="text-xs sm:text-sm">Org ID</TableHead>
                   <TableHead className="text-xs sm:text-sm">Name</TableHead>
+                  <TableHead className="text-xs sm:text-sm hidden sm:table-cell">Type</TableHead>
+                  <TableHead className="text-xs sm:text-sm hidden sm:table-cell">Max Limit</TableHead>
                   <TableHead className="text-xs sm:text-sm hidden sm:table-cell">Households</TableHead>
                   <TableHead className="text-xs sm:text-sm hidden sm:table-cell">Collectors</TableHead>
                   <TableHead className="text-xs sm:text-sm">Image Upload</TableHead>
@@ -846,6 +884,28 @@ export default function AdminDashboard() {
                   <TableRow key={village.id}>
                     <TableCell className="font-medium text-xs sm:text-sm">{village.villageId}</TableCell>
                     <TableCell className="text-xs sm:text-sm">{village.name}</TableCell>
+                    <TableCell className="text-xs sm:text-sm hidden sm:table-cell">
+                      <Badge variant="outline" className="text-[10px] font-medium">
+                        {UNIT_TYPES.find(ut => ut.code === village.unitType)?.name || 'Gram Panchayat'}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="text-xs sm:text-sm hidden sm:table-cell">
+                      <Input
+                        type="number"
+                        min="0"
+                        className="w-20 h-7 text-xs"
+                        defaultValue={village.maxHouseholds ?? 0}
+                        onBlur={(e) => {
+                          const val = parseInt(e.target.value) || 0;
+                          if (val !== (village.maxHouseholds ?? 0)) {
+                            apiRequest('PUT', `/api/villages/${village.villageId}`, { maxHouseholds: val }).then(() => {
+                              queryClient.invalidateQueries({ queryKey: ['/api/villages'] });
+                              toast({ title: 'Updated', description: `Household limit set to ${val}` });
+                            });
+                          }
+                        }}
+                      />
+                    </TableCell>
                     <TableCell className="text-xs sm:text-sm hidden sm:table-cell">{village.totalHouseholds || 0}</TableCell>
                     <TableCell className="text-xs sm:text-sm hidden sm:table-cell">{village.totalCollectors || 0}</TableCell>
                     <TableCell className="text-xs sm:text-sm">
@@ -1083,7 +1143,7 @@ export default function AdminDashboard() {
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h2 className="text-2xl sm:text-3xl font-bold">Moderator Management</h2>
-          <p className="text-muted-foreground">Create and manage moderators with village assignments</p>
+          <p className="text-muted-foreground">Create and manage moderators with organization assignments</p>
         </div>
         <Dialog>
           <DialogTrigger asChild>
@@ -1197,7 +1257,7 @@ export default function AdminDashboard() {
                           </Badge>
                         ))}
                         {(!moderator.villages || moderator.villages.length === 0) && (
-                          <span className="text-muted-foreground text-xs">No villages assigned</span>
+                          <span className="text-muted-foreground text-xs">No organizations assigned</span>
                         )}
                       </div>
                     </TableCell>
@@ -1233,12 +1293,12 @@ export default function AdminDashboard() {
                                     </div>
                                   ))}
                                   {(!moderator.villages || moderator.villages.length === 0) && (
-                                    <p className="text-muted-foreground text-sm">No villages assigned</p>
+                                    <p className="text-muted-foreground text-sm">No organizations assigned</p>
                                   )}
                                 </div>
                               </div>
                               <div>
-                                <Label>Assign New Villages</Label>
+                                <Label>Assign New Organizations</Label>
                                 <div className="space-y-3">
                                   <div className="space-y-2 max-h-32 overflow-y-auto border rounded p-2">
                                     {villages?.filter((village: any) =>

@@ -74,6 +74,8 @@ export async function getVillages(): Promise<Village[]> {
         notificationWindowStart: villages.notificationWindowStart,
         notificationWindowEnd: villages.notificationWindowEnd,
         collectorWasteLogEnabled: villages.collectorWasteLogEnabled,
+        unitType: villages.unitType,
+        maxHouseholds: villages.maxHouseholds,
         createdAt: villages.createdAt,
         updatedAt: villages.updatedAt,
     };
@@ -105,6 +107,8 @@ export async function getVillageByVillageId(villageId: string): Promise<Village 
         notificationWindowStart: villages.notificationWindowStart,
         notificationWindowEnd: villages.notificationWindowEnd,
         collectorWasteLogEnabled: villages.collectorWasteLogEnabled,
+        unitType: villages.unitType,
+        maxHouseholds: villages.maxHouseholds,
         createdAt: villages.createdAt,
         updatedAt: villages.updatedAt,
     }).from(villages).where(eq(villages.villageId, villageId));

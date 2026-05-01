@@ -9,6 +9,8 @@ const mockStorage = {
     createUser: jest.fn(),
     updateQRCodeStatus: jest.fn(),
     getQRCodesByBatch: jest.fn(),
+    getVillageByVillageId: jest.fn(),
+    getQRCodeCountByVillage: jest.fn(),
 };
 jest.unstable_mockModule('../../../server/storage', () => ({
     storage: mockStorage,
@@ -38,6 +40,8 @@ describe('qr-code.service', () => {
         test('creates batch of QR codes (DB only, no Cloudinary)', async () => {
             mockStorage.getNextBatchId.mockResolvedValue('BATCH-V001-001' as never);
             mockStorage.getNextQRCodeUid.mockResolvedValue(['GEN-V001-0001', 'GEN-V001-0002'] as never);
+            mockStorage.getVillageByVillageId.mockResolvedValue({ villageId: 'V001', maxHouseholds: 50, unitType: 'gram_panchayat' } as never);
+            mockStorage.getQRCodeCountByVillage.mockResolvedValue(0 as never);
             mockStorage.createBatchQRCodes.mockResolvedValue([
                 { uid: 'GEN-V001-0001', batchId: 'BATCH-V001-001' },
                 { uid: 'GEN-V001-0002', batchId: 'BATCH-V001-001' },
@@ -150,6 +154,7 @@ describe('qr-code.service', () => {
             mockStorage.getQRCodesByBatch.mockResolvedValue([
                 { uid: 'GEN-V001-0001', villageId: 'V001' },
             ] as never);
+            mockStorage.getVillageByVillageId.mockResolvedValue({ villageId: 'V001', unitType: 'gram_panchayat' } as never);
 
             const result = await generateBatchPDF('BATCH-V001-001');
             expect(Buffer.isBuffer(result)).toBe(true);

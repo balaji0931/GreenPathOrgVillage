@@ -5,6 +5,8 @@ import {
   validateQRAccess,
   mapQRToHousehold,
   generateBatchPDF,
+  generateUnmappedBatchPDF,
+  generateAllUnmappedPDF,
 } from "./qr-code.service";
 import { logAction } from "../audit/audit.storage";
 
@@ -25,7 +27,37 @@ export function registerQRCodeRoutes(app: Express, requireAuth: any, requireRole
       if (error.message === "Quantity must be between 1 and 500") {
         return res.status(400).json({ message: error.message });
       }
+      if (error.message?.startsWith("LIMIT_EXCEEDED:")) {
+        const [, remaining, max] = error.message.split(":");
+        return res.status(403).json({
+          message: `Household limit reached (${max}). You can create ${remaining} more. Contact support@greenpathindia.in to increase your limit.`,
+          code: "LIMIT_EXCEEDED",
+          remaining: Number(remaining),
+          max: Number(max),
+        });
+      }
       res.status(500).json({ message: "Failed to create QR codes" });
+    }
+  });
+
+  // QR stats for the village (used by manager dashboard progress bar)
+  app.get('/api/qr-codes/stats', requireAuth, requireRole(['manager']), requireVillageAccess, async (req, res) => {
+    try {
+      const villageId = req.session.villageId!;
+      const village = await storage.getVillageByVillageId(villageId);
+      const total = await storage.getQRCodeCountByVillage(villageId);
+      const unmapped = await storage.getUnmappedQRCodesByVillage(villageId);
+      const max = (village as any)?.maxHouseholds ?? 0;
+
+      res.json({
+        total,
+        mapped: total - unmapped.length,
+        unmapped: unmapped.length,
+        max,
+        remaining: Math.max(0, max - total),
+      });
+    } catch (error) {
+      res.status(500).json({ message: "Failed to get QR stats" });
     }
   });
 
@@ -55,6 +87,40 @@ export function registerQRCodeRoutes(app: Express, requireAuth: any, requireRole
         return res.status(404).json({ message: error.message });
       }
       res.status(500).json({ message: "Failed to generate PDF" });
+    }
+  });
+
+  // Unmapped-only PDF for a specific batch
+  app.get('/api/qr-codes/batch/:batchId/unmapped-pdf', requireAuth, requireRole(['manager']), requireVillageAccess, async (req, res) => {
+    try {
+      const { batchId } = req.params;
+      const pdfBuffer = await generateUnmappedBatchPDF(batchId);
+
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', `attachment; filename="${batchId}-unmapped-qr-codes.pdf"`);
+      res.send(pdfBuffer);
+    } catch (error: any) {
+      if (error.message === "No unmapped QR codes in this batch") {
+        return res.status(404).json({ message: error.message });
+      }
+      res.status(500).json({ message: "Failed to generate unmapped PDF" });
+    }
+  });
+
+  // All unmapped QR codes across all batches for the village
+  app.get('/api/qr-codes/unmapped/pdf', requireAuth, requireRole(['manager']), requireVillageAccess, async (req, res) => {
+    try {
+      const villageId = req.session.villageId!;
+      const pdfBuffer = await generateAllUnmappedPDF(villageId);
+
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', `attachment; filename="all-unmapped-qr-codes.pdf"`);
+      res.send(pdfBuffer);
+    } catch (error: any) {
+      if (error.message === "No unmapped QR codes") {
+        return res.status(404).json({ message: error.message });
+      }
+      res.status(500).json({ message: "Failed to generate unmapped PDF" });
     }
   });
 

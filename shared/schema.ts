@@ -22,6 +22,8 @@ export const villages = pgTable("villages", {
   notificationWindowStart: text("notification_window_start").default("05:30"), // HH:MM IST - earliest push time
   notificationWindowEnd: text("notification_window_end").default("13:00"), // HH:MM IST - latest push time
   collectorWasteLogEnabled: boolean("collector_waste_log_enabled").default(false), // Manager toggle: let collectors enter daily waste logs
+  unitType: text("unit_type").default("gram_panchayat"), // Organization type: gram_panchayat, municipality, apartment, township, institution_campus
+  maxHouseholds: integer("max_households").default(50), // Admin-set cap: max QR codes (mapped+unmapped) allowed for this org
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });

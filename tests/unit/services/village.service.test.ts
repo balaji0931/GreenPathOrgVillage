@@ -72,6 +72,8 @@ describe('village.service', () => {
                 villageId: 'V001',
                 name: 'Test Village',
                 paymentsEnabled: false,
+                unitType: 'gram_panchayat',
+                maxHouseholds: 50,
             });
             expect(mockStorage.createUser).toHaveBeenCalledWith(
                 expect.objectContaining({

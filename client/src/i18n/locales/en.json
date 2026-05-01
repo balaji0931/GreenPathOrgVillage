@@ -83,9 +83,21 @@
   },
   "roles": {
     "admin": "Administrator",
-    "manager": "Village Manager",
+    "manager": {
+      "gram_panchayat": "Village Manager",
+      "municipality": "Ward Manager",
+      "apartment": "Society Manager",
+      "township": "Township Manager",
+      "institution_campus": "Campus Manager"
+    },
     "collector": "Waste Collector",
-    "generator": "Household Generator"
+    "generator": {
+      "gram_panchayat": "Household User",
+      "municipality": "Property User",
+      "apartment": "Flat User",
+      "township": "Plot User",
+      "institution_campus": "Unit User"
+    }
   },
   "dashboard": {
     "welcome": "Welcome",
@@ -98,14 +110,20 @@
   },
   "navigation": {
     "dashboard": "Dashboard",
-    "households": "Households",
+    "households": {
+      "gram_panchayat": "Households",
+      "municipality": "Properties",
+      "apartment": "Flats",
+      "township": "Plots",
+      "institution_campus": "Units"
+    },
     "collectors": "Collectors",
     "collections": "Collections",
     "issues": "Issues",
     "feedback": "Feedback",
     "reports": "Reports",
     "announcements": "Announcements",
-    "villages": "Villages",
+    "villages": "Organizations",
     "managers": "Managers",
     "profile": "Profile",
     "settings": "Settings",
@@ -121,22 +139,76 @@
     "todayProgress": "Today's Progress",
     "scannedToday": "Scanned Today",
     "totalAssigned": "Total Assigned",
-    "villageTotal": "Village Total",
+    "villageTotal": {
+      "gram_panchayat": "Village Total",
+      "municipality": "Zone Total",
+      "apartment": "Society Total",
+      "township": "Township Total",
+      "institution_campus": "Campus Total"
+    },
     "collectionsToday": "collections today",
     "offlinePending": "offline pending",
     "scanQrCode": "Scan QR Code",
-    "scanQrToStart": "Scan household QR code to start collection",
-    "pointCamera": "Point your camera at the household QR code",
-    "enterHouseholdId": "Enter Household ID or Name or H.no",
-    "typeHouseholdId": "Type household ID...",
-    "lookupHousehold": "Lookup Household",
+    "scanQrToStart": {
+      "gram_panchayat": "Scan household QR code to start collection",
+      "municipality": "Scan property QR code to start collection",
+      "apartment": "Scan flat QR code to start collection",
+      "township": "Scan plot QR code to start collection",
+      "institution_campus": "Scan unit QR code to start collection"
+    },
+    "pointCamera": {
+      "gram_panchayat": "Point your camera at the household QR code",
+      "municipality": "Point your camera at the property QR code",
+      "apartment": "Point your camera at the flat QR code",
+      "township": "Point your camera at the plot QR code",
+      "institution_campus": "Point your camera at the unit QR code"
+    },
+    "enterHouseholdId": {
+      "gram_panchayat": "Enter Household ID or Name or H.no",
+      "municipality": "Enter Property ID or Name",
+      "apartment": "Enter Flat ID or Name",
+      "township": "Enter Plot ID or Name",
+      "institution_campus": "Enter Unit ID or Name"
+    },
+    "typeHouseholdId": {
+      "gram_panchayat": "Type household ID...",
+      "municipality": "Type property ID...",
+      "apartment": "Type flat ID...",
+      "township": "Type plot ID...",
+      "institution_campus": "Type unit ID..."
+    },
+    "lookupHousehold": {
+      "gram_panchayat": "Lookup Household",
+      "municipality": "Lookup Property",
+      "apartment": "Lookup Flat",
+      "township": "Lookup Plot",
+      "institution_campus": "Lookup Unit"
+    },
     "lookingUp": "Looking up...",
-    "noHouseholdFound": "No household found with this ID",
+    "noHouseholdFound": {
+      "gram_panchayat": "No household found with this ID",
+      "municipality": "No property found with this ID",
+      "apartment": "No flat found with this ID",
+      "township": "No plot found with this ID",
+      "institution_campus": "No unit found with this ID"
+    },
     "qrScanError": "QR Scan Error",
     "invalidQrCode": "Invalid QR code format",
-    "householdNotFound": "Household not found",
+    "householdNotFound": {
+      "gram_panchayat": "Household not found",
+      "municipality": "Property not found",
+      "apartment": "Flat not found",
+      "township": "Plot not found",
+      "institution_campus": "Unit not found"
+    },
     "alreadyCollectedToday": "Already collected today",
-    "alreadyCollectedTodayDesc": "Collection has already been recorded for this household today",
+    "alreadyCollectedTodayDesc": {
+      "gram_panchayat": "Collection has already been recorded for this household today",
+      "municipality": "Collection has already been recorded for this property today",
+      "apartment": "Collection has already been recorded for this flat today",
+      "township": "Collection has already been recorded for this plot today",
+      "institution_campus": "Collection has already been recorded for this unit today"
+    },
     "collectionForm": "Collection Form",
     "collectionFor": "Collection for",
     "wasteCollectionStatus": "Waste Collection Status",
@@ -178,9 +250,27 @@
     "startScanning": "Start scanning QR codes to record collections",
     "viewDetails": "View Details",
     "collectionDetails": "Collection Details",
-    "household": "Household",
-    "houseNumber": "House Number",
-    "ward": "Ward",
+    "household": {
+      "gram_panchayat": "Household",
+      "municipality": "Property",
+      "apartment": "Flat",
+      "township": "Plot",
+      "institution_campus": "Unit"
+    },
+    "houseNumber": {
+      "gram_panchayat": "House Number",
+      "municipality": "Door Number",
+      "apartment": "Flat Number",
+      "township": "Plot Number",
+      "institution_campus": "Unit Number"
+    },
+    "ward": {
+      "gram_panchayat": "Ward",
+      "municipality": "Sub-ward",
+      "apartment": "Wing / Block",
+      "township": "Sector",
+      "institution_campus": "Building"
+    },
     "time": "Time",
     "status": "Status",
     "collectionPhoto": "Collection Photo",
@@ -198,7 +288,7 @@
     "submitIssue": "Submit Issue",
     "submittingIssue": "Submitting...",
     "issueSubmitted": "Issue Reported",
-    "issueSubmittedDesc": "Your issue has been submitted to the village manager",
+    "issueSubmittedDesc": "Your issue has been submitted to the manager",
     "issueSubmitFailed": "Failed to submit issue",
     "noIssuesFound": "No issues reported yet",
     "noIssuesFoundDesc": "Report any problems you encounter during collection",
@@ -235,7 +325,7 @@
     "noActiveShift": "No active shift",
     "shiftDuration": "Shift Duration",
     "collectionsInShift": "Collections in shift",
-    "attendanceNotEnabled": "Attendance tracking is not enabled for your village",
+    "attendanceNotEnabled": "Attendance tracking is not enabled for your organization",
     "changePasswordError": "Failed to change password. Please try again.",
     "issueReportedError": "Failed to report issue. Please try again.",
     "issueReportedSuccess": "Your issue has been reported successfully!",
@@ -256,11 +346,35 @@
     "profile": "Profile",
     "bills": "Bills",
     "welcomeBack": "Welcome back",
-    "householdInfo": "Household Info",
-    "headOfHousehold": "Head of Household",
+    "householdInfo": {
+      "gram_panchayat": "Household Info",
+      "municipality": "Property Info",
+      "apartment": "Flat Info",
+      "township": "Plot Info",
+      "institution_campus": "Unit Info"
+    },
+    "headOfHousehold": {
+      "gram_panchayat": "Head of Household",
+      "municipality": "Property Owner",
+      "apartment": "Flat Owner",
+      "township": "Plot Owner",
+      "institution_campus": "Unit Head"
+    },
     "uid": "UID",
-    "houseNumber": "House Number",
-    "ward": "Ward",
+    "houseNumber": {
+      "gram_panchayat": "House Number",
+      "municipality": "Door Number",
+      "apartment": "Flat Number",
+      "township": "Plot Number",
+      "institution_campus": "Unit Number"
+    },
+    "ward": {
+      "gram_panchayat": "Ward",
+      "municipality": "Sub-ward",
+      "apartment": "Wing / Block",
+      "township": "Sector",
+      "institution_campus": "Building"
+    },
     "address": "Address",
     "phone": "Phone",
     "lastCollection": "Last Collection",
@@ -286,7 +400,7 @@
     "qrCodeDesc": "Show this QR code to the waste collector during collection",
     "downloadQrCode": "Download QR Code",
     "qrNotGenerated": "QR code not generated yet",
-    "contactManager": "Contact your village manager",
+    "contactManager": "Contact your manager",
     "reportIssue": "Report Issue",
     "issueTitle": "Issue Title",
     "issueTitlePlaceholder": "e.g., Garbage not collected for 3 days",
@@ -297,7 +411,7 @@
     "submitIssue": "Submit Issue",
     "submittingIssue": "Submitting...",
     "issueSubmitted": "Issue Reported",
-    "issueSubmittedDesc": "Your issue has been submitted to the village manager",
+    "issueSubmittedDesc": "Your issue has been submitted to the manager",
     "issueSubmitFailed": "Failed to submit issue",
     "yourIssues": "Your Issues",
     "noIssuesYet": "No issues reported yet",
@@ -327,41 +441,137 @@
     "issuePhoto": "Issue photo"
   },
   "manager": {
-    "householdsManagement": "Households Management",
-    "manageHouseholdsQR": "Manage households and QR codes",
+    "householdsManagement": {
+      "gram_panchayat": "Households Management",
+      "municipality": "Properties Management",
+      "apartment": "Flats Management",
+      "township": "Plots Management",
+      "institution_campus": "Units Management"
+    },
+    "manageHouseholdsQR": {
+      "gram_panchayat": "Manage households and QR codes",
+      "municipality": "Manage properties and QR codes",
+      "apartment": "Manage flats and QR codes",
+      "township": "Manage plots and QR codes",
+      "institution_campus": "Manage units and QR codes"
+    },
     "viewAll": "View All",
-    "addHousehold": "Add Household",
+    "addHousehold": {
+      "gram_panchayat": "Add Household",
+      "municipality": "Add Property",
+      "apartment": "Add Flat",
+      "township": "Add Plot",
+      "institution_campus": "Add Unit"
+    },
     "downloadQR": "Download QR",
     "qrCodeAvailable": "QR Code Available",
-    "addMultipleHouseholds": "Add Multiple Households",
-    "createMultipleDesc": "Create multiple households at once with automatic QR code generation",
+    "addMultipleHouseholds": {
+      "gram_panchayat": "Add Multiple Households",
+      "municipality": "Add Multiple Properties",
+      "apartment": "Add Multiple Flats",
+      "township": "Add Multiple Plots",
+      "institution_campus": "Add Multiple Units"
+    },
+    "createMultipleDesc": {
+      "gram_panchayat": "Create multiple households at once with automatic QR code generation",
+      "municipality": "Create multiple properties at once with automatic QR code generation",
+      "apartment": "Create multiple flats at once with automatic QR code generation",
+      "township": "Create multiple plots at once with automatic QR code generation",
+      "institution_campus": "Create multiple units at once with automatic QR code generation"
+    },
     "addRow": "Add Row",
-    "createHouseholds": "Create Households",
+    "createHouseholds": {
+      "gram_panchayat": "Create Households",
+      "municipality": "Create Properties",
+      "apartment": "Create Flats",
+      "township": "Create Plots",
+      "institution_campus": "Create Units"
+    },
     "creating": "Creating...",
-    "headNameRequired": "Head Name *",
-    "houseNumberRequired": "House Number *",
+    "headNameRequired": {
+      "gram_panchayat": "Head Name *",
+      "municipality": "Owner Name *",
+      "apartment": "Owner Name *",
+      "township": "Owner Name *",
+      "institution_campus": "Head Name *"
+    },
+    "houseNumberRequired": {
+      "gram_panchayat": "House Number *",
+      "municipality": "Door Number *",
+      "apartment": "Flat Number *",
+      "township": "Plot Number *",
+      "institution_campus": "Unit Number *"
+    },
     "phoneRequired": "Phone *",
     "addressOptional": "Address (Optional)",
-    "enterHeadName": "Enter head name",
-    "houseNumber": "House number",
+    "enterHeadName": {
+      "gram_panchayat": "Enter head name",
+      "municipality": "Enter owner name",
+      "apartment": "Enter owner name",
+      "township": "Enter owner name",
+      "institution_campus": "Enter head name"
+    },
+    "houseNumber": {
+      "gram_panchayat": "House number",
+      "municipality": "Door number",
+      "apartment": "Flat number",
+      "township": "Plot number",
+      "institution_campus": "Unit number"
+    },
     "phoneNumber": "Phone number",
     "fullAddress": "Full address",
-    "clickAddRow": "Click \"Add Row\" to start adding households",
+    "clickAddRow": {
+      "gram_panchayat": "Click \"Add Row\" to start adding households",
+      "municipality": "Click \"Add Row\" to start adding properties",
+      "apartment": "Click \"Add Row\" to start adding flats",
+      "township": "Click \"Add Row\" to start adding plots",
+      "institution_campus": "Click \"Add Row\" to start adding units"
+    },
     "downloadQRCodes": "Download QR Codes",
-    "downloadQRDesc": "Download household QR codes as PDF",
+    "downloadQRDesc": {
+      "gram_panchayat": "Download household QR codes as PDF",
+      "municipality": "Download property QR codes as PDF",
+      "apartment": "Download flat QR codes as PDF",
+      "township": "Download plot QR codes as PDF",
+      "institution_campus": "Download unit QR codes as PDF"
+    },
     "selectAll": "Select All",
     "generating": "Generating...",
     "downloadPDF": "Download PDF",
     "noQRAvailable": "No QR codes available yet",
-    "addHouseholdsForQR": "Add households to generate QR codes automatically",
+    "addHouseholdsForQR": {
+      "gram_panchayat": "Add households to generate QR codes automatically",
+      "municipality": "Add properties to generate QR codes automatically",
+      "apartment": "Add flats to generate QR codes automatically",
+      "township": "Add plots to generate QR codes automatically",
+      "institution_campus": "Add units to generate QR codes automatically"
+    },
     "collectionsManagement": "Collections Management",
-    "viewHouseholdStatus": "View household collection status",
+    "viewHouseholdStatus": {
+      "gram_panchayat": "View household collection status",
+      "municipality": "View property collection status",
+      "apartment": "View flat collection status",
+      "township": "View plot collection status",
+      "institution_campus": "View unit collection status"
+    },
     "collections": "Collections",
     "needsAttention": "Needs Attention",
     "searchFilter": "Search & Filter",
-    "searchPlaceholder": "Search by name, UID, or house number...",
+    "searchPlaceholder": {
+      "gram_panchayat": "Search by name, UID, or house number...",
+      "municipality": "Search by name, UID, or door number...",
+      "apartment": "Search by name, UID, or flat number...",
+      "township": "Search by name, UID, or plot number...",
+      "institution_campus": "Search by name, UID, or unit number..."
+    },
     "clear": "Clear",
-    "totalHouseholds": "Total Households",
+    "totalHouseholds": {
+      "gram_panchayat": "Total Households",
+      "municipality": "Total Properties",
+      "apartment": "Total Flats",
+      "township": "Total Plots",
+      "institution_campus": "Total Units"
+    },
     "registered": "Registered",
     "collectionsToday": "Collections Today",
     "selectedDate": "Selected date",
@@ -370,13 +580,25 @@
     "allTime": "All time",
     "avgSegregation": "Avg Segregation",
     "rating": "Rating",
-    "householdCollectionStatus": "Household Collection Status",
+    "householdCollectionStatus": {
+      "gram_panchayat": "Household Collection Status",
+      "municipality": "Property Collection Status",
+      "apartment": "Flat Collection Status",
+      "township": "Plot Collection Status",
+      "institution_campus": "Unit Collection Status"
+    },
     "collected": "✅ Collected",
     "pending": "⏳ Pending",
     "doneBefore": "📅 Done Before",
     "never": "❌ Never",
     "collectionDetails": "Collection Details",
-    "householdId": "Household ID",
+    "householdId": {
+      "gram_panchayat": "Household ID",
+      "municipality": "Property ID",
+      "apartment": "Flat ID",
+      "township": "Plot ID",
+      "institution_campus": "Unit ID"
+    },
     "collectionFor": "Collection for",
     "collector": "Collector",
     "time": "Time",
@@ -393,20 +615,50 @@
     "performingWell": "Performing well",
     "avgPerformance": "Avg Performance",
     "performanceScore": "Performance score",
-    "householdsNeedingAttention": "Households Needing Immediate Attention",
-    "attentionDesc": "Households with 3+ missed collections or poor ratings (below 4 stars) in last 10 collections",
+    "householdsNeedingAttention": {
+      "gram_panchayat": "Households Needing Immediate Attention",
+      "municipality": "Properties Needing Immediate Attention",
+      "apartment": "Flats Needing Immediate Attention",
+      "township": "Plots Needing Immediate Attention",
+      "institution_campus": "Units Needing Immediate Attention"
+    },
+    "attentionDesc": {
+      "gram_panchayat": "Households with 3+ missed collections or poor ratings (below 4 stars) in last 10 collections",
+      "municipality": "Properties with 3+ missed collections or poor ratings (below 4 stars) in last 10 collections",
+      "apartment": "Flats with 3+ missed collections or poor ratings (below 4 stars) in last 10 collections",
+      "township": "Plots with 3+ missed collections or poor ratings (below 4 stars) in last 10 collections",
+      "institution_campus": "Units with 3+ missed collections or poor ratings (below 4 stars) in last 10 collections"
+    },
     "problemCollections": "Problem collections",
     "outOf": "out of",
     "issues": "Issues",
     "totalCollections2": "total collections",
-    "allHouseholdsWell": "All households are performing well!",
-    "wellPerformingHouseholds": "Well-Performing Households",
-    "goodComplianceDesc": "Households with good collection compliance and ratings",
+    "allHouseholdsWell": {
+      "gram_panchayat": "All households are performing well!",
+      "municipality": "All properties are performing well!",
+      "apartment": "All flats are performing well!",
+      "township": "All plots are performing well!",
+      "institution_campus": "All units are performing well!"
+    },
+    "wellPerformingHouseholds": {
+      "gram_panchayat": "Well-Performing Households",
+      "municipality": "Well-Performing Properties",
+      "apartment": "Well-Performing Flats",
+      "township": "Well-Performing Plots",
+      "institution_campus": "Well-Performing Units"
+    },
+    "goodComplianceDesc": {
+      "gram_panchayat": "Households with good collection compliance and ratings",
+      "municipality": "Properties with good collection compliance and ratings",
+      "apartment": "Flats with good collection compliance and ratings",
+      "township": "Plots with good collection compliance and ratings",
+      "institution_campus": "Units with good collection compliance and ratings"
+    },
     "goodRatings": "Good ratings",
     "problemCollectionsOnly": "problem collections only",
     "excellent": "🟢 Excellent",
     "issuesManagement": "Issues Management",
-    "manageVillageIssues": "Manage village issues",
+    "manageVillageIssues": "Manage issues",
     "filterByStatus": "Filter by status",
     "allIssues": "All Issues",
     "open": "Open",
@@ -436,7 +688,13 @@
     "comprehensiveInsights": "Comprehensive performance insights and trends",
     "dailyReports": "Daily Reports",
     "collectionEfficiency": "Collection Efficiency",
-    "households": "households",
+    "households": {
+      "gram_panchayat": "households",
+      "municipality": "properties",
+      "apartment": "flats",
+      "township": "plots",
+      "institution_campus": "units"
+    },
     "averageSegregationRating": "Average Segregation Rating",
     "outOf5Stars": "Out of 5.0 stars",
     "dailyCollectionTrend": "Daily Collection Trend (Last 7 Days)",
@@ -454,8 +712,20 @@
     "selectDate": "Select Date",
     "today": "Today",
     "avgSegregationRating": "Avg Segregation Rating",
-    "totalHouses": "Total Houses",
-    "registeredHouseholds": "Registered households",
+    "totalHouses": {
+      "gram_panchayat": "Total Houses",
+      "municipality": "Total Properties",
+      "apartment": "Total Flats",
+      "township": "Total Plots",
+      "institution_campus": "Total Units"
+    },
+    "registeredHouseholds": {
+      "gram_panchayat": "Registered households",
+      "municipality": "Registered properties",
+      "apartment": "Registered flats",
+      "township": "Registered plots",
+      "institution_campus": "Registered units"
+    },
     "collectionsCompleted": "Collections completed",
     "remaining": "Remaining",
     "yetToCollect": "Yet to collect",
@@ -465,7 +735,7 @@
     "collectorPerformanceToday": "Collector Performance Today",
     "collectionTimeline": "Collection Timeline",
     "announcements": "Announcements",
-    "sendUpdates": "Send updates to your village",
+    "sendUpdates": "Send updates to your organization",
     "message": "Message",
     "typeAnnouncement": "Type your announcement...",
     "targetAudience": "Target Audience",
@@ -479,15 +749,33 @@
     "userInfo": "User Info",
     "settings": "Settings",
     "logout": "Logout",
-    "villageManager": "Village Manager",
+    "villageManager": {
+      "gram_panchayat": "Village Manager",
+      "municipality": "Zone Manager",
+      "apartment": "Society Manager",
+      "township": "Township Manager",
+      "institution_campus": "Campus Manager"
+    },
     "clickToViewFeedbacks": "Click to view feedbacks",
     "collectorFeedbacks": "Collector Feedbacks",
     "filterFeedbacks": "Filter Feedbacks",
     "allFeedbacks": "All",
-    "fromHousehold": "From Household",
+    "fromHousehold": {
+      "gram_panchayat": "From Household",
+      "municipality": "From Property",
+      "apartment": "From Flat",
+      "township": "From Plot",
+      "institution_campus": "From Unit"
+    },
     "toCollector": "To Collector",
     "noFeedbackYet": "No feedback data available for the selected date range",
-    "feedbackFromHouseholds": "Feedback from households to collectors",
+    "feedbackFromHouseholds": {
+      "gram_panchayat": "Feedback from households to collectors",
+      "municipality": "Feedback from properties to collectors",
+      "apartment": "Feedback from flats to collectors",
+      "township": "Feedback from plots to collectors",
+      "institution_campus": "Feedback from units to collectors"
+    },
     "downloadPdfReport": "Download PDF Report",
     "generatingPdf": "Generating...",
     "pdfDownloaded": "Daily report PDF downloaded!",
@@ -496,9 +784,9 @@
     "noCollectionsForDate": "No collections recorded for this date.",
     "quickInsight": "Quick Insight",
     "outstandingCoverage": "Outstanding coverage detected.",
-    "outstandingCoverageDesc": "The village is operating at peak efficiency. Minor missed households are likely seasonal or temporary vacancies.",
+    "outstandingCoverageDesc": "Operating at peak efficiency. Minor missed pickups are likely seasonal or temporary vacancies.",
     "improveCoverage": "Opportunity to increase coverage in outer wards.",
-    "improveCoverageDesc": "Targeting missed households in early morning slots could improve the daily collection percentage by up to 15%.",
+    "improveCoverageDesc": "Targeting missed pickups in early morning slots could improve the daily collection percentage by up to 15%.",
     "wasteMaterialNotLogged": "Daily Collected Waste Material Type Entries not logged/Entered for this date",
     "diversionRateWillAppear": "Diversion rate will appear once daily waste type entries are logged",
     "collectionPulse": "Collection Pulse",
@@ -507,7 +795,13 @@
     "peakCollectionHours": "Peak Collection Hours",
     "hourlyDistribution": "Hourly collection distribution",
     "peakWindow": "Peak Window",
-    "wardWiseBreakdown": "Ward-wise Breakdown",
+    "wardWiseBreakdown": {
+      "gram_panchayat": "Ward-wise Breakdown",
+      "municipality": "Sub-ward Breakdown",
+      "apartment": "Wing-wise Breakdown",
+      "township": "Sector-wise Breakdown",
+      "institution_campus": "Building-wise Breakdown"
+    },
     "nonCollected": "Non-Collected",
     "wasteMaterialLogs": "Waste Material Logs",
     "wasteDiversionRate": "Waste Diversion Rate",
@@ -540,8 +834,20 @@
     "fieldWorkers": "Field Workers",
     "generateQr": "Generate QR Batches",
     "helpers": "Helpers",
-    "householdDetails": "Household Details",
-    "householdPerformance": "Household Performance",
+    "householdDetails": {
+      "gram_panchayat": "Household Details",
+      "municipality": "Property Details",
+      "apartment": "Flat Details",
+      "township": "Plot Details",
+      "institution_campus": "Unit Details"
+    },
+    "householdPerformance": {
+      "gram_panchayat": "Household Performance",
+      "municipality": "Property Performance",
+      "apartment": "Flat Performance",
+      "township": "Plot Performance",
+      "institution_campus": "Unit Performance"
+    },
     "management": "Management",
     "markAttendance": "Mark Attendance",
     "paymentLedger": "Payment Ledger",
@@ -553,21 +859,51 @@
     "selectVehicle": "Select Vehicle",
     "vehicleManagement": "Vehicle Management",
     "viewShifts": "View Shifts",
-    "villageSettings": "Village Settings",
-    "wardsManagement": "Wards Management",
+    "villageSettings": {
+      "gram_panchayat": "Village Settings",
+      "municipality": "Zone Settings",
+      "apartment": "Society Settings",
+      "township": "Township Settings",
+      "institution_campus": "Campus Settings"
+    },
+    "wardsManagement": {
+      "gram_panchayat": "Wards Management",
+      "municipality": "Sub-wards Management",
+      "apartment": "Wings Management",
+      "township": "Sectors Management",
+      "institution_campus": "Buildings Management"
+    },
     "deleting": "Deleting...",
     "peakHours": "Peak Collection Hours",
-    "wardBreakdown": "Ward-wise Breakdown",
+    "wardBreakdown": {
+      "gram_panchayat": "Ward-wise Breakdown",
+      "municipality": "Sub-ward Breakdown",
+      "apartment": "Wing-wise Breakdown",
+      "township": "Sector-wise Breakdown",
+      "institution_campus": "Building-wise Breakdown"
+    },
     "landfill": "Landfill",
     "diversionRate": "Waste Diversion Rate",
     "reports": "Reports",
     "more": "More",
     "dashboard": "Dashboard",
     "vehicles": "Vehicles",
-    "wards": "Wards"
+    "wards": {
+      "gram_panchayat": "Wards",
+      "municipality": "Sub-wards",
+      "apartment": "Wings",
+      "township": "Sectors",
+      "institution_campus": "Buildings"
+    }
   },
   "householdPerformance": {
-    "title": "Household Performance",
+    "title": {
+      "gram_panchayat": "Household Performance",
+      "municipality": "Property Performance",
+      "apartment": "Flat Performance",
+      "township": "Plot Performance",
+      "institution_campus": "Unit Performance"
+    },
     "attention": "Attention",
     "good": "Good",
     "noData": "No Data",
@@ -576,8 +912,20 @@
     "mixedWaste": "Mixed Waste",
     "inactive": "Inactive",
     "never": "Never",
-    "allWards": "All Wards",
-    "noHouseholdsInCategory": "No households in this category",
+    "allWards": {
+      "gram_panchayat": "All Wards",
+      "municipality": "All Sub-wards",
+      "apartment": "All Wings",
+      "township": "All Sectors",
+      "institution_campus": "All Buildings"
+    },
+    "noHouseholdsInCategory": {
+      "gram_panchayat": "No households in this category",
+      "municipality": "No properties in this category",
+      "apartment": "No flats in this category",
+      "township": "No plots in this category",
+      "institution_campus": "No units in this category"
+    },
     "neverCollected": "Never collected",
     "lastToday": "today",
     "lastYesterday": "yesterday",
@@ -589,17 +937,47 @@
     "last30Days": "Last 30 Days",
     "needsAttention": "Needs Attention",
     "goodStanding": "Good Standing",
-    "meetingThresholds": "This household is meeting all thresholds",
+    "meetingThresholds": {
+      "gram_panchayat": "This household is meeting all thresholds",
+      "municipality": "This property is meeting all thresholds",
+      "apartment": "This flat is meeting all thresholds",
+      "township": "This plot is meeting all thresholds",
+      "institution_campus": "This unit is meeting all thresholds"
+    },
     "noCollectionData": "No Collection Data",
-    "noRecordedCollections": "This household has not had any recorded collections",
+    "noRecordedCollections": {
+      "gram_panchayat": "This household has not had any recorded collections",
+      "municipality": "This property has not had any recorded collections",
+      "apartment": "This flat has not had any recorded collections",
+      "township": "This plot has not had any recorded collections",
+      "institution_campus": "This unit has not had any recorded collections"
+    },
     "visit": "Visit",
     "call": "Call",
     "noLocationData": "No location data",
-    "noLocationDataDesc": "This household has no address or coordinates",
+    "noLocationDataDesc": {
+      "gram_panchayat": "This household has no address or coordinates",
+      "municipality": "This property has no address or coordinates",
+      "apartment": "This flat has no address or coordinates",
+      "township": "This plot has no address or coordinates",
+      "institution_campus": "This unit has no address or coordinates"
+    },
     "noPhoneNumber": "No phone number",
-    "noPhoneNumberDesc": "This household has no phone number on file",
+    "noPhoneNumberDesc": {
+      "gram_panchayat": "This household has no phone number on file",
+      "municipality": "This property has no phone number on file",
+      "apartment": "This flat has no phone number on file",
+      "township": "This plot has no phone number on file",
+      "institution_campus": "This unit has no phone number on file"
+    },
     "monitoringThresholds": "Monitoring Thresholds",
-    "configureThresholds": "Configure when a household gets flagged for attention.",
+    "configureThresholds": {
+      "gram_panchayat": "Configure when a household gets flagged for attention.",
+      "municipality": "Configure when a property gets flagged for attention.",
+      "apartment": "Configure when a flat gets flagged for attention.",
+      "township": "Configure when a plot gets flagged for attention.",
+      "institution_campus": "Configure when a unit gets flagged for attention."
+    },
     "minAvgRating": "Min avg segregation rating (1–5)",
     "maxMixed7Days": "Max mixed waste per 7 days",
     "maxInactiveDays": "Max inactive days",
@@ -705,7 +1083,13 @@
     "activateCycle": "Activate Cycle",
     "activateBillingCycle": "Activate Billing Cycle",
     "noBillingCycle": "No Billing Cycle for {{month}}",
-    "activateDesc": "Activate a billing cycle to generate bills for all households.",
+    "activateDesc": {
+      "gram_panchayat": "Activate a billing cycle to generate bills for all households.",
+      "municipality": "Activate a billing cycle to generate bills for all properties.",
+      "apartment": "Activate a billing cycle to generate bills for all flats.",
+      "township": "Activate a billing cycle to generate bills for all plots.",
+      "institution_campus": "Activate a billing cycle to generate bills for all units."
+    },
     "billingCycleActivated": "Billing Cycle Activated",
     "billsGenerated": "{{count}} bills generated. Expected revenue: ₹{{amount}}",
     "activationFailed": "Activation Failed",
@@ -719,7 +1103,13 @@
     "activating": "Activating...",
     "activateAndGenerate": "Activate & Generate {{count}} Bills",
     "loadingPreview": "Loading preview...",
-    "householdLedger": "Household Ledger",
+    "householdLedger": {
+      "gram_panchayat": "Household Ledger",
+      "municipality": "Property Ledger",
+      "apartment": "Flat Ledger",
+      "township": "Plot Ledger",
+      "institution_campus": "Unit Ledger"
+    },
     "searchNameHouse": "Search name, house#...",
     "paid": "Paid",
     "pay": "Pay",
@@ -743,7 +1133,13 @@
     "bulkPaymentDesc": "{{count}} bills marked as paid",
     "bulkPaymentFailed": "Bulk Payment Failed",
     "bulkPaymentFailedDesc": "Could not process bulk payment. Please try again.",
-    "householdPaymentHistory": "Household Payment History",
+    "householdPaymentHistory": {
+      "gram_panchayat": "Household Payment History",
+      "municipality": "Property Payment History",
+      "apartment": "Flat Payment History",
+      "township": "Plot Payment History",
+      "institution_campus": "Unit Payment History"
+    },
     "scanQrToPay": "Scan QR to Pay",
     "creatingPayment": "Creating Payment...",
     "creatingPaymentOrder": "Creating payment order...",
@@ -795,8 +1191,14 @@
     "webhookUrl": "Webhook URL",
     "webhookUrlDesc": "Paste this URL in your {{provider}} dashboard → Webhooks section:",
     "mdrConvenienceFee": "MDR / Convenience Fee",
-    "villageAbsorbs": "Village Absorbs (~2%)",
-    "householdPaysExtra": "Household Pays Extra",
+    "villageAbsorbs": "Organization Absorbs (~2%)",
+    "householdPaysExtra": {
+      "gram_panchayat": "Household Pays Extra",
+      "municipality": "Property Pays Extra",
+      "apartment": "Flat Pays Extra",
+      "township": "Plot Pays Extra",
+      "institution_campus": "Unit Pays Extra"
+    },
     "mdrPercent": "MDR %",
     "saveAndEncrypt": "Save & Encrypt",
     "gatewayConfigSaved": "Gateway Config Saved",
@@ -807,8 +1209,14 @@
     "removeGatewayConfirm": "Remove {{provider}}?",
     "removeGatewayDesc": "This payment gateway will be removed.",
     "missing": "Missing: {{fields}}",
-    "householdPaysMdr": "Household +{{percent}}%",
-    "villageAbsorbsMdr": "Village Absorbs",
+    "householdPaysMdr": {
+      "gram_panchayat": "Household +{{percent}}%",
+      "municipality": "Property +{{percent}}%",
+      "apartment": "Flat +{{percent}}%",
+      "township": "Plot +{{percent}}%",
+      "institution_campus": "Unit +{{percent}}%"
+    },
+    "villageAbsorbsMdr": "Organization Absorbs",
     "editConfig": "Edit Config",
     "billingCycleHistory": "Billing Cycle History",
     "noBillingCycles": "No billing cycles yet.",
@@ -842,7 +1250,7 @@
   },
   "myBills": {
     "noBills": "No Bills",
-    "notLinkedToHousehold": "Your account is not linked to a household yet.",
+    "notLinkedToHousehold": "Your account is not linked yet.",
     "outstandingFees": "Outstanding Waste Collection Fees",
     "monthsDue": "{{count}} month(s) due",
     "payNow": "Pay Now",
@@ -1016,12 +1424,42 @@
     "veryPoor": "Very Poor"
   },
   "households": {
-    "title": "Households",
-    "addHousehold": "Add Household",
+    "title": {
+      "gram_panchayat": "Households",
+      "municipality": "Properties",
+      "apartment": "Flats",
+      "township": "Plots",
+      "institution_campus": "Units"
+    },
+    "addHousehold": {
+      "gram_panchayat": "Add Household",
+      "municipality": "Add Property",
+      "apartment": "Add Flat",
+      "township": "Add Plot",
+      "institution_campus": "Add Unit"
+    },
     "bulkUpload": "Bulk Upload",
-    "householdName": "Household Name",
-    "houseNumber": "House Number",
-    "headName": "Head of Household",
+    "householdName": {
+      "gram_panchayat": "Household Name",
+      "municipality": "Property Name",
+      "apartment": "Flat Name",
+      "township": "Plot Name",
+      "institution_campus": "Unit Name"
+    },
+    "houseNumber": {
+      "gram_panchayat": "House Number",
+      "municipality": "Door Number",
+      "apartment": "Flat Number",
+      "township": "Plot Number",
+      "institution_campus": "Unit Number"
+    },
+    "headName": {
+      "gram_panchayat": "Head of Household",
+      "municipality": "Property Owner",
+      "apartment": "Flat Owner",
+      "township": "Plot Owner",
+      "institution_campus": "Unit Head"
+    },
     "phone": "Phone Number",
     "address": "Address",
     "qrCode": "QR Code",
@@ -1030,7 +1468,13 @@
     "inactive": "Inactive",
     "generateQR": "Generate QR Code",
     "downloadQR": "Download QR Code",
-    "totalHouseholds": "Total Households",
+    "totalHouseholds": {
+      "gram_panchayat": "Total Households",
+      "municipality": "Total Properties",
+      "apartment": "Total Flats",
+      "township": "Total Plots",
+      "institution_campus": "Total Units"
+    },
     "uploadCSV": "Upload CSV File",
     "csvTemplate": "Download CSV Template"
   },
@@ -1083,7 +1527,13 @@
     "provideFeedback": "Provide Feedback",
     "rating": "Rating",
     "comments": "Comments",
-    "fromHousehold": "From Household",
+    "fromHousehold": {
+      "gram_panchayat": "From Household",
+      "municipality": "From Property",
+      "apartment": "From Flat",
+      "township": "From Plot",
+      "institution_campus": "From Unit"
+    },
     "toCollector": "To Collector",
     "feedbackDate": "Feedback Date",
     "positiveComments": "Positive Comments",
@@ -1105,7 +1555,13 @@
     "performanceMetrics": "Performance Metrics",
     "segregationRates": "Segregation Rates",
     "collectorPerformance": "Collector Performance",
-    "householdParticipation": "Household Participation",
+    "householdParticipation": {
+      "gram_panchayat": "Household Participation",
+      "municipality": "Property Participation",
+      "apartment": "Flat Participation",
+      "township": "Plot Participation",
+      "institution_campus": "Unit Participation"
+    },
     "wasteComposition": "Waste Composition",
     "environmentalImpact": "Environmental Impact",
     "applyFilters": "Apply Filters",
@@ -1119,7 +1575,13 @@
     "allUsers": "All Users",
     "managers": "Managers Only",
     "collectors": "Collectors Only",
-    "households": "Households Only",
+    "households": {
+      "gram_panchayat": "Households Only",
+      "municipality": "Properties Only",
+      "apartment": "Flats Only",
+      "township": "Plots Only",
+      "institution_campus": "Units Only"
+    },
     "publishDate": "Publish Date",
     "expiryDate": "Expiry Date",
     "urgent": "Urgent",
@@ -1128,18 +1590,30 @@
     "checkLater": "Check back later for important updates"
   },
   "villages": {
-    "title": "Villages",
-    "addVillage": "Add Village",
-    "villageName": "Village Name",
-    "villageId": "Village ID",
+    "title": "Organizations",
+    "addVillage": "Add Organization",
+    "villageName": "Organization Name",
+    "villageId": "Organization ID",
     "managerName": "Manager Name",
     "managerPhone": "Manager Phone",
-    "totalVillages": "Total Villages",
-    "activeVillages": "Active Villages",
-    "villageStats": "Village Statistics",
-    "createVillage": "Create Village",
-    "addWard": "Add New Ward/Sub-Village",
-    "wardName": "Ward/Sub-Village Name"
+    "totalVillages": "Total Organizations",
+    "activeVillages": "Active Organizations",
+    "villageStats": "Organization Statistics",
+    "createVillage": "Create Organization",
+    "addWard": {
+      "gram_panchayat": "Add New Ward",
+      "municipality": "Add New Sub-ward",
+      "apartment": "Add New Wing",
+      "township": "Add New Sector",
+      "institution_campus": "Add New Building"
+    },
+    "wardName": {
+      "gram_panchayat": "Ward Name",
+      "municipality": "Sub-ward Name",
+      "apartment": "Wing Name",
+      "township": "Sector Name",
+      "institution_campus": "Building Name"
+    }
   },
   "profile": {
     "title": "Profile",
@@ -1155,14 +1629,26 @@
     "updateProfile": "Update Profile"
   },
   "filters": {
-    "selectVillage": "Select Village",
+    "selectVillage": "Select Organization",
     "selectCollector": "Select Collector",
-    "selectHousehold": "Select Household",
+    "selectHousehold": {
+      "gram_panchayat": "Select Household",
+      "municipality": "Select Property",
+      "apartment": "Select Flat",
+      "township": "Select Plot",
+      "institution_campus": "Select Unit"
+    },
     "startDate": "Start Date",
     "endDate": "End Date",
-    "allVillages": "All Villages",
+    "allVillages": "All Organizations",
     "allCollectors": "All Collectors",
-    "allHouseholds": "All Households"
+    "allHouseholds": {
+      "gram_panchayat": "All Households",
+      "municipality": "All Properties",
+      "apartment": "All Flats",
+      "township": "All Plots",
+      "institution_campus": "All Units"
+    }
   },
   "messages": {
     "noData": "No data available",
@@ -1206,6 +1692,88 @@
       "clickDone": "Click 'Done' to finish the tour.",
       "tourCompleted": "Tour completed! You can restart it anytime using the help button.",
       "helpButton": "Use this help button to restart the tour anytime."
+    }
+  },
+  "terminology": {
+    "gram_panchayat": {
+      "org": "Village",
+      "orgPlural": "Villages",
+      "household": "Household",
+      "householdPlural": "Households",
+      "headName": "Head of Household",
+      "houseNumber": "House Number",
+      "ward": "Ward",
+      "wardPlural": "Wards",
+      "collector": "Waste Collector",
+      "collectorPlural": "Waste Collectors",
+      "familySize": "Family Size",
+      "address": "Address",
+      "session": "Vehicle Session",
+      "sessionPlural": "Vehicle Sessions"
+    },
+    "municipality": {
+      "org": "Ward / Zone",
+      "orgPlural": "Wards / Zones",
+      "household": "Property",
+      "householdPlural": "Properties",
+      "headName": "Property Owner",
+      "houseNumber": "Door Number",
+      "ward": "Sub-ward",
+      "wardPlural": "Sub-wards",
+      "collector": "Sanitary Worker",
+      "collectorPlural": "Sanitary Workers",
+      "familySize": "Occupants",
+      "address": "Address",
+      "session": "Vehicle Session",
+      "sessionPlural": "Vehicle Sessions"
+    },
+    "apartment": {
+      "org": "Society",
+      "orgPlural": "Societies",
+      "household": "Flat",
+      "householdPlural": "Flats",
+      "headName": "Flat Owner",
+      "houseNumber": "Flat Number",
+      "ward": "Wing / Block",
+      "wardPlural": "Wings / Blocks",
+      "collector": "Housekeeping Staff",
+      "collectorPlural": "Housekeeping Staff",
+      "familySize": "Residents",
+      "address": "Floor & Wing",
+      "session": "Collection Session",
+      "sessionPlural": "Collection Sessions"
+    },
+    "township": {
+      "org": "Township",
+      "orgPlural": "Townships",
+      "household": "Plot",
+      "householdPlural": "Plots",
+      "headName": "Plot Owner",
+      "houseNumber": "Plot Number",
+      "ward": "Sector",
+      "wardPlural": "Sectors",
+      "collector": "Collection Staff",
+      "collectorPlural": "Collection Staff",
+      "familySize": "Residents",
+      "address": "Street / Block",
+      "session": "Vehicle Session",
+      "sessionPlural": "Vehicle Sessions"
+    },
+    "institution_campus": {
+      "org": "Campus",
+      "orgPlural": "Campuses",
+      "household": "Unit",
+      "householdPlural": "Units",
+      "headName": "Unit Head",
+      "houseNumber": "Unit Number",
+      "ward": "Building",
+      "wardPlural": "Buildings",
+      "collector": "Facility Staff",
+      "collectorPlural": "Facility Staff",
+      "familySize": "Occupants",
+      "address": "Building & Floor",
+      "session": "Collection Session",
+      "sessionPlural": "Collection Sessions"
     }
   }
 }
