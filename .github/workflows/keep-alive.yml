@@ -1,0 +1,19 @@
+name: Keep Server Alive
+
+on:
+  schedule:
+    - cron: '*/14 * * * *'
+  workflow_dispatch:
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Random delay (0–60s)
+        run: sleep $((RANDOM % 60))
+
+      - name: Ping warmup endpoint
+        run: |
+          curl -sS --max-time 10 --retry 2 --retry-delay 5 https://greenpathindia.in/pong \
+          || echo "Warmup ping failed"

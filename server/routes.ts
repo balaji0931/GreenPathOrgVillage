@@ -155,6 +155,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.use(session(sessionConfig));
 
+  // Keep-alive endpoint for cron services (bypasses CSRF and API rate limits)
+  app.get('/pong', (req, res) => {
+    res.status(200).send('ping');
+  });
+
   // Apply input validation middleware to all routes except static assets
   app.use('/api', validateInput);
 
