@@ -5,10 +5,28 @@ import bcrypt from "bcrypt";
 export function registerAuthRoutes(app: Express, requireAuth: any, generateCsrfToken: () => string) {
   // CSRF token endpoint - provides token for authenticated sessions
   app.get('/api/auth/csrf-token', (req, res) => {
-    // Generate new CSRF token and store in session
+    const now = Date.now();
+    const tokenAge = now - (req.session.csrfTokenGeneratedAt || 0);
+    const rotationInterval = 2 * 60 * 60 * 1000; // Rotate every 2 hours
+
+    // Return existing token if it's still fresh to prevent unnecessary invalidation
+    if (req.session.csrfToken && tokenAge < rotationInterval) {
+      return res.json({ csrfToken: req.session.csrfToken });
+    }
+
+    // Generate new CSRF token and store in session (idempotent for this request)
     const token = generateCsrfToken();
     req.session.csrfToken = token;
-    res.json({ csrfToken: token });
+    req.session.csrfTokenGeneratedAt = now;
+
+    // Explicitly save session to ensure the token is persisted
+    req.session.save((err) => {
+      if (err) {
+        console.error("Session save error in csrf-token:", err);
+        return res.status(500).json({ message: "Failed to initialize CSRF token" });
+      }
+      res.json({ csrfToken: token });
+    });
   });
 
   // Auth routes
@@ -63,6 +81,7 @@ export function registerAuthRoutes(app: Express, requireAuth: any, generateCsrfT
       // Generate new CSRF token for the session
       const csrfToken = generateCsrfToken();
       req.session.csrfToken = csrfToken;
+      req.session.csrfTokenGeneratedAt = Date.now();
 
       // Explicitly save session to ensure data is persisted
       await saveSession();

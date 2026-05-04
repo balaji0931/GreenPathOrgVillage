@@ -46,8 +46,9 @@ export function getFetchHeaders(contentType?: string): Record<string, string> {
   if (contentType) {
     headers["Content-Type"] = contentType;
   }
-  if (csrfToken) {
-    headers["X-CSRF-Token"] = csrfToken;
+  const currentToken = getCsrfToken();
+  if (currentToken) {
+    headers["X-CSRF-Token"] = currentToken;
   }
   return headers;
 }
@@ -55,17 +56,33 @@ export function getFetchHeaders(contentType?: string): Record<string, string> {
 // Wrapper for fetch with CSRF token (for file uploads and other raw fetch calls)
 export async function fetchWithCsrf(
   url: string,
-  options: RequestInit = {}
+  options: RequestInit = {},
+  isRetry = false
 ): Promise<Response> {
+  const method = (options.method || "GET").toUpperCase();
   const headers = new Headers(options.headers);
-  if (csrfToken && !["GET", "HEAD", "OPTIONS"].includes((options.method || "GET").toUpperCase())) {
-    headers.set("X-CSRF-Token", csrfToken);
+  const currentToken = getCsrfToken();
+
+  if (currentToken && !["GET", "HEAD", "OPTIONS"].includes(method)) {
+    headers.set("X-CSRF-Token", currentToken);
   }
-  return fetch(url, {
+
+  const res = await fetch(url, {
     ...options,
     headers,
     credentials: "include",
   });
+
+  // Self-healing: if we get a 403, retry once after fetching a fresh token
+  if (res.status === 403 && !isRetry && !["GET", "HEAD", "OPTIONS"].includes(method)) {
+    console.warn("CSRF mismatch in fetchWithCsrf. Attempting self-healing retry...");
+    const newToken = await fetchCsrfToken();
+    if (newToken) {
+      return fetchWithCsrf(url, options, true);
+    }
+  }
+
+  return res;
 }
 
 async function throwIfResNotOk(res: Response) {
@@ -79,6 +96,7 @@ export async function apiRequest(
   method: string,
   url: string,
   data?: unknown | undefined,
+  isRetry = false
 ): Promise<Response> {
   const headers: Record<string, string> = {};
   
@@ -87,8 +105,9 @@ export async function apiRequest(
   }
   
   // Include CSRF token for state-changing requests
-  if (csrfToken && !["GET", "HEAD", "OPTIONS"].includes(method.toUpperCase())) {
-    headers["X-CSRF-Token"] = csrfToken;
+  const currentToken = getCsrfToken();
+  if (currentToken && !["GET", "HEAD", "OPTIONS"].includes(method.toUpperCase())) {
+    headers["X-CSRF-Token"] = currentToken;
   }
   
   const res = await fetch(url, {
@@ -97,6 +116,16 @@ export async function apiRequest(
     body: data ? JSON.stringify(data) : undefined,
     credentials: "include",
   });
+
+  // Self-healing: if we get a 403, it might be a stale CSRF token.
+  // Fetch a new one and retry the request exactly once.
+  if (res.status === 403 && !isRetry && !["GET", "HEAD", "OPTIONS"].includes(method.toUpperCase())) {
+    console.warn("CSRF mismatch detected. Attempting self-healing retry...");
+    const newToken = await fetchCsrfToken();
+    if (newToken) {
+      return apiRequest(method, url, data, true);
+    }
+  }
 
   await throwIfResNotOk(res);
   return res;
