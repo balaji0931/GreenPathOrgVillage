@@ -78,7 +78,6 @@ declare module 'express-session' {
     role?: string;
     villageId?: string;
     csrfToken?: string;
-    csrfTokenGeneratedAt?: number;
   }
 }
 
