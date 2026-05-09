@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 
 const BASE_URL = "https://greenpathindia.in";
-const DEFAULT_TITLE = "GreenPath - Waste Collection Management Platform";
+const DEFAULT_TITLE = "GreenPath - Digital Waste Governance Platform";
 const DEFAULT_DESCRIPTION =
   "Digital waste management for communities. QR-based household tracking, offline-first collection, analytics, and governance - from doorstep to processing.";
 

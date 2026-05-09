@@ -13,7 +13,7 @@ const BASE_URL = "https://greenpathindia.in";
 // Per-page SEO metadata for server-side injection (social crawlers, Googlebot)
 const SEO_META: Record<string, { title: string; description: string; image?: string }> = {
   "/": {
-    title: "GreenPath - Waste Collection Management Platform",
+    title: "GreenPath - Digital Waste Governance Platform",
     description: "Digital waste management for communities. QR-based household tracking, offline-first collection, real-time analytics, and governance - from doorstep to processing.",
   },
   "/product": {
