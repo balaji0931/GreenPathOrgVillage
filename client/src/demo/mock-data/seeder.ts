@@ -31,6 +31,10 @@ import {
   generateDryWasteSales,
   generateAuditLogs,
   clearMemoizedData,
+  getModeratorVillages,
+  getModeratorManagers,
+  getModeratorIssues,
+  generateModeratorOverviewStats,
 } from "./generators";
 
 const V = DEMO_VILLAGE_ID;
@@ -165,8 +169,39 @@ export function seedDemoData(client: QueryClient, role: DemoRole): void {
   // ─── Fieldworker ────────────────────────────────────────────────
   if (role === "fieldworker") {
     client.setQueryData(qk.fwVillage(V), village);
-    client.setQueryData(qk.fwHouseholdTypes(V), getHouseholdTypes());
+    client.setQueryData(qk.fwHouseholdTypes(V), getHouseholdTypes().map(h => ({ typeCode: h.type, displayName: h.label })));
     client.setQueryData(qk.qrCodes(V), getQRCodes());
     client.setQueryData(qk.qrCodes(), getQRCodes());
   }
+
+  // ─── Moderator ─────────────────────────────────────────────────
+  if (role === "moderator") {
+    client.setQueryData(["/api/moderator/villages"], getModeratorVillages());
+    client.setQueryData(["/api/moderator/issues"], getModeratorIssues());
+    client.setQueryData(["/api/moderator/managers"], getModeratorManagers());
+    client.setQueryData(["/api/moderator/audit-logs"], generateAuditLogs());
+
+    // Overview stats - date-dependent, seed last 14 days + no-date variant
+    client.setQueryData(["/api/moderator/overview-stats"], generateModeratorOverviewStats());
+    for (const date of recentDates(14)) {
+      client.setQueryData(["/api/moderator/overview-stats", date], generateModeratorOverviewStats(date));
+    }
+
+    // Per-village managers (used by the custom queryFn)
+    const managers = getModeratorManagers();
+    const villages = getModeratorVillages();
+    for (const v of villages) {
+      const villageManagers = managers.filter(m => m.villageId === v.villageId);
+      client.setQueryData([`/api/moderator/village/${v.villageId}/managers`], villageManagers);
+
+      // Village detailed report (reuses manager premium analytics shape)
+      for (const date of recentDates(14)) {
+        client.setQueryData(
+          ["/api/moderator/village/report", v.villageId, date],
+          generatePremiumAnalytics(date)
+        );
+      }
+    }
+  }
 }
+

@@ -128,6 +128,13 @@ export const DEMO_USERS = {
     villageId: DEMO_VILLAGE_ID,
     isFirstLogin: false,
   },
+  moderator: {
+    userId: "DEMO-MOD-001",
+    role: "moderator",
+    name: "Priya Joshi",
+    villageId: null,
+    isFirstLogin: false,
+  },
 };
 
 // ─── Village ──────────────────────────────────────────────────────────
@@ -967,6 +974,111 @@ export function generateHouseholdTypes() {
   ];
 }
 
+// ─── Moderator Data ───────────────────────────────────────────────────
+
+export function generateModeratorVillages() {
+  return [
+    {
+      id: 1, villageId: DEMO_VILLAGE_ID, name: "Sundernagar",
+      unitType: "village",
+      totalHouseholds: 100, totalCollectors: 9, openIssues: 3,
+      managerPhone: "9876500001",
+    },
+    {
+      id: 2, villageId: "DEMO-V002", name: "Chandanpur",
+      unitType: "village",
+      totalHouseholds: 75, totalCollectors: 6, openIssues: 1,
+      managerPhone: "9876500002",
+    },
+    {
+      id: 3, villageId: "DEMO-V003", name: "Lakshminagar",
+      unitType: "village",
+      totalHouseholds: 60, totalCollectors: 4, openIssues: 0,
+      managerPhone: "9876500003",
+    },
+  ];
+}
+
+export function generateModeratorOverviewStats(dateStr?: string) {
+  const seed = dateStr ? dateStr.split("-").reduce((a, b) => a + parseInt(b), 0) * 3 : 555;
+  const rand = seededRandom(seed);
+  const villages = generateModeratorVillages();
+
+  const villageStats = villages.map(v => {
+    const collected = Math.floor(v.totalHouseholds * (0.6 + rand() * 0.3));
+    return {
+      villageId: v.villageId,
+      name: v.name,
+      totalHouseholds: v.totalHouseholds,
+      collectionsToday: collected,
+      collectionRate: Math.round((collected / v.totalHouseholds) * 100),
+      avgRating: parseFloat((3.0 + rand() * 1.8).toFixed(1)),
+      openIssues: v.openIssues,
+    };
+  });
+
+  villageStats.sort((a, b) => a.collectionRate - b.collectionRate);
+
+  const totalHouseholds = villageStats.reduce((s, v) => s + v.totalHouseholds, 0);
+  const collectionsToday = villageStats.reduce((s, v) => s + v.collectionsToday, 0);
+  const totalRating = villageStats.reduce((s, v) => s + v.avgRating * v.collectionsToday, 0);
+
+  return {
+    aggregate: {
+      totalVillages: villages.length,
+      totalHouseholds,
+      collectionsToday,
+      notCollectedToday: totalHouseholds - collectionsToday,
+      avgRating: collectionsToday > 0 ? parseFloat((totalRating / collectionsToday).toFixed(1)) : 0,
+      openIssues: villageStats.reduce((s, v) => s + v.openIssues, 0),
+    },
+    villages: villageStats,
+  };
+}
+
+export function generateModeratorManagers() {
+  return [
+    { userId: "DEMO-MGR-001", name: "Amit Deshmukh", phone: "9876500001", villageName: "Sundernagar", villageId: DEMO_VILLAGE_ID },
+    { userId: "DEMO-MGR-002", name: "Neha Kulkarni", phone: "9876500002", villageName: "Chandanpur", villageId: "DEMO-V002" },
+    { userId: "DEMO-MGR-003", name: "Ravi Pawar", phone: "9876500003", villageName: "Lakshminagar", villageId: "DEMO-V003" },
+  ];
+}
+
+export function generateModeratorIssues() {
+  const baseIssues = generateIssues();
+  return [
+    ...baseIssues,
+    {
+      id: 5,
+      title: "Irregular collection schedule in Ward-1",
+      description: "Households report that waste collection happens at different times each day, making it hard to keep waste ready.",
+      category: "missed_collection",
+      status: "open",
+      reportedBy: "GEN-V002-015",
+      villageId: "DEMO-V002",
+      photoUrl: null,
+      managerReply: null,
+      managerProofPhotoUrl: null,
+      createdAt: getISTDate(2).toISOString(),
+      updatedAt: getISTDate(2).toISOString(),
+    },
+    {
+      id: 6,
+      title: "Compost pit overflow at community garden",
+      description: "The compost pit at Lakshminagar community garden is full and needs expansion or emptying.",
+      category: "infrastructure",
+      status: "in_progress",
+      reportedBy: "GEN-V003-008",
+      villageId: "DEMO-V003",
+      photoUrl: null,
+      managerReply: "Expansion work started. Expected completion by next week.",
+      managerProofPhotoUrl: null,
+      createdAt: getISTDate(4).toISOString(),
+      updatedAt: getISTDate(1).toISOString(),
+    },
+  ];
+}
+
 // ─── Memoized Getters ─────────────────────────────────────────────────
 // Use these instead of calling generateXxx() directly.
 // Ensures consistent object references + avoids re-computation.
@@ -985,6 +1097,9 @@ let _feedback: ReturnType<typeof generateFeedback> | null = null;
 let _qrCodes: ReturnType<typeof generateQRCodes> | null = null;
 let _attendanceCenters: ReturnType<typeof generateAttendanceCenters> | null = null;
 let _householdTypes: ReturnType<typeof generateHouseholdTypes> | null = null;
+let _moderatorVillages: ReturnType<typeof generateModeratorVillages> | null = null;
+let _moderatorManagers: ReturnType<typeof generateModeratorManagers> | null = null;
+let _moderatorIssues: ReturnType<typeof generateModeratorIssues> | null = null;
 
 export function getHouseholds() { return _households ??= generateHouseholds(); }
 export function getCollections() { return _collections ??= generateCollections(); }
@@ -1000,6 +1115,9 @@ export function getFeedback() { return _feedback ??= generateFeedback(); }
 export function getQRCodes() { return _qrCodes ??= generateQRCodes(); }
 export function getAttendanceCenters() { return _attendanceCenters ??= generateAttendanceCenters(); }
 export function getHouseholdTypes() { return _householdTypes ??= generateHouseholdTypes(); }
+export function getModeratorVillages() { return _moderatorVillages ??= generateModeratorVillages(); }
+export function getModeratorManagers() { return _moderatorManagers ??= generateModeratorManagers(); }
+export function getModeratorIssues() { return _moderatorIssues ??= generateModeratorIssues(); }
 
 /** Reset all cached data - called on demo reset */
 export function clearMemoizedData() {
@@ -1007,4 +1125,5 @@ export function clearMemoizedData() {
   _collectorStats = _fieldWorkers = _village = _managerStats = null;
   _announcements = _issues = _feedback = _qrCodes = null;
   _attendanceCenters = _householdTypes = null;
+  _moderatorVillages = _moderatorManagers = _moderatorIssues = null;
 }

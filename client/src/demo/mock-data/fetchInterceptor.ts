@@ -30,6 +30,11 @@ import {
   generateDryWasteSales,
   generateCollectorWasteLogSummary,
   generateAuditLogs,
+  getModeratorVillages,
+  getModeratorManagers,
+  getModeratorIssues,
+  generateModeratorOverviewStats,
+  generatePremiumAnalytics,
 } from "./generators";
 
 const DEMO_GENERATOR_INDEX = 41; // Sunita Patil - H-042
@@ -134,6 +139,16 @@ export function getDemoApiResponse(url: string, role: DemoRole): any {
     // ─── QR codes ────────────────────────────────────────────
     if (path === "/api/qr-codes") return getQRCodes();
     if (path.startsWith("/api/qr-codes/batch/")) return { message: "Demo: PDF download not available" };
+    // Individual QR lookup (fieldworker: scan/search → open form)
+    if (path.match(/^\/api\/qr-codes\/[^/]+$/) && !path.includes("batch")) {
+      return {
+        id: 1,
+        uid: `${DEMO_VILLAGE_ID}-H0001`,
+        status: "notMapped",
+        villageId: DEMO_VILLAGE_ID,
+        batchId: "BATCH-DEMO-001",
+      };
+    }
 
     // ─── Material Logs ───────────────────────────────────────
     if (path === "/api/material-log/daily-waste") return generateDailyWasteLogs();
@@ -163,10 +178,26 @@ export function getDemoApiResponse(url: string, role: DemoRole): any {
     if (path.startsWith("/api/push")) return { subscribed: true };
 
     // ─── Household types ─────────────────────────────────────
-    if (path.startsWith("/api/household-types")) return getHouseholdTypes();
+    if (path.startsWith("/api/household-types")) return getHouseholdTypes().map(h => ({ typeCode: h.type, displayName: h.label }));
 
     // ─── Audit / Activity Logs ─────────────────────────────────
     if (path === "/api/audit-logs" || path === "/api/activity-logs") return generateAuditLogs();
+
+    // ─── Moderator ───────────────────────────────────────────────
+    if (path === "/api/moderator/villages") return getModeratorVillages();
+    if (path === "/api/moderator/overview-stats") return generateModeratorOverviewStats(params.get("date") || undefined);
+    if (path === "/api/moderator/issues") return getModeratorIssues();
+    if (path === "/api/moderator/managers") return getModeratorManagers();
+    if (path.match(/^\/api\/moderator\/village\/[^/]+\/managers$/)) {
+      const villageId = path.split("/")[4];
+      return getModeratorManagers().filter(m => m.villageId === villageId);
+    }
+    if (path.match(/^\/api\/moderator\/village\/[^/]+\/report$/)) {
+      const dateParam = params.get("date") || undefined;
+      return generatePremiumAnalytics(dateParam);
+    }
+    if (path === "/api/moderator/audit-logs") return generateAuditLogs();
+    if (path === "/api/profile") return DEMO_USERS[role];
 
     // ─── Upload (photos) ───────────────────────────────────────
     if (path.startsWith("/api/upload")) return { url: "/demo-placeholder.jpg" };

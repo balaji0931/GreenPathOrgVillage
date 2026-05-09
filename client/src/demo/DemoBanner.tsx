@@ -8,6 +8,7 @@ const ROLE_LABELS: Record<DemoRole, string> = {
   collector: "Waste Collector",
   generator: "Household",
   fieldworker: "Field Worker",
+  moderator: "Moderator",
 };
 
 export function DemoBanner() {

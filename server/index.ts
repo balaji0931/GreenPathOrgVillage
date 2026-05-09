@@ -106,8 +106,8 @@ const { app, logger } = createApp();
   server.listen(
     {
       port,
-      host: "0.0.0.0",
-      reusePort: true,
+      // host: "0.0.0.0",
+      // reusePort: true,
     },
     () => {
       log(`serving on port ${port}`);

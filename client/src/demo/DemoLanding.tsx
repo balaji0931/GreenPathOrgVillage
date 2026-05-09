@@ -15,6 +15,20 @@ const ROLES: Array<{
   features: string[];
 }> = [
   {
+    role: "moderator",
+    label: "Moderator",
+    icon: Shield,
+    color: "text-rose-600",
+    bgColor: "bg-rose-50",
+    description: "Oversee multiple villages, monitor performance across territories, and manage village managers.",
+    features: [
+      "Multi-village overview & KPIs",
+      "Cross-village issue monitoring",
+      "Manager creation & password reset",
+      "Territory-wide announcements",
+    ],
+  },
+  {
     role: "manager",
     label: "Village Manager",
     icon: Briefcase,
@@ -77,7 +91,7 @@ export default function DemoLanding() {
 
   useSEO({
     title: "GreenPath Demo - Interactive Waste Management Dashboard",
-    description: "Try GreenPath's waste management platform - explore Manager, Collector, Household, and Field Worker dashboards with realistic demo data. No signup required.",
+    description: "Try GreenPath's waste management platform - explore Moderator, Manager, Collector, Household, and Field Worker dashboards with realistic demo data. No signup required.",
     path: "/demo",
   });
 
@@ -104,7 +118,7 @@ export default function DemoLanding() {
 
         {/* Role Cards */}
         <div className="max-w-5xl mx-auto px-4 pb-8">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5">
+          <div className="flex flex-wrap justify-center gap-4 sm:gap-5 lg:gap-8 [&>*]:w-full [&>*]:sm:w-[calc(50%-0.625rem)] [&>*]:lg:w-[calc(33.333%-1.375rem)]">
             {ROLES.map(({ role, label, icon: Icon, color, bgColor, description, features }) => (
               <button
                 key={role}

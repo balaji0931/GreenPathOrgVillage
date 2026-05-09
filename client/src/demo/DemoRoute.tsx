@@ -8,15 +8,17 @@ const ManagerDashboard = lazy(() => import("@/pages/manager-dashboard"));
 const CollectorDashboard = lazy(() => import("@/pages/collector-dashboard"));
 const GeneratorDashboard = lazy(() => import("@/pages/generator-dashboard"));
 const FieldWorkerDashboard = lazy(() => import("@/pages/fieldworker-dashboard"));
+const ModeratorDashboard = lazy(() => import("@/pages/moderator"));
 
 const DASHBOARD_MAP: Record<DemoRole, React.LazyExoticComponent<any>> = {
   manager: ManagerDashboard,
   collector: CollectorDashboard,
   generator: GeneratorDashboard,
   fieldworker: FieldWorkerDashboard,
+  moderator: ModeratorDashboard,
 };
 
-const VALID_ROLES = new Set<string>(["manager", "collector", "generator", "fieldworker"]);
+const VALID_ROLES = new Set<string>(["manager", "collector", "generator", "fieldworker", "moderator"]);
 
 function DemoLoading() {
   return (

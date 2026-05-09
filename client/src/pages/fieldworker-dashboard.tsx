@@ -3,7 +3,7 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
 import type { Village } from "@shared/schema";
 import { useTerminology } from '@/hooks/useTerminology';
-import { useIsMobileWithLoading } from "@/hooks/use-mobile";
+import { useDemo } from "@/demo/DemoContext";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -29,7 +29,12 @@ import {
   Phone,
   Users,
   MapPinned,
-  CheckCircle
+  CheckCircle,
+  ScanLine,
+  ChevronLeft,
+  Target,
+  ScanBarcode,
+  ScanBarcodeIcon
 } from "lucide-react";
 
 interface HouseholdForm {
@@ -55,7 +60,7 @@ interface QRCodeData {
 export default function FieldWorkerDashboard() {
   const { user, logout, changePassword, isChangePasswordPending } = useAuth();
   const { toast } = useToast();
-  const { isMobile, isLoading: isMobileLoading } = useIsMobileWithLoading();
+  const demo = useDemo();
   const [activeTab, setActiveTab] = useState<'map' | 'account'>('map');
 
   const [showScanner, setShowScanner] = useState(false);
@@ -252,6 +257,20 @@ export default function FieldWorkerDashboard() {
       });
       return;
     }
+    // In demo mode, skip the mutation (DemoProvider overrides mutationFn)
+    // and directly simulate a notMapped QR code
+    if (demo?.isDemo) {
+      const demoQR: QRCodeData = {
+        id: 1,
+        uid: `${user?.villageId || "DEMO-V001"}-H0001`,
+        status: "notMapped",
+        villageId: user?.villageId || "DEMO-V001",
+        batchId: "BATCH-DEMO-001",
+      };
+      setScannedQRCode(demoQR);
+      setShowForm(true);
+      return;
+    }
     lookupQRCodeMutation.mutate(trimmedUid);
   };
 
@@ -342,633 +361,611 @@ export default function FieldWorkerDashboard() {
     }
   };
 
-  if (isMobileLoading) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading...</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (!isMobile) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-8">
-        <Card className="max-w-md">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-orange-600">
-              <Phone className="h-6 w-6" />
-              Mobile Device Required
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <p className="text-gray-600">
-              The Field Worker app is designed for mobile devices. Please access this application from your smartphone or tablet to scan QR codes and map households.
-            </p>
-            <div className="bg-orange-50 p-4 rounded-lg">
-              <p className="text-sm text-orange-800">
-                Open this page on your mobile device to continue working.
-              </p>
-            </div>
-            <Button
-              variant="outline"
-              onClick={() => logout()}
-              className="w-full"
-              data-testid="button-logout-desktop"
-            >
-              <LogOut className="h-4 w-4 mr-2" />
-              Logout
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
   return (
-    <div className="min-h-screen bg-gray-50 pb-20">
-      <div className="bg-green-600 text-white p-3 sticky top-0 z-10">
-        <div className="flex items-center justify-center">
-          <img
-            src="/logos/logo-dark.svg"
-            alt="GreenPath"
-            className="w-auto h-9"
-          />
+    <div className="min-h-screen bg-gray-100 flex justify-center">
+      <div className="w-full max-w-md min-h-screen bg-gradient-to-br from-green-50/50 via-white to-blue-50/30 pb-28 relative shadow-xl">
+
+
+        {/* ── Top Bar (always visible, same on both tabs) ── */}
+        <div className="sticky top-0 z-20">
+          <div className="bg-white/80 backdrop-blur-xl border-b border-gray-100/80">
+            <div className="flex items-center justify-between px-3 py-2.5">
+              <img src="/logos/logo-full.svg" alt="GreenPath" className="h-12 w-auto" />
+              <button
+                onClick={() => setActiveTab(activeTab === 'account' ? 'map' : 'account')}
+                className="w-10 h-10 rounded-full bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center text-white text-xs font-black active:scale-90 transition-transform shadow-md"
+              >
+                {(user?.name || "F").charAt(0).toUpperCase()}
+              </button>
+            </div>
+          </div>
+
+          {/* Account sub-header */}
+          {activeTab === 'account' && (
+            <div className="bg-white/60 backdrop-blur-md border-b border-gray-100/60 px-3 py-2 flex items-center gap-2">
+              <button onClick={() => setActiveTab('map')} className="flex items-center gap-0.5 text-green-600 active:scale-95 transition-transform">
+                <ChevronLeft className="h-5 w-5" />
+                <span className="text-sm font-bold">Back</span>
+              </button>
+              <span className="flex-1 text-center text-base font-black text-gray-900 pr-14">Account</span>
+            </div>
+          )}
         </div>
-      </div>
 
+        {/* ── Main Content ── */}
+        <div className="p-3">
+          {activeTab === 'map' && (
+            <div className="space-y-4">
 
-      <div className="p-4">
-        {activeTab === 'map' && (
-          <div className="space-y-4">
-            {mappingSuccess && (
-              <Card className="bg-green-50 border-green-200">
-                <CardContent className="pt-4">
-                  <div className="flex items-center gap-3 text-green-700">
-                    <CheckCircle className="h-6 w-6" />
-                    <div>
-                      <p className="font-medium">Mapped Successfully!</p>
-                      <p className="text-sm text-green-600">The QR code has been linked successfully.</p>
-                    </div>
+              {/* Hero header matching reference */}
+              <div className="pt-1 pb-1 relative text-center">
+                <div>
+                  <h1 className="text-xl font-black text-gray-900">{`Map ${label.household}`}</h1>
+                  <p className="text-xs text-gray-400 font-medium">Scan QR or search by UID to map {label.household.toLowerCase()}</p>
+                </div>
+              </div>
+              {demo?.isDemo && (
+                <div className="bg-emerald-50 rounded-2xl border border-emerald-100 px-4 py-3 flex items-start gap-3">
+                  <div>
+                    <p className="text-sm text-emerald-700 font-semibold">ENTER UID <span className="font-mono bg-emerald-100 px-1.5 py-0.5 rounded-md text-xs">V001-H0001</span> below to explore</p>
                   </div>
-                </CardContent>
-              </Card>
-            )}
+                </div>
+              )}
 
-            <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="flex items-center gap-2 text-lg">
-                  <MapPin className="h-5 w-5 text-green-600" />
-                  {`Map ${label.household}`}
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <Button
-                  onClick={() => setShowScanner(true)}
-                  className="w-full bg-green-600 hover:bg-green-700"
-                  data-testid="button-scan-qr"
+              {/* Success banner */}
+              {mappingSuccess && (
+                <div className="bg-green-50 border border-green-200 rounded-2xl p-3 flex items-center gap-3 animate-in slide-in-from-top-2">
+                  <div className="bg-green-500 rounded-full p-1.5"><CheckCircle className="h-4 w-4 text-white" /></div>
+                  <div>
+                    <p className="text-sm font-bold text-green-800">Mapped Successfully!</p>
+                    <p className="text-[10px] text-green-600">QR code linked to {label.household.toLowerCase()}</p>
+                  </div>
+                </div>
+              )}
+
+              {/* Search by UID card */}
+              <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 space-y-3.5 border-l-4 border-l-blue-400">
+                <div className="flex items-center gap-3">
+                  <div className="bg-blue-100 p-2.5 rounded-full">
+                    <Search className="h-5 w-5 text-blue-600" />
+                  </div>
+                  <div>
+                    <h2 className="text-base font-bold text-gray-900">Search by UID</h2>
+                  </div>
+                </div>
+
+                <Input
+                  placeholder="Enter UID (e.g., V001-H0001)"
+                  value={searchUid}
+                  onChange={(e) => setSearchUid(e.target.value)}
+                  className="rounded-xl border-gray-200 bg-gray-50 text-sm h-12"
+                  data-testid="input-search-uid"
+                />
+
+                <button
+                  onClick={handleSearchByUid}
+                  disabled={lookupQRCodeMutation.isPending || !searchUid.trim()}
+                  className="w-full bg-gradient-to-r from-green-600 to-emerald-500 text-white rounded-xl py-3.5 font-bold text-sm flex items-center justify-center gap-2 active:scale-[0.98] transition-all shadow-lg shadow-green-200/50 disabled:opacity-40"
+                  data-testid="button-search-uid"
                 >
-                  <Camera className="h-5 w-5 mr-2" />
-                  Scan QR Code
-                </Button>
-
-                <div className="relative">
-                  <div className="absolute inset-0 flex items-center">
-                    <span className="w-full border-t" />
-                  </div>
-                  <div className="relative flex justify-center text-xs uppercase">
-                    <span className="bg-white px-2 text-gray-500">or</span>
-                  </div>
-                </div>
-
-                <div className="flex gap-2">
-                  <Input
-                    placeholder="Enter QR UID (e.g., GEN-V001-0001)"
-                    value={searchUid}
-                    onChange={(e) => setSearchUid(e.target.value)}
-                    data-testid="input-search-uid"
-                  />
-                  <Button
-                    onClick={handleSearchByUid}
-                    variant="outline"
-                    disabled={lookupQRCodeMutation.isPending}
-                    data-testid="button-search-uid"
-                  >
-                    <Search className="h-4 w-4" />
-                  </Button>
-                </div>
+                  <Search className="h-4 w-4" />
+                  Map {label.household.toLowerCase()}
+                </button>
 
                 {lookupQRCodeMutation.isPending && (
-                  <div className="text-center py-4">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600 mx-auto"></div>
-                    <p className="text-sm text-gray-500 mt-2">Looking up QR code...</p>
+                  <div className="flex items-center justify-center gap-2 py-1">
+                    <div className="w-4 h-4 border-2 border-green-500/20 border-t-green-500 rounded-full animate-spin" />
+                    <span className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Looking up...</span>
                   </div>
                 )}
-              </CardContent>
-            </Card>
+              </div>
 
-            <Card className="bg-blue-50 border-blue-200">
-              <CardContent className="pt-4">
-                <h3 className="font-medium text-blue-900 mb-2">How to Map</h3>
-                <ol className="text-sm text-blue-800 space-y-1 list-decimal list-inside">
-                  <li>Scan the printed QR code or enter its UID</li>
-                  <li>{`Fill in ${label.household.toLowerCase()} details`}</li>
-                  <li>Preview and confirm the mapping</li>
-                </ol>
-              </CardContent>
-            </Card>
+              {/* How it works */}
+              <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 border-l-4 border-l-green-400">
+                <h3 className="text-xs font-black text-gray-800 uppercase tracking-widest mb-3">How it works</h3>
+                <div className="space-y-3">
+                  {[
+                    { step: "1", text: "Scan QR or type UID above", icon: Camera },
+                    { step: "2", text: `Fill ${label.household.toLowerCase()} details`, icon: Home },
+                    { step: "3", text: "Preview & confirm mapping", icon: Check },
+                  ].map(({ step, text, icon: StepIcon }) => (
+                    <div key={step} className="flex items-center gap-3">
+                      <span className="bg-green-500 text-white text-xs font-black w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0">{step}</span>
+                      <StepIcon className="h-4 w-4 text-gray-400 flex-shrink-0" />
+                      <p className="text-sm text-gray-700 font-medium">{text}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Spacer for bottom wave */}
+              <div className="h-16" />
+            </div>
+          )}
+
+          {activeTab === 'account' && (
+            <div className="space-y-3">
+              <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center text-white text-xl font-black shadow-lg">
+                    {(user?.name || "F").charAt(0).toUpperCase()}
+                  </div>
+                  <div>
+                    <p className="font-bold text-gray-900 text-base">{user?.name}</p>
+                    <p className="text-[10px] font-bold text-green-600 uppercase tracking-widest">Field Worker</p>
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  {[
+                    { icon: User, lbl: "User ID", value: user?.userId },
+                    { icon: MapPinned, lbl: label.org, value: user?.villageId || "Not assigned" },
+                  ].map(({ icon: Icon, lbl, value }) => (
+                    <div key={lbl} className="flex items-center gap-3 p-2.5 bg-gray-50 rounded-xl">
+                      <Icon className="h-4 w-4 text-gray-400 flex-shrink-0" />
+                      <div className="min-w-0">
+                        <p className="text-[9px] font-bold text-gray-400 uppercase tracking-widest">{lbl}</p>
+                        <p className="text-sm font-semibold text-gray-800 truncate">{value}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 space-y-2">
+                <h3 className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Settings</h3>
+                <button onClick={() => setShowPasswordModal(true)} className="w-full flex items-center gap-3 p-3 rounded-xl bg-gray-50 hover:bg-gray-100 active:scale-[0.98] transition-all" data-testid="button-change-password">
+                  <Lock className="h-4 w-4 text-gray-500" /><span className="text-sm font-semibold text-gray-700">Change Password</span>
+                </button>
+                <button onClick={() => logout()} className="w-full flex items-center gap-3 p-3 rounded-xl bg-red-50 hover:bg-red-100 active:scale-[0.98] transition-all" data-testid="button-logout">
+                  <LogOut className="h-4 w-4 text-red-500" /><span className="text-sm font-semibold text-red-600">Logout</span>
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* ── Bottom Scanner Bar ── */}
+        {activeTab === 'map' && (
+          <div className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-md z-30">
+            {/* Frosted glass bottom bar */}
+            <div className="bg-white/90 backdrop-blur-xl border-t border-gray-200/50 px-6 pt-8 pb-6 flex justify-center" style={{ paddingBottom: 'max(24px, env(safe-area-inset-bottom))' }}>
+              <p className="text-[9px] font-bold text-gray-800 uppercase tracking-[0.2em]">Tap to scan</p>
+            </div>
+
+            {/* Elevated scan button */}
+            <div className="absolute left-1/2 -translate-x-1/2 -top-7">
+              <button
+                onClick={() => setShowScanner(true)}
+                data-testid="button-scan-qr"
+                className="group relative active:scale-95 transition-transform duration-150"
+              >
+                {/* Glow effect */}
+                <div className="absolute inset-0 rounded-[22px] bg-green-400/40 blur-xl scale-110 group-active:bg-green-500/50 transition-colors" />
+
+                {/* Main pill button */}
+                <div className="relative flex items-center gap-2.5 bg-gradient-to-r from-green-500 via-emerald-500 to-green-600 text-white px-7 py-3.5 rounded-[22px] shadow-xl shadow-green-600/30">
+                  <ScanLine className="h-6 w-6" strokeWidth={2.5} />
+                  <span className="text-sm font-bold tracking-wide">Scan QR</span>
+                </div>
+              </button>
+            </div>
           </div>
         )}
 
-        {activeTab === 'account' && (
-          <div className="space-y-4">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <User className="h-5 w-5 text-green-600" />
-                  Account Details
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
-                    <User className="h-5 w-5 text-gray-400" />
-                    <div>
-                      <p className="text-xs text-gray-500">Name</p>
-                      <p className="font-medium">{user?.name}</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
-                    <Badge variant="secondary" className="h-5 w-5 flex items-center justify-center p-0 text-xs">ID</Badge>
-                    <div>
-                      <p className="text-xs text-gray-500">User ID</p>
-                      <p className="font-medium">{user?.userId}</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
-                    <MapPinned className="h-5 w-5 text-gray-400" />
-                    <div>
-                      <p className="text-xs text-gray-500">{label.org}</p>
-                      <p className="font-medium">{user?.villageId || 'Not assigned'}</p>
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+        {showScanner && (
+          <Dialog open={showScanner} onOpenChange={setShowScanner}>
+            <DialogContent className="sm:max-w-md p-0">
+              <DialogHeader className="p-4 pb-0">
+                <DialogTitle>Scan QR Code</DialogTitle>
+              </DialogHeader>
+              <div className="p-4">
+                <QRScanner
+                  onScan={handleQRScan}
+                  onClose={() => setShowScanner(false)}
+                />
+              </div>
+            </DialogContent>
+          </Dialog>
+        )}
 
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Lock className="h-5 w-5 text-green-600" />
-                  Security
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
+        {/* ── Form Page View (inline, not dialog) ── */}
+        {showForm && scannedQRCode && (
+          <div className="fixed inset-0 z-40 bg-white flex flex-col">
+            {/* Same top nav bar as other tabs */}
+            <div className="bg-white/80 backdrop-blur-xl border-b border-gray-100/80 flex-shrink-0">
+              <div className="flex items-center justify-between px-3 py-2.5">
+                <img src="/logos/logo-full.svg" alt="GreenPath" className="h-12 w-auto" />
+                <button
+                  onClick={() => setActiveTab(activeTab === 'account' ? 'map' : 'account')}
+                  className="w-10 h-10 rounded-full bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center text-white text-xs font-black active:scale-90 transition-transform shadow-md"
+                >
+                  {(user?.name || "F").charAt(0).toUpperCase()}
+                </button>
+              </div>
+            </div>
+
+            {/* Sub-header: back + QR UID */}
+            <div className="bg-gradient-to-r from-green-600 to-emerald-500 px-4 py-2.5 flex items-center gap-3 flex-shrink-0">
+              <button onClick={resetForm} className="bg-white/20 p-1.5 rounded-lg active:scale-90 transition-transform text-white">
+                <ChevronLeft className="h-5 w-5" />
+              </button>
+              <div className="flex-1 flex items-center gap-2">
+                <span className="text-white/70 text-xs font-bold uppercase tracking-widest">QR UID :</span>
+                <span className="text-white text-sm font-mono font-bold">{scannedQRCode.uid}</span>
+              </div>
+            </div>
+
+            {/* Scrollable form body */}
+            <div className="flex-1 overflow-y-auto px-4 py-5 space-y-5 bg-gray-50">
+
+              {/* Head Name */}
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-gray-700 flex items-center gap-1.5">
+                  <User className="h-3.5 w-3.5 text-green-500" />
+                  {label.headName} <span className="text-red-400">*</span>
+                </label>
+                <Input
+                  id="headName"
+                  value={householdForm.headName}
+                  onChange={(e) => setHouseholdForm({ ...householdForm, headName: e.target.value })}
+                  placeholder="Enter full name"
+                  className="rounded-xl border-gray-200 bg-white h-12 text-sm shadow-sm"
+                  data-testid="input-head-name"
+                />
+              </div>
+
+              {/* Phone */}
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-gray-700 flex items-center gap-1.5">
+                  <Phone className="h-3.5 w-3.5 text-green-500" />
+                  Phone Number <span className="text-red-400">*</span>
+                </label>
+                <Input
+                  id="phone"
+                  type="tel"
+                  value={householdForm.phone}
+                  onChange={(e) => setHouseholdForm({ ...householdForm, phone: e.target.value })}
+                  placeholder="Enter mobile number"
+                  className="rounded-xl border-gray-200 bg-white h-12 text-sm shadow-sm"
+                  data-testid="input-phone"
+                />
+              </div>
+
+              {/* House Number */}
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-gray-700 flex items-center gap-1.5">
+                  <Home className="h-3.5 w-3.5 text-green-500" />
+                  {label.houseNumber} <span className="text-red-400">*</span>
+                </label>
+                <Input
+                  id="houseNumber"
+                  value={householdForm.houseNumber}
+                  onChange={(e) => setHouseholdForm({ ...householdForm, houseNumber: e.target.value })}
+                  placeholder="Enter house / door number"
+                  className="rounded-xl border-gray-200 bg-white h-12 text-sm shadow-sm"
+                  data-testid="input-house-number"
+                />
+              </div>
+
+              {/* Ward */}
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-gray-700 flex items-center gap-1.5">
+                  <MapPinned className="h-3.5 w-3.5 text-green-500" />
+                  {label.ward} <span className="text-red-400">*</span>
+                </label>
+                <Select value={householdForm.ward} onValueChange={(value) => setHouseholdForm({ ...householdForm, ward: value })}>
+                  <SelectTrigger className="rounded-xl border-gray-200 bg-white h-12 text-sm shadow-sm" data-testid="select-ward">
+                    <SelectValue placeholder={`Select ${label.ward.toLowerCase()}`} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {wardOptions.map((ward) => (<SelectItem key={ward} value={ward}>{ward}</SelectItem>))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Household Type */}
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-gray-700 flex items-center gap-1.5">
+                  <Home className="h-3.5 w-3.5 text-green-500" />
+                  {`${label.household} Type`} <span className="text-red-400">*</span>
+                </label>
+                <Select value={householdForm.householdType} onValueChange={(value) => setHouseholdForm({ ...householdForm, householdType: value })}>
+                  <SelectTrigger className="rounded-xl border-gray-200 bg-white h-12 text-sm shadow-sm" data-testid="select-household-type">
+                    <SelectValue placeholder="Select type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {(householdTypeOptions || [
+                      { typeCode: 'residential_small', displayName: 'Residential (Small)' },
+                      { typeCode: 'residential_large', displayName: 'Residential (Large)' },
+                      { typeCode: 'commercial_shop', displayName: 'Commercial (Shop)' },
+                      { typeCode: 'bulk_generator', displayName: 'Bulk Generator' },
+                      { typeCode: 'institutional', displayName: 'Institutional' },
+                      { typeCode: 'slum_supported', displayName: 'Subsidized' },
+                    ]).map((type) => (<SelectItem key={type.typeCode} value={type.typeCode}>{type.displayName}</SelectItem>))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Family Size */}
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-gray-700 flex items-center gap-1.5">
+                  <Users className="h-3.5 w-3.5 text-green-500" />
+                  {label.familySize}
+                </label>
+                <Input
+                  id="familySize"
+                  type="number"
+                  min="0"
+                  value={householdForm.familySize}
+                  onChange={(e) => setHouseholdForm({ ...householdForm, familySize: parseInt(e.target.value) || 1 })}
+                  placeholder="Number of family members"
+                  className="rounded-xl border-gray-200 bg-white h-12 text-sm shadow-sm"
+                  data-testid="input-family-size"
+                />
+              </div>
+
+              {/* Address */}
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-gray-700 flex items-center gap-1.5">
+                  <MapPin className="h-3.5 w-3.5 text-green-500" />
+                  Address
+                </label>
+                <Input
+                  id="address"
+                  value={householdForm.address}
+                  onChange={(e) => setHouseholdForm({ ...householdForm, address: e.target.value })}
+                  placeholder="Enter full address"
+                  className="rounded-xl border-gray-200 bg-white h-12 text-sm shadow-sm"
+                  data-testid="input-address"
+                />
+              </div>
+
+              {/* Location */}
+              {village?.locationServicesEnabled && (
+                <div className="space-y-2">
+                  <label className="text-xs font-bold text-gray-700 flex items-center gap-1.5">
+                    <MapPin className="h-3.5 w-3.5 text-blue-500" />
+                    Location <span className="text-red-400">*</span>
+                  </label>
+                  <Button type="button" variant="outline" onClick={() => { setShowMapModal(true); fetchLocation(); }} className="w-full rounded-xl bg-blue-50 border-blue-200 text-blue-700 hover:bg-blue-100 h-12 text-sm font-semibold">
+                    <MapPin className="h-4 w-4 mr-2" />
+                    Capture Live Location
+                  </Button>
+                  {householdForm.latitude && householdForm.longitude && (
+                    <div className="bg-blue-50 p-2.5 rounded-xl text-xs text-blue-700 font-semibold flex gap-4 justify-center">
+                      <span>Lat: {householdForm.latitude}</span>
+                      <span>Lng: {householdForm.longitude}</span>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Bottom spacer */}
+              <div className="h-2" />
+            </div>
+
+            {/* Sticky bottom actions */}
+            <div className="flex-shrink-0 bg-white border-t border-gray-100 px-4 py-3 flex gap-3" style={{ paddingBottom: 'max(12px, env(safe-area-inset-bottom))' }}>
+              <button
+                onClick={resetForm}
+                className="flex-1 py-3.5 rounded-xl border border-gray-200 text-sm font-bold text-gray-500 active:scale-[0.98] transition-transform"
+                data-testid="button-cancel-form"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handlePreview}
+                className="flex-[2] py-3.5 rounded-xl bg-gradient-to-r from-green-600 to-emerald-500 text-white text-md font-bold flex items-center justify-center gap-2 active:scale-[0.98] transition-transform shadow-lg shadow-green-200/50"
+                data-testid="button-preview"
+              >
+                Preview & Submit
+              </button>
+            </div>
+          </div>
+        )}
+
+        {showPreview && scannedQRCode && (
+          <Dialog open={showPreview} onOpenChange={(open) => { if (!open) { setShowPreview(false); setShowForm(true); } }}>
+            <DialogContent className="sm:max-w-md">
+              <DialogHeader>
+                <DialogTitle className="flex items-center gap-2">
+                  <Eye className="h-5 w-5" />
+                  Confirm Mapping
+                </DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4">
+                <div className="bg-green-50 p-3 rounded-lg">
+                  <p className="text-xs text-green-600 font-medium">QR Code UID</p>
+                  <p className="text-sm font-mono">{scannedQRCode.uid}</p>
+                </div>
+
+                <div className="space-y-2 text-sm">
+                  <div className="flex justify-between py-2 border-b">
+                    <span className="text-gray-500">{label.headName}</span>
+                    <span className="font-medium">{householdForm.headName}</span>
+                  </div>
+                  {householdForm.phone && (
+                    <div className="flex justify-between py-2 border-b">
+                      <span className="text-gray-500">Phone</span>
+                      <span className="font-medium">{householdForm.phone}</span>
+                    </div>
+                  )}
+                  {householdForm.houseNumber && (
+                    <div className="flex justify-between py-2 border-b">
+                      <span className="text-gray-500">{label.houseNumber}</span>
+                      <span className="font-medium">{householdForm.houseNumber}</span>
+                    </div>
+                  )}
+                  <div className="flex justify-between py-2 border-b">
+                    <span className="text-gray-500">{label.ward}</span>
+                    <span className="font-medium">{householdForm.ward}</span>
+                  </div>
+                  <div className="flex justify-between py-2 border-b">
+                    <span className="text-gray-500">{label.household} Type</span>
+                    <span className="font-medium">
+                      {householdTypeOptions?.find(t => t.typeCode === householdForm.householdType)?.displayName || householdForm.householdType}
+                    </span>
+                  </div>
+                  <div className="flex justify-between py-2 border-b">
+                    <span className="text-gray-500">{label.familySize}</span>
+                    <span className="font-medium">{householdForm.familySize}</span>
+                  </div>
+                  {householdForm.address && (
+                    <div className="flex justify-between py-2 border-b">
+                      <span className="text-gray-500">{label.address}</span>
+                      <span className="font-medium">{householdForm.address}</span>
+                    </div>
+                  )}
+                </div>
+
+                <div className="bg-yellow-50 p-3 rounded-lg text-sm text-yellow-800">
+                  Please verify all details before confirming. This action cannot be undone.
+                </div>
+              </div>
+              <DialogFooter className="gap-2 sm:gap-0">
                 <Button
                   variant="outline"
-                  className="w-full"
-                  onClick={() => setShowPasswordModal(true)}
-                  data-testid="button-change-password"
+                  onClick={() => { setShowPreview(false); setShowForm(true); }}
+                  data-testid="button-edit"
                 >
-                  <Lock className="h-4 w-4 mr-2" />
-                  Change Password
+                  <X className="h-4 w-4 mr-2" />
+                  Edit
                 </Button>
                 <Button
-                  variant="destructive"
-                  onClick={() => logout()}
-                  className="w-full"
-                  data-testid="button-logout"
+                  onClick={handleConfirmMapping}
+                  disabled={mapHouseholdMutation.isPending}
+                  className="bg-green-600 hover:bg-green-700"
+                  data-testid="button-confirm-mapping"
                 >
-                  <LogOut className="h-4 w-4 mr-2" />
-                  Logout
+                  {mapHouseholdMutation.isPending ? (
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                      Mapping...
+                    </>
+                  ) : (
+                    <>
+                      <Check className="h-4 w-4 mr-2" />
+                      Confirm
+                    </>
+                  )}
                 </Button>
-              </CardContent>
-            </Card>
-          </div>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
         )}
+
+        {showPasswordModal && (
+          <Dialog open={showPasswordModal} onOpenChange={handlePasswordModalClose}>
+            <DialogContent className="sm:max-w-md">
+              <DialogHeader>
+                <DialogTitle className="flex items-center gap-2">
+                  <Lock className="h-5 w-5" />
+                  Change Password
+                </DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4">
+                <div>
+                  <Label htmlFor="newPassword">New Password</Label>
+                  <Input
+                    id="newPassword"
+                    type="password"
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    placeholder="Enter new password (min 6 characters)"
+                    data-testid="input-new-password"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="confirmPassword">Confirm Password</Label>
+                  <Input
+                    id="confirmPassword"
+                    type="password"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    placeholder="Confirm new password"
+                    data-testid="input-confirm-password"
+                  />
+                </div>
+              </div>
+              <DialogFooter className="gap-2 sm:gap-0">
+                <Button variant="outline" onClick={() => handlePasswordModalClose(false)}>
+                  Cancel
+                </Button>
+                <Button
+                  onClick={handleChangePassword}
+                  disabled={isChangePasswordPending}
+                  className="bg-green-600 hover:bg-green-700"
+                  data-testid="button-save-password"
+                >
+                  {isChangePasswordPending ? "Saving..." : "Save Password"}
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+        )}
+        {showMapModal && (
+          <Dialog open={showMapModal} onOpenChange={setShowMapModal}>
+            <DialogContent className="max-w-none w-[100vw] h-[100vh] px-1 py-1 flex flex-col">
+              {/* Header */}
+              <div className="flex justify-between items-center px-3">
+                <h2 className="text-lg font-semibold">
+                  {label.household} Location
+                </h2>
+                <Button
+                  variant="ghost"
+                  onClick={() => setShowMapModal(false)}
+                >
+                </Button>
+              </div>
+
+              {/* Map */}
+              <div className="flex-1">
+                <MapPicker
+                  initialLocation={tempLocation || undefined}
+                  onLocationSelect={(lat, lng) => {
+                    setTempLocation({ lat, lng });
+                  }}
+                />
+              </div>
+              <p className="text-xs text-red-500 text-center">* Note: Select and Pin exact location of household</p>
+
+              {/* Footer */}
+              <div className="flex items-center justify-between p-1 space-x-2  bg-white">
+
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={fetchLocation}
+                  className="bg-blue-50 border-blue-200 text-blue-700 hover:bg-blue-100 p-1"
+                >
+                  <MapPin className="h-4 w-4" />
+                  Live Location
+                </Button>
+
+                <Button
+                  disabled={!tempLocation}
+                  className="bg-green-600 hover:bg-green-700 "
+                  onClick={() => {
+                    if (tempLocation) {
+                      setHouseholdForm(prev => ({
+                        ...prev,
+                        latitude: tempLocation.lat.toString(),
+                        longitude: tempLocation.lng.toString(),
+                      }));
+                    }
+                    setShowMapModal(false);
+                  }}
+                >
+                  Confirm Location
+                </Button>
+
+              </div>
+
+
+            </DialogContent>
+          </Dialog>
+        )}
+
       </div>
-
-      <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 px-4 py-3 flex justify-around safe-area-bottom">
-        <button
-          onClick={() => setActiveTab('map')}
-          className={`flex flex-col items-center py-2 px-6 rounded-lg transition-colors ${activeTab === 'map' ? 'text-green-600 bg-green-50' : 'text-gray-500'
-            }`}
-          data-testid="tab-map"
-        >
-          <MapPin className="h-6 w-6" />
-        </button>
-        <button
-          onClick={() => setActiveTab('account')}
-          className={`flex flex-col items-center py-2 px-6 rounded-lg transition-colors ${activeTab === 'account' ? 'text-green-600 bg-green-50' : 'text-gray-500'
-            }`}
-          data-testid="tab-account"
-        >
-          <User className="h-6 w-6" />
-        </button>
-      </nav>
-
-      {showScanner && (
-        <Dialog open={showScanner} onOpenChange={setShowScanner}>
-          <DialogContent className="sm:max-w-md p-0">
-            <DialogHeader className="p-4 pb-0">
-              <DialogTitle>Scan QR Code</DialogTitle>
-            </DialogHeader>
-            <div className="p-4">
-              <QRScanner
-                onScan={handleQRScan}
-                onClose={() => setShowScanner(false)}
-              />
-            </div>
-          </DialogContent>
-        </Dialog>
-      )}
-
-      {showForm && scannedQRCode && (
-        <Dialog open={showForm} onOpenChange={(open) => { if (!open) resetForm(); }}>
-          <DialogContent className="sm:max-w-md max-h-[100vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle className="flex items-center gap-2">
-                <Home className="h-5 w-5" />
-                {`${label.household} Details`}
-              </DialogTitle>
-            </DialogHeader>
-            <div className="space-y-4">
-              <div className="bg-green-50 p-1 rounded-lg text-center">
-                <p className="text-xs text-green-600 font-medium">QR Code UID</p>
-                <p className="text-sm font-mono">{scannedQRCode.uid}</p>
-              </div>
-
-              <div className="space-y-3">
-                <div className="space-y-1">
-                  <Label htmlFor="headName" className="flex items-center gap-1">
-                    <User className="h-4 w-4" />
-                    {label.headName} <span className="text-red-500">*</span>
-                  </Label>
-                  <Input
-                    id="headName"
-                    value={householdForm.headName}
-                    onChange={(e) => setHouseholdForm({ ...householdForm, headName: e.target.value })}
-                    placeholder="Full name"
-                    data-testid="input-head-name"
-                  />
-                </div>
-
-                <div className="space-y-1">
-                  <Label htmlFor="phone" className="flex items-center gap-1">
-                    <Phone className="h-4 w-4" />
-                    Phone Number <span className="text-red-500">*</span>
-                  </Label>
-                  <Input
-                    id="phone"
-                    type="tel"
-                    value={householdForm.phone}
-                    onChange={(e) => setHouseholdForm({ ...householdForm, phone: e.target.value })}
-                    placeholder="Mobile number"
-                    data-testid="input-phone"
-                  />
-                </div>
-
-                <div className="space-y-1">
-                  <Label htmlFor="houseNumber" className="flex items-center gap-1">
-                    <Home className="h-4 w-4" />
-                    {label.houseNumber} <span className="text-red-500">*</span>
-                  </Label>
-                  <Input
-                    id="houseNumber"
-                    value={householdForm.houseNumber}
-                    onChange={(e) => setHouseholdForm({ ...householdForm, houseNumber: e.target.value })}
-                    placeholder="House/Door number"
-                    data-testid="input-house-number"
-                  />
-                </div>
-
-                <div className="space-y-1">
-                  <Label htmlFor="ward" className="flex items-center gap-1">
-                    <MapPinned className="h-4 w-4" />
-                    {label.ward} <span className="text-red-500">*</span>
-                  </Label>
-                  <Select
-                    value={householdForm.ward}
-                    onValueChange={(value) => setHouseholdForm({ ...householdForm, ward: value })}
-                  >
-                    <SelectTrigger data-testid="select-ward">
-                      <SelectValue placeholder={`Select ${label.ward.toLowerCase()}`} />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {wardOptions.map((ward) => (
-                        <SelectItem key={ward} value={ward}>{ward}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="space-y-1">
-                  <Label htmlFor="householdType" className="flex items-center gap-1">
-                    <Home className="h-4 w-4" />
-                    {`${label.household} Type`} <span className="text-red-500">*</span>
-                  </Label>
-                  <Select
-                    value={householdForm.householdType}
-                    onValueChange={(value) => setHouseholdForm({ ...householdForm, householdType: value })}
-                  >
-                    <SelectTrigger data-testid="select-household-type">
-                      <SelectValue placeholder="Select type" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {(householdTypeOptions || [
-                        { typeCode: 'residential_small', displayName: 'Residential (Small)' },
-                        { typeCode: 'residential_large', displayName: 'Residential (Large)' },
-                        { typeCode: 'commercial_shop', displayName: 'Commercial (Shop)' },
-                        { typeCode: 'bulk_generator', displayName: 'Bulk Generator' },
-                        { typeCode: 'institutional', displayName: 'Institutional' },
-                        { typeCode: 'slum_supported', displayName: 'Subsidized' },
-                      ]).map((type) => (
-                        <SelectItem key={type.typeCode} value={type.typeCode}>{type.displayName}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="space-y-1">
-                  <Label htmlFor="familySize" className="flex items-center gap-1">
-                    <Users className="h-4 w-4" />
-                    {label.familySize}
-                  </Label>
-                  <Input
-                    id="familySize"
-                    type="number"
-                    min="0"
-                    value={householdForm.familySize}
-                    onChange={(e) => setHouseholdForm({ ...householdForm, familySize: parseInt(e.target.value) || 1 })}
-                    data-testid="input-family-size"
-                  />
-                </div>
-
-                <div className="space-y-1">
-                  <Label htmlFor="address" className="flex items-center gap-1">
-                    <MapPin className="h-4 w-4" />
-                    Address
-                  </Label>
-                  <Input
-                    id="address"
-                    value={householdForm.address}
-                    onChange={(e) => setHouseholdForm({ ...householdForm, address: e.target.value })}
-                    placeholder="Full address"
-                    data-testid="input-address"
-                  />
-                </div>
-
-                {village?.locationServicesEnabled && (
-                  <div className="space-y-3">
-
-                    <div className="flex flex-col gap-2">
-
-                      {/* Open Fullscreen Map Modal */}
-                      <Button
-                        type="button"
-                        variant="outline"
-                        onClick={() => {
-                          setShowMapModal(true);
-                          fetchLocation(); // center to GPS
-                        }}
-                        className="bg-blue-50 border-blue-200 text-blue-700 hover:bg-blue-100"
-                      >
-                        <MapPin className="h-4 w-4 mr-2" />
-                        Capture Live Location <span className="text-red-500">*</span>
-                      </Button>
-
-                      {/* Show Selected Coordinates */}
-                      {householdForm.latitude && householdForm.longitude && (
-                        <div className="bg-blue-50 p-2 rounded text-xs text-blue-800 flex flex-col gap-1">
-                          <p>Lat: {householdForm.latitude}</p>
-                          <p>Long: {householdForm.longitude}</p>
-                        </div>
-                      )}
-
-                    </div>
-                  </div>
-                )}
-
-              </div>
-            </div>
-            <DialogFooter className="gap-2 sm:gap-0">
-              <Button variant="outline" onClick={resetForm} data-testid="button-cancel-form">
-                <X className="h-4 w-4 mr-2" />
-                Cancel
-              </Button>
-              <Button onClick={handlePreview} className="bg-green-600 hover:bg-green-700" data-testid="button-preview">
-                <Eye className="h-4 w-4 mr-2" />
-                Preview
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-      )}
-
-      {showPreview && scannedQRCode && (
-        <Dialog open={showPreview} onOpenChange={(open) => { if (!open) { setShowPreview(false); setShowForm(true); } }}>
-          <DialogContent className="sm:max-w-md">
-            <DialogHeader>
-              <DialogTitle className="flex items-center gap-2">
-                <Eye className="h-5 w-5" />
-                Confirm Mapping
-              </DialogTitle>
-            </DialogHeader>
-            <div className="space-y-4">
-              <div className="bg-green-50 p-3 rounded-lg">
-                <p className="text-xs text-green-600 font-medium">QR Code UID</p>
-                <p className="text-sm font-mono">{scannedQRCode.uid}</p>
-              </div>
-
-              <div className="space-y-2 text-sm">
-                <div className="flex justify-between py-2 border-b">
-                  <span className="text-gray-500">{label.headName}</span>
-                  <span className="font-medium">{householdForm.headName}</span>
-                </div>
-                {householdForm.phone && (
-                  <div className="flex justify-between py-2 border-b">
-                    <span className="text-gray-500">Phone</span>
-                    <span className="font-medium">{householdForm.phone}</span>
-                  </div>
-                )}
-                {householdForm.houseNumber && (
-                  <div className="flex justify-between py-2 border-b">
-                    <span className="text-gray-500">{label.houseNumber}</span>
-                    <span className="font-medium">{householdForm.houseNumber}</span>
-                  </div>
-                )}
-                <div className="flex justify-between py-2 border-b">
-                  <span className="text-gray-500">{label.ward}</span>
-                  <span className="font-medium">{householdForm.ward}</span>
-                </div>
-                <div className="flex justify-between py-2 border-b">
-                  <span className="text-gray-500">{label.household} Type</span>
-                  <span className="font-medium">
-                    {householdTypeOptions?.find(t => t.typeCode === householdForm.householdType)?.displayName || householdForm.householdType}
-                  </span>
-                </div>
-                <div className="flex justify-between py-2 border-b">
-                  <span className="text-gray-500">{label.familySize}</span>
-                  <span className="font-medium">{householdForm.familySize}</span>
-                </div>
-                {householdForm.address && (
-                  <div className="flex justify-between py-2 border-b">
-                    <span className="text-gray-500">{label.address}</span>
-                    <span className="font-medium">{householdForm.address}</span>
-                  </div>
-                )}
-              </div>
-
-              <div className="bg-yellow-50 p-3 rounded-lg text-sm text-yellow-800">
-                Please verify all details before confirming. This action cannot be undone.
-              </div>
-            </div>
-            <DialogFooter className="gap-2 sm:gap-0">
-              <Button
-                variant="outline"
-                onClick={() => { setShowPreview(false); setShowForm(true); }}
-                data-testid="button-edit"
-              >
-                <X className="h-4 w-4 mr-2" />
-                Edit
-              </Button>
-              <Button
-                onClick={handleConfirmMapping}
-                disabled={mapHouseholdMutation.isPending}
-                className="bg-green-600 hover:bg-green-700"
-                data-testid="button-confirm-mapping"
-              >
-                {mapHouseholdMutation.isPending ? (
-                  <>
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                    Mapping...
-                  </>
-                ) : (
-                  <>
-                    <Check className="h-4 w-4 mr-2" />
-                    Confirm
-                  </>
-                )}
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-      )}
-
-      {showPasswordModal && (
-        <Dialog open={showPasswordModal} onOpenChange={handlePasswordModalClose}>
-          <DialogContent className="sm:max-w-md">
-            <DialogHeader>
-              <DialogTitle className="flex items-center gap-2">
-                <Lock className="h-5 w-5" />
-                Change Password
-              </DialogTitle>
-            </DialogHeader>
-            <div className="space-y-4">
-              <div>
-                <Label htmlFor="newPassword">New Password</Label>
-                <Input
-                  id="newPassword"
-                  type="password"
-                  value={newPassword}
-                  onChange={(e) => setNewPassword(e.target.value)}
-                  placeholder="Enter new password (min 6 characters)"
-                  data-testid="input-new-password"
-                />
-              </div>
-              <div>
-                <Label htmlFor="confirmPassword">Confirm Password</Label>
-                <Input
-                  id="confirmPassword"
-                  type="password"
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  placeholder="Confirm new password"
-                  data-testid="input-confirm-password"
-                />
-              </div>
-            </div>
-            <DialogFooter className="gap-2 sm:gap-0">
-              <Button variant="outline" onClick={() => handlePasswordModalClose(false)}>
-                Cancel
-              </Button>
-              <Button
-                onClick={handleChangePassword}
-                disabled={isChangePasswordPending}
-                className="bg-green-600 hover:bg-green-700"
-                data-testid="button-save-password"
-              >
-                {isChangePasswordPending ? "Saving..." : "Save Password"}
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-      )}
-      {showMapModal && (
-        <Dialog open={showMapModal} onOpenChange={setShowMapModal}>
-          <DialogContent className="max-w-none w-[100vw] h-[100vh] px-1 py-1 flex flex-col">
-            {/* Header */}
-            <div className="flex justify-between items-center px-3">
-              <h2 className="text-lg font-semibold">
-                {label.household} Location
-              </h2>
-              <Button
-                variant="ghost"
-                onClick={() => setShowMapModal(false)}
-              >
-              </Button>
-            </div>
-
-            {/* Map */}
-            <div className="flex-1">
-              <MapPicker
-                initialLocation={tempLocation || undefined}
-                onLocationSelect={(lat, lng) => {
-                  setTempLocation({ lat, lng });
-                }}
-              />
-            </div>
-            <p className="text-xs text-red-500 text-center">* Note: Select and Pin exact location of household</p>
-
-            {/* Footer */}
-            <div className="flex items-center justify-between p-1 space-x-2  bg-white">
-
-              <Button
-                type="button"
-                variant="outline"
-                onClick={fetchLocation}
-                className="bg-blue-50 border-blue-200 text-blue-700 hover:bg-blue-100 p-1"
-              >
-                <MapPin className="h-4 w-4" />
-                Live Location
-              </Button>
-
-              <Button
-                disabled={!tempLocation}
-                className="bg-green-600 hover:bg-green-700 "
-                onClick={() => {
-                  if (tempLocation) {
-                    setHouseholdForm(prev => ({
-                      ...prev,
-                      latitude: tempLocation.lat.toString(),
-                      longitude: tempLocation.lng.toString(),
-                    }));
-                  }
-                  setShowMapModal(false);
-                }}
-              >
-                Confirm Location
-              </Button>
-
-            </div>
-
-
-          </DialogContent>
-        </Dialog>
-      )}
-
     </div>
   );
 }

@@ -1,6 +1,6 @@
 import { createContext, useContext } from "react";
 
-export type DemoRole = "manager" | "collector" | "generator" | "fieldworker";
+export type DemoRole = "manager" | "collector" | "generator" | "fieldworker" | "moderator";
 
 export interface DemoContextValue {
   isDemo: true;
