@@ -4,11 +4,12 @@ import bcrypt from "bcrypt";
 
 export function registerAuthRoutes(app: Express, requireAuth: any, generateCsrfToken: () => string) {
   // CSRF token endpoint - provides token for authenticated sessions
+  // Returns existing token if one exists (avoids invalidating other callers like SW)
   app.get('/api/auth/csrf-token', (req, res) => {
-    // Generate new CSRF token and store in session
-    const token = generateCsrfToken();
-    req.session.csrfToken = token;
-    res.json({ csrfToken: token });
+    if (!req.session.csrfToken) {
+      req.session.csrfToken = generateCsrfToken();
+    }
+    res.json({ csrfToken: req.session.csrfToken });
   });
 
   // Auth routes

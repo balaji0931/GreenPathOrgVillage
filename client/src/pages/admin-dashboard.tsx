@@ -697,8 +697,67 @@ export default function AdminDashboard() {
 
 
 
+  // Manual behaviour stats refresh mutation
+  const refreshBehaviourStatsMutation = useMutation({
+    mutationFn: async () => {
+      const response = await apiRequest("POST", "/cron/daily-refresh");
+      return response.json();
+    },
+    onSuccess: (data) => {
+      toast({
+        title: "Success",
+        description: data.message || "Behaviour stats refreshed successfully",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to refresh behaviour stats",
+        variant: "destructive",
+      });
+    },
+  });
+
   const renderVillages = () => (
     <div className="space-y-4 sm:space-y-6">
+      {/* PAYMENT WORKER DISABLED WARNING */}
+      <div className="bg-red-50 border-2 border-red-400 rounded-lg p-4">
+        <div className="flex items-start gap-3">
+          <AlertTriangle className="h-6 w-6 text-red-600 flex-shrink-0 mt-0.5" />
+          <div className="flex-1">
+            <h3 className="font-bold text-red-800 text-base">⚠️ Payment Order Expiry Worker Disabled</h3>
+            <p className="text-red-700 text-sm mt-1">
+              The 10-minute payment order expiry background worker has been disabled to reduce database compute costs.
+              <strong> Do NOT allow any village to accept online payments</strong> until the payment expiry system is redesigned and re-enabled.
+              Enabling payments without this fix will cause bills to stay locked permanently after failed/abandoned payment attempts.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Manual Refresh Card */}
+      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-start gap-3">
+            <RotateCcw className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
+            <div>
+              <h3 className="font-semibold text-blue-800 text-sm">Behaviour Stats Refresh</h3>
+              <p className="text-blue-600 text-xs mt-0.5">Auto-runs daily at 1 AM IST. Use button if cron failed or for immediate refresh.</p>
+            </div>
+          </div>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => refreshBehaviourStatsMutation.mutate()}
+            disabled={refreshBehaviourStatsMutation.isPending}
+            className="border-blue-300 text-blue-700 hover:bg-blue-100"
+          >
+            <RotateCcw className={cn("h-4 w-4 mr-1", refreshBehaviourStatsMutation.isPending && "animate-spin")} />
+            {refreshBehaviourStatsMutation.isPending ? "Refreshing..." : "Refresh Now"}
+          </Button>
+        </div>
+      </div>
+
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h2 className="text-2xl sm:text-3xl font-bold">Organization Management</h2>

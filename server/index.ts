@@ -1,7 +1,9 @@
 import { createApp } from "./app";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
-import { startOrderExpiryWorker, stopOrderExpiryWorker } from "./workers/order-expiry";
+// DISABLED: Payment order expiry worker — wakes DB every 10 min, consuming ~14 hrs/day compute.
+// Re-enable ONLY after fixing the payment expiry system (see payment_issues.md).
+// import { startOrderExpiryWorker, stopOrderExpiryWorker } from "./workers/order-expiry";
 import type { Request, Response, NextFunction } from "express";
 
 const { app, logger } = createApp();
@@ -9,8 +11,9 @@ const { app, logger } = createApp();
 (async () => {
   const server = await registerRoutes(app);
 
-  // Start background workers
-  startOrderExpiryWorker();
+  // DISABLED: Payment order expiry worker — saves ~14 hrs/day of DB compute.
+  // Do NOT allow villages to accept online payments until this is fixed.
+  // startOrderExpiryWorker();
 
   // Enhanced error handling middleware - Security hardened
   app.use((err: any, req: Request, res: Response, _next: NextFunction) => {
@@ -78,8 +81,7 @@ const { app, logger } = createApp();
   const gracefulShutdown = async (signal: string) => {
     logger.info(`Received ${signal}. Graceful shutdown initiated.`);
 
-    // Stop background workers
-    stopOrderExpiryWorker();
+    // stopOrderExpiryWorker(); // DISABLED — worker not running
 
     server.close(() => {
       logger.info("HTTP server closed.");

@@ -1,0 +1,17 @@
+name: Daily Behaviour Refresh
+
+on:
+  schedule:
+    - cron: '30 19 * * *'        # 1 AM IST (19:30 UTC)
+  workflow_dispatch:
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Trigger daily behaviour stats refresh
+        run: |
+          curl -sS --max-time 30 --retry 2 --retry-delay 10 \
+            -X POST https://greenpathindia.in/cron/daily-refresh \
+          || echo "Daily refresh failed"

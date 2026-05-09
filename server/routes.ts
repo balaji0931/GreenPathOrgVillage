@@ -235,12 +235,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Push notification routes (proximity alerts)
   registerPushRoutes(app, requireAuth, requireRole);
 
-  // Start nightly behaviour stats refresh guard
-  // Runs on server start + every hour; only refreshes once per day (IST)
+  // Behaviour stats refresh — runs once on server start (catch-up if missed)
   checkAndRunDailyRefresh().catch((e) => console.error("[BehaviourStats] Initial refresh failed:", e));
-  setInterval(() => {
-    checkAndRunDailyRefresh().catch((e) => console.error("[BehaviourStats] Hourly check failed:", e));
-  }, 60 * 60 * 1000);
+  // Hourly setInterval REMOVED — was causing 24 DB wake-ups/day (~72 hrs/month compute).
+  // Now triggered by GitHub Actions cron at 1 AM IST (see keep-alive.yml).
+
+  // Cron endpoint for daily behaviour stats refresh (called by GitHub Actions at 1 AM IST)
+  // Also used by admin manual refresh button
+  app.post('/cron/daily-refresh', async (req, res) => {
+    // Allow from: GitHub Actions (no session) OR authenticated admin
+    const isAdmin = req.session?.role === 'admin';
+    const isCron = !req.session?.userId; // No session = external cron call
+
+    if (!isAdmin && !isCron) {
+      return res.status(403).json({ message: "Forbidden" });
+    }
+
+    try {
+      await checkAndRunDailyRefresh();
+      res.json({ message: "Behaviour stats refresh completed", timestamp: new Date().toISOString() });
+    } catch (e: any) {
+      console.error("[BehaviourStats] Cron refresh failed:", e);
+      res.status(500).json({ message: "Refresh failed", error: e.message });
+    }
+  });
 
 
   // Moderator-specific API endpoints
