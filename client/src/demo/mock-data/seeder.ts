@@ -145,11 +145,27 @@ export function seedDemoData(client: QueryClient, role: DemoRole): void {
     client.setQueryData(qk.collectionsCollector(), myCollections);
     client.setQueryData(qk.todayCount(), { count: 72, total: 100 });
     client.setQueryData(qk.villageDetails(V), village);
+    
+    // Shift state shape fix
+    const today = new Date();
+    const shiftStart = new Date(today);
+    shiftStart.setHours(6, 30, 0, 0);
     client.setQueryData(qk.myShift(), {
-      shiftStart: new Date(new Date().setHours(6, 30)).toISOString(),
-      shiftEnd: null,
-      centerName: "Gram Panchayat Office",
+      attendanceStatus: "present",
+      isShiftActive: true,
+      currentShiftNumber: 1,
+      shifts: [
+        {
+          shiftNumber: 1,
+          startedAt: shiftStart.toISOString(),
+          endedAt: null,
+          centerName: "Gram Panchayat Office",
+        }
+      ]
     });
+
+    // Seed collector waste logs
+    client.setQueryData(["/api/collector-waste-log"], generateDailyWasteLogs());
   }
 
   // ─── Generator (Household) ─────────────────────────────────────

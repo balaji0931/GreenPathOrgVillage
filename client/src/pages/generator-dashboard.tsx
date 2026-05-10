@@ -27,6 +27,7 @@ import { Progress } from "@/components/ui/progress";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
+import { useDemo } from "@/demo/DemoContext";
 import { apiRequest, queryClient, fetchWithCsrf } from "@/lib/queryClient";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import { TourButton } from "@/components/tours/TourButton";
@@ -73,8 +74,16 @@ const ISSUE_CATEGORIES = [
 
 export default function GeneratorDashboard() {
   const { user, logout } = useAuth();
+  const demo = useDemo();
   const { toast } = useToast();
   const { t } = useTranslation();
+
+  // Fetch village settings first so they are available for useTerminology
+  const { data: villageDetails } = useQuery<any>({
+    queryKey: [`/api/villages/${user?.villageId}`],
+    enabled: !!user?.villageId,
+  });
+
   const { tt, label } = useTerminology((villageDetails as any)?.unitType);
 
   const [activeTab, setActiveTab] = useState("home");
@@ -135,12 +144,6 @@ export default function GeneratorDashboard() {
     },
     retry: 3,
     retryDelay: 1000,
-  });
-
-  // Fetch village settings to check if proximity alerts are enabled
-  const { data: villageDetails } = useQuery<any>({
-    queryKey: [`/api/villages/${user?.villageId}`],
-    enabled: !!user?.villageId,
   });
 
   // Fetch push subscription status
@@ -462,7 +465,6 @@ export default function GeneratorDashboard() {
             <img src="/logos/logo-dark.svg" alt="GreenPath" className="w-auto h-9" />
           </div>
           <div className="flex items-center space-x-2">
-            <TourButton className="text-black hover:bg-white/20 bg-white" />
             <LanguageSwitcher />
           </div>
         </div>
@@ -1015,7 +1017,7 @@ export default function GeneratorDashboard() {
 
             {/* Filter Tabs */}
             <div className="flex space-x-2 overflow-x-auto pb-2">
-              {[{key:"All",label:tt("app.all")},{key:"Open",label:tt("issues.open")},{key:tt('issues.inProgress'),label:tt("issues.inProgress")},{key:tt('issues.resolved'),label:tt("issues.resolved")}].map((filter) => (
+              {[{ key: "All", label: tt("app.all") }, { key: "Open", label: tt("issues.open") }, { key: tt('issues.inProgress'), label: tt("issues.inProgress") }, { key: tt('issues.resolved'), label: tt("issues.resolved") }].map((filter) => (
                 <Button
                   key={filter.key}
                   variant={issueFilter === filter.key ? "default" : "outline"}
@@ -1224,7 +1226,9 @@ export default function GeneratorDashboard() {
                     <div className="flex flex-col items-center space-y-4">
                       <div className="p-4 bg-white border-2 border-gray-200 rounded-lg shadow-sm">
                         <img
-                          src={`/api/qr-codes/${householdData.uid}/image`}
+                          src={demo?.isDemo 
+                            ? `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=DEMO-GEN-${householdData.uid}`
+                            : `/api/qr-codes/${householdData.uid}/image`}
                           alt={tt('generator.yourQrCode')}
                           className="w-48 h-48 mx-auto"
                         />
@@ -1264,7 +1268,9 @@ export default function GeneratorDashboard() {
                               </div>
                               <div style="width:45mm; height:45mm; display:flex; align-items:center; justify-content:center;">
                                 <img 
-                                  src="/api/qr-codes/${householdData.uid}/image" 
+                                  src="${demo?.isDemo 
+                                    ? `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=DEMO-GEN-${householdData.uid}`
+                                    : `/api/qr-codes/${householdData.uid}/image`}"
                                   style="width:100%; height:100%; object-fit:contain;"
                                 />
                               </div>

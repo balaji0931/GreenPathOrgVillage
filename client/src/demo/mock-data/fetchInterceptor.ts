@@ -155,7 +155,9 @@ export function getDemoApiResponse(url: string, role: DemoRole): any {
     if (path === "/api/material-log/compost") return generateCompostLogs();
     if (path === "/api/material-log/dry-waste-sales") return generateDryWasteSales();
     if (path === "/api/material-log/upload-photo") return { url: "/demo-placeholder.jpg" };
-    if (path.startsWith("/api/collector-waste-log/")) return generateCollectorWasteLogSummary();
+    if (path === "/api/collector-waste-log" || path.startsWith("/api/collector-waste-log/")) {
+      return path === "/api/collector-waste-log" ? generateDailyWasteLogs() : generateCollectorWasteLogSummary();
+    }
 
     // ─── Staff ───────────────────────────────────────────────
     if (path === "/api/staff") return generateStaff(params.get("type") || undefined);
@@ -164,10 +166,21 @@ export function getDemoApiResponse(url: string, role: DemoRole): any {
     if (path === "/api/attendance/daily") return generateAttendanceDaily(params.get("workerType") || undefined);
     if (path === "/api/attendance/centers") return getAttendanceCenters();
     if (path === "/api/attendance/my-shift") {
+      const today = new Date();
+      const shiftStart = new Date(today);
+      shiftStart.setHours(6, 30, 0, 0);
       return {
-        shiftStart: new Date(new Date().setHours(6, 30)).toISOString(),
-        shiftEnd: null,
-        centerName: "Gram Panchayat Office",
+        attendanceStatus: "present",
+        isShiftActive: true,
+        currentShiftNumber: 1,
+        shifts: [
+          {
+            shiftNumber: 1,
+            startedAt: shiftStart.toISOString(),
+            endedAt: null,
+            centerName: "Gram Panchayat Office",
+          }
+        ]
       };
     }
 
