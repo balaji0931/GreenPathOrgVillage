@@ -1,5 +1,5 @@
-import { pgTable, text, serial, integer, boolean, timestamp, decimal, json, date, real, index, uniqueIndex } from "drizzle-orm/pg-core";
-import { relations } from "drizzle-orm";
+import { pgTable, text, serial, integer, boolean, timestamp, decimal, json, jsonb, date, real, index, uniqueIndex } from "drizzle-orm/pg-core";
+import { relations, sql } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -58,6 +58,8 @@ export const households = pgTable("households", {
   address: text("address"),
   status: text("status").default("active"),
   householdType: text("household_type").default("residential_small"), // residential_small, residential_large, commercial_shop, bulk_generator, institutional, slum_supported
+  accessRoadId: integer("access_road_id").references(() => villageRoads.id),
+  preferredCollectionTime: text("preferred_collection_time"),
 
   qrPrinted: boolean("qr_printed").default(false), // Track if QR code has been printed
   generatorUserId: text("generator_user_id"),
@@ -1202,3 +1204,60 @@ export const pushSubscriptionsRelations = relations(pushSubscriptions, ({ one })
 export const insertPushSubscriptionSchema = createInsertSchema(pushSubscriptions).omit({ id: true, createdAt: true, lastNotifiedAt: true });
 export type PushSubscription = typeof pushSubscriptions.$inferSelect;
 export type InsertPushSubscription = z.infer<typeof insertPushSubscriptionSchema>;
+
+// ═══════════════════════════════════════════
+// Village Roads (GPS-recorded road segments)
+// ═══════════════════════════════════════════
+export const villageRoads = pgTable("village_roads", {
+  id: serial("id").primaryKey(),
+  villageId: text("village_id").notNull().references(() => villages.villageId),
+  name: text("name").notNull().default("Road"),
+  coordinates: json("coordinates").$type<[number, number][]>().notNull(), // Array of [lat, lng] pairs
+  distanceMeters: integer("distance_meters").default(0), // Pre-computed route length
+  recordedBy: text("recorded_by").notNull(), // userId who recorded this road
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => [
+  index("idx_village_roads_village").on(table.villageId),
+]);
+
+export const villageRoadsRelations = relations(villageRoads, ({ one }) => ({
+  village: one(villages, {
+    fields: [villageRoads.villageId],
+    references: [villages.villageId],
+  }),
+}));
+
+export const insertVillageRoadSchema = createInsertSchema(villageRoads).omit({ id: true, createdAt: true });
+export type VillageRoad = typeof villageRoads.$inferSelect;
+export type InsertVillageRoad = z.infer<typeof insertVillageRoadSchema>;
+
+// ═══════════════════════════════════════════
+// Village Boundaries (village & ward polygons)
+// ═══════════════════════════════════════════
+export const villageBoundaries = pgTable("village_boundaries", {
+  id: serial("id").primaryKey(),
+  villageId: text("village_id").notNull().references(() => villages.villageId),
+  type: text("type").notNull(), // 'village' | 'ward'
+  wardName: text("ward_name"), // NULL for village boundary, ward name for ward
+  coordinates: jsonb("coordinates").$type<[number, number][]>().notNull(), // Polygon vertices [[lat, lng], ...]
+  areaSqMeters: integer("area_sq_meters").default(0),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => [
+  index("idx_village_boundaries_village").on(table.villageId),
+  // Partial unique: only one village boundary per village
+  uniqueIndex("idx_vb_village_unique").on(table.villageId).where(sql`type = 'village'`),
+  // Partial unique: only one boundary per ward per village
+  uniqueIndex("idx_vb_ward_unique").on(table.villageId, table.wardName).where(sql`type = 'ward'`),
+]);
+
+export const villageBoundariesRelations = relations(villageBoundaries, ({ one }) => ({
+  village: one(villages, {
+    fields: [villageBoundaries.villageId],
+    references: [villages.villageId],
+  }),
+}));
+
+export const insertVillageBoundarySchema = createInsertSchema(villageBoundaries).omit({ id: true, createdAt: true, updatedAt: true });
+export type VillageBoundary = typeof villageBoundaries.$inferSelect;
+export type InsertVillageBoundary = z.infer<typeof insertVillageBoundarySchema>;

@@ -171,10 +171,10 @@ export function registerQRCodeRoutes(app: Express, requireAuth: any, requireRole
     }
   });
 
-  app.post('/api/qr-codes/:uid/map', requireAuth, requireRole(['fieldworker']), requireVillageAccess, async (req, res) => {
+  app.post('/api/qr-codes/:uid/map', requireAuth, requireRole(['fieldworker', 'manager']), requireVillageAccess, async (req, res) => {
     try {
       const { uid } = req.params;
-      const { headName, phone, houseNumber, ward, familySize, address, latitude, longitude, householdType } = req.body;
+      const { headName, phone, houseNumber, ward, familySize, address, latitude, longitude, householdType, accessRoadId, preferredCollectionTime } = req.body;
       const villageId = req.session.villageId!;
 
       const result = await mapQRToHousehold(uid, villageId, {
@@ -187,6 +187,8 @@ export function registerQRCodeRoutes(app: Express, requireAuth: any, requireRole
         latitude,
         longitude,
         householdType,
+        accessRoadId,
+        preferredCollectionTime,
       });
 
       logAction(villageId, req.session.userId!, 'mapped', 'qr_mapping', uid, {

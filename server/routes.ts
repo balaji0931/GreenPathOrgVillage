@@ -34,6 +34,8 @@ import { registerBehaviourRoutes } from "./modules/behaviour/behaviour.routes";
 import { checkAndRunDailyRefresh } from "./modules/behaviour/behaviour.storage";
 import { registerStaffRoutes } from "./modules/staff/staff.routes";
 import { registerPushRoutes } from "./modules/push/push.routes";
+import { registerRoadMappingRoutes } from "./modules/road-mapping/road-mapping.routes";
+import { registerBoundariesRoutes } from "./modules/boundaries/boundaries.routes";
 
 // Configure multer for file uploads with enhanced security
 const upload = multer({
@@ -147,7 +149,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     cookie: {
       secure: process.env.NODE_ENV === 'production', // HTTPS only in production
       httpOnly: true, // Prevent XSS
-      maxAge: parseInt(process.env.SESSION_MAX_AGE || '86400000'), // 24 hours default
+      maxAge: parseInt(process.env.SESSION_MAX_AGE || '604800000'), // 7 days default (was 24h)
       sameSite: 'strict' as const // CSRF protection
     },
     ...(sessionStore && { store: sessionStore })
@@ -234,6 +236,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Push notification routes (proximity alerts)
   registerPushRoutes(app, requireAuth, requireRole);
+
+  // Road Mapping routes (village road recording)
+  registerRoadMappingRoutes(app, requireAuth, requireRole, requireVillageAccess);
+
+  // Boundaries routes (village & ward boundary polygons)
+  registerBoundariesRoutes(app, requireAuth, requireRole, requireVillageAccess);
 
   // Behaviour stats refresh — runs once on server start (catch-up if missed)
   checkAndRunDailyRefresh().catch((e) => console.error("[BehaviourStats] Initial refresh failed:", e));

@@ -69,7 +69,7 @@ export default function MapPicker({ initialLocation, onLocationSelect }: MapPick
           <BaseLayer checked name="Satellite">
             <TileLayer
               maxZoom={19}
-              attribution='Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community'
+              attribution='&copy; Esri'
               url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
             />
           </BaseLayer>
@@ -77,7 +77,7 @@ export default function MapPicker({ initialLocation, onLocationSelect }: MapPick
           <BaseLayer name="Street">
             <TileLayer
               maxZoom={19}
-              attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+              attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a>'
               url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
             />
           </BaseLayer>

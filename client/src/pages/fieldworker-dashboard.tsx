@@ -36,6 +36,7 @@ import {
   ScanBarcode,
   ScanBarcodeIcon
 } from "lucide-react";
+import RoadSelectionMap from "@/components/RoadSelectionMap";
 
 interface HouseholdForm {
   headName: string;
@@ -47,6 +48,8 @@ interface HouseholdForm {
   address: string;
   latitude?: string;
   longitude?: string;
+  accessRoadId?: number;
+  preferredCollectionTime?: string;
 }
 
 interface QRCodeData {
@@ -69,6 +72,7 @@ export default function FieldWorkerDashboard() {
   const [showForm, setShowForm] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
   const [showPasswordModal, setShowPasswordModal] = useState(false);
+  const [showRoadMapModal, setShowRoadMapModal] = useState(false);
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [mappingSuccess, setMappingSuccess] = useState(false);
@@ -118,7 +122,10 @@ export default function FieldWorkerDashboard() {
   const [showMapModal, setShowMapModal] = useState(false);
   const [tempLocation, setTempLocation] = useState<{ lat: number; lng: number } | null>(null);
 
-
+  const { data: villageRoads } = useQuery<{ id: number; name: string; coordinates: [number, number][] }[]>({
+    queryKey: ["/api/village-roads"],
+    enabled: !!user?.villageId,
+  });
 
   const lookupQRCodeMutation = useMutation({
     mutationFn: async (uid: string) => {
@@ -180,7 +187,9 @@ export default function FieldWorkerDashboard() {
       familySize: 0,
       address: "",
       latitude: undefined,
-      longitude: undefined
+      longitude: undefined,
+      accessRoadId: undefined,
+      preferredCollectionTime: undefined,
     });
     setSearchUid("");
   };
@@ -567,6 +576,38 @@ export default function FieldWorkerDashboard() {
           </Dialog>
         )}
 
+        {/* Road Map modal */}
+        {showRoadMapModal && (
+          <Dialog open={showRoadMapModal} onOpenChange={setShowRoadMapModal}>
+            <DialogContent className="max-w-none w-[100vw] h-[100vh] px-1 py-1 flex flex-col">
+              <div className="flex justify-between items-center px-3">
+                <h2 className="text-lg font-semibold">Select Access Road</h2>
+                <Button variant="ghost" onClick={() => setShowRoadMapModal(false)}><X className="w-5 h-5"/></Button>
+              </div>
+              <div className="flex-1">
+                <RoadSelectionMap
+                  initialLocation={tempLocation || { lat: parseFloat(householdForm.latitude || "0"), lng: parseFloat(householdForm.longitude || "0") }}
+                  roads={villageRoads || []}
+                  selectedRoadId={householdForm.accessRoadId}
+                  onSelectRoad={(id) => setHouseholdForm(prev => ({ ...prev, accessRoadId: id }))}
+                />
+              </div>
+              <p className="text-xs text-orange-500 text-center">
+                * Note: Tap on a blue road line to select it as the access road.
+              </p>
+              <div className="flex items-center justify-center p-2 bg-white">
+                <Button
+                  disabled={!householdForm.accessRoadId}
+                  className="bg-green-600 hover:bg-green-700 w-full"
+                  onClick={() => setShowRoadMapModal(false)}
+                >
+                  Confirm Selected Road
+                </Button>
+              </div>
+            </DialogContent>
+          </Dialog>
+        )}
+
         {/* ── Form Page View (inline, not dialog) ── */}
         {showForm && scannedQRCode && (
           <div className="fixed inset-0 z-40 bg-white flex flex-col">
@@ -738,6 +779,61 @@ export default function FieldWorkerDashboard() {
                   )}
                 </div>
               )}
+
+              {/* Access Road Selection */}
+              <div className="space-y-2">
+                <label className="text-xs font-bold text-gray-700 flex items-center gap-1.5">
+                  <MapPin className="h-3.5 w-3.5 text-orange-500" />
+                  Access Road
+                </label>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => {
+                    if (!householdForm.latitude) {
+                      toast({
+                        title: "Location Required",
+                        description: "Please capture live location first before selecting an access road.",
+                        variant: "destructive",
+                      });
+                      return;
+                    }
+                    if (!villageRoads || villageRoads.length === 0) {
+                      toast({
+                        title: "No Roads Found",
+                        description: "No roads have been recorded for this village yet.",
+                        variant: "destructive",
+                      });
+                      return;
+                    }
+                    setShowRoadMapModal(true);
+                  }}
+                  className="w-full rounded-xl bg-orange-50 border-orange-200 text-orange-700 hover:bg-orange-100 h-12 text-sm font-semibold"
+                >
+                  {householdForm.accessRoadId
+                    ? `Road Selected (${villageRoads?.find(r => r.id === householdForm.accessRoadId)?.name || 'Road'})`
+                    : "Select Access Road"}
+                </Button>
+              </div>
+
+              {/* Preferred Collection Time */}
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-gray-700">Preferred Collection Time</label>
+                <Select
+                  value={householdForm.preferredCollectionTime || ""}
+                  onValueChange={(val) => setHouseholdForm({ ...householdForm, preferredCollectionTime: val })}
+                >
+                  <SelectTrigger className="rounded-xl border-gray-200 bg-white h-12 text-sm shadow-sm">
+                    <SelectValue placeholder="Select time" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="5 - 7">5:00 AM - 7:00 AM</SelectItem>
+                    <SelectItem value="7 - 9">7:00 AM - 9:00 AM</SelectItem>
+                    <SelectItem value="9 - noon">9:00 AM - 12:00 PM</SelectItem>
+                    <SelectItem value="Anytime in the day">Anytime in the day</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
 
               {/* Bottom spacer */}
               <div className="h-2" />

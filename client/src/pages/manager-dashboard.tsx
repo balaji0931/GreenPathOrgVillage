@@ -99,9 +99,14 @@ import { jsPDF } from "jspdf";
 import { generateDailyReportPDF, type PDFReportData } from "@/components/DailyReportPDF";
 import { DataExportWizard } from "@/components/DataExportWizard";
 import { MaterialLog } from "@/components/manager/MaterialLog";
+import { ManagerAddHouseholdScreen } from "@/components/manager/ManagerAddHouseholdScreen";
 import PaymentsTab from "@/components/payments-tab";
 import ActivityLog from "@/components/ActivityLog";
 import { cn } from "@/lib/utils";
+
+const RoadMapper = React.lazy(() => import('@/components/manager/RoadMapper'));
+const BoundariesEditor = React.lazy(() => import('@/components/manager/BoundariesEditor'));
+const MapVisualization = React.lazy(() => import('@/components/manager/MapVisualization'));
 
 interface Collector {
   id: number;
@@ -3759,7 +3764,8 @@ export default function ManagerDashboard() {
                   {villageData?.name || "GreenPath"}
                 </span>
                 <span className="text-lg font-bold text-gray-900 leading-tight truncate">
-                  {activeMoreScreen === "household-details" ? tt('manager.householdDetails')
+                  {activeMoreScreen === "add-household" ? "Add Household"
+                    : activeMoreScreen === "household-details" ? tt('manager.householdDetails')
                     : activeMoreScreen === "generate-qr" ? tt('manager.generateQr')
                       : activeMoreScreen === "download-qr" ? tt('manager.downloadQr')
                         : activeMoreScreen === "collectors" ? tt('manager.collectors')
@@ -3782,11 +3788,14 @@ export default function ManagerDashboard() {
                                                           : activeMoreScreen === "data-export" ? tt('manager.dataExport')
                                                             : activeMoreScreen === "change-password" ? tt('app.changePassword')
                                                               : activeMoreScreen === "language" ? tt('generator.language')
-                                                                : activeTab === "reports" ? tt('manager.dailyReports')
-                                                                  : activeTab === "collections" ? tt('collections.title')
-                                                                    : activeTab === "issues" ? tt('navigation.issues')
-                                                                      : activeTab === "more" ? tt('manager.more')
-                                                                        : tt('manager.dashboard')}
+                                                                : activeMoreScreen === "road-mapper" ? "Road Mapper"
+                                                                  : activeMoreScreen === "boundaries" ? "Boundaries"
+                                                                    : activeTab === "reports" ? tt('manager.dailyReports')
+                                                                      : activeTab === "collections" ? tt('collections.title')
+                                                                      : activeTab === "map-viz" ? 'Map View'
+                                                                      : activeTab === "issues" ? tt('navigation.issues')
+                                                                        : activeTab === "more" ? tt('manager.more')
+                                                                          : tt('manager.dashboard')}
                 </span>
               </div>
             </div>
@@ -3822,6 +3831,7 @@ export default function ManagerDashboard() {
               {[
                 { id: "reports", icon: BarChart3, label: tt('manager.reports') },
                 { id: "collections", icon: Package, label: tt('collections.title') },
+                { id: "map-viz", icon: MapIcon, label: 'Map' },
                 { id: "issues", icon: AlertCircle, label: tt('navigation.issues') },
                 { id: "more", icon: LayoutDashboard, label: tt('manager.more') },
               ].map(({ id, icon: Icon, label }) => {
@@ -3855,6 +3865,7 @@ export default function ManagerDashboard() {
                 {[
                   { id: "reports", icon: BarChart3, label: tt('manager.dailyReports') },
                   { id: "collections", icon: Package, label: tt("navigation.collections") },
+                  { id: "map-viz", icon: MapIcon, label: 'Map View' },
                   { id: "issues", icon: AlertCircle, label: tt("navigation.issues") },
                 ].map(({ id, icon: Icon, label }) => (
                   <button
@@ -3875,6 +3886,7 @@ export default function ManagerDashboard() {
                   <p className="text-[10px] uppercase tracking-widest text-gray-400 font-semibold px-3 mb-1">{tt('manager.households')}</p>
                   {[
                     { id: "household-details", icon: Home, label: tt('manager.householdDetails') },
+                    { id: "add-household", icon: Plus, label: "Add Household" },
                     { id: "generate-qr", icon: QrCode, label: tt('manager.generateQr') },
                     { id: "download-qr", icon: Download, label: tt('manager.downloadQr') },
                   ].map(({ id, icon: Icon, label }) => (
@@ -3938,6 +3950,23 @@ export default function ManagerDashboard() {
                       className={cn(
                         "w-full flex items-center gap-3 px-3 py-2 rounded-xl text-left transition-colors text-sm font-medium",
                         activeMoreScreen === id ? "bg-blue-50 text-blue-700" : "text-gray-600 hover:bg-gray-50",
+                      )}
+                    >
+                      <Icon className="h-4 w-4 flex-shrink-0" />
+                      {label}
+                    </button>
+                  ))}
+                  <p className="text-[10px] uppercase tracking-widest text-gray-400 font-semibold px-3 mt-3 mb-1">Map</p>
+                  {[
+                    { id: "road-mapper", icon: MapIcon, label: "Road Mapper" },
+                    { id: "boundaries", icon: MapPin, label: "Boundaries" },
+                  ].map(({ id, icon: Icon, label }) => (
+                    <button
+                      key={id}
+                      onClick={() => { setActiveTab("more"); setActiveMoreScreen(id); }}
+                      className={cn(
+                        "w-full flex items-center gap-3 px-3 py-2 rounded-xl text-left transition-colors text-sm font-medium",
+                        activeMoreScreen === id ? "bg-cyan-50 text-cyan-700" : "text-gray-600 hover:bg-gray-50",
                       )}
                     >
                       <Icon className="h-4 w-4 flex-shrink-0" />
@@ -4200,6 +4229,7 @@ export default function ManagerDashboard() {
                     <div className="bg-white rounded-2xl ring-1 ring-black/5 shadow-sm overflow-hidden">
                       {[
                         { id: "household-details", icon: Home, label: tt('manager.householdDetails'), description: tt('manager.householdDetails') },
+                        { id: "add-household", icon: Plus, label: "Add Household", description: "Map a new household to a QR code" },
                         { id: "generate-qr", icon: QrCode, label: tt('manager.generateQr'), description: tt('manager.generateQr') },
                         { id: "download-qr", icon: Download, label: tt('manager.downloadQr'), description: tt('manager.downloadQr') },
                       ].map(({ id, icon: Icon, label, description }, idx, arr) => (
@@ -4297,6 +4327,33 @@ export default function ManagerDashboard() {
                         >
                           <div className="w-9 h-9 rounded-xl bg-blue-50 flex items-center justify-center flex-shrink-0">
                             <Icon className="h-4 w-4 text-blue-600" />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="font-semibold text-gray-900 text-sm">{label}</p>
+                            <p className="text-xs text-gray-400 truncate">{description}</p>
+                          </div>
+                          <ArrowRight className="h-4 w-4 text-gray-300 flex-shrink-0" />
+                        </button>
+                      ))}
+                    </div>
+
+                    {/* Map group */}
+                    <p className="text-[11px] uppercase tracking-widest text-gray-400 font-bold px-1 pt-4 pb-1">Map</p>
+                    <div className="bg-white rounded-2xl ring-1 ring-black/5 shadow-sm overflow-hidden">
+                      {[
+                        { id: "road-mapper", icon: MapIcon, label: "Road Mapper", description: "Record village collection roads" },
+                        { id: "boundaries", icon: MapPin, label: "Boundaries", description: "Village & ward boundaries, road editing" },
+                      ].map(({ id, icon: Icon, label, description }, idx, arr) => (
+                        <button
+                          key={id}
+                          onClick={() => setActiveMoreScreen(id)}
+                          className={cn(
+                            "w-full flex items-center gap-4 px-4 py-3 text-left transition-colors active:bg-gray-50 active:scale-[0.99]",
+                            idx < arr.length - 1 ? "border-b border-gray-100" : ""
+                          )}
+                        >
+                          <div className="w-9 h-9 rounded-xl bg-cyan-50 flex items-center justify-center flex-shrink-0">
+                            <Icon className="h-4 w-4 text-cyan-600" />
                           </div>
                           <div className="flex-1 min-w-0">
                             <p className="font-semibold text-gray-900 text-sm">{label}</p>
@@ -4530,6 +4587,11 @@ export default function ManagerDashboard() {
                       {households.length} {label.householdPlural.toLowerCase()}
                     </p>
                   </div>
+                )}
+
+                {/* Add Household - embeds field-worker mapping UI */}
+                {activeMoreScreen === "add-household" && (
+                  <ManagerAddHouseholdScreen onBack={() => setActiveMoreScreen(null)} />
                 )}
 
                 {/* Generate QR - Premium */}
@@ -5678,6 +5740,20 @@ export default function ManagerDashboard() {
               })()
             }
 
+            {/* Road Mapper — under More > Map group */}
+            {activeTab === "more" && activeMoreScreen === "road-mapper" && (
+              <React.Suspense fallback={<div className="flex-1 flex items-center justify-center"><div className="w-8 h-8 border-2 border-green-600 border-t-transparent rounded-full animate-spin" /></div>}>
+                <RoadMapper />
+              </React.Suspense>
+            )}
+
+            {/* Boundaries Editor — under More > Map group */}
+            {activeTab === "more" && activeMoreScreen === "boundaries" && (
+              <React.Suspense fallback={<div className="flex-1 flex items-center justify-center"><div className="w-8 h-8 border-2 border-green-600 border-t-transparent rounded-full animate-spin" /></div>}>
+                <BoundariesEditor />
+              </React.Suspense>
+            )}
+
             {/* Reports Tab */}
             {activeTab === "reports" && (
               <ReportsTabContent
@@ -5690,6 +5766,13 @@ export default function ManagerDashboard() {
                 managerName={user?.name || tt('roles.manager')}
                 unitType={villageData?.unitType}
               />
+            )}
+
+            {/* Map Visualization Tab */}
+            {activeTab === "map-viz" && (
+              <React.Suspense fallback={<div className="flex-1 flex items-center justify-center"><div className="w-8 h-8 border-2 border-green-600 border-t-transparent rounded-full animate-spin" /></div>}>
+                <MapVisualization onBack={() => setActiveTab('reports')} />
+              </React.Suspense>
             )}
 
           </div >

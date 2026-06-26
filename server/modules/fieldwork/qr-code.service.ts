@@ -78,9 +78,11 @@ export async function mapQRToHousehold(
         address?: string;
         latitude?: number;
         longitude?: number;
+        accessRoadId?: number;
+        preferredCollectionTime?: string;
     }
 ) {
-    const { headName, phone, houseNumber, ward, householdType, familySize, address, latitude, longitude } = data;
+    const { headName, phone, houseNumber, ward, householdType, familySize, address, latitude, longitude, accessRoadId, preferredCollectionTime } = data;
 
     const { toFullUid, generateGeneratorCredentials } = await import('./qr-service');
     const fullUid = toFullUid(uid);
@@ -120,6 +122,8 @@ export async function mapQRToHousehold(
         address,
         latitude: latitude?.toString(),
         longitude: longitude?.toString(),
+        accessRoadId,
+        preferredCollectionTime,
         status: 'active',
         qrPrinted: true,
         generatorUserId,
