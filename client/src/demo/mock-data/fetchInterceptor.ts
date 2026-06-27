@@ -33,9 +33,9 @@ import {
   getModeratorVillages,
   getModeratorManagers,
   getModeratorIssues,
-  generateModeratorOverviewStats,
-  generatePremiumAnalytics,
+  generateModeratorOverviewStats
 } from "./generators";
+import { DEMO_VILLAGE_ID } from "@/lib/queryKeys";
 
 const DEMO_GENERATOR_INDEX = 41; // Sunita Patil - H-042
 

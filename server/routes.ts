@@ -36,6 +36,8 @@ import { registerStaffRoutes } from "./modules/staff/staff.routes";
 import { registerPushRoutes } from "./modules/push/push.routes";
 import { registerRoadMappingRoutes } from "./modules/road-mapping/road-mapping.routes";
 import { registerBoundariesRoutes } from "./modules/boundaries/boundaries.routes";
+import subscriptionRoutes from "./modules/subscription/subscription.routes";
+import { requireWriteAccess } from "./middleware/subscription.middleware";
 
 // Configure multer for file uploads with enhanced security
 const upload = multer({
@@ -168,6 +170,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Apply CSRF protection to all API routes
   app.use('/api', csrfProtection);
 
+  // Apply subscription write-access check to all API routes
+  app.use('/api', requireWriteAccess);
+
   // Public API routes (no authentication required)
   registerPublicRoutes(app);
 
@@ -242,6 +247,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Boundaries routes (village & ward boundary polygons)
   registerBoundariesRoutes(app, requireAuth, requireRole, requireVillageAccess);
+
+  // Subscription management routes
+  app.use('/api/subscriptions', requireAuth, subscriptionRoutes);
 
   // Behaviour stats refresh — runs once on server start (catch-up if missed)
   checkAndRunDailyRefresh().catch((e) => console.error("[BehaviourStats] Initial refresh failed:", e));

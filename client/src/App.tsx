@@ -3,6 +3,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { useAuth } from "@/hooks/useAuth";
 
 import { OfflineIndicator } from "@/components/OfflineIndicator";
+import { ExpiredSubscriptionDialog } from "@/components/ExpiredSubscriptionDialog";
 import Login from "@/pages/login";
 import AdminDashboard from "@/pages/admin-dashboard";
 import ManagerDashboard from "@/pages/manager-dashboard";
@@ -169,6 +170,7 @@ function Router() {
 
       <Route component={NotFound} />
     </Switch>
+    <ExpiredSubscriptionDialog />
     </>
   );
 }

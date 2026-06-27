@@ -35,7 +35,7 @@ export function DemoProvider({ role, children }: DemoProviderProps) {
 
   // Create isolated QueryClient - recreated on reset
   const demoQueryClient = useMemo(() => {
-    const client = new QueryClient({
+    const client: QueryClient = new QueryClient({
       defaultOptions: {
         queries: {
           /**
@@ -45,9 +45,9 @@ export function DemoProvider({ role, children }: DemoProviderProps) {
            *
            * Priority: 1) existing cache data  2) getDemoApiResponse  3) []
            */
-          queryFn: ({ queryKey }) => {
+          queryFn: async ({ queryKey }: any): Promise<any> => {
             // 1) Return existing cached data (handles re-fetches of seeded data)
-            const cached = client.getQueryData(queryKey);
+            const cached: any = client.getQueryData(queryKey);
             if (cached !== undefined) return cached;
 
             // 2) Try the fetch interceptor's response mapper

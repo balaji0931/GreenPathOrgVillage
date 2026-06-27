@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { SubscriptionBanner } from "@/components/SubscriptionBanner";
 import {
   Select,
   SelectContent,
@@ -805,17 +806,20 @@ export default function ModeratorDashboard() {
   return (
     <div className="min-h-screen bg-background flex flex-col">
       {/* Mobile Top Bar */}
-      <div className="md:hidden bg-green-600 border-b px-3 py-3 sticky top-0 left-0 z-10">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center">
-            <img src="/logos/logo-dark.svg" alt="GreenPath" className="h-9 w-auto" />
-          </div>
-          <div className="">
-            <Button onClick={() => logout()} variant="ghost" size="default" className="p-2">
-              <LogOut className="h-7 w-7 text-white" strokeWidth={3} />
-            </Button>
+      <div className="md:hidden sticky top-0 left-0 z-10">
+        <div className="bg-green-600 border-b px-3 py-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center">
+              <img src="/logos/logo-dark.svg" alt="GreenPath" className="h-9 w-auto" />
+            </div>
+            <div className="">
+              <Button onClick={() => logout()} variant="ghost" size="default" className="p-2">
+                <LogOut className="h-7 w-7 text-white" strokeWidth={3} />
+              </Button>
+            </div>
           </div>
         </div>
+        <SubscriptionBanner />
       </div>
 
       <div className="flex flex-1 min-h-0">
@@ -917,8 +921,11 @@ export default function ModeratorDashboard() {
         </div>
 
         {/* Main Content */}
-        <div className="flex-1 overflow-auto pb-20 md:pb-6 md:ml-64">
-          <div className="p-3 sm:p-6">{renderContent()}</div>
+        <div className="flex-1 flex flex-col min-h-0 md:ml-64">
+          <div className="hidden md:block">
+            <SubscriptionBanner />
+          </div>
+          <div className="flex-1 overflow-auto p-3 sm:p-6">{renderContent()}</div>
         </div>
       </div>
     </div>

@@ -7,6 +7,7 @@ import { useTranslation } from "react-i18next";
 import { translateEnum } from '../i18n/enumTranslations';
 import { useTerminology } from '@/hooks/useTerminology';
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
+import { SubscriptionBanner } from "@/components/SubscriptionBanner";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   ResponsiveContainer,
@@ -796,10 +797,29 @@ export const StickyDateSwitcher = ({
     onChange(format(d, 'yyyy-MM-dd'));
   };
 
+  const [headerHeight, setHeaderHeight] = React.useState(60);
+
+  React.useEffect(() => {
+    const header = document.getElementById('manager-header');
+    if (!header) return;
+
+    setHeaderHeight(header.offsetHeight);
+
+    const observer = new ResizeObserver(() => {
+      setHeaderHeight(header.offsetHeight);
+    });
+    observer.observe(header);
+    
+    return () => observer.disconnect();
+  }, []);
+
   return (
     <>
       {/* Fixed bar pinned below the nav header */}
-      <div className="fixed left-0 md:left-56 right-0 z-40 bg-white/90 backdrop-blur-md border-b border-gray-100/50 px-4 sm:py-2" style={{ top: 60 }}>
+      <div 
+        className="fixed left-0 md:left-56 right-0 z-40 bg-white/90 backdrop-blur-md border-b border-gray-100/50 px-4 sm:py-2 transition-all duration-200" 
+        style={{ top: headerHeight }}
+      >
         <div className="pt-1 max-w-4xl mx-auto flex items-center justify-between">
           {/* Left: back arrow (when onBack provided) */}
           {onBack && (
@@ -3742,8 +3762,9 @@ export default function ManagerDashboard() {
 
       <div className="min-h-screen flex flex-col bg-gray-50">
         {/* Top App Bar – Premium Native */}
-        <div className="bg-white border-b border-gray-100 px-4 py-2 sticky top-0 z-[60]"
-          style={{ boxShadow: "0 1px 3px rgba(0,0,0,0.06)" }}>
+        <div id="manager-header" className="sticky top-0 z-[60]">
+          <div className="bg-white border-b border-gray-100 px-4 py-2"
+            style={{ boxShadow: "0 1px 3px rgba(0,0,0,0.06)" }}>
           <div className="flex items-center justify-between h-11">
             {/* Left: Logo + village + screen title */}
             <div className="flex items-center gap-3 min-w-0">
@@ -3821,8 +3842,9 @@ export default function ManagerDashboard() {
               </button>
             </div>
           </div>
+          </div>
+          <SubscriptionBanner />
         </div>
-
         <div className="flex flex-1 min-h-0">
           {/* Mobile Bottom Navigation – 4 Tabs */}
           <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-50 md:hidden"
@@ -3831,7 +3853,7 @@ export default function ManagerDashboard() {
               {[
                 { id: "reports", icon: BarChart3, label: tt('manager.reports') },
                 { id: "collections", icon: Package, label: tt('collections.title') },
-                { id: "map-viz", icon: MapIcon, label: 'Map' },
+                ...(villageData?.locationServicesEnabled ? [{ id: "map-viz", icon: MapIcon, label: 'Map' }] : []),
                 { id: "issues", icon: AlertCircle, label: tt('navigation.issues') },
                 { id: "more", icon: LayoutDashboard, label: tt('manager.more') },
               ].map(({ id, icon: Icon, label }) => {
@@ -3865,7 +3887,7 @@ export default function ManagerDashboard() {
                 {[
                   { id: "reports", icon: BarChart3, label: tt('manager.dailyReports') },
                   { id: "collections", icon: Package, label: tt("navigation.collections") },
-                  { id: "map-viz", icon: MapIcon, label: 'Map View' },
+                  ...(villageData?.locationServicesEnabled ? [{ id: "map-viz", icon: MapIcon, label: 'Map View' }] : []),
                   { id: "issues", icon: AlertCircle, label: tt("navigation.issues") },
                 ].map(({ id, icon: Icon, label }) => (
                   <button
@@ -3956,23 +3978,27 @@ export default function ManagerDashboard() {
                       {label}
                     </button>
                   ))}
-                  <p className="text-[10px] uppercase tracking-widest text-gray-400 font-semibold px-3 mt-3 mb-1">Map</p>
-                  {[
-                    { id: "road-mapper", icon: MapIcon, label: "Road Mapper" },
-                    { id: "boundaries", icon: MapPin, label: "Boundaries" },
-                  ].map(({ id, icon: Icon, label }) => (
-                    <button
-                      key={id}
-                      onClick={() => { setActiveTab("more"); setActiveMoreScreen(id); }}
-                      className={cn(
-                        "w-full flex items-center gap-3 px-3 py-2 rounded-xl text-left transition-colors text-sm font-medium",
-                        activeMoreScreen === id ? "bg-cyan-50 text-cyan-700" : "text-gray-600 hover:bg-gray-50",
-                      )}
-                    >
-                      <Icon className="h-4 w-4 flex-shrink-0" />
-                      {label}
-                    </button>
-                  ))}
+                  {villageData?.locationServicesEnabled && (
+                    <>
+                      <p className="text-[10px] uppercase tracking-widest text-gray-400 font-semibold px-3 mt-3 mb-1">Map</p>
+                      {[
+                        { id: "road-mapper", icon: MapIcon, label: "Road Mapper" },
+                        { id: "boundaries", icon: MapPin, label: "Boundaries" },
+                      ].map(({ id, icon: Icon, label }) => (
+                        <button
+                          key={id}
+                          onClick={() => { setActiveTab("more"); setActiveMoreScreen(id); }}
+                          className={cn(
+                            "w-full flex items-center gap-3 px-3 py-2 rounded-xl text-left transition-colors text-sm font-medium",
+                            activeMoreScreen === id ? "bg-cyan-50 text-cyan-700" : "text-gray-600 hover:bg-gray-50",
+                          )}
+                        >
+                          <Icon className="h-4 w-4 flex-shrink-0" />
+                          {label}
+                        </button>
+                      ))}
+                    </>
+                  )}
                   <p className="text-[10px] uppercase tracking-widest text-gray-400 font-semibold px-3 mt-3 mb-1">{tt('manager.management')}</p>
                   {[
                     { id: "vehicles", icon: Package, label: tt('manager.vehicles') },
@@ -4338,31 +4364,35 @@ export default function ManagerDashboard() {
                     </div>
 
                     {/* Map group */}
-                    <p className="text-[11px] uppercase tracking-widest text-gray-400 font-bold px-1 pt-4 pb-1">Map</p>
-                    <div className="bg-white rounded-2xl ring-1 ring-black/5 shadow-sm overflow-hidden">
-                      {[
-                        { id: "road-mapper", icon: MapIcon, label: "Road Mapper", description: "Record village collection roads" },
-                        { id: "boundaries", icon: MapPin, label: "Boundaries", description: "Village & ward boundaries, road editing" },
-                      ].map(({ id, icon: Icon, label, description }, idx, arr) => (
-                        <button
-                          key={id}
-                          onClick={() => setActiveMoreScreen(id)}
-                          className={cn(
-                            "w-full flex items-center gap-4 px-4 py-3 text-left transition-colors active:bg-gray-50 active:scale-[0.99]",
-                            idx < arr.length - 1 ? "border-b border-gray-100" : ""
-                          )}
-                        >
-                          <div className="w-9 h-9 rounded-xl bg-cyan-50 flex items-center justify-center flex-shrink-0">
-                            <Icon className="h-4 w-4 text-cyan-600" />
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <p className="font-semibold text-gray-900 text-sm">{label}</p>
-                            <p className="text-xs text-gray-400 truncate">{description}</p>
-                          </div>
-                          <ArrowRight className="h-4 w-4 text-gray-300 flex-shrink-0" />
-                        </button>
-                      ))}
-                    </div>
+                    {villageData?.locationServicesEnabled && (
+                      <>
+                        <p className="text-[11px] uppercase tracking-widest text-gray-400 font-bold px-1 pt-4 pb-1">Map</p>
+                        <div className="bg-white rounded-2xl ring-1 ring-black/5 shadow-sm overflow-hidden">
+                          {[
+                            { id: "road-mapper", icon: MapIcon, label: "Road Mapper", description: "Record village collection roads" },
+                            { id: "boundaries", icon: MapPin, label: "Boundaries", description: "Village & ward boundaries, road editing" },
+                          ].map(({ id, icon: Icon, label, description }, idx, arr) => (
+                            <button
+                              key={id}
+                              onClick={() => setActiveMoreScreen(id)}
+                              className={cn(
+                                "w-full flex items-center gap-4 px-4 py-3 text-left transition-colors active:bg-gray-50 active:scale-[0.99]",
+                                idx < arr.length - 1 ? "border-b border-gray-100" : ""
+                              )}
+                            >
+                              <div className="w-9 h-9 rounded-xl bg-cyan-50 flex items-center justify-center flex-shrink-0">
+                                <Icon className="h-4 w-4 text-cyan-600" />
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <p className="font-semibold text-gray-900 text-sm">{label}</p>
+                                <p className="text-xs text-gray-400 truncate">{description}</p>
+                              </div>
+                              <ArrowRight className="h-4 w-4 text-gray-300 flex-shrink-0" />
+                            </button>
+                          ))}
+                        </div>
+                      </>
+                    )}
 
                     {/* Management group */}
                     <p className="text-[11px] uppercase tracking-widest text-gray-400 font-bold px-1 pt-4 pb-1">Management</p>

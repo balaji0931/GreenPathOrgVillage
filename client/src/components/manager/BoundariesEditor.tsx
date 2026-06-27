@@ -161,7 +161,7 @@ export default function BoundariesEditor() {
       const polys = generateAllBoundaries(households, wards);
 
       // Client-side overlap check BEFORE sending anything
-      const wardEntries = [...polys.entries()].filter(([n]) => n !== '__village__');
+      const wardEntries = Array.from(polys.entries()).filter(([n]) => n !== '__village__');
       for (let i = 0; i < wardEntries.length; i++) {
         for (let j = i + 1; j < wardEntries.length; j++) {
           if (polygonsOverlap(wardEntries[i][1], wardEntries[j][1])) {

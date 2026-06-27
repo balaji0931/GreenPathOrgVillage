@@ -326,15 +326,34 @@ export function ManagerAddHouseholdScreen({ onBack }: Props) {
       }
     }
     if (
-      village?.locationServicesEnabled &&
-      (!householdForm.latitude || !householdForm.longitude)
+      !householdForm.preferredCollectionTime ||
+      householdForm.preferredCollectionTime.trim() === ""
     ) {
       toast({
-        title: "Location Required",
-        description: "Please capture the live location before continuing.",
+        title: "Missing Information",
+        description: "Preferred Collection Time is required.",
         variant: "destructive",
       });
       return;
+    }
+
+    if (village?.locationServicesEnabled) {
+      if (!householdForm.latitude || !householdForm.longitude) {
+        toast({
+          title: "Location Required",
+          description: "Please capture the live location before continuing.",
+          variant: "destructive",
+        });
+        return;
+      }
+      if (!householdForm.accessRoadId) {
+        toast({
+          title: "Missing Information",
+          description: "Access Road is required when location services are enabled.",
+          variant: "destructive",
+        });
+        return;
+      }
     }
     setShowForm(false);
     setShowPreview(true);
@@ -576,45 +595,46 @@ export function ManagerAddHouseholdScreen({ onBack }: Props) {
 
           <div className="h-2" />
           
-          {/* Access Road Selection */}
-          <div className="space-y-2">
-            <label className="text-xs font-bold text-gray-700 flex items-center gap-1.5">
-              <MapPin className="h-3.5 w-3.5 text-orange-500" />
-              Access Road
-            </label>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => {
-                if (!householdForm.latitude) {
-                  toast({
-                    title: "Location Required",
-                    description: "Please capture live location first before selecting an access road.",
-                    variant: "destructive",
-                  });
-                  return;
-                }
-                if (!villageRoads || villageRoads.length === 0) {
-                  toast({
-                    title: "No Roads Found",
-                    description: "No roads have been recorded for this village yet.",
-                    variant: "destructive",
-                  });
-                  return;
-                }
-                setShowRoadMapModal(true);
-              }}
-              className="w-full rounded-xl bg-orange-50 border-orange-200 text-orange-700 hover:bg-orange-100 h-12 text-sm font-semibold"
-            >
-              {householdForm.accessRoadId
-                ? `Road Selected (${villageRoads?.find(r => r.id === householdForm.accessRoadId)?.name || 'Road'})`
-                : "Select Access Road"}
-            </Button>
-          </div>
+          {village?.locationServicesEnabled && (
+            <div className="space-y-2">
+              <label className="text-xs font-bold text-gray-700 flex items-center gap-1.5">
+                <MapPin className="h-3.5 w-3.5 text-orange-500" />
+                Access Road <span className="text-red-400">*</span>
+              </label>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  if (!householdForm.latitude) {
+                    toast({
+                      title: "Location Required",
+                      description: "Please capture live location first before selecting an access road.",
+                      variant: "destructive",
+                    });
+                    return;
+                  }
+                  if (!villageRoads || villageRoads.length === 0) {
+                    toast({
+                      title: "No Roads Found",
+                      description: "No roads have been recorded for this village yet.",
+                      variant: "destructive",
+                    });
+                    return;
+                  }
+                  setShowRoadMapModal(true);
+                }}
+                className="w-full rounded-xl bg-orange-50 border-orange-200 text-orange-700 hover:bg-orange-100 h-12 text-sm font-semibold"
+              >
+                {householdForm.accessRoadId
+                  ? `Road Selected (${villageRoads?.find(r => r.id === householdForm.accessRoadId)?.name || 'Road'})`
+                  : "Select Access Road"}
+              </Button>
+            </div>
+          )}
 
           {/* Preferred Collection Time */}
           <div className="space-y-1.5">
-            <label className="text-xs font-bold text-gray-700">Preferred Collection Time</label>
+            <label className="text-xs font-bold text-gray-700">Preferred Collection Time <span className="text-red-400">*</span></label>
             <Select
               value={householdForm.preferredCollectionTime || ""}
               onValueChange={(val) => setHouseholdForm({ ...householdForm, preferredCollectionTime: val })}

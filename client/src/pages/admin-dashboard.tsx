@@ -24,6 +24,7 @@ import { cn } from "@/lib/utils";
 import ActivityLog from "@/components/ActivityLog";
 import { UNIT_TYPES } from '@/constants/unitTypes';
 import { DataExportWizard } from "@/components/DataExportWizard";
+import { AdminSubscriptions } from "@/components/AdminSubscriptions";
 
 export default function AdminDashboard() {
   const { user, logout } = useAuth();
@@ -690,6 +691,7 @@ export default function AdminDashboard() {
     { id: "announcements", label: "Announcements", icon: Bell },
     { id: "website-feedback", label: "Website Feedback", icon: MessageSquare },
     { id: "contact-submissions", label: "Contact Us", icon: FileText },
+    { id: "subscriptions", label: "Subscriptions", icon: FileText },
     { id: "profile", label: "Profile", icon: User },
     { id: "activity-log", label: "Activity Log", icon: ClipboardList },
     { id: "data-export", label: "Data Export", icon: FileDown },
@@ -1947,6 +1949,7 @@ export default function AdminDashboard() {
       case "announcements": return renderAnnouncements();
       case "website-feedback": return renderWebsiteFeedback();
       case "contact-submissions": return renderContactSubmissions();
+      case "subscriptions": return <AdminSubscriptions />;
       case "profile": return renderProfile();
       case "activity-log": return (
         <ActivityLog

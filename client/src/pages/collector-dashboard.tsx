@@ -17,6 +17,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { apiRequest, queryClient, fetchWithCsrf } from "@/lib/queryClient";
 import { QRScanner } from "@/components/qr-scanner";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
+import { SubscriptionBanner } from "@/components/SubscriptionBanner";
 import { useOfflineStorage, offlineStorage } from "@/lib/offline-storage";
 import { TourButton } from "@/components/tours/TourButton";
 import CollectorWasteLog from "@/components/collector/CollectorWasteLog";
@@ -975,24 +976,27 @@ export default function CollectorDashboard() {
       /> */}
 
       {/* Header */}
-      <div className="bg-white px-4 pt-3 pb-3 sticky top-0 z-10 shadow-sm border-b border-gray-100">
-        <div className="flex items-center justify-between">
-          <img src="/logos/logo-full.svg" alt="GreenPath" className="w-auto h-10" />
-          <div className="flex items-center gap-2">
-            {/* Show Me in header when odd nav tabs for even distribution */}
-            {((villageData?.attendanceEnabled ? 1 : 0) + 1 + (villageData?.collectorWasteLogEnabled ? 1 : 0) + 1) % 2 !== 0 && (
-              <button
-                onClick={() => setActiveTab('profile')}
-                className={`w-8 h-8 rounded-full flex items-center justify-center transition-all ${activeTab === 'profile'
-                  ? 'bg-green-100 text-green-700'
-                  : 'bg-gray-100 text-gray-500'
-                  }`}
-              >
-                <User size={18} strokeWidth={2.5} />
-              </button>
-            )}
+      <div className="sticky top-0 z-10">
+        <div className="bg-white px-4 pt-3 pb-3 shadow-sm border-b border-gray-100">
+          <div className="flex items-center justify-between">
+            <img src="/logos/logo-full.svg" alt="GreenPath" className="w-auto h-10" />
+            <div className="flex items-center gap-2">
+              {/* Show Me in header when odd nav tabs for even distribution */}
+              {((villageData?.attendanceEnabled ? 1 : 0) + 1 + (villageData?.collectorWasteLogEnabled ? 1 : 0) + 1) % 2 !== 0 && (
+                <button
+                  onClick={() => setActiveTab('profile')}
+                  className={`w-8 h-8 rounded-full flex items-center justify-center transition-all ${activeTab === 'profile'
+                    ? 'bg-green-100 text-green-700'
+                    : 'bg-gray-100 text-gray-500'
+                    }`}
+                >
+                  <User size={18} strokeWidth={2.5} />
+                </button>
+              )}
+            </div>
           </div>
         </div>
+        <SubscriptionBanner />
       </div>
 
       {/* Tab Content */}

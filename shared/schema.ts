@@ -28,6 +28,17 @@ export const villages = pgTable("villages", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
+// Subscriptions table for villages
+export const subscriptions = pgTable("subscriptions", {
+  id: serial("id").primaryKey(),
+  villageId: text("village_id").notNull().references(() => villages.villageId),
+  startDate: timestamp("start_date").notNull(),
+  endDate: timestamp("end_date").notNull(),
+  gracePeriodDays: integer("grace_period_days").notNull().default(30),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
 // Users table with role-based structure
 export const users = pgTable("users", {
   id: serial("id").primaryKey(),
@@ -225,6 +236,12 @@ export const insertVillageSchema = createInsertSchema(villages).omit({
   updatedAt: true,
 });
 
+export const insertSubscriptionSchema = createInsertSchema(subscriptions).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
 export const insertUserSchema = createInsertSchema(users).omit({
   id: true,
   createdAt: true,
@@ -380,6 +397,7 @@ export const insertContactSubmissionSchema = createInsertSchema(contactSubmissio
 
 // Types
 export type InsertVillage = z.infer<typeof insertVillageSchema>;
+export type InsertSubscription = z.infer<typeof insertSubscriptionSchema>;
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type InsertHousehold = z.infer<typeof insertHouseholdSchema>;
 export type InsertCollector = z.infer<typeof insertCollectorSchema>;
@@ -395,6 +413,7 @@ export type InsertContactSubmission = z.infer<typeof insertContactSubmissionSche
 export type InsertQRCode = z.infer<typeof insertQRCodeSchema>;
 
 export type Village = typeof villages.$inferSelect;
+export type Subscription = typeof subscriptions.$inferSelect;
 export type User = typeof users.$inferSelect;
 export type Household = typeof households.$inferSelect;
 export type Collector = typeof collectors.$inferSelect;

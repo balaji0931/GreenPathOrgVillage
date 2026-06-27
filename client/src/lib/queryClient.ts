@@ -71,6 +71,10 @@ export async function fetchWithCsrf(
 async function throwIfResNotOk(res: Response) {
   if (!res.ok) {
     const text = (await res.text()) || res.statusText;
+    if (res.status === 403 && text.includes("SUBSCRIPTION_EXPIRED")) {
+      window.dispatchEvent(new CustomEvent("subscription_expired"));
+      throw new Error(`403: SUBSCRIPTION_EXPIRED`);
+    }
     throw new Error(`${res.status}: ${text}`);
   }
 }

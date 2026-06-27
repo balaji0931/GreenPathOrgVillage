@@ -74,8 +74,8 @@ export function useTerminology(unitType?: string | null) {
      */
     const tt = (key: string, options?: Record<string, unknown>): string => {
       const typeSpecific = t(`${key}.${type}`, { ...options, defaultValue: '' });
-      if (typeSpecific) return typeSpecific;
-      return t(key, options as any);
+      if (typeSpecific) return typeSpecific as string;
+      return t(key, options as any) as string;
     };
 
     return { tt, label, unitType: type };

@@ -114,7 +114,7 @@ export function registerBoundariesRoutes(
       const [village] = await db.select({ wards: villages.wards })
         .from(villages).where(eq(villages.villageId, villageId)).limit(1);
       const validWardSet = new Set(village?.wards || []);
-      const targetWards = [...new Set(assignments.map((a: any) => a.newWard as string))];
+      const targetWards = Array.from(new Set(assignments.map((a: any) => a.newWard as string)));
       const invalidWards = targetWards.filter(w => !validWardSet.has(w));
       if (invalidWards.length > 0) {
         return res.status(400).json({ message: `Invalid wards: ${invalidWards.join(', ')}` });
