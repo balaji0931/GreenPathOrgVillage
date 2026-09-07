@@ -195,7 +195,11 @@ export function registerWasteCollectionRoutes(app: Express, requireAuth: any, re
   // Lightweight village-wide today count for collectors
   app.get('/api/village/today-count', requireAuth, requireRole(['collector', 'manager']), requireVillageAccess, async (req, res) => {
     try {
-      const villageId = req.session.villageId!;
+      const villageId = req.user?.villageId || req.session?.villageId;
+      if (!villageId) {
+        return res.status(400).json({ message: "Village ID required", collectedToday: 0, count: 0 });
+      }
+
       const now = new Date();
       const todayStr = now.toISOString().split('T')[0];
       const [year, month, day] = todayStr.split('-').map(Number);
@@ -214,9 +218,11 @@ export function registerWasteCollectionRoutes(app: Express, requireAuth: any, re
           )
         );
 
-      res.json({ collectedToday: result?.count || 0 });
+      const total = Number(result?.count) || 0;
+      res.json({ collectedToday: total, count: total });
     } catch (error) {
-      res.status(500).json({ message: "Failed to get today count" });
+      console.error("[VillageTodayCount] Error:", error);
+      res.status(500).json({ message: "Failed to get today count", collectedToday: 0, count: 0 });
     }
   });
 }

@@ -1,11 +1,12 @@
 import { isModeratorAssignedToVillage } from "../../modules/moderation/moderator.storage";
 
 // Cross-village authorization middleware
+// Checks req.user (from dualAuth) first, falls back to req.session
 export const requireVillageAccess = async (req: any, res: any, next: any) => {
     const requestedVillageId = req.params.villageId || req.body.villageId || req.query.villageId;
-    const userVillageId = req.session?.villageId;
-    const userRole = req.session?.role;
-    const userId = req.session?.userId;
+    const userVillageId = req.user?.villageId || req.session?.villageId;
+    const userRole = req.user?.role || req.session?.role;
+    const userId = req.user?.userId || req.session?.userId;
 
     // Admins can access all villages
     if (userRole === 'admin') {

@@ -22,13 +22,13 @@ export async function requireWriteAccess(req: Request, res: Response, next: Next
   }
 
   // Admins are exempt from write blocks
-  const role = (req as any).session?.role;
-  
+  const role = (req as any).user?.role || (req as any).session?.role;
+
   if (role === 'admin') {
     return next();
   }
 
-  const villageId = (req as any).session?.villageId;
+  const villageId = (req as any).user?.villageId || (req as any).session?.villageId;
   if (!villageId) {
     return next();
   }
@@ -51,7 +51,7 @@ export async function requireWriteAccess(req: Request, res: Response, next: Next
     for (const sub of allVillageSubscriptions) {
       const graceEnd = new Date(sub.endDate);
       graceEnd.setDate(graceEnd.getDate() + sub.gracePeriodDays);
-      
+
       if (now >= new Date(sub.startDate) && now <= graceEnd) {
         activeSub = sub;
         break;

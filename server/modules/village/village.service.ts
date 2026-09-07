@@ -1,5 +1,7 @@
 import { storage } from "../../storage";
 import bcrypt from "bcrypt";
+import { db } from "../../db";
+import { subscriptions } from "@shared/schema";
 
 /**
  * Generate a unique village ID by scanning existing villages.
@@ -56,6 +58,21 @@ export async function createVillageWithManager(data: {
         phone: managerPhone,
         villageId,
     });
+
+    // Seed initial subscription (essential for tests and default write access)
+    try {
+        const now = new Date();
+        const nextYear = new Date();
+        nextYear.setFullYear(now.getFullYear() + 1);
+        await db.insert(subscriptions).values({
+            villageId,
+            startDate: now,
+            endDate: nextYear,
+            gracePeriodDays: 30,
+        });
+    } catch (err) {
+        console.error("Failed to seed initial subscription:", err);
+    }
 
     return {
         village,

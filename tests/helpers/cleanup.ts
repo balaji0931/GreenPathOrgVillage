@@ -29,6 +29,8 @@ const ALL_TABLES = [
     'billing_cycles',
     'village_month_fee_config',
     'village_payment_gateway_config',
+    // Subscriptions
+    'subscriptions',
     // Existing tables
     'dry_waste_sale_materials',
     'dry_waste_sales',
@@ -94,6 +96,24 @@ export async function seedAdmin(): Promise<void> {
 export async function resetTestDB(): Promise<void> {
     await truncateAll();
     await seedAdmin();
+}
+
+/**
+ * Seed an active subscription for a village directly in the DB.
+ */
+export async function seedSubscription(
+    villageId: string,
+    options?: { startDate?: Date; endDate?: Date; gracePeriodDays?: number }
+): Promise<void> {
+    const pool = getCleanupPool();
+    const start = options?.startDate || new Date(Date.now() - 24 * 60 * 60 * 1000);
+    const end = options?.endDate || new Date(Date.now() + 365 * 24 * 60 * 60 * 1000);
+    const grace = options?.gracePeriodDays ?? 30;
+    await pool.query(
+        `INSERT INTO subscriptions (village_id, start_date, end_date, grace_period_days)
+         VALUES ($1, $2, $3, $4)`,
+        [villageId, start, end, grace]
+    );
 }
 
 /**

@@ -8,6 +8,7 @@ import { RedisStore } from "connect-redis";
 
 import { registerPublicRoutes } from "./modules/website/public.routes";
 import { registerAuthRoutes } from "./modules/auth/auth.routes";
+import { registerMobileAuthRoutes } from "./modules/mobile-auth/mobile-auth.routes";
 import { registerLegalRoutes } from "./modules/legal/legal.routes";
 import { registerVehicleRoutes } from "./modules/vehicle/vehicle.routes";
 import { registerVillageRoutes } from "./modules/village/village.routes";
@@ -38,6 +39,7 @@ import { registerRoadMappingRoutes } from "./modules/road-mapping/road-mapping.r
 import { registerBoundariesRoutes } from "./modules/boundaries/boundaries.routes";
 import subscriptionRoutes from "./modules/subscription/subscription.routes";
 import { requireWriteAccess } from "./middleware/subscription.middleware";
+import { dualAuth } from "./common/middleware/dual-auth";
 
 // Configure multer for file uploads with enhanced security
 const upload = multer({
@@ -51,7 +53,19 @@ const upload = multer({
     // Allowed MIME types for different upload types
     const allowedMimeTypes = {
       photo: ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'],
-      voice: ['audio/mpeg', 'audio/wav', 'audio/mp3', 'audio/webm', 'audio/ogg'],
+      voice: [
+        'audio/mpeg',
+        'audio/wav',
+        'audio/mp3',
+        'audio/webm',
+        'audio/ogg',
+        'audio/m4a',
+        'audio/x-m4a',
+        'audio/mp4',
+        'audio/aac',
+        'audio/x-aac',
+        'audio/3gpp',
+      ],
       document: ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'] // For manager proof photos
     };
 
@@ -66,7 +80,7 @@ const upload = multer({
     }
 
     // Additional filename validation
-    const allowedExtensions = /\.(jpg|jpeg|png|webp|mp3|wav|ogg|webm)$/i;
+    const allowedExtensions = /\.(jpg|jpeg|png|webp|mp3|wav|ogg|webm|m4a|aac|3gp)$/i;
     if (!allowedExtensions.test(file.originalname)) {
       return cb(new Error('Invalid file extension'));
     }
@@ -131,6 +145,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
         client: redisClient,
         prefix: 'greenpath:sess:',
       });
+
+      // Safely handle transient Redis drops (e.g. cloud TLS timeout ECONNRESET)
+      // Instead of failing the entire HTTP request with 500, treat as empty session
+      const originalStoreGet = sessionStore.get.bind(sessionStore);
+      sessionStore.get = (sid: string, fn: (err?: any, session?: any) => void) => {
+        originalStoreGet(sid, (err: any, session: any) => {
+          if (err) {
+            console.warn('⚠️ Session store read warning (transient connection issue):', err.message);
+            return fn(null, null);
+          }
+          fn(null, session);
+        });
+      };
       console.log('🟢 Using Redis session store');
     } catch (error) {
       console.warn('⚠️ Redis session store not available, falling back to memory store:', (error as Error).message);
@@ -159,6 +186,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.use(session(sessionConfig));
 
+  // Dual authentication middleware (resolves Bearer JWT or Session cookie into req.user)
+  // Must run BEFORE csrfProtection so Bearer requests are identified and exempted from CSRF
+  app.use('/api', dualAuth);
+
   // Keep-alive endpoint for cron services (bypasses CSRF and API rate limits)
   app.get('/pong', (req, res) => {
     res.status(200).send('ping');
@@ -179,6 +210,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Auth & session routes
   registerAuthRoutes(app, requireAuth, generateCsrfToken);
+  registerMobileAuthRoutes(app);
 
   // Vehicle Management Routes
   registerVehicleRoutes(app, requireAuth, requireRole, requireVillageAccess);

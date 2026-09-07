@@ -25,12 +25,20 @@ export const csrfProtection = (req: any, res: any, next: any) => {
     // Normalize path: use originalUrl (preserves /api prefix when mounted via app.use('/api', ...))
     // Strip query string and trailing slash for exact comparison
     const normalizedPath = (req.originalUrl || req.path).split('?')[0].replace(/\/$/, '');
-    if (publicEndpoints.includes(normalizedPath)) {
+    if (publicEndpoints.includes(normalizedPath) || normalizedPath.startsWith('/api/mobile/auth')) {
+        return next();
+    }
+
+    // Skip CSRF for Bearer-authenticated requests (mobile clients).
+    // Bearer tokens are stored in SecureStore (not cookies), so they
+    // are inherently immune to CSRF attacks.
+    const authHeader = req.headers?.authorization;
+    if ((authHeader && typeof authHeader === 'string' && authHeader.startsWith('Bearer ')) || (req as any).user?.authType === 'bearer') {
         return next();
     }
 
     // Skip CSRF for unauthenticated requests (they can't do anything sensitive anyway)
-    if (!req.session?.userId) {
+    if (!req.session?.userId && !(req as any).user?.userId) {
         return next();
     }
 

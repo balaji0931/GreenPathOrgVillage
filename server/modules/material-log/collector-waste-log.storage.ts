@@ -32,7 +32,7 @@ export async function getCollectorWasteLogsByCollector(
         .select()
         .from(collectorDailyWasteLog)
         .where(and(...conditions))
-        .orderBy(desc(collectorDailyWasteLog.date));
+        .orderBy(desc(collectorDailyWasteLog.date), desc(collectorDailyWasteLog.id));
 }
 
 /** All entries for a village on a given date (all collectors combined) */

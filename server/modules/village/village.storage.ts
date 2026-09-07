@@ -7,6 +7,7 @@ import {
     issues,
     announcements,
     feedback,
+    subscriptions,
     moderatorVillageAssignments,
     paymentAuditLog,
     paymentGatewayEvents,
@@ -225,6 +226,7 @@ export async function deleteVillage(villageId: string): Promise<void> {
     await db.delete(collectors).where(eq(collectors.villageId, villageId));
     await db.delete(issues).where(eq(issues.villageId, villageId));
     await db.delete(announcements).where(eq(announcements.villageId, villageId));
+    await db.delete(subscriptions).where(eq(subscriptions.villageId, villageId));
     await db.delete(users).where(eq(users.villageId, villageId));
     await db.delete(villages).where(eq(villages.villageId, villageId));
 }

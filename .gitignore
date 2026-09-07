@@ -48,3 +48,11 @@ results.txt
 test_run*.txt
 
 coverage-*.json
+
+# Android / React Native Expo
+android/node_modules/
+android/.expo/
+android/dist/
+android/android/
+android/ios/
+android/.env.local
