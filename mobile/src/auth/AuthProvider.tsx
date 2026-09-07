@@ -69,6 +69,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const accessTokenRef = useRef<string | null>(null);
   const expiresAtRef = useRef<number>(0);
   const refreshTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const refreshPromiseRef = useRef<Promise<boolean> | null>(null);
 
   // ── Helpers ────────────────────────────────────────────────
 
@@ -116,36 +117,46 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const refreshTokens = useCallback(async (): Promise<boolean> => {
-    try {
-      const refreshToken = await SecureStore.getItemAsync(SECURE_STORE_REFRESH_KEY);
-      if (!refreshToken) return false;
-
-      const data = await apiRequest<{
-        accessToken: string;
-        refreshToken: string;
-        expiresIn: number;
-      }>(API_ENDPOINTS.refresh, {
-        method: 'POST',
-        body: { refreshToken },
-        skipAuth: true,
-      });
-
-      // Store new tokens
-      accessTokenRef.current = data.accessToken;
-      expiresAtRef.current = Date.now() + data.expiresIn * 1000;
-      await SecureStore.setItemAsync(SECURE_STORE_REFRESH_KEY, data.refreshToken);
-
-      // Schedule next refresh
-      scheduleRefresh(data.expiresIn);
-
-      return true;
-    } catch (err) {
-      // ONLY clear tokens if server explicitly returned 401 (session revoked on server)
-      if (err instanceof ApiError && err.status === 401) {
-        await clearTokens();
-      }
-      return false;
+    if (refreshPromiseRef.current) {
+      return refreshPromiseRef.current;
     }
+
+    refreshPromiseRef.current = (async () => {
+      try {
+        const refreshToken = await SecureStore.getItemAsync(SECURE_STORE_REFRESH_KEY);
+        if (!refreshToken) return false;
+
+        const data = await apiRequest<{
+          accessToken: string;
+          refreshToken: string;
+          expiresIn: number;
+        }>(API_ENDPOINTS.refresh, {
+          method: 'POST',
+          body: { refreshToken },
+          skipAuth: true,
+        });
+
+        // Store new tokens
+        accessTokenRef.current = data.accessToken;
+        expiresAtRef.current = Date.now() + data.expiresIn * 1000;
+        await SecureStore.setItemAsync(SECURE_STORE_REFRESH_KEY, data.refreshToken);
+
+        // Schedule next refresh
+        scheduleRefresh(data.expiresIn);
+
+        return true;
+      } catch (err) {
+        // ONLY clear tokens if server explicitly returned 401 (session revoked on server)
+        if (err instanceof ApiError && err.status === 401) {
+          await clearTokens();
+        }
+        return false;
+      } finally {
+        refreshPromiseRef.current = null;
+      }
+    })();
+
+    return refreshPromiseRef.current;
   }, [scheduleRefresh, clearTokens]);
 
   const onAuthFailure = useCallback(async () => {
