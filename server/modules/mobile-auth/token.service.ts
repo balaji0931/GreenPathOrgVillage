@@ -43,8 +43,8 @@ interface TokenPair {
 
 // ── Constants ──────────────────────────────────────────────────
 
-const ACCESS_TOKEN_EXPIRY = "5m";
-const ACCESS_TOKEN_EXPIRY_SECONDS = 300;
+const ACCESS_TOKEN_EXPIRY = "1h";
+const ACCESS_TOKEN_EXPIRY_SECONDS = 3600;
 const REFRESH_TOKEN_EXPIRY_DAYS = 30;
 const REFRESH_TOKEN_EXPIRY_SECONDS = REFRESH_TOKEN_EXPIRY_DAYS * 24 * 60 * 60;
 // Keep record of rotated tokens for 7 days (for replay detection)

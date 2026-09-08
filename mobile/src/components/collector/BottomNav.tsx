@@ -46,15 +46,15 @@ export function BottomNav({
     leftTabs.push({
       key: 'shift',
       label: 'Shifts',
-      icon: 'time',
-      activeIcon: 'time',
+      icon: 'id-card-outline',
+      activeIcon: 'id-card',
     });
   }
   leftTabs.push({
     key: 'reports',
     label: 'Reports',
-    icon: 'bar-chart-outline',
-    activeIcon: 'bar-chart',
+    icon: 'time-outline',
+    activeIcon: 'time',
   });
 
   if (wasteLogEnabled) {

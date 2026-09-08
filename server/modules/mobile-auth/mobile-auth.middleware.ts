@@ -14,11 +14,22 @@ import { verifyAccessToken, isUserRevoked } from "./token.service";
 
 /**
  * Extract Bearer token from Authorization header.
+ * Falls back to X-Mobile-Token custom header for proxies
+ * (like Render) that may strip the standard Authorization header.
  */
 function extractBearerToken(req: Request): string | null {
   const authHeader = req.headers.authorization;
-  if (!authHeader || !authHeader.startsWith("Bearer ")) return null;
-  return authHeader.slice(7);
+  if (authHeader && authHeader.startsWith("Bearer ")) {
+    return authHeader.slice(7);
+  }
+
+  // Fallback for proxies that strip the standard Authorization header
+  const customHeader = req.headers['x-mobile-token'];
+  if (typeof customHeader === 'string') {
+    return customHeader;
+  }
+
+  return null;
 }
 
 /**
