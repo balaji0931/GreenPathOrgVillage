@@ -536,7 +536,20 @@ export function getPendingRecords(): QueuedCollection[] {
 export function markSyncing(id: number): void {
   const database = getDb();
   database.runSync(
-    `UPDATE collection_queue SET syncStatus = 'SYNCING', syncAttempts = syncAttempts + 1 WHERE id = ?`,
+    `UPDATE collection_queue SET syncStatus = 'SYNCING' WHERE id = ?`,
+    id,
+  );
+}
+
+/**
+ * Save an uploaded media URL to the database immediately after upload.
+ * This ensures retries don't re-upload already-uploaded files.
+ */
+export function saveUploadedUrl(id: number, field: 'photoUrl' | 'voiceUrl', url: string): void {
+  const database = getDb();
+  database.runSync(
+    `UPDATE collection_queue SET ${field} = ? WHERE id = ?`,
+    url,
     id,
   );
 }
@@ -586,7 +599,7 @@ export function markConfirmed(id: number, photoUrl?: string, voiceUrl?: string):
 export function markFailed(id: number, error: string): void {
   const database = getDb();
   database.runSync(
-    `UPDATE collection_queue SET syncStatus = 'FAILED', syncError = ? WHERE id = ?`,
+    `UPDATE collection_queue SET syncStatus = 'FAILED', syncError = ?, syncAttempts = syncAttempts + 1 WHERE id = ?`,
     error,
     id,
   );
@@ -598,12 +611,12 @@ export function markFailed(id: number, error: string): void {
 export function resetStaleSync(): void {
   const database = getDb();
   database.runSync(
-    `UPDATE collection_queue SET syncStatus = 'QUEUED' WHERE syncStatus = 'SYNCING'`,
+    `UPDATE collection_queue SET syncStatus = 'QUEUED', syncAttempts = 0 WHERE syncStatus = 'SYNCING'`,
   );
 }
 
 /**
- * Reset a specific record back to QUEUED without incrementing syncAttempts.
+ * Reset a specific record back to QUEUED AND reset syncAttempts to 0.
  * Used by the sync engine for transient network errors (DNS, TLS, no connectivity)
  * and auth expiry — these are not "real" failures and should not count toward
  * the 5-attempt limit.
@@ -611,8 +624,21 @@ export function resetStaleSync(): void {
 export function resetToQueued(id: number): void {
   const database = getDb();
   database.runSync(
-    `UPDATE collection_queue SET syncStatus = 'QUEUED' WHERE id = ?`,
+    `UPDATE collection_queue SET syncStatus = 'QUEUED', syncAttempts = 0 WHERE id = ?`,
     id,
+  );
+}
+
+/**
+ * Get pending records for manual sync ("Sync Now" button).
+ * Ignores the syncAttempts limit — user explicitly wants to retry.
+ */
+export function getPendingRecordsForManualSync(): QueuedCollection[] {
+  const database = getDb();
+  return database.getAllSync<QueuedCollection>(
+    `SELECT * FROM collection_queue
+     WHERE syncStatus IN ('QUEUED', 'FAILED')
+     ORDER BY createdAt ASC`,
   );
 }
 
@@ -683,18 +709,28 @@ export function getTodayLocalCollections(): QueuedCollection[] {
  */
 export async function cleanupOldRecords(): Promise<number> {
   const database = getDb();
-  const cutoff = new Date();
-  cutoff.setDate(cutoff.getDate() - 1); // Purge confirmed records older than 24 hours
+  const confirmedCutoff = new Date();
+  confirmedCutoff.setDate(confirmedCutoff.getDate() - 1); // Purge confirmed records older than 24 hours
 
-  // Get files to delete
-  const oldRecords = database.getAllSync<{ photoLocalPath: string; voiceLocalPath: string }>(
+  const unsyncedCutoff = new Date();
+  unsyncedCutoff.setDate(unsyncedCutoff.getDate() - 7); // Purge unsynced records older than 7 days
+
+  // Get files to delete from old confirmed records
+  const oldConfirmed = database.getAllSync<{ photoLocalPath: string; voiceLocalPath: string }>(
     `SELECT photoLocalPath, voiceLocalPath FROM collection_queue
      WHERE syncStatus = 'CONFIRMED' AND syncedAt < ?`,
-    cutoff.toISOString(),
+    confirmedCutoff.toISOString(),
+  );
+
+  // Get files to delete from old unsynced records (QUEUED/FAILED older than 7 days)
+  const oldUnsynced = database.getAllSync<{ photoLocalPath: string; voiceLocalPath: string }>(
+    `SELECT photoLocalPath, voiceLocalPath FROM collection_queue
+     WHERE syncStatus IN ('QUEUED', 'FAILED') AND createdAt < ?`,
+    unsyncedCutoff.toISOString(),
   );
 
   // Delete local files
-  for (const record of oldRecords) {
+  for (const record of [...oldConfirmed, ...oldUnsynced]) {
     if (record.photoLocalPath) {
       try { const f = new File(record.photoLocalPath); if (f.exists) f.delete(); } catch {}
     }
@@ -703,12 +739,43 @@ export async function cleanupOldRecords(): Promise<number> {
     }
   }
 
-  // Delete DB records
-  const result = database.runSync(
+  // Delete confirmed DB records older than 24h
+  const r1 = database.runSync(
     `DELETE FROM collection_queue WHERE syncStatus = 'CONFIRMED' AND syncedAt < ?`,
-    cutoff.toISOString(),
+    confirmedCutoff.toISOString(),
   );
-  return result.changes;
+
+  // Delete unsynced DB records older than 7 days
+  const r2 = database.runSync(
+    `DELETE FROM collection_queue WHERE syncStatus IN ('QUEUED', 'FAILED') AND createdAt < ?`,
+    unsyncedCutoff.toISOString(),
+  );
+
+  return r1.changes + r2.changes;
+}
+
+/**
+ * Clear ALL queue data — called on logout.
+ * Deletes all SQLite records (collection_queue, waste_log_queue,
+ * cached_server_collections, today_collected_households)
+ * and wipes the local photo/voice files directory.
+ */
+export function clearAllQueueData(): void {
+  const database = getDb();
+
+  // Delete all local files
+  try {
+    const queueDir = new Directory(Paths.document, QUEUE_DIR_NAME);
+    if (queueDir.exists) {
+      queueDir.delete();
+    }
+  } catch {}
+
+  // Clear all tables
+  database.runSync(`DELETE FROM collection_queue`);
+  database.runSync(`DELETE FROM waste_log_queue`);
+  database.runSync(`DELETE FROM cached_server_collections`);
+  database.runSync(`DELETE FROM today_collected_households`);
 }
 
 // ── Public API: Waste Log Queue (Offline-First) ───────────────

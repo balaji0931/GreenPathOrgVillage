@@ -25,10 +25,9 @@ export async function getVillageStats(villageId: string): Promise<{
     const cached = await cache.get(cacheKeys.villageStats(villageId));
     if (cached) return cached;
 
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const tomorrow = new Date(today);
-    tomorrow.setDate(tomorrow.getDate() + 1);
+    const istDateStr = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kolkata' }).format(new Date());
+    const today = new Date(`${istDateStr}T00:00:00+05:30`);
+    const tomorrow = new Date(today.getTime() + 86400000);
 
     const [householdsCount] = await db
         .select({ count: count() })

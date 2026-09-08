@@ -298,6 +298,15 @@ export function WasteLogScreen() {
   };
 
   const handleDeleteWithConfirm = (log: WasteLog) => {
+    const logDateStr = log.date ? log.date.split('T')[0] : '';
+    if (logDateStr !== todayStr) {
+      Alert.alert(
+        'Action Not Allowed',
+        "Collectors are only permitted to delete logs recorded today. Logs from previous days cannot be deleted."
+      );
+      return;
+    }
+
     Alert.alert(
       'Delete Waste Log',
       'Are you sure you want to delete this log entry? This action cannot be undone.',
@@ -420,21 +429,23 @@ export function WasteLogScreen() {
                     <Text style={styles.cardTotalWeight}>{totalKg.toFixed(1)} kg</Text>
                     <View style={styles.cardActions}>
                       {isEditable && (
-                        <TouchableOpacity
-                          style={styles.iconButton}
-                          onPress={() => openEdit(log)}
-                          activeOpacity={0.7}
-                        >
-                          <Ionicons name="create-outline" size={18} color={Colors.slate600} />
-                        </TouchableOpacity>
+                        <>
+                          <TouchableOpacity
+                            style={styles.iconButton}
+                            onPress={() => openEdit(log)}
+                            activeOpacity={0.7}
+                          >
+                            <Ionicons name="create-outline" size={18} color={Colors.slate600} />
+                          </TouchableOpacity>
+                          <TouchableOpacity
+                            style={[styles.iconButton, styles.iconButtonDelete]}
+                            onPress={() => handleDeleteWithConfirm(log)}
+                            activeOpacity={0.7}
+                          >
+                            <Ionicons name="trash-outline" size={18} color="#EF4444" />
+                          </TouchableOpacity>
+                        </>
                       )}
-                      <TouchableOpacity
-                        style={[styles.iconButton, styles.iconButtonDelete]}
-                        onPress={() => handleDeleteWithConfirm(log)}
-                        activeOpacity={0.7}
-                      >
-                        <Ionicons name="trash-outline" size={18} color="#EF4444" />
-                      </TouchableOpacity>
                     </View>
                   </View>
 

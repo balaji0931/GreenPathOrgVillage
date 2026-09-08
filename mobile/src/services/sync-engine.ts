@@ -26,11 +26,13 @@
  */
 import {
   getPendingRecords,
+  getPendingRecordsForManualSync,
   markSyncing,
   markConfirmed,
   markFailed,
   resetStaleSync,
   resetToQueued,
+  saveUploadedUrl,
   getQueueStats,
   cleanupOldRecords,
   getQueuedWasteLogs,
@@ -70,6 +72,15 @@ export function initSyncEngine(): void {
 export function triggerSync(): void {
   if (isSyncing) return;
   processQueue();
+}
+
+/**
+ * Trigger a manual sync ("Sync Now" button). Ignores the attempt limit
+ * and resets stuck records so they can be retried.
+ */
+export function triggerManualSync(): void {
+  if (isSyncing) return;
+  processQueue(true);
 }
 
 /**
@@ -155,7 +166,7 @@ function isNetworkError(err: any): boolean {
   );
 }
 
-async function processQueue(): Promise<void> {
+async function processQueue(isManual: boolean = false): Promise<void> {
   isSyncing = true;
   notifyStatsChange();
 
@@ -163,7 +174,7 @@ async function processQueue(): Promise<void> {
     // Also sync any queued waste logs silently in background
     await syncAllQueuedWasteLogs().catch(() => {});
 
-    const pending = getPendingRecords();
+    const pending = isManual ? getPendingRecordsForManualSync() : getPendingRecords();
     if (pending.length === 0) {
       isSyncing = false;
       notifyStatsChange();
@@ -193,11 +204,15 @@ async function syncOneRecord(record: QueuedCollection): Promise<void> {
     // 1. Upload photo if present and not yet uploaded
     if (record.photoLocalPath && !photoUrl) {
       photoUrl = await uploadPhoto(record.photoLocalPath);
+      // Save URL to DB immediately so retries don't re-upload
+      saveUploadedUrl(record.id, 'photoUrl', photoUrl);
     }
 
     // 2. Upload voice if present and not yet uploaded
     if (record.voiceLocalPath && !voiceUrl) {
       voiceUrl = await uploadVoice(record.voiceLocalPath);
+      // Save URL to DB immediately so retries don't re-upload
+      saveUploadedUrl(record.id, 'voiceUrl', voiceUrl);
     }
 
     // 3. Submit to server

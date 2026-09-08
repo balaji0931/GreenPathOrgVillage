@@ -162,6 +162,18 @@ export function registerCollectorWasteLogRoutes(
                 return res.status(403).json({ message: 'Not authorized to delete this entry' });
             }
 
+            // Collectors should not be allowed to delete logs of other days
+            const today = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kolkata' }).format(new Date());
+            const existingDateStr = typeof existing.date === 'string'
+                ? existing.date
+                : new Date(existing.date).toISOString().split('T')[0];
+
+            if (existingDateStr !== today) {
+                return res.status(403).json({
+                    message: "Collectors are not allowed to delete logs from other days. Only today's logs can be deleted."
+                });
+            }
+
             await collectorWasteLogStorage.deleteCollectorWasteLog(parseInt(id));
             res.json({ message: 'Collector waste log deleted' });
         } catch (error) {

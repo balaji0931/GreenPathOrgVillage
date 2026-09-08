@@ -24,7 +24,7 @@ import * as Haptics from 'expo-haptics';
 import { Colors, Typography, Spacing, BorderRadius, Shadows } from '../../constants/theme';
 import { EmptyState } from '../../components/common/EmptyState';
 import { useNetwork } from '../../hooks/useNetwork';
-import { triggerSync, onSyncStatsChange, isSyncInProgress } from '../../services/sync-engine';
+import { triggerSync, triggerManualSync, onSyncStatsChange, isSyncInProgress } from '../../services/sync-engine';
 import {
   getAllQueueRecords,
   retryFailedRecords,
@@ -137,7 +137,7 @@ export function SyncQueueScreen() {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     setIsManualSyncing(true);
     try {
-      await triggerSync();
+      triggerManualSync();
       loadQueueData();
     } finally {
       setTimeout(() => {

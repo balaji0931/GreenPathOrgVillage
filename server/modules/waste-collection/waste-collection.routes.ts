@@ -200,11 +200,11 @@ export function registerWasteCollectionRoutes(app: Express, requireAuth: any, re
         return res.status(400).json({ message: "Village ID required", collectedToday: 0, count: 0 });
       }
 
-      const now = new Date();
-      const todayStr = now.toISOString().split('T')[0];
-      const [year, month, day] = todayStr.split('-').map(Number);
-      const startDate = new Date(year, month - 1, day, 0, 0, 0);
-      const endDate = new Date(year, month - 1, day, 23, 59, 59, 999);
+      // Use Asia/Kolkata timezone so today begins and ends at local midnight (00:00:00 to 23:59:59.999 IST),
+      // matching the mobile collector's device timezone and preventing the 12:00 AM - 5:30 AM discrepancy.
+      const istDateStr = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kolkata' }).format(new Date());
+      const startDate = new Date(`${istDateStr}T00:00:00+05:30`);
+      const endDate = new Date(`${istDateStr}T23:59:59.999+05:30`);
 
       const [result] = await db
         .select({ count: count() })

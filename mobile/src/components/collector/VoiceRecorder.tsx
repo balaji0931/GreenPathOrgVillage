@@ -30,6 +30,8 @@ import { Colors, Typography, Spacing, BorderRadius, Shadows } from '../../consta
 import { uploadVoice } from '../../api/upload.api';
 import { getFriendlyErrorMessage } from '../../utils/errorMessage';
 
+const MAX_RECORDING_SECONDS = 30;
+
 interface VoiceRecorderProps {
   voiceUrl: string;
   onVoiceCapture: (url: string) => void;
@@ -88,7 +90,14 @@ export function VoiceRecorder({ voiceUrl, onVoiceCapture, localOnly = false }: V
       setIsRecording(true);
 
       timerRef.current = setInterval(() => {
-        setDuration((prev) => prev + 1);
+        setDuration((prev) => {
+          const next = prev + 1;
+          if (next >= MAX_RECORDING_SECONDS) {
+            // Auto-stop recording at limit
+            stopRecording();
+          }
+          return next;
+        });
       }, 1000);
     } catch (err: unknown) {
       setIsRecording(false);
@@ -234,7 +243,7 @@ export function VoiceRecorder({ voiceUrl, onVoiceCapture, localOnly = false }: V
       <View style={styles.recordingContainer}>
         <View style={styles.recordingLeft}>
           <View style={styles.recordingDot} />
-          <Text style={styles.recordingText}>Recording {formatTime(duration)}</Text>
+          <Text style={styles.recordingText}>Recording {formatTime(duration)} / {formatTime(MAX_RECORDING_SECONDS)}</Text>
         </View>
         <TouchableOpacity
           style={styles.stopBtn}

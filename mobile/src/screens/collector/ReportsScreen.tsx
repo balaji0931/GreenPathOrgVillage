@@ -15,6 +15,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { Colors, Typography, Spacing, BorderRadius, Shadows } from '../../constants/theme';
 import { Skeleton } from '../../components/common/Skeleton';
+import { DatePickerModal } from '../../components/common/DatePickerModal';
 import { fetchVehicleReport, type VehicleReport } from '../../api/collector.api';
 
 // ── Helpers ────────────────────────────────────────────────────
@@ -49,6 +50,7 @@ function fmtDateLabel(date: Date): string {
 
 export function ReportsScreen() {
   const [selectedDate, setSelectedDate] = useState(new Date());
+  const [showCalendar, setShowCalendar] = useState(false);
   const [report, setReport] = useState<VehicleReport | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -87,68 +89,110 @@ export function ReportsScreen() {
 
   const isToday = fmtDate(selectedDate) === fmtDate(new Date());
 
+  const renderDateNav = () => (
+    <View style={styles.dateNav}>
+      <TouchableOpacity
+        onPress={() => changeDate(-1)}
+        style={styles.dateButton}
+        activeOpacity={0.7}
+      >
+        <Ionicons name="chevron-back" size={20} color={Colors.slate600} />
+      </TouchableOpacity>
+
+      <TouchableOpacity
+        style={styles.dateSelectorButton}
+        onPress={() => setShowCalendar(true)}
+        activeOpacity={0.7}
+      >
+        <Ionicons name="calendar-outline" size={16} color={Colors.emerald700} style={{ marginRight: 6 }} />
+        <Text style={styles.dateLabel}>{fmtDateLabel(selectedDate)}</Text>
+        <Ionicons name="chevron-down" size={13} color={Colors.slate400} style={{ marginLeft: 6 }} />
+      </TouchableOpacity>
+
+      <TouchableOpacity
+        onPress={() => changeDate(1)}
+        style={[styles.dateButton, isToday && styles.dateButtonDisabled]}
+        disabled={isToday}
+        activeOpacity={0.7}
+      >
+        <Ionicons name="chevron-forward" size={20} color={isToday ? Colors.slate300 : Colors.slate600} />
+      </TouchableOpacity>
+    </View>
+  );
+
   // ── Loading Skeleton ──
   if (isLoading) {
     return (
-      <ScrollView style={styles.container} contentContainerStyle={styles.scrollContent}>
-        <View style={styles.dateNav}>
-          <Skeleton width={32} height={32} borderRadius={16} />
-          <Skeleton width={120} height={20} borderRadius={4} />
-          <Skeleton width={32} height={32} borderRadius={16} />
-        </View>
-        <View style={styles.card}>
-          <Skeleton height={24} width="50%" borderRadius={4} style={{ marginBottom: 16 }} />
-          <Skeleton height={16} width="70%" borderRadius={4} style={{ marginBottom: 12 }} />
-          <Skeleton height={60} borderRadius={8} style={{ marginBottom: 8 }} />
-          <Skeleton height={60} borderRadius={8} />
-        </View>
-        <View style={styles.card}>
-          <Skeleton height={24} width="50%" borderRadius={4} style={{ marginBottom: 16 }} />
-          <Skeleton height={120} borderRadius={8} />
-        </View>
-      </ScrollView>
+      <View style={styles.container}>
+        <ScrollView style={styles.container} contentContainerStyle={styles.scrollContent}>
+          <View style={styles.dateNav}>
+            <Skeleton width={36} height={36} borderRadius={18} />
+            <Skeleton width={150} height={36} borderRadius={18} />
+            <Skeleton width={36} height={36} borderRadius={18} />
+          </View>
+          <View style={styles.card}>
+            <Skeleton height={24} width="50%" borderRadius={4} style={{ marginBottom: 16 }} />
+            <Skeleton height={16} width="70%" borderRadius={4} style={{ marginBottom: 12 }} />
+            <Skeleton height={60} borderRadius={8} style={{ marginBottom: 8 }} />
+            <Skeleton height={60} borderRadius={8} />
+          </View>
+          <View style={styles.card}>
+            <Skeleton height={24} width="50%" borderRadius={4} style={{ marginBottom: 16 }} />
+            <Skeleton height={120} borderRadius={8} />
+          </View>
+        </ScrollView>
+      </View>
     );
   }
 
   // ── No Vehicle Assigned ──
   if (report && !report.vehicleName) {
     return (
-      <ScrollView style={styles.container} contentContainerStyle={styles.scrollContent}>
-        <View style={styles.dateNav}>
-          <TouchableOpacity onPress={() => changeDate(-1)} style={styles.dateButton}>
-            <Ionicons name="chevron-back" size={20} color={Colors.slate600} />
-          </TouchableOpacity>
-          <Text style={styles.dateLabel}>{fmtDateLabel(selectedDate)}</Text>
-          <TouchableOpacity onPress={() => changeDate(1)} style={[styles.dateButton, isToday && styles.dateButtonDisabled]} disabled={isToday}>
-            <Ionicons name="chevron-forward" size={20} color={isToday ? Colors.slate300 : Colors.slate600} />
-          </TouchableOpacity>
-        </View>
-        <View style={styles.emptyContainer}>
-          <Ionicons name="car-outline" size={48} color={Colors.slate300} />
-          <Text style={styles.emptyTitle}>No Vehicle Assigned</Text>
-          <Text style={styles.emptySubtitle}>Contact your manager to get assigned to a vehicle.</Text>
-        </View>
-      </ScrollView>
+      <View style={styles.container}>
+        <ScrollView style={styles.container} contentContainerStyle={styles.scrollContent}>
+          {renderDateNav()}
+          <View style={styles.emptyContainer}>
+            <Ionicons name="car-outline" size={48} color={Colors.slate300} />
+            <Text style={styles.emptyTitle}>No Vehicle Assigned</Text>
+            <Text style={styles.emptySubtitle}>Contact your manager to get assigned to a vehicle.</Text>
+          </View>
+        </ScrollView>
+        <DatePickerModal
+          visible={showCalendar}
+          selectedDate={selectedDate}
+          onSelectDate={(d) => setSelectedDate(d)}
+          onClose={() => setShowCalendar(false)}
+        />
+      </View>
     );
   }
 
   // ── Error State ──
   if (error) {
     return (
-      <ScrollView
-        style={styles.container}
-        contentContainerStyle={styles.scrollContent}
-        refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={handleRefresh} />}
-      >
-        <View style={styles.emptyContainer}>
-          <Ionicons name="alert-circle-outline" size={48} color={Colors.slate300} />
-          <Text style={styles.emptyTitle}>Failed to Load</Text>
-          <Text style={styles.emptySubtitle}>{error}</Text>
-          <TouchableOpacity style={styles.retryButton} onPress={() => loadReport()}>
-            <Text style={styles.retryText}>Retry</Text>
-          </TouchableOpacity>
-        </View>
-      </ScrollView>
+      <View style={styles.container}>
+        <ScrollView
+          style={styles.container}
+          contentContainerStyle={styles.scrollContent}
+          refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={handleRefresh} />}
+        >
+          {renderDateNav()}
+          <View style={styles.emptyContainer}>
+            <Ionicons name="alert-circle-outline" size={48} color={Colors.slate300} />
+            <Text style={styles.emptyTitle}>Failed to Load</Text>
+            <Text style={styles.emptySubtitle}>{error}</Text>
+            <TouchableOpacity style={styles.retryButton} onPress={() => loadReport()}>
+              <Text style={styles.retryText}>Retry</Text>
+            </TouchableOpacity>
+          </View>
+        </ScrollView>
+        <DatePickerModal
+          visible={showCalendar}
+          selectedDate={selectedDate}
+          onSelectDate={(d) => setSelectedDate(d)}
+          onClose={() => setShowCalendar(false)}
+        />
+      </View>
     );
   }
 
@@ -157,21 +201,14 @@ export function ReportsScreen() {
   const maxHourly = Math.max(...report.hourlyTimeline.map(h => h.collections), 1);
 
   return (
-    <ScrollView
-      style={styles.container}
-      contentContainerStyle={styles.scrollContent}
-      refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={handleRefresh} />}
-    >
-      {/* ── Date Navigation ── */}
-      <View style={styles.dateNav}>
-        <TouchableOpacity onPress={() => changeDate(-1)} style={styles.dateButton}>
-          <Ionicons name="chevron-back" size={20} color={Colors.slate600} />
-        </TouchableOpacity>
-        <Text style={styles.dateLabel}>{fmtDateLabel(selectedDate)}</Text>
-        <TouchableOpacity onPress={() => changeDate(1)} style={[styles.dateButton, isToday && styles.dateButtonDisabled]} disabled={isToday}>
-          <Ionicons name="chevron-forward" size={20} color={isToday ? Colors.slate300 : Colors.slate600} />
-        </TouchableOpacity>
-      </View>
+    <View style={styles.container}>
+      <ScrollView
+        style={styles.container}
+        contentContainerStyle={styles.scrollContent}
+        refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={handleRefresh} />}
+      >
+        {/* ── Date Navigation ── */}
+        {renderDateNav()}
 
       {/* ── Vehicle Header Card ── */}
       <View style={styles.vehicleCard}>
@@ -230,7 +267,6 @@ export function ReportsScreen() {
                   {/* Break indicator */}
                   {session.breakBeforeMs > 0 && (
                     <View style={styles.breakIndicator}>
-                      <Ionicons name="cafe-outline" size={10} color="#ea580c" />
                       <Text style={styles.breakText}>Break: {bH > 0 ? `${bH}h ` : ''}{bM}m</Text>
                     </View>
                   )}
@@ -304,7 +340,16 @@ export function ReportsScreen() {
 
       {/* Bottom spacing */}
       <View style={{ height: 100 }} />
-    </ScrollView>
+      </ScrollView>
+
+      {/* Date Picker Modal */}
+      <DatePickerModal
+        visible={showCalendar}
+        selectedDate={selectedDate}
+        onSelectDate={(d) => setSelectedDate(d)}
+        onClose={() => setShowCalendar(false)}
+      />
+    </View>
   );
 }
 
@@ -325,27 +370,39 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: Spacing.md,
+    gap: Spacing.sm,
     marginBottom: Spacing.md,
   },
   dateButton: {
-    width: 34,
-    height: 34,
-    borderRadius: 17,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     backgroundColor: Colors.white,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
     borderColor: Colors.slate200,
+    ...Shadows.sm,
   },
   dateButtonDisabled: {
-    opacity: 0.4,
+    opacity: 0.35,
+  },
+  dateSelectorButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: Colors.white,
+    paddingHorizontal: Spacing.md,
+    paddingVertical: 7,
+    borderRadius: BorderRadius.full,
+    borderWidth: 1,
+    borderColor: Colors.slate200,
+    ...Shadows.sm,
   },
   dateLabel: {
-    fontSize: 15,
+    fontSize: 14,
     fontFamily: Typography.fontFamilyBold,
     color: Colors.slate900,
-    minWidth: 100,
     textAlign: 'center',
   },
 
