@@ -5,7 +5,7 @@
  * and sync engine lifecycle.
  */
 import { useState, useCallback, useEffect, useMemo, useRef } from 'react';
-import { View, Text, TextInput, FlatList, RefreshControl, Alert, StyleSheet, TouchableOpacity, ActivityIndicator } from 'react-native';
+import { View, Text, TextInput, FlatList, RefreshControl, Alert, StyleSheet, TouchableOpacity, ActivityIndicator, Modal, Pressable } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors, Typography, Spacing, BorderRadius, Shadows } from '../../constants/theme';
@@ -26,6 +26,7 @@ import { QRScannerModal } from '../../components/scanner/QRScannerModal';
 import { AnnouncementsScreen } from './AnnouncementsScreen';
 import { ShiftScreen } from './ShiftScreen';
 import { WasteLogScreen } from './WasteLogScreen';
+import { ReportsScreen } from './ReportsScreen';
 import { CollectionDetailsModal, type CollectionRecordDetail } from '../../components/collector/CollectionDetailsModal';
 import { ProfileScreen } from './ProfileScreen';
 import { SyncQueueScreen } from './SyncQueueScreen';
@@ -35,6 +36,8 @@ import { useCollectorData } from '../../hooks/useCollectorData';
 import { useNetwork } from '../../hooks/useNetwork';
 import { initSyncEngine, stopSyncEngine, triggerSync, onSyncStatsChange } from '../../services/sync-engine';
 import { hasLocalCollectionToday, getLocalCollectionForHousehold, type QueueStats } from '../../services/offline-queue';
+import { useAuth } from '../../auth/AuthProvider';
+import { ConfirmDialog } from '../../components/common/ConfirmDialog';
 import type { Household, ScanResult } from '../../types/collector';
 
 const PAGE_SIZE = 50;
@@ -51,6 +54,8 @@ export function CollectorDashboard() {
   const [detailHousehold, setDetailHousehold] = useState<Household | null>(null);
   const [syncStats, setSyncStats] = useState<QueueStats>({ total: 0, queued: 0, syncing: 0, confirmed: 0, failed: 0 });
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [showMenu, setShowMenu] = useState(false);
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const toastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const {
@@ -64,6 +69,7 @@ export function CollectorDashboard() {
   } = useCollectorData();
 
   const { isConnected } = useNetwork();
+  const { logout } = useAuth();
   const [isRefreshing, setIsRefreshing] = useState(false);
 
   // ── Sync Engine Lifecycle ──────────────────────────────────────
@@ -267,6 +273,8 @@ export function CollectorDashboard() {
     switch (activeTab) {
       case 'announcements':
         return <AnnouncementsScreen />;
+      case 'reports':
+        return <ReportsScreen />;
       case 'shift':
         return <ShiftScreen />;
       case 'wastelog':
@@ -401,7 +409,8 @@ export function CollectorDashboard() {
       {/* Top Brand Header */}
       <CollectorHeader
         isOnline={isConnected}
-        onProfilePress={() => setActiveTab('profile')}
+        onAlertsPress={() => setActiveTab('announcements')}
+        onMenuPress={() => setShowMenu(true)}
       />
 
       {/* Floating Success Toast Acknowledgment */}
@@ -461,6 +470,53 @@ export function CollectorDashboard() {
           setDetailHousehold(null);
           setSelectedCollectionDetail(null);
         }}
+      />
+
+      {/* 3-Dot Menu Modal */}
+      <Modal
+        visible={showMenu}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowMenu(false)}
+      >
+        <Pressable style={styles.menuOverlay} onPress={() => setShowMenu(false)}>
+          <View style={styles.menuContainer}>
+            <TouchableOpacity
+              style={styles.menuItem}
+              onPress={() => {
+                setShowMenu(false);
+                setActiveTab('profile');
+              }}
+            >
+              <Ionicons name="person-outline" size={20} color={Colors.slate700} />
+              <Text style={styles.menuItemText}>View Profile</Text>
+            </TouchableOpacity>
+            <View style={styles.menuDivider} />
+            <TouchableOpacity
+              style={styles.menuItem}
+              onPress={() => {
+                setShowMenu(false);
+                setShowLogoutConfirm(true);
+              }}
+            >
+              <Ionicons name="log-out-outline" size={20} color={Colors.destructive} />
+              <Text style={[styles.menuItemText, { color: Colors.destructive }]}>Logout</Text>
+            </TouchableOpacity>
+          </View>
+        </Pressable>
+      </Modal>
+
+      {/* Logout Confirmation */}
+      <ConfirmDialog
+        visible={showLogoutConfirm}
+        title="Logout"
+        message="Are you sure you want to logout?"
+        confirmText="Logout"
+        onConfirm={async () => {
+          setShowLogoutConfirm(false);
+          await logout();
+        }}
+        onCancel={() => setShowLogoutConfirm(false)}
       />
     </SafeAreaView>
   );
@@ -569,5 +625,37 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontFamily: Typography.fontFamilyBold,
     color: '#ffffff',
+  },
+  menuOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.25)',
+    justifyContent: 'flex-start',
+    alignItems: 'flex-end',
+  },
+  menuContainer: {
+    marginTop: 90,
+    marginRight: 16,
+    backgroundColor: Colors.white,
+    borderRadius: BorderRadius.lg,
+    minWidth: 180,
+    ...Shadows.lg,
+    overflow: 'hidden',
+  },
+  menuItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.sm,
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.sm + 2,
+  },
+  menuItemText: {
+    fontSize: 14,
+    fontFamily: Typography.fontFamilyMedium,
+    color: Colors.slate700,
+  },
+  menuDivider: {
+    height: 1,
+    backgroundColor: Colors.slate100,
+    marginHorizontal: Spacing.sm,
   },
 });

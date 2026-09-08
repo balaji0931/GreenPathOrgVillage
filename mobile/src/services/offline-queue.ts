@@ -603,6 +603,20 @@ export function resetStaleSync(): void {
 }
 
 /**
+ * Reset a specific record back to QUEUED without incrementing syncAttempts.
+ * Used by the sync engine for transient network errors (DNS, TLS, no connectivity)
+ * and auth expiry — these are not "real" failures and should not count toward
+ * the 5-attempt limit.
+ */
+export function resetToQueued(id: number): void {
+  const database = getDb();
+  database.runSync(
+    `UPDATE collection_queue SET syncStatus = 'QUEUED' WHERE id = ?`,
+    id,
+  );
+}
+
+/**
  * Get queue statistics for the sync indicator badge.
  */
 export function getQueueStats(): QueueStats {

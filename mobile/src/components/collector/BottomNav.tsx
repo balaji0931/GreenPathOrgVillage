@@ -11,7 +11,7 @@ import { View, Text, TouchableOpacity, StyleSheet, Dimensions, Platform } from '
 import { Ionicons } from '@expo/vector-icons';
 import { Colors, Typography, Spacing } from '../../constants/theme';
 
-export type CollectorTab = 'home' | 'shift' | 'announcements' | 'wastelog' | 'sync' | 'profile';
+export type CollectorTab = 'home' | 'shift' | 'reports' | 'announcements' | 'wastelog' | 'sync' | 'profile';
 
 interface BottomNavProps {
   activeTab: CollectorTab;
@@ -51,10 +51,10 @@ export function BottomNav({
     });
   }
   leftTabs.push({
-    key: 'announcements',
-    label: 'Alerts',
-    icon: 'notifications',
-    activeIcon: 'notifications',
+    key: 'reports',
+    label: 'Reports',
+    icon: 'bar-chart-outline',
+    activeIcon: 'bar-chart',
   });
 
   if (wasteLogEnabled) {

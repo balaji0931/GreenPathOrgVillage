@@ -1,29 +1,27 @@
 /**
- * Collector Header — Premium Brand Header
+ * Collector Header — Compact Brand Header
  *
  * Displays:
- * - GreenPath brand logo
+ * - GreenPath brand logo (compact)
  * - Live online/offline status pill
- * - Pending sync badge (if queue > 0)
- * - User avatar button
+ * - Alerts bell button (navigates to announcements)
+ * - 3-dot vertical menu button (profile, logout)
  */
 import { View, Text, Image, TouchableOpacity, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors, Typography, Spacing, BorderRadius, Shadows } from '../../constants/theme';
-import { useAuth } from '../../auth/AuthProvider';
 
 interface CollectorHeaderProps {
   isOnline: boolean;
-  onProfilePress: () => void;
+  onAlertsPress: () => void;
+  onMenuPress: () => void;
 }
 
 export function CollectorHeader({
   isOnline,
-  onProfilePress,
+  onAlertsPress,
+  onMenuPress,
 }: CollectorHeaderProps) {
-  const { user } = useAuth();
-  const initial = user?.name ? user.name.charAt(0).toUpperCase() : 'C';
-
   return (
     <View style={styles.header}>
       <View style={styles.left}>
@@ -43,13 +41,24 @@ export function CollectorHeader({
           </Text>
         </View>
 
-        {/* User Profile Avatar */}
+        {/* Alerts Bell */}
         <TouchableOpacity
-          style={styles.avatarButton}
-          onPress={onProfilePress}
-          activeOpacity={0.8}
+          style={styles.iconButton}
+          onPress={onAlertsPress}
+          activeOpacity={0.7}
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
         >
-          <Text style={styles.avatarText}>{initial}</Text>
+          <Ionicons name="notifications-outline" size={22} color={Colors.slate600} />
+        </TouchableOpacity>
+
+        {/* 3-Dot Menu */}
+        <TouchableOpacity
+          style={styles.iconButton}
+          onPress={onMenuPress}
+          activeOpacity={0.7}
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+        >
+          <Ionicons name="ellipsis-vertical" size={22} color={Colors.slate600} />
         </TouchableOpacity>
       </View>
     </View>
@@ -61,8 +70,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingVertical: Spacing.sm - 1,
-    paddingHorizontal: Spacing.lg,
+    paddingVertical: Spacing.xs + 2,
+    paddingHorizontal: Spacing.md,
     backgroundColor: Colors.white,
     borderBottomWidth: 1,
     borderBottomColor: Colors.slate100,
@@ -73,20 +82,20 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   logo: {
-    width: 180,
-    height: 45,
+    width: 140,
+    height: 34,
   },
   right: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: Spacing.sm,
+    gap: Spacing.xs + 2,
   },
   statusPill: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 5,
-    paddingHorizontal: Spacing.sm + 2,
-    paddingVertical: 4,
+    gap: 4,
+    paddingHorizontal: Spacing.sm,
+    paddingVertical: 3,
     backgroundColor: Colors.emerald50,
     borderRadius: BorderRadius.full,
     borderWidth: 1,
@@ -97,52 +106,28 @@ const styles = StyleSheet.create({
     borderColor: '#fecaca',
   },
   statusDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
+    width: 5,
+    height: 5,
+    borderRadius: 2.5,
     backgroundColor: Colors.emerald500,
   },
   statusDotOffline: {
     backgroundColor: Colors.destructive,
   },
   statusText: {
-    fontSize: 11,
+    fontSize: 10,
     fontFamily: Typography.fontFamilyMedium,
     color: Colors.emerald700,
   },
   statusTextOffline: {
     color: Colors.destructive,
   },
-  syncPill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    paddingHorizontal: Spacing.sm + 2,
-    paddingVertical: 4,
-    backgroundColor: Colors.blue50,
-    borderRadius: BorderRadius.full,
-    borderWidth: 1,
-    borderColor: Colors.blue100,
-  },
-  syncPillText: {
-    fontSize: 11,
-    fontFamily: Typography.fontFamilySemiBold,
-    color: Colors.blue600,
-  },
-  avatarButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: Colors.emerald600,
+  iconButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: 2,
-    borderColor: Colors.emerald100,
-    ...Shadows.sm,
-  },
-  avatarText: {
-    fontSize: 14,
-    fontFamily: Typography.fontFamilyBold,
-    color: Colors.white,
+    backgroundColor: Colors.slate50,
   },
 });

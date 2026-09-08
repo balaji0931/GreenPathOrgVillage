@@ -5,9 +5,15 @@
  * - Login via POST /api/mobile/auth/login
  * - Refresh token stored in SecureStore (Android Keystore)
  * - Access token kept in memory only
- * - Auto-refresh before expiry
+ * - Expiry-aware token lifecycle (no setTimeout — survives Android background suspension)
  * - Bootstrap on app launch (restore session from SecureStore)
  * - Logout with server-side token revocation
+ *
+ * Design principles:
+ * - Tokens are checked for expiry at the MOMENT OF USE, not via timers.
+ * - AppState listener proactively refreshes when the app returns to foreground.
+ * - onAuthFailure is ONLY called when the refresh token itself is dead (server 401).
+ * - Transient network errors never cause a logout.
  */
 import React, { createContext, useContext, useEffect, useRef, useState, useCallback } from 'react';
 import * as SecureStore from 'expo-secure-store';
@@ -43,8 +49,9 @@ interface AuthContextValue extends AuthState {
 const SECURE_STORE_REFRESH_KEY = 'greenpath_refresh_token';
 const SECURE_STORE_DEVICE_ID_KEY = 'greenpath_device_id';
 const SECURE_STORE_USER_KEY = 'greenpath_user';
-// Refresh 30 seconds before expiry to avoid race conditions
-const REFRESH_BUFFER_SECONDS = 30;
+// Refresh when less than 60 seconds remain — gives plenty of buffer
+// without relying on timers that Android can suspend.
+const EXPIRY_BUFFER_MS = 60_000;
 
 // ── Context ────────────────────────────────────────────────────
 
@@ -65,10 +72,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     error: null,
   });
 
-  // In-memory token storage (never persisted)
+  // In-memory token storage (never persisted to disk)
   const accessTokenRef = useRef<string | null>(null);
   const expiresAtRef = useRef<number>(0);
-  const refreshTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Mutex: ensures only one refresh call is in-flight at a time
   const refreshPromiseRef = useRef<Promise<boolean> | null>(null);
 
   // ── Helpers ────────────────────────────────────────────────
@@ -76,7 +83,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const getDeviceId = useCallback(async (): Promise<string> => {
     let deviceId = await SecureStore.getItemAsync(SECURE_STORE_DEVICE_ID_KEY);
     if (!deviceId) {
-      // Generate a stable device ID on first use
       deviceId = `android-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
       await SecureStore.setItemAsync(SECURE_STORE_DEVICE_ID_KEY, deviceId);
     }
@@ -90,33 +96,32 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const clearTokens = useCallback(async () => {
     accessTokenRef.current = null;
     expiresAtRef.current = 0;
-    if (refreshTimerRef.current) {
-      clearTimeout(refreshTimerRef.current);
-      refreshTimerRef.current = null;
-    }
     await Promise.all([
       SecureStore.deleteItemAsync(SECURE_STORE_REFRESH_KEY).catch(() => {}),
       SecureStore.deleteItemAsync(SECURE_STORE_USER_KEY).catch(() => {}),
     ]);
   }, []);
 
-  const scheduleRefresh = useCallback((expiresIn: number) => {
-    if (refreshTimerRef.current) {
-      clearTimeout(refreshTimerRef.current);
-    }
-    const refreshInMs = Math.max((expiresIn - REFRESH_BUFFER_SECONDS) * 1000, 10000);
-    refreshTimerRef.current = setTimeout(() => {
-      refreshTokens();
-    }, refreshInMs);
+  /**
+   * Check if the in-memory access token is expired or about to expire.
+   * Called by the API client BEFORE each request to decide whether to
+   * proactively refresh (avoiding the 401 → refresh → retry round-trip).
+   */
+  const isTokenExpired = useCallback((): boolean => {
+    if (!accessTokenRef.current) return true;
+    return Date.now() >= (expiresAtRef.current - EXPIRY_BUFFER_MS);
   }, []);
 
   // ── Token Provider for API client ──────────────────────────
 
   const getAccessToken = useCallback((): string | null => {
+    // Return null if the token is expired — forces the API client to refresh
+    if (isTokenExpired()) return null;
     return accessTokenRef.current;
-  }, []);
+  }, [isTokenExpired]);
 
   const refreshTokens = useCallback(async (): Promise<boolean> => {
+    // Mutex: if a refresh is already in-flight, wait for it
     if (refreshPromiseRef.current) {
       return refreshPromiseRef.current;
     }
@@ -141,15 +146,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         expiresAtRef.current = Date.now() + data.expiresIn * 1000;
         await SecureStore.setItemAsync(SECURE_STORE_REFRESH_KEY, data.refreshToken);
 
-        // Schedule next refresh
-        scheduleRefresh(data.expiresIn);
-
         return true;
       } catch (err) {
-        // ONLY clear tokens if server explicitly returned 401 (session revoked on server)
+        // ONLY clear tokens if server explicitly returned 401 (refresh token is dead)
         if (err instanceof ApiError && err.status === 401) {
           await clearTokens();
         }
+        // For network errors (TypeError, DNS failure, etc.) — do NOT clear tokens.
+        // The user's refresh token is still valid on the server; we just can't reach it.
         return false;
       } finally {
         refreshPromiseRef.current = null;
@@ -157,7 +161,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     })();
 
     return refreshPromiseRef.current;
-  }, [scheduleRefresh, clearTokens]);
+  }, [clearTokens]);
 
   const onAuthFailure = useCallback(async () => {
     await clearTokens();
@@ -171,24 +175,33 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       refreshTokens,
       onAuthFailure,
     });
-    // Also register with upload API for multipart file uploads
     setUploadTokenProvider({
       getAccessToken,
       refreshTokens,
     });
   }, [getAccessToken, refreshTokens, onAuthFailure]);
 
-  // Silently refresh token when app returns to foreground if in-memory token is empty
+  /**
+   * AppState listener: proactively refresh when app returns to foreground.
+   *
+   * On Android, setTimeout is suspended while the app is backgrounded.
+   * Instead of relying on timers, we check token expiry every time the
+   * user brings the app back. This covers all durations (10 min, 1 hour, etc.)
+   */
   useEffect(() => {
     const subscription = AppState.addEventListener('change', (nextAppState) => {
-      if (nextAppState === 'active' && !accessTokenRef.current) {
-        refreshTokens().catch(() => {});
+      if (nextAppState === 'active') {
+        // Always check expiry when coming to foreground — don't rely on
+        // accessTokenRef being null (it can be stale/expired but non-null)
+        if (isTokenExpired()) {
+          refreshTokens().catch(() => {});
+        }
       }
     });
     return () => {
       subscription.remove();
     };
-  }, [refreshTokens]);
+  }, [refreshTokens, isTokenExpired]);
 
   // ── Bootstrap (restore session on app launch) ──────────────
 
@@ -214,7 +227,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           } catch {}
         }
 
-        // Offline-first: if cached user exists, immediately restore them so the UI opens without waiting or failing offline!
+        // Offline-first: if cached user exists, immediately restore them
+        // so the UI opens without waiting or failing offline!
         if (cachedUser && mounted) {
           setState({ user: cachedUser, isLoading: false, error: null });
         }
@@ -230,9 +244,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               if (mounted) setState({ user: freshUser, isLoading: false, error: null });
             }
           } else if (!cachedUser) {
-            // No cached user and refresh failed
-            if (mounted) setState({ user: null, isLoading: false, error: null });
+            // No cached user and refresh failed — check if we still have a refresh token
+            // (network error case: token is valid but we can't reach server)
+            const stillHasRefresh = await SecureStore.getItemAsync(SECURE_STORE_REFRESH_KEY).catch(() => null);
+            if (!stillHasRefresh && mounted) {
+              // Refresh token was cleared by the refresh function (server returned 401)
+              setState({ user: null, isLoading: false, error: null });
+            } else if (mounted) {
+              // Network error — no cached user, can't reach server. Show login.
+              setState({ user: null, isLoading: false, error: null });
+            }
           }
+          // If we have cachedUser and refresh failed due to network, stay logged in with cache. ✓
         } catch (refreshErr) {
           if (refreshErr instanceof ApiError && refreshErr.status === 401) {
             await clearTokens();
@@ -284,16 +307,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         SecureStore.setItemAsync(SECURE_STORE_USER_KEY, JSON.stringify(data.user)),
       ]);
 
-      // Schedule auto-refresh
-      scheduleRefresh(data.expiresIn);
-
       setState({ user: data.user, isLoading: false, error: null });
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Login failed';
       setState(prev => ({ ...prev, isLoading: false, error: message }));
       throw err;
     }
-  }, [getDeviceId, getDeviceName, scheduleRefresh]);
+  }, [getDeviceId, getDeviceName]);
 
   // ── Logout ─────────────────────────────────────────────────
 

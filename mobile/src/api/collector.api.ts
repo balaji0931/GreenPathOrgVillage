@@ -136,3 +136,32 @@ export async function changePassword(newPassword: string): Promise<void> {
     body: { newPassword },
   });
 }
+
+// ── Vehicle Report ──────────────────────────────────────────────
+
+export interface VehicleReportSession {
+  index: number;
+  startTime: string;
+  endTime: string;
+  count: number;
+  durationMs: number;
+  breakBeforeMs: number;
+}
+
+export interface VehicleReport {
+  vehicleName: string | null;
+  registrationNumber: string | null;
+  collectorNames: string;
+  count: number;
+  startTime: string | null;
+  endTime: string | null;
+  sessions: VehicleReportSession[];
+  totalWorkMs: number;
+  totalBreakMs: number;
+  hourlyTimeline: { hour: string; collections: number }[];
+}
+
+export async function fetchVehicleReport(date?: string): Promise<VehicleReport> {
+  const params = date ? `?date=${date}` : '';
+  return apiRequest<VehicleReport>(`/api/collector/vehicle-report${params}`);
+}
