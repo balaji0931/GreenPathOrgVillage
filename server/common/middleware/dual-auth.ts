@@ -37,8 +37,17 @@ declare global {
 
 function extractBearerToken(req: Request): string | null {
   const authHeader = req.headers.authorization;
-  if (!authHeader || !authHeader.startsWith("Bearer ")) return null;
-  return authHeader.slice(7);
+  if (authHeader && authHeader.startsWith("Bearer ")) {
+    return authHeader.slice(7);
+  }
+
+  // Fallback for proxies (Nginx/Apache) that strip the standard Authorization header
+  const customHeader = req.headers['x-mobile-token'];
+  if (typeof customHeader === 'string') {
+    return customHeader;
+  }
+
+  return null;
 }
 
 /**

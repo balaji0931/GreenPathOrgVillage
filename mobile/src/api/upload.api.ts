@@ -47,6 +47,7 @@ export async function uploadPhoto(uri: string): Promise<string> {
   const token = await getOrRefreshToken();
   if (token) {
     headers['Authorization'] = `Bearer ${token}`;
+    headers['X-Mobile-Token'] = token;
   }
 
   const uploadUrl = `${API_BASE_URL}${API_ENDPOINTS.uploadPhoto}`;
@@ -65,6 +66,7 @@ export async function uploadPhoto(uri: string): Promise<string> {
       const newToken = tokenProvider.getAccessToken();
       if (newToken) {
         headers['Authorization'] = `Bearer ${newToken}`;
+        headers['X-Mobile-Token'] = newToken;
       }
       response = await FileSystem.uploadAsync(uploadUrl, uri, {
         fieldName: 'file',
@@ -105,6 +107,7 @@ export async function uploadVoice(uri: string): Promise<string> {
   const token = await getOrRefreshToken();
   if (token) {
     headers['Authorization'] = `Bearer ${token}`;
+    headers['X-Mobile-Token'] = token;
   }
 
   const uploadUrl = `${API_BASE_URL}${API_ENDPOINTS.uploadVoice}`;
@@ -123,6 +126,7 @@ export async function uploadVoice(uri: string): Promise<string> {
       const newToken = tokenProvider.getAccessToken();
       if (newToken) {
         headers['Authorization'] = `Bearer ${newToken}`;
+        headers['X-Mobile-Token'] = newToken;
       }
       response = await FileSystem.uploadAsync(uploadUrl, uri, {
         fieldName: 'file',

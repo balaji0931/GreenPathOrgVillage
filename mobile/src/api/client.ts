@@ -51,6 +51,7 @@ export async function apiRequest<T = unknown>(
     }
     if (token) {
       requestHeaders['Authorization'] = `Bearer ${token}`;
+      requestHeaders['X-Mobile-Token'] = token;
     }
   }
 
@@ -70,6 +71,7 @@ export async function apiRequest<T = unknown>(
       const newToken = tokenProvider.getAccessToken();
       if (newToken) {
         requestHeaders['Authorization'] = `Bearer ${newToken}`;
+        requestHeaders['X-Mobile-Token'] = newToken;
       }
       response = await fetch(url, {
         method,

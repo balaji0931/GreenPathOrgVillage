@@ -18,6 +18,7 @@ import { StatsCards } from '../../components/collector/StatsCards';
 import { HouseholdCard } from '../../components/collector/HouseholdCard';
 import { CollectionModal } from '../../components/collector/CollectionModal';
 import { LoadingState } from '../../components/common/LoadingState';
+import { Skeleton } from '../../components/common/Skeleton';
 import { EmptyState } from '../../components/common/EmptyState';
 import { QRScannerModal } from '../../components/scanner/QRScannerModal';
 
@@ -281,7 +282,32 @@ export function CollectorDashboard() {
   };
 
   const renderHomeTab = () => {
-    if (isLoading) return <LoadingState message="Loading your route..." />;
+    if (isLoading) {
+      return (
+        <View style={styles.homeContainer}>
+          <View style={styles.homeHeader}>
+            <View style={{ flexDirection: 'row', gap: 12, marginBottom: 16 }}>
+              <Skeleton height={80} style={{ flex: 1 }} borderRadius={16} />
+              <Skeleton height={80} style={{ flex: 1 }} borderRadius={16} />
+            </View>
+            <Skeleton height={48} borderRadius={12} style={{ marginBottom: 16 }} />
+            <Skeleton height={20} width="60%" borderRadius={4} />
+          </View>
+          <View style={{ paddingHorizontal: 16, paddingTop: 16, gap: 16 }}>
+            {[1, 2, 3, 4, 5].map((i) => (
+              <View key={i} style={{ backgroundColor: Colors.white, padding: 16, borderRadius: 16, shadowColor: Colors.slate900, shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 8, elevation: 2 }}>
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 12 }}>
+                  <Skeleton height={24} width="40%" borderRadius={4} />
+                  <Skeleton height={24} width="20%" borderRadius={12} />
+                </View>
+                <Skeleton height={16} width="70%" borderRadius={4} style={{ marginBottom: 8 }} />
+                <Skeleton height={16} width="50%" borderRadius={4} />
+              </View>
+            ))}
+          </View>
+        </View>
+      );
+    }
 
     const hasMore = displayLimit < allFilteredHouseholds.length;
 
