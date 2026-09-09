@@ -26,7 +26,7 @@ import * as Location from 'expo-location';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors, Typography, Spacing, BorderRadius, Shadows } from '../../constants/theme';
 import { LoadingState } from '../../components/common/LoadingState';
-import { QRScannerModal } from '../../components/scanner/QRScannerModal';
+import { QRScannerModal, type ScanResult } from '../../components/common/QRScannerModal';
 import { DatePickerModal } from '../../components/common/DatePickerModal';
 import { ServiceUnavailableModal } from '../../components/common/ServiceUnavailableModal';
 import { useSubscription } from '../../hooks/useSubscription';
@@ -36,7 +36,7 @@ import {
   fetchMyAttendanceStatus,
   type AttendanceStatusResponse,
 } from '../../api/collector.api';
-import type { ShiftState, ShiftItem, ScanResult } from '../../types/collector';
+import type { ShiftState, ShiftItem } from '../../types/collector';
 import { getFriendlyErrorMessage } from '../../utils/errorMessage';
 
 function fmtDateIso(d: Date): string {

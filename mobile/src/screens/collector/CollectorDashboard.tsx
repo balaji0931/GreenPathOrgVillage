@@ -20,8 +20,8 @@ import { CollectionModal } from '../../components/collector/CollectionModal';
 import { LoadingState } from '../../components/common/LoadingState';
 import { Skeleton } from '../../components/common/Skeleton';
 import { EmptyState } from '../../components/common/EmptyState';
-import { QRScannerModal } from '../../components/scanner/QRScannerModal';
-import { SubscriptionBanner } from '../../components/collector/SubscriptionBanner';
+import { QRScannerModal, type ScanResult } from '../../components/common/QRScannerModal';
+import { SubscriptionBanner } from '../../components/common/SubscriptionBanner';
 import { ServiceUnavailableModal } from '../../components/common/ServiceUnavailableModal';
 
 // Screens
@@ -37,11 +37,11 @@ import { SyncQueueScreen } from './SyncQueueScreen';
 import { useCollectorData } from '../../hooks/useCollectorData';
 import { useNetwork } from '../../hooks/useNetwork';
 import { useSubscription } from '../../hooks/useSubscription';
-import { initSyncEngine, stopSyncEngine, triggerSync, onSyncStatsChange } from '../../services/sync-engine';
-import { hasLocalCollectionToday, getLocalCollectionForHousehold, type QueueStats } from '../../services/offline-queue';
+import { initSyncEngine, stopSyncEngine, triggerSync, onSyncStatsChange } from '../../services/collector-sync';
+import { hasLocalCollectionToday, getLocalCollectionForHousehold, type QueueStats } from '../../services/collector-queue';
 import { useAuth } from '../../auth/AuthProvider';
 import { ConfirmDialog } from '../../components/common/ConfirmDialog';
-import type { Household, ScanResult } from '../../types/collector';
+import type { Household } from '../../types/collector';
 
 const PAGE_SIZE = 50;
 

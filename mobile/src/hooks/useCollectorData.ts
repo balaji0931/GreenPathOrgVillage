@@ -29,7 +29,7 @@ import {
   getCachedVillageData,
   saveCachedServerCollections,
   getMergedTodayCollections,
-} from '../services/offline-queue';
+} from '../services/collector-queue';
 
 interface CollectorData {
   households: Household[];

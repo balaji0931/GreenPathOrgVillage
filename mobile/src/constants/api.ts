@@ -51,4 +51,11 @@ export const API_ENDPOINTS = {
 
   // Subscriptions
   activeSubscription: (villageId: string) => `/api/subscriptions/villages/${villageId}/active`,
+
+  // Field Worker
+  qrLookup: (uid: string) => `/api/qr-codes/${encodeURIComponent(uid)}`,
+  qrMap: (uid: string) => `/api/qr-codes/${encodeURIComponent(uid)}/map`,
+  householdTypes: '/api/household-types',
+  villageRoads: '/api/village-roads',
+  villageDetails: (villageId: string) => `/api/villages/${encodeURIComponent(villageId)}`,
 } as const;

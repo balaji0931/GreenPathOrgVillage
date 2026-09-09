@@ -37,7 +37,7 @@ import {
   syncSingleWasteLog,
   syncAllQueuedWasteLogs,
   type QueuedWasteLog,
-} from '../../services/offline-queue';
+} from '../../services/collector-queue';
 import { getFriendlyErrorMessage } from '../../utils/errorMessage';
 
 function queuedToWasteLog(q: QueuedWasteLog): WasteLog {

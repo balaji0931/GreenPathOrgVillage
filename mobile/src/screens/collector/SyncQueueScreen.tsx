@@ -24,13 +24,13 @@ import * as Haptics from 'expo-haptics';
 import { Colors, Typography, Spacing, BorderRadius, Shadows } from '../../constants/theme';
 import { EmptyState } from '../../components/common/EmptyState';
 import { useNetwork } from '../../hooks/useNetwork';
-import { triggerSync, triggerManualSync, onSyncStatsChange, isSyncInProgress } from '../../services/sync-engine';
+import { triggerSync, triggerManualSync, onSyncStatsChange, isSyncInProgress } from '../../services/collector-sync';
 import {
   getAllQueueRecords,
   retryFailedRecords,
   type QueuedCollection,
   type QueueStats,
-} from '../../services/offline-queue';
+} from '../../services/collector-queue';
 
 export function SyncQueueScreen() {
   const [records, setRecords] = useState<QueuedCollection[]>([]);

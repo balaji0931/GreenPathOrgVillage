@@ -21,8 +21,8 @@ import { Platform, AppState } from 'react-native';
 import { apiRequest, setTokenProvider, ApiError } from '../api/client';
 import { setUploadTokenProvider } from '../api/upload.api';
 import { API_ENDPOINTS } from '../constants/api';
-import { clearAllQueueData } from '../services/offline-queue';
-import { stopSyncEngine } from '../services/sync-engine';
+import { clearAllQueueData } from '../services/collector-queue';
+import { stopSyncEngine } from '../services/collector-sync';
 
 // ── Types ──────────────────────────────────────────────────────
 

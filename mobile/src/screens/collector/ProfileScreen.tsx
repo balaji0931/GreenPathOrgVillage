@@ -11,7 +11,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { Colors, Typography, Spacing, BorderRadius, Shadows } from '../../constants/theme';
 import { ConfirmDialog } from '../../components/common/ConfirmDialog';
-import { changePassword } from '../../api/collector.api';
+import { changePassword } from '../../api/auth.api';
 import { useAuth, type User } from '../../auth/AuthProvider';
 import { getFriendlyErrorMessage } from '../../utils/errorMessage';
 

@@ -15,11 +15,11 @@ import {
   fetchActiveSubscription,
   type SubscriptionState,
   type ActiveSubscriptionResponse,
-} from '../api/collector.api';
+} from '../api/subscription.api';
 import {
   saveCachedSubscription,
   getCachedSubscription,
-} from '../services/offline-queue';
+} from '../services/collector-queue';
 
 export type { SubscriptionState };
 

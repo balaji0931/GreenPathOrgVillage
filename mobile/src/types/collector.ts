@@ -210,10 +210,3 @@ export interface CollectorStats {
   collectedToday: number;
   villageTodayCount: number;
 }
-
-// ── QR Scanner ──────────────────────────────────────────────────
-
-export type ScanResult =
-  | { kind: 'household'; uid: string }
-  | { kind: 'attendance'; token: string }
-  | { kind: 'invalid' };

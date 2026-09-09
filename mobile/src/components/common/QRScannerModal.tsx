@@ -1,23 +1,28 @@
 /**
- * QR Scanner Modal
+ * QR Scanner Modal — Common Component
  *
  * Native camera QR scanner using expo-camera CameraView.
  * Works completely offline (local barcode decoding).
+ * Accessible across all role dashboards (Collector, Field Worker, Manager, etc.).
  *
- * Handles three QR payload formats:
+ * Handles QR payload formats:
  * 1. {"uid":"HH-VLG001-0042","type":"household"} — standard
  * 2. {"uid":"HH-VLG001-0042","type":"premapped"} — field worker mapped
  * 3. {"type":"attendance","token":"..."} — shift attendance
- * 4. Raw UID string fallback
+ * 4. Raw UID string fallback (e.g. "V001-HH0042" or "V001-QR0042")
  */
 import { useState, useRef, useCallback } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Linking, Modal } from 'react-native';
 import { CameraView, useCameraPermissions, type BarcodeScanningResult } from 'expo-camera';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors, Typography, Spacing, BorderRadius } from '../../constants/theme';
-import type { ScanResult } from '../../types/collector';
 
-interface QRScannerModalProps {
+export type ScanResult =
+  | { kind: 'household'; uid: string }
+  | { kind: 'attendance'; token: string }
+  | { kind: 'invalid' };
+
+export interface QRScannerModalProps {
   visible: boolean;
   onScan: (result: ScanResult) => void;
   onClose: () => void;
@@ -43,7 +48,7 @@ function parseScannedCode(rawString: string): ScanResult {
       return { kind: 'household', uid: json.uid };
     }
   } catch {
-    // Raw string fallback (non-JSON QR containing household UID directly)
+    // Raw string fallback (non-JSON QR containing UID directly)
     if (rawString.trim()) {
       return { kind: 'household', uid: rawString.trim() };
     }
@@ -109,7 +114,7 @@ export function QRScannerModal({ visible, onScan, onClose, scanMode = 'all' }: Q
             <Text style={styles.permissionTitle}>Camera Permission Required</Text>
             <Text style={styles.permissionText}>
               {canAsk
-                ? 'Camera access is needed to scan QR codes for waste collection.'
+                ? 'Camera access is needed to scan QR codes.'
                 : 'Camera access was denied. Please enable it in your device Settings.'}
             </Text>
             {canAsk ? (
@@ -182,7 +187,7 @@ export function QRScannerModal({ visible, onScan, onClose, scanMode = 'all' }: Q
             <Text style={styles.hintText}>
               {scanMode === 'attendance'
                 ? 'Point camera at the attendance QR code'
-                : 'Point camera at household QR code'}
+                : 'Point camera at QR code'}
             </Text>
           </View>
         </View>

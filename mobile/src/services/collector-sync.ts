@@ -39,7 +39,7 @@ import {
   getQueuedWasteLogs,
   syncAllQueuedWasteLogs,
   type QueuedCollection,
-} from './offline-queue';
+} from './collector-queue';
 import { uploadPhoto, uploadVoice } from '../api/upload.api';
 import { submitCollectionRaw } from '../api/collector.api';
 import { NetworkError } from '../api/client';

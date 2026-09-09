@@ -11,6 +11,7 @@
  * - no_subscription (dark slate read-only)
  *
  * Single-line with horizontal scrolling and a small dismiss [✕] button.
+ * Common component used across Collector, Field Worker, and other role dashboards.
  */
 import React, { useState, useEffect } from 'react';
 import {
@@ -143,8 +144,6 @@ export function SubscriptionBanner() {
     default:
       return null;
   }
-
-  const fullMessage = [title, subtitle, actionText].filter(Boolean).join(' ');
 
   return (
     <View

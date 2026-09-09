@@ -37,8 +37,8 @@ import { StarRating } from './StarRating';
 import { WasteTypeSelector } from './WasteTypeSelector';
 import { PhotoCapture } from './PhotoCapture';
 import { VoiceRecorder } from './VoiceRecorder';
-import { enqueueCollection, hasLocalCollectionToday } from '../../services/offline-queue';
-import { triggerSync } from '../../services/sync-engine';
+import { enqueueCollection, hasLocalCollectionToday } from '../../services/collector-queue';
+import { triggerSync } from '../../services/collector-sync';
 import { useNetwork } from '../../hooks/useNetwork';
 import type { Household, VillageData, WasteType } from '../../types/collector';
 
