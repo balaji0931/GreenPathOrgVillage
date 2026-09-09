@@ -8,6 +8,7 @@
  * - Village today count
  */
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { AppState } from 'react-native';
 import {
   fetchHouseholds,
   fetchCollectorCollections,
@@ -43,47 +44,76 @@ interface CollectorData {
 
 export function useCollectorData(): CollectorData {
   const { user } = useAuth();
-  const [households, setHouseholds] = useState<Household[]>([]);
-  const [collections, setCollections] = useState<WasteCollection[]>([]);
-  const [villageData, setVillageData] = useState<VillageData | null>(null);
-  const [villageTodayCount, setVillageTodayCount] = useState(0);
-  const [isLoading, setIsLoading] = useState(true);
+
+  // Initialize state directly and synchronously from SQLite cache (zero millisecond render)
+  const [households, setHouseholds] = useState<Household[]>(() => {
+    try {
+      return getCachedHouseholds();
+    } catch (e) {
+      console.warn('Error reading initial cached households:', e);
+      return [];
+    }
+  });
+
+  const [collections, setCollections] = useState<WasteCollection[]>(() => {
+    try {
+      return getMergedTodayCollections();
+    } catch (e) {
+      console.warn('Error reading initial cached collections:', e);
+      return [];
+    }
+  });
+
+  const [villageData, setVillageData] = useState<VillageData | null>(() => {
+    try {
+      return user?.villageId ? getCachedVillageData(user.villageId) : null;
+    } catch (e) {
+      console.warn('Error reading initial cached village data:', e);
+      return null;
+    }
+  });
+
+  const [villageTodayCount, setVillageTodayCount] = useState<number>(() => {
+    try {
+      return getMergedTodayCollections().length;
+    } catch {
+      return 0;
+    }
+  });
+
+  // Only show blocking loading skeletons if SQLite has ZERO cached households (e.g. brand new install)
+  const [isLoading, setIsLoading] = useState<boolean>(() => {
+    try {
+      return getCachedHouseholds().length === 0;
+    } catch {
+      return true;
+    }
+  });
+
   const [error, setError] = useState<string | null>(null);
   const isMounted = useRef(true);
+  const householdsRef = useRef(households);
+  householdsRef.current = households;
+  const lastFetchTimeRef = useRef(Date.now());
 
-  // 1. Initial immediate load from SQLite (instant zero-network render)
+  // Sync villageData cache if user villageId loads or changes
   useEffect(() => {
-    isMounted.current = true;
-    try {
-      const cachedH = getCachedHouseholds();
-      const cachedC = getMergedTodayCollections();
-      const cachedV = user?.villageId ? getCachedVillageData(user.villageId) : null;
-
-      if (isMounted.current) {
-        if (cachedH.length > 0) setHouseholds(cachedH);
-        if (cachedC.length > 0) setCollections(cachedC);
-        if (cachedV) setVillageData(cachedV);
-
-        // If we have cached data, dismiss full loading spinner immediately
-        if (cachedH.length > 0) {
-          setIsLoading(false);
-        }
+    if (user?.villageId) {
+      try {
+        const localV = getCachedVillageData(user.villageId);
+        if (localV) setVillageData(localV);
+      } catch (e) {
+        console.warn('Error syncing cached village data:', e);
       }
-    } catch (e) {
-      console.warn('Error loading initial offline cache:', e);
     }
-
-    return () => {
-      isMounted.current = false;
-    };
   }, [user?.villageId]);
 
-  // 2. Fetch fresh data from network & sync to SQLite
-  const loadData = useCallback(async (silent = false) => {
+  // Fetch fresh data from network & sync to SQLite silently in the background
+  const loadData = useCallback(async (silent = true) => {
     if (!user?.villageId) return;
     try {
-      // Only show full spinner if we don't have any cached households
-      if (!silent && households.length === 0) {
+      // Only show full spinner if requested non-silent AND there are no cached households
+      if (!silent && householdsRef.current.length === 0) {
         setIsLoading(true);
       }
       setError(null);
@@ -101,7 +131,7 @@ export function useCollectorData(): CollectorData {
           setHouseholds(householdsRes);
           saveCachedHouseholds(householdsRes);
         } else {
-          // Offline fallback
+          // Offline / network failure fallback
           const localH = getCachedHouseholds();
           if (localH.length > 0) setHouseholds(localH);
         }
@@ -147,14 +177,37 @@ export function useCollectorData(): CollectorData {
         }
       }
     } finally {
-      if (isMounted.current && !silent) {
+      if (isMounted.current) {
         setIsLoading(false);
       }
+      lastFetchTimeRef.current = Date.now();
     }
-  }, [user?.villageId, households.length]);
+  }, [user?.villageId]);
 
+  // Initial silent background sync on mount
   useEffect(() => {
-    loadData(false);
+    isMounted.current = true;
+    loadData(true);
+    return () => {
+      isMounted.current = false;
+    };
+  }, [loadData]);
+
+  // Revalidate silently when returning to foreground if backgrounded > 10 minutes
+  useEffect(() => {
+    const subscription = AppState.addEventListener('change', (nextAppState) => {
+      if (nextAppState === 'active') {
+        const now = Date.now();
+        if (now - lastFetchTimeRef.current > 10 * 60 * 1000) {
+          lastFetchTimeRef.current = now;
+          loadData(true);
+        }
+      }
+    });
+
+    return () => {
+      subscription.remove();
+    };
   }, [loadData]);
 
   // Optimistic collection recording (instant zero-reload UI update)

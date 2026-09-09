@@ -12,6 +12,10 @@
       "resizeMode": "contain",
       "backgroundColor": "#0e7c3f"
     },
+    "androidStatusBar": {
+      "barStyle": "light-content",
+      "backgroundColor": "#0e7c3f"
+    },
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "social.greenpathorg.mobile",

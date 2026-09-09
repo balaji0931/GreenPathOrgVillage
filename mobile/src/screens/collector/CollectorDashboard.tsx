@@ -5,8 +5,8 @@
  * and sync engine lifecycle.
  */
 import { useState, useCallback, useEffect, useMemo, useRef } from 'react';
-import { View, Text, TextInput, FlatList, RefreshControl, Alert, StyleSheet, TouchableOpacity, ActivityIndicator, Modal, Pressable } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { View, Text, TextInput, FlatList, RefreshControl, Alert, StyleSheet, TouchableOpacity, ActivityIndicator, Modal, Pressable, StatusBar, Platform } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors, Typography, Spacing, BorderRadius, Shadows } from '../../constants/theme';
 import { playSuccessSound } from '../../utils/audio';
@@ -57,6 +57,7 @@ export function CollectorDashboard() {
   const [showMenu, setShowMenu] = useState(false);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const toastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const insets = useSafeAreaInsets();
 
   const {
     households,
@@ -96,7 +97,7 @@ export function CollectorDashboard() {
 
   const handleRefresh = useCallback(async () => {
     setIsRefreshing(true);
-    await refresh(false);
+    await refresh(true);
     triggerSync();
     setIsRefreshing(false);
   }, [refresh]);
@@ -405,7 +406,11 @@ export function CollectorDashboard() {
   const pendingCount = syncStats.queued + syncStats.syncing + syncStats.failed;
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
+    <View style={styles.container}>
+      <StatusBar barStyle="light-content" backgroundColor={Colors.greenPrimary} />
+      {/* Area above top nav colored greenPrimary for white mobile network, battery, and clock */}
+      <View style={{ height: insets.top, backgroundColor: Colors.greenPrimary }} />
+
       {/* Top Brand Header */}
       <CollectorHeader
         isOnline={isConnected}
@@ -518,7 +523,7 @@ export function CollectorDashboard() {
         }}
         onCancel={() => setShowLogoutConfirm(false)}
       />
-    </SafeAreaView>
+    </View>
   );
 }
 
