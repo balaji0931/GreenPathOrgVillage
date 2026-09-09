@@ -11,15 +11,92 @@ import { Colors, Typography, Spacing, BorderRadius, Shadows } from '../../consta
 import { StatusBadge } from '../../components/common/StatusBadge';
 import { LoadingState } from '../../components/common/LoadingState';
 import { QRScannerModal } from '../../components/scanner/QRScannerModal';
-import { fetchShiftState, scanShift } from '../../api/collector.api';
+import { DatePickerModal } from '../../components/common/DatePickerModal';
+import {
+  fetchShiftState,
+  scanShift,
+  fetchMyAttendanceStatus,
+  type AttendanceStatusResponse,
+} from '../../api/collector.api';
 import type { ShiftState, ScanResult } from '../../types/collector';
 import { getFriendlyErrorMessage } from '../../utils/errorMessage';
+
+function fmtDateIso(d: Date): string {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
+function fmtDateShort(d: Date): string {
+  const day = String(d.getDate()).padStart(2, '0');
+  const month = d.toLocaleDateString('en-IN', { month: 'short' });
+  const year = d.getFullYear();
+  return `${day} ${month} ${year}`;
+}
+
+function getStatusLabel(status?: string | null): string {
+  switch (status) {
+    case 'present':
+      return 'Present';
+    case 'half_day':
+    case 'halfday':
+      return 'Half Day';
+    case 'absent':
+      return 'Absent';
+    default:
+      return 'Not Marked';
+  }
+}
+
+function getStatusBadgeStyle(status?: string | null) {
+  switch (status) {
+    case 'present':
+      return { backgroundColor: '#ecfdf5', borderColor: '#a7f3d0' };
+    case 'half_day':
+    case 'halfday':
+      return { backgroundColor: '#fffbeb', borderColor: '#fde68a' };
+    case 'absent':
+      return { backgroundColor: '#fef2f2', borderColor: '#fecaca' };
+    default:
+      return { backgroundColor: '#f8fafc', borderColor: '#e2e8f0' };
+  }
+}
+
+function getStatusDotStyle(status?: string | null) {
+  switch (status) {
+    case 'present':
+      return { backgroundColor: '#059669' };
+    case 'half_day':
+    case 'halfday':
+      return { backgroundColor: '#d97706' };
+    case 'absent':
+      return { backgroundColor: '#dc2626' };
+    default:
+      return { backgroundColor: '#94a3b8' };
+  }
+}
+
+function getStatusTextStyle(status?: string | null) {
+  switch (status) {
+    case 'present':
+      return { color: '#059669' };
+    case 'half_day':
+    case 'halfday':
+      return { color: '#d97706' };
+    case 'absent':
+      return { color: '#dc2626' };
+    default:
+      return { color: '#64748b' };
+  }
+}
 
 export function ShiftScreen() {
   const [shiftState, setShiftState] = useState<ShiftState | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [showScanner, setShowScanner] = useState(false);
   const [isScanning, setIsScanning] = useState(false);
+  const [selectedDate, setSelectedDate] = useState(new Date());
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [attendance, setAttendance] = useState<AttendanceStatusResponse | null>(null);
+  const [isAttendanceLoading, setIsAttendanceLoading] = useState(false);
 
   const loadData = useCallback(async () => {
     try {
@@ -32,7 +109,25 @@ export function ShiftScreen() {
     }
   }, []);
 
-  useEffect(() => { loadData(); }, [loadData]);
+  const loadAttendance = useCallback(async (date: Date) => {
+    setIsAttendanceLoading(true);
+    try {
+      const res = await fetchMyAttendanceStatus(fmtDateIso(date));
+      setAttendance(res);
+    } catch {
+      // silent
+    } finally {
+      setIsAttendanceLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
+
+  useEffect(() => {
+    loadAttendance(selectedDate);
+  }, [selectedDate, loadAttendance]);
 
   const handleScan = async (result: ScanResult) => {
     setShowScanner(false);
@@ -78,6 +173,7 @@ export function ShiftScreen() {
           `Shift #${response.shiftNumber} ${response.eventType === 'shift_start' ? 'started' : 'ended'} at ${response.centerName} (${response.distance}m away)`,
         );
         loadData();
+        loadAttendance(selectedDate);
       }
     } catch (err: any) {
       Alert.alert('Notice', getFriendlyErrorMessage(err, 'Failed to process shift scan. Please try again.'));
@@ -87,8 +183,6 @@ export function ShiftScreen() {
   };
 
   if (isLoading) return <LoadingState message="Loading shift data..." />;
-
-  const today = new Date().toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
 
   return (
     <View style={styles.container}>
@@ -105,11 +199,44 @@ export function ShiftScreen() {
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        {/* Date Header */}
-        <View style={styles.dateCard}>
-          <Ionicons name="calendar-outline" size={18} color={Colors.emerald600} />
-          <Text style={styles.dateText}>{today}</Text>
+        {/* Attendance Status & Date Selector Bar */}
+        <View style={styles.attendanceBar}>
+          {/* Left: Attendance Status */}
+          <View style={styles.attendanceCol}>
+            <Text style={styles.attendanceLabel}>Attendance: </Text>
+            {isAttendanceLoading ? (
+              <ActivityIndicator size="small" color={Colors.emerald600} style={{ marginLeft: 2 }} />
+            ) : (
+              <View style={[styles.statusBadge, getStatusBadgeStyle(attendance?.status)]}>
+                <View style={[styles.statusDot, getStatusDotStyle(attendance?.status)]} />
+                <Text style={[styles.statusBadgeText, getStatusTextStyle(attendance?.status)]}>
+                  {getStatusLabel(attendance?.status)}
+                </Text>
+              </View>
+            )}
+          </View>
+
+          {/* Right: Date Selector with Calendar Icon */}
+          <TouchableOpacity
+            style={styles.dateSelectorButton}
+            onPress={() => setShowDatePicker(true)}
+            activeOpacity={0.7}
+          >
+            <Ionicons name="calendar-outline" size={15} color={Colors.emerald700} style={{ marginRight: 5 }} />
+            <Text style={styles.dateSelectorText}>{fmtDateShort(selectedDate)}</Text>
+            <Ionicons name="chevron-down" size={12} color={Colors.slate400} style={{ marginLeft: 4 }} />
+          </TouchableOpacity>
         </View>
+
+        {/* Optional Remarks Note */}
+        {attendance?.remarks ? (
+          <View style={styles.remarksBadge}>
+            <Ionicons name="information-circle-outline" size={15} color={Colors.slate500} />
+            <Text style={styles.remarksBadgeText} numberOfLines={2}>
+              {attendance.remarks}
+            </Text>
+          </View>
+        ) : null}
 
         {/* Current State Card */}
         <View style={[styles.stateCard, shiftState?.hasActiveShift && styles.stateCardActive]}>
@@ -215,6 +342,16 @@ export function ShiftScreen() {
         onClose={() => setShowScanner(false)}
         scanMode="attendance"
       />
+
+      {/* Date Picker Modal */}
+      <DatePickerModal
+        visible={showDatePicker}
+        selectedDate={selectedDate}
+        onSelectDate={(newDate) => {
+          setSelectedDate(newDate);
+        }}
+        onClose={() => setShowDatePicker(false)}
+      />
     </View>
   );
 }
@@ -250,22 +387,77 @@ const styles = StyleSheet.create({
     paddingBottom: Spacing.xxl + 32,
     gap: Spacing.md,
   },
-  dateCard: {
+  attendanceBar: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: Spacing.sm,
+    justifyContent: 'space-between',
     backgroundColor: Colors.white,
-    paddingHorizontal: Spacing.md + 2,
+    paddingHorizontal: Spacing.md,
     paddingVertical: Spacing.sm + 2,
     borderRadius: BorderRadius.xl,
     borderWidth: 1,
     borderColor: Colors.slate200,
     ...Shadows.sm,
   },
-  dateText: {
+  attendanceCol: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flexShrink: 1,
+  },
+  attendanceLabel: {
     fontSize: 13,
-    fontFamily: Typography.fontFamilyMedium,
+    fontFamily: Typography.fontFamilySemiBold,
     color: Colors.slate700,
+  },
+  statusBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: BorderRadius.full,
+    borderWidth: 1,
+  },
+  statusDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    marginRight: 5,
+  },
+  statusBadgeText: {
+    fontSize: 12,
+    fontFamily: Typography.fontFamilyBold,
+  },
+  dateSelectorButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: Colors.slate50,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: BorderRadius.full,
+    borderWidth: 1,
+    borderColor: Colors.slate200,
+  },
+  dateSelectorText: {
+    fontSize: 12,
+    fontFamily: Typography.fontFamilyBold,
+    color: Colors.slate800,
+  },
+  remarksBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: Colors.slate100,
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.xs + 2,
+    borderRadius: BorderRadius.lg,
+    borderWidth: 1,
+    borderColor: Colors.slate200,
+  },
+  remarksBadgeText: {
+    flex: 1,
+    fontSize: 12,
+    fontFamily: Typography.fontFamilyMedium,
+    color: Colors.slate600,
   },
   stateCard: {
     backgroundColor: Colors.white,

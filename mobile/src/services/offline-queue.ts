@@ -922,7 +922,13 @@ async function copyToDurableStorage(sourceUri: string, type: string, requestId: 
 
   // Copy source file to durable location
   const sourceFile = new File(sourceUri);
-  sourceFile.copy(destFile);
+  if (!sourceFile.exists) {
+    console.warn(`[OfflineQueue] Source ${type} file does not exist: ${sourceUri}`);
+    return '';
+  }
+
+  // Must await the copy to ensure the full file is written before the source is deleted
+  await sourceFile.copy(destFile, { overwrite: true });
 
   return destFile.uri;
 }

@@ -10,6 +10,7 @@
  * - Never trigger a logout from upload failures — let the auth layer handle that.
  */
 import * as FileSystem from 'expo-file-system/legacy';
+import { File } from 'expo-file-system';
 import { API_BASE_URL, API_ENDPOINTS } from '../constants/api';
 import { NetworkError } from './client';
 
@@ -61,9 +62,33 @@ async function safeUpload(
   uri: string,
   options: FileSystem.FileSystemUploadOptions,
 ): Promise<FileSystem.FileSystemUploadResult> {
+  // Pre-validate that local file exists and is accessible
+  try {
+    const localFile = new File(uri);
+    if (!localFile.exists) {
+      throw new Error(`Local file does not exist: ${uri}`);
+    }
+  } catch (checkErr: any) {
+    if (checkErr.message?.includes('Local file does not exist')) {
+      throw checkErr;
+    }
+  }
+
   try {
     return await FileSystem.uploadAsync(url, uri, options);
   } catch (err: any) {
+    const msg = (err?.message || '').toLowerCase();
+    // Do not mask local filesystem errors as network errors
+    if (
+      msg.includes('filenotfound') ||
+      msg.includes('no such file') ||
+      msg.includes('does not exist') ||
+      msg.includes('local file') ||
+      msg.includes('nullpointer')
+    ) {
+      throw new Error(`File system error: ${err?.message}`);
+    }
+
     throw new NetworkError(
       err?.message || 'Upload failed — check your internet connection'
     );

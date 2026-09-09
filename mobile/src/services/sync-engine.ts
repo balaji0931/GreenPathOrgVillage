@@ -42,6 +42,7 @@ import {
 import { uploadPhoto, uploadVoice } from '../api/upload.api';
 import { submitCollectionRaw } from '../api/collector.api';
 import { NetworkError } from '../api/client';
+import { File } from 'expo-file-system';
 
 // ── State ──────────────────────────────────────────────────────
 
@@ -203,16 +204,36 @@ async function syncOneRecord(record: QueuedCollection): Promise<void> {
 
     // 1. Upload photo if present and not yet uploaded
     if (record.photoLocalPath && !photoUrl) {
-      photoUrl = await uploadPhoto(record.photoLocalPath);
-      // Save URL to DB immediately so retries don't re-upload
-      saveUploadedUrl(record.id, 'photoUrl', photoUrl);
+      try {
+        const photoFile = new File(record.photoLocalPath);
+        if (photoFile.exists) {
+          photoUrl = await uploadPhoto(record.photoLocalPath);
+          // Save URL to DB immediately so retries don't re-upload
+          saveUploadedUrl(record.id, 'photoUrl', photoUrl);
+        } else {
+          console.warn(`[SyncEngine] Local photo file does not exist: ${record.photoLocalPath}, skipping photo`);
+        }
+      } catch (photoErr: any) {
+        if (isNetworkError(photoErr)) throw photoErr;
+        console.warn(`[SyncEngine] Photo upload failed with local error:`, photoErr?.message);
+      }
     }
 
     // 2. Upload voice if present and not yet uploaded
     if (record.voiceLocalPath && !voiceUrl) {
-      voiceUrl = await uploadVoice(record.voiceLocalPath);
-      // Save URL to DB immediately so retries don't re-upload
-      saveUploadedUrl(record.id, 'voiceUrl', voiceUrl);
+      try {
+        const voiceFile = new File(record.voiceLocalPath);
+        if (voiceFile.exists) {
+          voiceUrl = await uploadVoice(record.voiceLocalPath);
+          // Save URL to DB immediately so retries don't re-upload
+          saveUploadedUrl(record.id, 'voiceUrl', voiceUrl);
+        } else {
+          console.warn(`[SyncEngine] Local voice file does not exist: ${record.voiceLocalPath}, skipping voice`);
+        }
+      } catch (voiceErr: any) {
+        if (isNetworkError(voiceErr)) throw voiceErr;
+        console.warn(`[SyncEngine] Voice upload failed with local error:`, voiceErr?.message);
+      }
     }
 
     // 3. Submit to server

@@ -87,8 +87,19 @@ export async function fetchAnnouncements(): Promise<Announcement[]> {
 
 // ── Attendance / Shift ──────────────────────────────────────────
 
+export interface AttendanceStatusResponse {
+  date: string;
+  status: 'present' | 'half_day' | 'absent' | 'not_marked';
+  remarks: string | null;
+}
+
 export async function fetchShiftState(): Promise<ShiftState> {
   return apiRequest<ShiftState>(API_ENDPOINTS.myShift);
+}
+
+export async function fetchMyAttendanceStatus(date?: string): Promise<AttendanceStatusResponse> {
+  const params = date ? `?date=${date}` : '';
+  return apiRequest<AttendanceStatusResponse>(`${API_ENDPOINTS.myAttendanceStatus}${params}`);
 }
 
 export async function scanShift(data: {

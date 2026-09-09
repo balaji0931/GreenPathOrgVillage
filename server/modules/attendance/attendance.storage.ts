@@ -249,6 +249,20 @@ export async function getAttendanceForDate(villageId: string, date: string) {
     .orderBy(workerAttendance.workerName);
 }
 
+export async function getWorkerAttendanceForDate(villageId: string, workerId: string, date: string) {
+  const [record] = await db
+    .select()
+    .from(workerAttendance)
+    .where(
+      and(
+        eq(workerAttendance.villageId, villageId),
+        eq(workerAttendance.workerId, workerId),
+        eq(workerAttendance.attendanceDate, date)
+      )
+    );
+  return record || null;
+}
+
 export async function getAttendanceReport(villageId: string, startDate: string, endDate: string) {
   const { sql } = await import("drizzle-orm");
   return db

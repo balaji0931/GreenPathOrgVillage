@@ -40,6 +40,7 @@ export const API_ENDPOINTS = {
 
   // Attendance / Shift
   myShift: '/api/attendance/my-shift',
+  myAttendanceStatus: '/api/attendance/my-status',
   scanShift: '/api/attendance/scan-shift',
 
   // Waste Log

@@ -10,7 +10,7 @@ import * as staffStorage from "../staff/staff.storage";
 
 // Middleware: reject if attendance feature disabled for this village
 async function requireAttendanceEnabled(req: Request, res: Response, next: NextFunction) {
-  const villageId = req.session?.villageId;
+  const villageId = req.user?.villageId || req.session?.villageId;
   if (!villageId) return next();
 
   const [village] = await db
@@ -205,16 +205,22 @@ export function registerAttendanceRoutes(app: Express, requireAuth: any, require
         return res.status(400).json({ message: "QR token and GPS coordinates are required" });
       }
 
+      const userId = req.user?.userId || req.session?.userId;
+      const villageId = req.user?.villageId || req.session?.villageId;
+      if (!userId || !villageId) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+
       // Get collector name from DB
-      const collectorsData = await attendanceStorage.getCollectorsForVillage(req.session.villageId!);
-      const collector = collectorsData.find(c => c.uid === req.session.userId);
+      const collectorsData = await attendanceStorage.getCollectorsForVillage(villageId);
+      const collector = collectorsData.find(c => c.uid === userId);
       const collectorName = collector?.name || "Unknown";
 
       const result = await attendanceStorage.scanShift({
         qrToken,
-        workerId: req.session.userId!,
+        workerId: userId,
         workerName: collectorName,
-        villageId: req.session.villageId!,
+        villageId,
         latitude: parseFloat(latitude),
         longitude: parseFloat(longitude),
       });
@@ -247,17 +253,24 @@ export function registerAttendanceRoutes(app: Express, requireAuth: any, require
   // Get current shift state + attendance status for logged-in collector
   app.get("/api/attendance/my-shift", requireAuth, requireRole(["collector"]), requireVillageAccess, async (req, res) => {
     try {
-      const istOffset = 5.5 * 60 * 60 * 1000;
-      const nowIst = new Date(Date.now() + istOffset);
-      const shiftDate = nowIst.toISOString().split("T")[0];
+      const userId = req.user?.userId || req.session?.userId;
+      const villageId = req.user?.villageId || req.session?.villageId;
+      if (!userId || !villageId) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+
+      const istDateStr = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kolkata' }).format(new Date());
+      const shiftDate = typeof req.query.date === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(req.query.date)
+        ? req.query.date
+        : istDateStr;
 
       // Get both shift state and attendance status
       const [state, attendance] = await Promise.all([
-        attendanceStorage.getWorkerShiftState(req.session.userId!, shiftDate),
-        attendanceStorage.getAttendanceForDate(req.session.villageId!, shiftDate),
+        attendanceStorage.getWorkerShiftState(userId, shiftDate),
+        attendanceStorage.getAttendanceForDate(villageId, shiftDate),
       ]);
 
-      const myAttendance = attendance.find(a => a.workerId === req.session.userId);
+      const myAttendance = attendance.find(a => a.workerId === userId);
 
       res.json({
         shiftDate,
@@ -267,6 +280,32 @@ export function registerAttendanceRoutes(app: Express, requireAuth: any, require
       });
     } catch (error) {
       res.status(500).json({ message: "Failed to get shift state" });
+    }
+  });
+
+  // Get attendance status for a specific date for logged-in collector
+  app.get("/api/attendance/my-status", requireAuth, requireRole(["collector"]), requireVillageAccess, async (req, res) => {
+    try {
+      const userId = req.user?.userId || req.session?.userId;
+      const villageId = req.user?.villageId || req.session?.villageId;
+      if (!userId || !villageId) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+
+      const istDateStr = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kolkata' }).format(new Date());
+      const queryDate = typeof req.query.date === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(req.query.date)
+        ? req.query.date
+        : istDateStr;
+
+      const record = await attendanceStorage.getWorkerAttendanceForDate(villageId, userId, queryDate);
+
+      res.json({
+        date: queryDate,
+        status: record?.status || 'not_marked',
+        remarks: record?.remarks || null,
+      });
+    } catch (error) {
+      res.status(500).json({ message: "Failed to get attendance status" });
     }
   });
 
