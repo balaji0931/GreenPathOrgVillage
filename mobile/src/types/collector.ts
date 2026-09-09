@@ -117,23 +117,37 @@ export interface IssueFormData {
 
 // ── Attendance / Shift ──────────────────────────────────────────
 
+export interface ShiftItem {
+  shiftNumber: number;
+  startedAt: string | null;
+  endedAt: string | null;
+  startCenter?: number | null;
+  endCenter?: number | null;
+  // Helpers
+  startTime?: string;
+  endTime?: string;
+  duration?: number;
+  centerName?: string;
+}
+
+export type ShiftEntry = ShiftItem;
+
 export interface ShiftState {
-  hasActiveShift: boolean;
+  shiftDate?: string;
+  isShiftActive: boolean;
+  currentShiftNumber: number;
+  shifts: ShiftItem[];
+  attendanceStatus?: 'present' | 'half_day' | 'absent' | null;
+  attendanceRemarks?: string | null;
+  // Compatibility fields
+  hasActiveShift?: boolean;
+  todayShifts?: ShiftItem[];
+  completedShifts?: number;
   currentShift?: {
     shiftNumber: number;
     startTime: string;
     centerName?: string;
   };
-  todayShifts: ShiftEntry[];
-  completedShifts: number;
-}
-
-export interface ShiftEntry {
-  shiftNumber: number;
-  startTime: string;
-  endTime?: string;
-  duration?: number; // minutes
-  centerName?: string;
 }
 
 export interface ShiftScanResult {

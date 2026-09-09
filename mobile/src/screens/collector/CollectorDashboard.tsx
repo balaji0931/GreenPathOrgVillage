@@ -495,6 +495,7 @@ export function CollectorDashboard() {
       {/* Subscription Expired / Write Blocked Modal */}
       <ServiceUnavailableModal
         visible={showUnavailableModal}
+        actionType="collection"
         onDismiss={() => setShowUnavailableModal(false)}
       />
 

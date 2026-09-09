@@ -660,6 +660,7 @@ export function WasteLogScreen() {
       {/* Subscription Expired / Write Blocked Modal */}
       <ServiceUnavailableModal
         visible={showUnavailableModal}
+        actionType="wastelog"
         onDismiss={() => setShowUnavailableModal(false)}
       />
     </View>

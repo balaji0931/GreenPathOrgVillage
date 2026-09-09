@@ -1,14 +1,30 @@
 /**
  * Shift Screen
- * Attendance/shift management with QR scanner and GPS.
- * Matches web collector-dashboard.tsx shift tab exactly.
+ *
+ * Attendance and shift lifecycle management for collectors:
+ * - Real-time shift state tracking (Shift #1, Shift #2, Shift #3...)
+ * - If a shift is in progress: displays shift card with inline "End Shift" button on the right
+ * - While a shift is in progress: blocks starting a new shift
+ * - When all shifts are ended: displays "Start Shift #(N+1)" button
+ * - When zero shifts: displays clean empty state with "Start Shift #1"
+ * - Date navigator to view attendance & shift logs for past dates
+ * - Guarded by subscription write access (ServiceUnavailableModal)
  */
-import { useState, useCallback, useEffect } from 'react';
-import { View, Text, TouchableOpacity, Alert, StyleSheet, ActivityIndicator, Linking, ScrollView } from 'react-native';
+import React, { useState, useCallback, useEffect, useMemo } from 'react';
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  Alert,
+  StyleSheet,
+  ActivityIndicator,
+  Linking,
+  ScrollView,
+  RefreshControl,
+} from 'react-native';
 import * as Location from 'expo-location';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors, Typography, Spacing, BorderRadius, Shadows } from '../../constants/theme';
-import { StatusBadge } from '../../components/common/StatusBadge';
 import { LoadingState } from '../../components/common/LoadingState';
 import { QRScannerModal } from '../../components/scanner/QRScannerModal';
 import { DatePickerModal } from '../../components/common/DatePickerModal';
@@ -20,7 +36,7 @@ import {
   fetchMyAttendanceStatus,
   type AttendanceStatusResponse,
 } from '../../api/collector.api';
-import type { ShiftState, ScanResult } from '../../types/collector';
+import type { ShiftState, ShiftItem, ScanResult } from '../../types/collector';
 import { getFriendlyErrorMessage } from '../../utils/errorMessage';
 
 function fmtDateIso(d: Date): string {
@@ -32,6 +48,33 @@ function fmtDateShort(d: Date): string {
   const month = d.toLocaleDateString('en-IN', { month: 'short' });
   const year = d.getFullYear();
   return `${day} ${month} ${year}`;
+}
+
+function formatTime(isoString?: string | null): string {
+  if (!isoString) return '—';
+  try {
+    const d = new Date(isoString);
+    return d.toLocaleTimeString('en-IN', {
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: true,
+    });
+  } catch {
+    return '—';
+  }
+}
+
+function formatDuration(startedAt?: string | null, endedAt?: string | null): string {
+  if (!startedAt || !endedAt) return '';
+  const start = new Date(startedAt).getTime();
+  const end = new Date(endedAt).getTime();
+  const diffMinutes = Math.max(1, Math.round((end - start) / (1000 * 60)));
+  if (diffMinutes < 60) {
+    return `${diffMinutes} min`;
+  }
+  const hours = Math.floor(diffMinutes / 60);
+  const mins = diffMinutes % 60;
+  return mins > 0 ? `${hours}h ${mins}m` : `${hours}h`;
 }
 
 function getStatusLabel(status?: string | null): string {
@@ -93,6 +136,7 @@ function getStatusTextStyle(status?: string | null) {
 export function ShiftScreen() {
   const [shiftState, setShiftState] = useState<ShiftState | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const [showScanner, setShowScanner] = useState(false);
   const [isScanning, setIsScanning] = useState(false);
   const [selectedDate, setSelectedDate] = useState(new Date());
@@ -102,37 +146,74 @@ export function ShiftScreen() {
   const { isWriteBlocked } = useSubscription();
   const [showUnavailableModal, setShowUnavailableModal] = useState(false);
 
-  const loadData = useCallback(async () => {
+  // Check if selected date is today
+  const isToday = useMemo(() => {
+    const todayStr = fmtDateIso(new Date());
+    return fmtDateIso(selectedDate) === todayStr;
+  }, [selectedDate]);
+
+  // Load shifts for chosen date
+  const loadShifts = useCallback(async (date: Date = selectedDate) => {
     try {
-      const data = await fetchShiftState();
+      const data = await fetchShiftState(fmtDateIso(date));
       setShiftState(data);
     } catch {
-      // silent
+      // silent fallback
     } finally {
       setIsLoading(false);
+      setIsRefreshing(false);
     }
-  }, []);
+  }, [selectedDate]);
 
-  const loadAttendance = useCallback(async (date: Date) => {
+  // Load attendance status for chosen date
+  const loadAttendance = useCallback(async (date: Date = selectedDate) => {
     setIsAttendanceLoading(true);
     try {
       const res = await fetchMyAttendanceStatus(fmtDateIso(date));
       setAttendance(res);
     } catch {
-      // silent
+      // silent fallback
     } finally {
       setIsAttendanceLoading(false);
     }
-  }, []);
+  }, [selectedDate]);
 
+  // Fetch when selectedDate changes
   useEffect(() => {
-    loadData();
-  }, [loadData]);
-
-  useEffect(() => {
+    loadShifts(selectedDate);
     loadAttendance(selectedDate);
-  }, [selectedDate, loadAttendance]);
+  }, [selectedDate, loadShifts, loadAttendance]);
 
+  const handleRefresh = useCallback(async () => {
+    setIsRefreshing(true);
+    await Promise.all([
+      loadShifts(selectedDate),
+      loadAttendance(selectedDate),
+    ]);
+    setIsRefreshing(false);
+  }, [selectedDate, loadShifts, loadAttendance]);
+
+  // Date stepper
+  const handleDateStep = (offset: number) => {
+    const next = new Date(selectedDate);
+    next.setDate(next.getDate() + offset);
+    const today = new Date();
+    today.setHours(23, 59, 59, 999);
+    if (next <= today) {
+      setSelectedDate(next);
+    }
+  };
+
+  // Trigger scanning action
+  const triggerScanAction = () => {
+    if (isWriteBlocked) {
+      setShowUnavailableModal(true);
+      return;
+    }
+    setShowScanner(true);
+  };
+
+  // Handle successful QR scan
   const handleScan = async (result: ScanResult) => {
     setShowScanner(false);
     if (isWriteBlocked) {
@@ -140,7 +221,7 @@ export function ShiftScreen() {
       return;
     }
     if (result.kind !== 'attendance') {
-      Alert.alert('Invalid QR', 'Please scan an attendance QR code.');
+      Alert.alert('Invalid QR', 'Please scan an attendance QR code provided at your facility.');
       return;
     }
 
@@ -150,15 +231,15 @@ export function ShiftScreen() {
       if (status !== 'granted') {
         if (!canAskAgain) {
           Alert.alert(
-            'Location Permission',
-            'Location access was denied. Please enable it in Settings for shift check-in.',
+            'Location Permission Required',
+            'Location access was denied. Please enable location permissions in Settings to verify facility proximity.',
             [
               { text: 'Cancel', style: 'cancel' },
               { text: 'Open Settings', onPress: () => Linking.openSettings() },
             ],
           );
         } else {
-          Alert.alert('Permission Required', 'Location permission is needed for shift check-in.');
+          Alert.alert('Permission Required', 'GPS location is required to verify check-in at the facility.');
         }
         return;
       }
@@ -174,13 +255,18 @@ export function ShiftScreen() {
       });
 
       if (response.error === 'too_far') {
-        Alert.alert('Too Far', `You are ${response.distance}m from the center. Maximum allowed: ${response.maxDistance}m.`);
-      } else {
         Alert.alert(
-          response.eventType === 'shift_start' ? 'Shift Started' : 'Shift Ended',
-          `Shift #${response.shiftNumber} ${response.eventType === 'shift_start' ? 'started' : 'ended'} at ${response.centerName} (${response.distance}m away)`,
+          'Outside Facility Radius',
+          `You are ${response.distance}m from ${response.centerName || 'the center'}. You must be within ${response.maxDistance}m to mark attendance.`,
         );
-        loadData();
+      } else {
+        const isStart = response.eventType === 'shift_start';
+        Alert.alert(
+          isStart ? 'Shift Started' : 'Shift Ended',
+          `Shift #${response.shiftNumber} successfully ${isStart ? 'started' : 'ended'} at ${response.centerName} (${response.distance}m away).`,
+        );
+        // Instant reload of shift state & attendance
+        loadShifts(selectedDate);
         loadAttendance(selectedDate);
       }
     } catch (err: any) {
@@ -190,7 +276,13 @@ export function ShiftScreen() {
     }
   };
 
-  if (isLoading) return <LoadingState message="Loading shift data..." />;
+  if (isLoading) return <LoadingState message="Loading shift records..." />;
+
+  const shifts: ShiftItem[] = shiftState?.shifts || [];
+  const isShiftActive = Boolean(shiftState?.isShiftActive);
+  const activeShift = isShiftActive ? shifts.find((s) => !s.endedAt) : null;
+  const completedCount = shifts.filter((s) => Boolean(s.endedAt)).length;
+  const nextShiftNumber = shifts.length > 0 ? shifts[shifts.length - 1].shiftNumber + 1 : 1;
 
   return (
     <View style={styles.container}>
@@ -198,7 +290,7 @@ export function ShiftScreen() {
       <View style={styles.header}>
         <View>
           <Text style={styles.title}>Shifts</Text>
-          <Text style={styles.subtitle}>Daily attendance and work shifts</Text>
+          <Text style={styles.subtitle}>Daily attendance and shift logs</Text>
         </View>
       </View>
 
@@ -206,14 +298,61 @@ export function ShiftScreen() {
         style={styles.scroll}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={isRefreshing}
+            onRefresh={handleRefresh}
+            colors={[Colors.emerald600]}
+          />
+        }
       >
-        {/* Attendance Status & Date Selector Bar */}
-        <View style={styles.attendanceBar}>
-          {/* Left: Attendance Status */}
-          <View style={styles.attendanceCol}>
-            <Text style={styles.attendanceLabel}>Attendance: </Text>
+        {/* Date Navigator & Attendance Summary Card */}
+        <View style={styles.dateCard}>
+          {/* Row 1: Date Navigation */}
+          <View style={styles.dateNavRow}>
+            <TouchableOpacity
+              style={styles.dateStepBtn}
+              onPress={() => handleDateStep(-1)}
+              activeOpacity={0.7}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            >
+              <Ionicons name="chevron-back" size={18} color={Colors.slate700} />
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.datePickerTrigger}
+              onPress={() => setShowDatePicker(true)}
+              activeOpacity={0.7}
+            >
+              <Ionicons name="calendar" size={16} color={Colors.emerald600} style={{ marginRight: 6 }} />
+              <Text style={styles.datePickerText}>{fmtDateShort(selectedDate)}</Text>
+              {isToday && (
+                <View style={styles.todayTag}>
+                  <Text style={styles.todayTagText}>Today</Text>
+                </View>
+              )}
+              <Ionicons name="chevron-down" size={12} color={Colors.slate400} style={{ marginLeft: 6 }} />
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[styles.dateStepBtn, isToday && styles.dateStepBtnDisabled]}
+              onPress={() => handleDateStep(1)}
+              disabled={isToday}
+              activeOpacity={0.7}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            >
+              <Ionicons name="chevron-forward" size={18} color={isToday ? Colors.slate300 : Colors.slate700} />
+            </TouchableOpacity>
+          </View>
+
+          {/* Divider */}
+          <View style={styles.cardDivider} />
+
+          {/* Row 2: Attendance Badge */}
+          <View style={styles.attendanceRow}>
+            <Text style={styles.attendanceLabel}>Attendance Status</Text>
             {isAttendanceLoading ? (
-              <ActivityIndicator size="small" color={Colors.emerald600} style={{ marginLeft: 2 }} />
+              <ActivityIndicator size="small" color={Colors.emerald600} />
             ) : (
               <View style={[styles.statusBadge, getStatusBadgeStyle(attendance?.status)]}>
                 <View style={[styles.statusDot, getStatusDotStyle(attendance?.status)]} />
@@ -224,133 +363,191 @@ export function ShiftScreen() {
             )}
           </View>
 
-          {/* Right: Date Selector with Calendar Icon */}
-          <TouchableOpacity
-            style={styles.dateSelectorButton}
-            onPress={() => setShowDatePicker(true)}
-            activeOpacity={0.7}
-          >
-            <Ionicons name="calendar-outline" size={15} color={Colors.emerald700} style={{ marginRight: 5 }} />
-            <Text style={styles.dateSelectorText}>{fmtDateShort(selectedDate)}</Text>
-            <Ionicons name="chevron-down" size={12} color={Colors.slate400} style={{ marginLeft: 4 }} />
-          </TouchableOpacity>
+          {/* Optional Remarks Note */}
+          {attendance?.remarks ? (
+            <View style={styles.remarksBox}>
+              <Ionicons name="information-circle-outline" size={14} color={Colors.slate500} style={{ marginRight: 4 }} />
+              <Text style={styles.remarksText} numberOfLines={2}>
+                {attendance.remarks}
+              </Text>
+            </View>
+          ) : null}
         </View>
 
-        {/* Optional Remarks Note */}
-        {attendance?.remarks ? (
-          <View style={styles.remarksBadge}>
-            <Ionicons name="information-circle-outline" size={15} color={Colors.slate500} />
-            <Text style={styles.remarksBadgeText} numberOfLines={2}>
-              {attendance.remarks}
+        {/* ── Shifts List & Action Center ────────────────────────── */}
+        {shifts.length === 0 ? (
+          /* CASE 1: Zero Shifts on this date */
+          <View style={styles.emptyShiftsCard}>
+            <View style={styles.clockCircle}>
+              <Ionicons name="time-outline" size={32} color={Colors.slate400} />
+            </View>
+            <Text style={styles.emptyTitle}>
+              {isToday ? 'No Active Shift' : 'No Shifts Recorded'}
             </Text>
+            <Text style={styles.emptySubtitle}>
+              {isToday
+                ? 'Scan the attendance QR code at your facility to start duty.'
+                : 'No shifts were logged for this selected date.'}
+            </Text>
+
+            {isToday && (
+              <TouchableOpacity
+                style={styles.primaryActionButton}
+                onPress={triggerScanAction}
+                disabled={isScanning}
+                activeOpacity={0.8}
+              >
+                {isScanning ? (
+                  <ActivityIndicator color={Colors.white} />
+                ) : (
+                  <>
+                    <Ionicons name="camera" size={20} color={Colors.white} style={{ marginRight: 8 }} />
+                    <Text style={styles.primaryActionButtonText}>Start Shift #1</Text>
+                  </>
+                )}
+              </TouchableOpacity>
+            )}
           </View>
-        ) : null}
-
-        {/* Current State Card */}
-        <View style={[styles.stateCard, shiftState?.hasActiveShift && styles.stateCardActive]}>
-          {shiftState?.hasActiveShift ? (
-            <View style={styles.activeStateCol}>
-              <View style={styles.onDutyBadge}>
-                <View style={styles.pulsingDot} />
-                <Text style={styles.onDutyText}>ON DUTY</Text>
+        ) : (
+          /* CASE 2: One or More Shifts Recorded */
+          <View style={styles.shiftsSection}>
+            {/* Section Header */}
+            <View style={styles.sectionHeaderRow}>
+              <Text style={styles.sectionTitle}>
+                {isToday ? 'TODAY’S SHIFTS' : 'RECORDED SHIFTS'} ({shifts.length})
+              </Text>
+              <View style={styles.summaryBadge}>
+                <Text style={styles.summaryBadgeText}>
+                  {isShiftActive
+                    ? `${completedCount} Done · 1 In Progress`
+                    : `${completedCount} Completed`}
+                </Text>
               </View>
-              <Text style={styles.shiftNumberText}>
-                Shift #{shiftState.currentShift?.shiftNumber}
-              </Text>
-              <Text style={styles.shiftTimeText}>
-                Started at {new Date(shiftState.currentShift?.startTime || '').toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true })}
-              </Text>
-
-              <TouchableOpacity
-                style={styles.endShiftButton}
-                onPress={() => {
-                  if (isWriteBlocked) {
-                    setShowUnavailableModal(true);
-                    return;
-                  }
-                  setShowScanner(true);
-                }}
-                disabled={isScanning}
-                activeOpacity={0.8}
-              >
-                {isScanning ? (
-                  <ActivityIndicator color={Colors.white} />
-                ) : (
-                  <>
-                    <Ionicons name="camera" size={22} color={Colors.white} />
-                    <Text style={styles.endShiftButtonText}>Scan QR to End Shift</Text>
-                  </>
-                )}
-              </TouchableOpacity>
             </View>
-          ) : (
-            <View style={styles.noShiftCol}>
-              <View style={styles.clockCircle}>
-                <Ionicons name="time" size={32} color={Colors.slate400} />
-              </View>
-              <Text style={styles.noShiftTitle}>
-                {(shiftState?.completedShifts ?? 0) > 0
-                  ? `${shiftState!.completedShifts} Shift${shiftState!.completedShifts > 1 ? 's' : ''} Completed`
-                  : 'No Active Shift'}
-              </Text>
-              <Text style={styles.noShiftSubtitle}>
-                Scan attendance QR code at the facility to start duty
-              </Text>
 
-              <TouchableOpacity
-                style={styles.startShiftButton}
-                onPress={() => {
-                  if (isWriteBlocked) {
-                    setShowUnavailableModal(true);
-                    return;
-                  }
-                  setShowScanner(true);
-                }}
-                disabled={isScanning}
-                activeOpacity={0.8}
-              >
-                {isScanning ? (
-                  <ActivityIndicator color={Colors.white} />
-                ) : (
-                  <>
-                    <Ionicons name="camera" size={22} color={Colors.white} />
-                    <Text style={styles.startShiftButtonText}>Start Shift</Text>
-                  </>
-                )}
-              </TouchableOpacity>
+            {/* List of Shift Cards */}
+            <View style={styles.shiftsList}>
+              {shifts.map((shift) => {
+                const isActive = !shift.endedAt;
+                const durationText = formatDuration(shift.startedAt, shift.endedAt);
+
+                return (
+                  <View
+                    key={shift.shiftNumber}
+                    style={[
+                      styles.shiftCard,
+                      isActive ? styles.shiftCardActive : styles.shiftCardCompleted,
+                    ]}
+                  >
+                    {/* Card Header: Shift Number + Status Badge on left, Action/Duration on right */}
+                    <View style={styles.shiftCardHeader}>
+                      {/* Left: Shift info & status tag */}
+                      <View style={styles.shiftHeaderLeft}>
+                        <Text style={styles.shiftNumberTitle}>Shift #{shift.shiftNumber}</Text>
+                        {isActive ? (
+                          <View style={styles.activeTag}>
+                            <View style={styles.pulsingDot} />
+                            <Text style={styles.activeTagText}>IN PROGRESS</Text>
+                          </View>
+                        ) : (
+                          <View style={styles.completedTag}>
+                            <Ionicons name="checkmark" size={12} color="#1d4ed8" style={{ marginRight: 2 }} />
+                            <Text style={styles.completedTagText}>Completed</Text>
+                          </View>
+                        )}
+                      </View>
+
+                      {/* Right: End Shift Button (if active) OR Duration Badge (if completed) */}
+                      {isActive && isToday ? (
+                        <TouchableOpacity
+                          style={styles.inlineEndShiftButton}
+                          onPress={triggerScanAction}
+                          disabled={isScanning}
+                          activeOpacity={0.8}
+                        >
+                          {isScanning ? (
+                            <ActivityIndicator size="small" color={Colors.white} />
+                          ) : (
+                            <>
+                              <Ionicons name="camera" size={15} color={Colors.white} style={{ marginRight: 4 }} />
+                              <Text style={styles.inlineEndShiftText}>End Shift</Text>
+                            </>
+                          )}
+                        </TouchableOpacity>
+                      ) : durationText ? (
+                        <View style={styles.durationTag}>
+                          <Ionicons name="time-outline" size={12} color={Colors.slate600} style={{ marginRight: 3 }} />
+                          <Text style={styles.durationTagText}>{durationText}</Text>
+                        </View>
+                      ) : null}
+                    </View>
+
+                    {/* Card Time Timeline */}
+                    <View style={styles.timelineRow}>
+                      <View style={styles.timePoint}>
+                        <View style={[styles.timePointDot, { backgroundColor: Colors.emerald600 }]} />
+                        <Text style={styles.timePointLabel}>Started:</Text>
+                        <Text style={styles.timePointValue}>{formatTime(shift.startedAt)}</Text>
+                      </View>
+
+                      <View style={styles.timePointArrow}>
+                        <Ionicons name="arrow-forward" size={12} color={Colors.slate400} />
+                      </View>
+
+                      <View style={styles.timePoint}>
+                        <View
+                          style={[
+                            styles.timePointDot,
+                            { backgroundColor: isActive ? Colors.amber600 : Colors.blue600 },
+                          ]}
+                        />
+                        <Text style={styles.timePointLabel}>Ended:</Text>
+                        <Text
+                          style={[
+                            styles.timePointValue,
+                            isActive && { color: Colors.amber600, fontFamily: Typography.fontFamilySemiBold },
+                          ]}
+                        >
+                          {isActive ? 'In progress' : formatTime(shift.endedAt)}
+                        </Text>
+                      </View>
+                    </View>
+                  </View>
+                );
+              })}
             </View>
-          )}
-        </View>
 
-        {/* Shift Timeline */}
-        {(shiftState?.todayShifts ?? []).length > 0 && (
-          <View style={styles.timelineSection}>
-            <Text style={styles.timelineSectionTitle}>TODAY'S SHIFTS</Text>
-            {shiftState!.todayShifts.map((shift, idx) => (
-              <View key={idx} style={styles.timelineCard}>
-                <View style={styles.timelineLeft}>
-                  <Text style={styles.timelineShiftNumber}>Shift #{shift.shiftNumber}</Text>
-                  <Text style={styles.timelineTimeRange}>
-                    {new Date(shift.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true })}
-                    {' → '}
-                    {shift.endTime
-                      ? new Date(shift.endTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true })
-                      : 'Active'}
+            {/* ── Bottom Action Button Control ── */}
+            {isToday && (
+              isShiftActive ? (
+                /* Shift in progress: Cannot start new shift */
+                <View style={styles.activeShiftHintBox}>
+                  <Ionicons name="information-circle" size={18} color={Colors.emerald700} style={{ marginRight: 8 }} />
+                  <Text style={styles.activeShiftHintText}>
+                    Shift #{activeShift?.shiftNumber} is currently active. Please end it before starting a new shift.
                   </Text>
                 </View>
-                <View style={styles.timelineRight}>
-                  {shift.duration != null ? (
-                    <View style={styles.durationBadge}>
-                      <Text style={styles.durationBadgeText}>{shift.duration} min</Text>
-                    </View>
+              ) : (
+                /* All shifts ended: Allow starting next shift */
+                <TouchableOpacity
+                  style={styles.startNextShiftButton}
+                  onPress={triggerScanAction}
+                  disabled={isScanning}
+                  activeOpacity={0.8}
+                >
+                  {isScanning ? (
+                    <ActivityIndicator color={Colors.white} />
                   ) : (
-                    <View style={styles.activeBadge}>
-                      <Text style={styles.activeBadgeText}>Active</Text>
-                    </View>
+                    <>
+                      <Ionicons name="camera" size={20} color={Colors.white} style={{ marginRight: 8 }} />
+                      <Text style={styles.startNextShiftButtonText}>
+                        Start Shift #{nextShiftNumber}
+                      </Text>
+                    </>
                   )}
-                </View>
-              </View>
-            ))}
+                </TouchableOpacity>
+              )
+            )}
           </View>
         )}
       </ScrollView>
@@ -376,6 +573,7 @@ export function ShiftScreen() {
       {/* Subscription Expired / Write Blocked Modal */}
       <ServiceUnavailableModal
         visible={showUnavailableModal}
+        actionType="shift"
         onDismiss={() => setShowUnavailableModal(false)}
       />
     </View>
@@ -389,7 +587,7 @@ const styles = StyleSheet.create({
   },
   header: {
     paddingHorizontal: Spacing.lg,
-    paddingBottom: Spacing.sm,
+    paddingBottom: Spacing.xs,
     backgroundColor: Colors.background,
     zIndex: 10,
   },
@@ -401,264 +599,380 @@ const styles = StyleSheet.create({
   subtitle: {
     fontSize: 12,
     fontFamily: Typography.fontFamily,
-    color: Colors.slate400,
-    marginTop: 2,
+    color: Colors.slate500,
+    marginTop: 1,
   },
   scroll: {
     flex: 1,
   },
   scrollContent: {
     paddingHorizontal: Spacing.lg,
-    paddingTop: Spacing.xs,
-    paddingBottom: Spacing.xxl + 32,
+    paddingTop: Spacing.sm,
+    paddingBottom: Spacing.xxl + 40,
     gap: Spacing.md,
   },
-  attendanceBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+
+  // ── Date & Attendance Card ────────────────────────────────────
+  dateCard: {
     backgroundColor: Colors.white,
-    paddingHorizontal: Spacing.md,
-    paddingVertical: Spacing.sm + 2,
     borderRadius: BorderRadius.xl,
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.md,
     borderWidth: 1,
     borderColor: Colors.slate200,
     ...Shadows.sm,
   },
-  attendanceCol: {
+  dateNavRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    flexShrink: 1,
+    justifyContent: 'space-between',
+  },
+  dateStepBtn: {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    backgroundColor: Colors.slate100,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  dateStepBtnDisabled: {
+    opacity: 0.4,
+  },
+  datePickerTrigger: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: Colors.slate50,
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+    borderRadius: BorderRadius.full,
+    borderWidth: 1,
+    borderColor: Colors.slate200,
+  },
+  datePickerText: {
+    fontSize: 13,
+    fontFamily: Typography.fontFamilyBold,
+    color: Colors.slate800,
+  },
+  todayTag: {
+    backgroundColor: Colors.emerald50,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
+    marginLeft: 6,
+    borderWidth: 1,
+    borderColor: Colors.emerald100,
+  },
+  todayTagText: {
+    fontSize: 10,
+    fontFamily: Typography.fontFamilyBold,
+    color: Colors.emerald700,
+    textTransform: 'uppercase',
+  },
+  cardDivider: {
+    height: 1,
+    backgroundColor: Colors.slate100,
+    marginVertical: Spacing.sm,
+  },
+  attendanceRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
   },
   attendanceLabel: {
     fontSize: 13,
-    fontFamily: Typography.fontFamilySemiBold,
-    color: Colors.slate700,
+    fontFamily: Typography.fontFamilyMedium,
+    color: Colors.slate600,
   },
   statusBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 8,
-    paddingVertical: 3,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
     borderRadius: BorderRadius.full,
     borderWidth: 1,
   },
   statusDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    marginRight: 5,
+    width: 7,
+    height: 7,
+    borderRadius: 4,
+    marginRight: 6,
   },
   statusBadgeText: {
     fontSize: 12,
     fontFamily: Typography.fontFamilyBold,
   },
-  dateSelectorButton: {
+  remarksBox: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: Colors.slate50,
-    paddingHorizontal: 10,
+    borderRadius: BorderRadius.md,
+    paddingHorizontal: Spacing.sm,
     paddingVertical: 6,
-    borderRadius: BorderRadius.full,
+    marginTop: Spacing.sm,
     borderWidth: 1,
     borderColor: Colors.slate200,
   },
-  dateSelectorText: {
-    fontSize: 12,
-    fontFamily: Typography.fontFamilyBold,
-    color: Colors.slate800,
-  },
-  remarksBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    backgroundColor: Colors.slate100,
-    paddingHorizontal: Spacing.md,
-    paddingVertical: Spacing.xs + 2,
-    borderRadius: BorderRadius.lg,
-    borderWidth: 1,
-    borderColor: Colors.slate200,
-  },
-  remarksBadgeText: {
-    flex: 1,
-    fontSize: 12,
-    fontFamily: Typography.fontFamilyMedium,
+  remarksText: {
+    fontSize: 11,
+    fontFamily: Typography.fontFamily,
     color: Colors.slate600,
+    flex: 1,
   },
-  stateCard: {
+
+  // ── Empty State ───────────────────────────────────────────────
+  emptyShiftsCard: {
     backgroundColor: Colors.white,
     borderRadius: BorderRadius.xxl,
     padding: Spacing.xl,
+    alignItems: 'center',
     borderWidth: 1,
     borderColor: Colors.slate200,
     ...Shadows.sm,
-  },
-  stateCardActive: {
-    borderColor: Colors.emerald100,
-    backgroundColor: '#ffffff',
-  },
-  activeStateCol: {
-    alignItems: 'center',
-    gap: Spacing.sm,
-  },
-  pulsingDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: Colors.emerald500,
-  },
-  onDutyBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    backgroundColor: Colors.emerald50,
-    paddingHorizontal: Spacing.md,
-    paddingVertical: 4,
-    borderRadius: BorderRadius.full,
-    borderWidth: 1,
-    borderColor: Colors.emerald100,
-  },
-  onDutyText: {
-    fontSize: 11,
-    fontFamily: Typography.fontFamilyBold,
-    color: Colors.emerald700,
-    letterSpacing: 0.8,
-  },
-  shiftNumberText: {
-    fontSize: 22,
-    fontFamily: Typography.fontFamilyBold,
-    color: Colors.slate900,
-    marginTop: 4,
-  },
-  shiftTimeText: {
-    fontSize: 13,
-    fontFamily: Typography.fontFamilyMedium,
-    color: Colors.slate500,
-  },
-  endShiftButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: Spacing.sm,
-    backgroundColor: Colors.destructive,
-    width: '100%',
-    height: 52,
-    borderRadius: BorderRadius.xl,
-    marginTop: Spacing.md,
-    shadowColor: Colors.destructive,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.25,
-    shadowRadius: 8,
-    elevation: 4,
-  },
-  endShiftButtonText: {
-    fontSize: 16,
-    fontFamily: Typography.fontFamilyBold,
-    color: Colors.white,
-  },
-  noShiftCol: {
-    alignItems: 'center',
-    gap: Spacing.sm,
-    paddingVertical: Spacing.sm,
+    marginTop: Spacing.xs,
   },
   clockCircle: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
+    width: 60,
+    height: 60,
+    borderRadius: 30,
     backgroundColor: Colors.slate100,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 4,
+    marginBottom: Spacing.sm,
   },
-  noShiftTitle: {
-    fontSize: 18,
+  emptyTitle: {
+    fontSize: 17,
     fontFamily: Typography.fontFamilyBold,
     color: Colors.slate800,
+    marginBottom: 4,
   },
-  noShiftSubtitle: {
+  emptySubtitle: {
     fontSize: 13,
     fontFamily: Typography.fontFamily,
     color: Colors.slate400,
     textAlign: 'center',
+    lineHeight: 18,
+    marginBottom: Spacing.lg,
     maxWidth: 260,
   },
-  startShiftButton: {
+  primaryActionButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: Spacing.sm,
     backgroundColor: Colors.emerald600,
     width: '100%',
-    height: 52,
+    height: 48,
     borderRadius: BorderRadius.xl,
-    marginTop: Spacing.md,
     ...Shadows.emeraldGlow,
   },
-  startShiftButtonText: {
-    fontSize: 16,
+  primaryActionButtonText: {
+    fontSize: 15,
     fontFamily: Typography.fontFamilyBold,
     color: Colors.white,
   },
-  timelineSection: {
+
+  // ── Shifts Section & Cards ────────────────────────────────────
+  shiftsSection: {
     gap: Spacing.sm,
   },
-  timelineSectionTitle: {
-    fontSize: 11,
-    fontFamily: Typography.fontFamilyBold,
-    color: Colors.slate400,
-    letterSpacing: 0.6,
-  },
-  timelineCard: {
+  sectionHeaderRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+    paddingHorizontal: 2,
+    marginBottom: 2,
+  },
+  sectionTitle: {
+    fontSize: 12,
+    fontFamily: Typography.fontFamilyBold,
+    color: Colors.slate500,
+    letterSpacing: 0.6,
+  },
+  summaryBadge: {
+    backgroundColor: Colors.slate100,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: BorderRadius.full,
+  },
+  summaryBadgeText: {
+    fontSize: 11,
+    fontFamily: Typography.fontFamilySemiBold,
+    color: Colors.slate600,
+  },
+  shiftsList: {
+    gap: Spacing.sm + 2,
+  },
+  shiftCard: {
     backgroundColor: Colors.white,
     borderRadius: BorderRadius.xl,
-    padding: Spacing.md + 2,
+    padding: Spacing.md,
     borderWidth: 1,
-    borderColor: Colors.slate200,
     ...Shadows.sm,
   },
-  timelineLeft: {
-    gap: 3,
+  shiftCardActive: {
+    borderColor: '#10b981',
+    borderLeftWidth: 5,
+    borderLeftColor: '#059669',
+    backgroundColor: '#ffffff',
   },
-  timelineShiftNumber: {
-    fontSize: 14,
+  shiftCardCompleted: {
+    borderColor: Colors.slate200,
+  },
+  shiftCardHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: Spacing.sm,
+  },
+  shiftHeaderLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    flexShrink: 1,
+  },
+  shiftNumberTitle: {
+    fontSize: 15,
     fontFamily: Typography.fontFamilyBold,
     color: Colors.slate900,
   },
-  timelineTimeRange: {
+  activeTag: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    backgroundColor: '#ecfdf5',
+    paddingHorizontal: 7,
+    paddingVertical: 3,
+    borderRadius: BorderRadius.full,
+    borderWidth: 1,
+    borderColor: '#a7f3d0',
+  },
+  pulsingDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: '#059669',
+  },
+  activeTagText: {
+    fontSize: 10,
+    fontFamily: Typography.fontFamilyBold,
+    color: '#059669',
+    letterSpacing: 0.5,
+  },
+  completedTag: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#eff6ff',
+    paddingHorizontal: 7,
+    paddingVertical: 3,
+    borderRadius: BorderRadius.full,
+    borderWidth: 1,
+    borderColor: '#bfdbfe',
+  },
+  completedTagText: {
+    fontSize: 10,
+    fontFamily: Typography.fontFamilyBold,
+    color: '#1d4ed8',
+  },
+  inlineEndShiftButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#dc2626',
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+    borderRadius: BorderRadius.lg,
+    shadowColor: '#dc2626',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  inlineEndShiftText: {
     fontSize: 12,
+    fontFamily: Typography.fontFamilyBold,
+    color: Colors.white,
+  },
+  durationTag: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: Colors.slate100,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: BorderRadius.full,
+    borderWidth: 1,
+    borderColor: Colors.slate200,
+  },
+  durationTagText: {
+    fontSize: 11,
+    fontFamily: Typography.fontFamilySemiBold,
+    color: Colors.slate700,
+  },
+  timelineRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: Colors.slate50,
+    borderRadius: BorderRadius.md,
+    paddingHorizontal: Spacing.sm + 2,
+    paddingVertical: 8,
+  },
+  timePoint: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  timePointDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+  },
+  timePointLabel: {
+    fontSize: 11,
     fontFamily: Typography.fontFamily,
-    color: Colors.slate500,
+    color: Colors.slate400,
   },
-  timelineRight: {
-    alignItems: 'flex-end',
+  timePointValue: {
+    fontSize: 12,
+    fontFamily: Typography.fontFamilyMedium,
+    color: Colors.slate800,
   },
-  durationBadge: {
-    backgroundColor: Colors.blue50,
-    paddingHorizontal: Spacing.sm + 2,
-    paddingVertical: 3,
-    borderRadius: BorderRadius.full,
+  timePointArrow: {
+    marginHorizontal: Spacing.sm,
+  },
+
+  // ── Bottom Buttons / Hints ────────────────────────────────────
+  startNextShiftButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: Colors.greenPrimary,
+    width: '100%',
+    height: 48,
+    borderRadius: BorderRadius.xl,
+    marginTop: Spacing.xs,
+    shadowColor: Colors.greenPrimary,
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.25,
+    shadowRadius: 6,
+    elevation: 3,
+  },
+  startNextShiftButtonText: {
+    fontSize: 15,
+    fontFamily: Typography.fontFamilyBold,
+    color: Colors.white,
+  },
+  activeShiftHintBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#ecfdf5',
     borderWidth: 1,
-    borderColor: Colors.blue100,
+    borderColor: '#a7f3d0',
+    borderRadius: BorderRadius.lg,
+    padding: Spacing.md,
+    marginTop: Spacing.xs,
   },
-  durationBadgeText: {
-    fontSize: 11,
-    fontFamily: Typography.fontFamilySemiBold,
-    color: Colors.blue600,
-  },
-  activeBadge: {
-    backgroundColor: Colors.emerald50,
-    paddingHorizontal: Spacing.sm + 2,
-    paddingVertical: 3,
-    borderRadius: BorderRadius.full,
-    borderWidth: 1,
-    borderColor: Colors.emerald100,
-  },
-  activeBadgeText: {
-    fontSize: 11,
-    fontFamily: Typography.fontFamilySemiBold,
-    color: Colors.emerald600,
+  activeShiftHintText: {
+    flex: 1,
+    fontSize: 12,
+    fontFamily: Typography.fontFamilyMedium,
+    color: '#065f46',
+    lineHeight: 17,
   },
 });

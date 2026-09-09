@@ -14,6 +14,7 @@ import type {
   Announcement,
 
   ShiftState,
+  ShiftItem,
   WasteLog,
   WasteLogFormData,
 } from '../types/collector';
@@ -93,8 +94,45 @@ export interface AttendanceStatusResponse {
   remarks: string | null;
 }
 
-export async function fetchShiftState(): Promise<ShiftState> {
-  return apiRequest<ShiftState>(API_ENDPOINTS.myShift);
+export async function fetchShiftState(date?: string): Promise<ShiftState> {
+  const params = date ? `?date=${date}` : '';
+  const data = await apiRequest<any>(`${API_ENDPOINTS.myShift}${params}`);
+
+  const rawShifts: any[] = Array.isArray(data?.shifts) ? data.shifts : [];
+  const shifts: ShiftItem[] = rawShifts.map((s: any) => ({
+    shiftNumber: Number(s.shiftNumber) || 1,
+    startedAt: s.startedAt || s.startTime || null,
+    endedAt: s.endedAt || s.endTime || null,
+    startCenter: s.startCenter ?? null,
+    endCenter: s.endCenter ?? null,
+    startTime: s.startedAt || s.startTime || undefined,
+    endTime: s.endedAt || s.endTime || undefined,
+    duration: s.startedAt && s.endedAt
+      ? Math.max(1, Math.round((new Date(s.endedAt).getTime() - new Date(s.startedAt).getTime()) / 60000))
+      : undefined,
+  }));
+
+  const isShiftActive = Boolean(data?.isShiftActive);
+  const currentShiftNumber = Number(data?.currentShiftNumber) || (shifts.length > 0 ? shifts[shifts.length - 1].shiftNumber : 0);
+  const activeShiftItem = isShiftActive ? shifts.find((s) => !s.endedAt) : undefined;
+
+  return {
+    shiftDate: data?.shiftDate,
+    isShiftActive,
+    currentShiftNumber,
+    shifts,
+    attendanceStatus: data?.attendanceStatus,
+    attendanceRemarks: data?.attendanceRemarks,
+    hasActiveShift: isShiftActive,
+    todayShifts: shifts,
+    completedShifts: shifts.filter((s) => Boolean(s.endedAt)).length,
+    currentShift: activeShiftItem
+      ? {
+          shiftNumber: activeShiftItem.shiftNumber,
+          startTime: activeShiftItem.startedAt || '',
+        }
+      : undefined,
+  };
 }
 
 export async function fetchMyAttendanceStatus(date?: string): Promise<AttendanceStatusResponse> {

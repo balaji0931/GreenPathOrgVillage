@@ -16,15 +16,29 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { Colors, Typography, Spacing, BorderRadius, Shadows } from '../../constants/theme';
 
+export type BlockedActionType = 'collection' | 'shift' | 'wastelog';
+
 interface ServiceUnavailableModalProps {
   visible: boolean;
   onDismiss: () => void;
+  actionType?: BlockedActionType;
+  message?: string;
 }
+
+const ACTION_MESSAGES: Record<BlockedActionType, string> = {
+  collection: "New waste collections cannot be recorded because your village's GreenPath subscription has expired.",
+  shift: "Attendance shifts cannot be marked because your village's GreenPath subscription has expired.",
+  wastelog: "Daily waste logs cannot be recorded because your village's GreenPath subscription has expired.",
+};
 
 export function ServiceUnavailableModal({
   visible,
   onDismiss,
+  actionType = 'collection',
+  message,
 }: ServiceUnavailableModalProps) {
+  const primaryMessage = message || ACTION_MESSAGES[actionType] || ACTION_MESSAGES.collection;
+
   return (
     <Modal
       transparent
@@ -43,9 +57,7 @@ export function ServiceUnavailableModal({
           <Text style={styles.title}>Service Temporarily Unavailable</Text>
 
           {/* Message Body */}
-          <Text style={styles.primaryText}>
-            New waste collections cannot be recorded because your village's GreenPath subscription has expired.
-          </Text>
+          <Text style={styles.primaryText}>{primaryMessage}</Text>
 
           <Text style={styles.secondaryText}>
             Please inform your supervisor or Panchayat secretary.
