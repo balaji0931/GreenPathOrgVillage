@@ -26,6 +26,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { Colors, Typography, Spacing, BorderRadius, Shadows } from '../../constants/theme';
 import { EmptyState } from '../../components/common/EmptyState';
 import { LoadingState } from '../../components/common/LoadingState';
+import { ServiceUnavailableModal } from '../../components/common/ServiceUnavailableModal';
+import { useSubscription } from '../../hooks/useSubscription';
 import { fetchWasteLogs, createWasteLog, updateWasteLog, deleteWasteLog } from '../../api/collector.api';
 import type { WasteLog, WasteLogFormData } from '../../types/collector';
 import {
@@ -124,6 +126,8 @@ export function WasteLogScreen() {
   const [editingLog, setEditingLog] = useState<WasteLog | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [syncingId, setSyncingId] = useState<number | null>(null);
+  const { isWriteBlocked } = useSubscription();
+  const [showUnavailableModal, setShowUnavailableModal] = useState(false);
 
   // Form state
   const todayStr = useMemo(() => getTodayStr(), []);
@@ -217,11 +221,19 @@ export function WasteLogScreen() {
   };
 
   const openAdd = () => {
+    if (isWriteBlocked) {
+      setShowUnavailableModal(true);
+      return;
+    }
     resetForm();
     setShowForm(true);
   };
 
   const openEdit = (log: WasteLog) => {
+    if (isWriteBlocked) {
+      setShowUnavailableModal(true);
+      return;
+    }
     const logDateStr = log.date ? log.date.split('T')[0] : '';
     if (logDateStr !== todayStr) {
       Alert.alert(
@@ -298,6 +310,10 @@ export function WasteLogScreen() {
   };
 
   const handleDeleteWithConfirm = (log: WasteLog) => {
+    if (isWriteBlocked) {
+      setShowUnavailableModal(true);
+      return;
+    }
     const logDateStr = log.date ? log.date.split('T')[0] : '';
     if (logDateStr !== todayStr) {
       Alert.alert(
@@ -640,6 +656,12 @@ export function WasteLogScreen() {
           </View>
         </KeyboardAvoidingView>
       </Modal>
+
+      {/* Subscription Expired / Write Blocked Modal */}
+      <ServiceUnavailableModal
+        visible={showUnavailableModal}
+        onDismiss={() => setShowUnavailableModal(false)}
+      />
     </View>
   );
 }

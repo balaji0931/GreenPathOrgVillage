@@ -21,6 +21,8 @@ import { LoadingState } from '../../components/common/LoadingState';
 import { Skeleton } from '../../components/common/Skeleton';
 import { EmptyState } from '../../components/common/EmptyState';
 import { QRScannerModal } from '../../components/scanner/QRScannerModal';
+import { SubscriptionBanner } from '../../components/collector/SubscriptionBanner';
+import { ServiceUnavailableModal } from '../../components/common/ServiceUnavailableModal';
 
 // Screens
 import { AnnouncementsScreen } from './AnnouncementsScreen';
@@ -34,6 +36,7 @@ import { SyncQueueScreen } from './SyncQueueScreen';
 // Hooks & services
 import { useCollectorData } from '../../hooks/useCollectorData';
 import { useNetwork } from '../../hooks/useNetwork';
+import { useSubscription } from '../../hooks/useSubscription';
 import { initSyncEngine, stopSyncEngine, triggerSync, onSyncStatsChange } from '../../services/sync-engine';
 import { hasLocalCollectionToday, getLocalCollectionForHousehold, type QueueStats } from '../../services/offline-queue';
 import { useAuth } from '../../auth/AuthProvider';
@@ -56,6 +59,7 @@ export function CollectorDashboard() {
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [showMenu, setShowMenu] = useState(false);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+  const [showUnavailableModal, setShowUnavailableModal] = useState(false);
   const toastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const insets = useSafeAreaInsets();
 
@@ -70,6 +74,7 @@ export function CollectorDashboard() {
   } = useCollectorData();
 
   const { isConnected } = useNetwork();
+  const { isWriteBlocked, refresh: refreshSub } = useSubscription();
   const { logout } = useAuth();
   const [isRefreshing, setIsRefreshing] = useState(false);
 
@@ -97,10 +102,13 @@ export function CollectorDashboard() {
 
   const handleRefresh = useCallback(async () => {
     setIsRefreshing(true);
-    await refresh(true);
+    await Promise.all([
+      refresh(true),
+      refreshSub(),
+    ]);
     triggerSync();
     setIsRefreshing(false);
-  }, [refresh]);
+  }, [refresh, refreshSub]);
 
   // Check if household was already collected today (server + local SQLite)
   const isAlreadyCollectedToday = useCallback((household: Household): boolean => {
@@ -196,10 +204,14 @@ export function CollectorDashboard() {
       });
       setShowDetailsModal(true);
     } else {
+      if (isWriteBlocked) {
+        setShowUnavailableModal(true);
+        return;
+      }
       setSelectedHousehold(household);
       setShowCollectionModal(true);
     }
-  }, [isAlreadyCollectedToday, collections]);
+  }, [isAlreadyCollectedToday, collections, isWriteBlocked]);
 
   // Handle QR scan result
   const handleQRScan = useCallback((result: ScanResult) => {
@@ -418,6 +430,9 @@ export function CollectorDashboard() {
         onMenuPress={() => setShowMenu(true)}
       />
 
+      {/* Subscription Banner */}
+      <SubscriptionBanner />
+
       {/* Floating Success Toast Acknowledgment */}
       {toastMessage && (
         <View style={styles.toastContainer} pointerEvents="none">
@@ -475,6 +490,12 @@ export function CollectorDashboard() {
           setDetailHousehold(null);
           setSelectedCollectionDetail(null);
         }}
+      />
+
+      {/* Subscription Expired / Write Blocked Modal */}
+      <ServiceUnavailableModal
+        visible={showUnavailableModal}
+        onDismiss={() => setShowUnavailableModal(false)}
       />
 
       {/* 3-Dot Menu Modal */}

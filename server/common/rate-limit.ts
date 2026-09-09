@@ -20,12 +20,12 @@ export function configureRateLimiting(app: Express, logger: Logger) {
     // Skip rate limiting in test environment
     if (process.env.NODE_ENV === 'test') return;
 
-    // General API rate limiting
+    // General API rate limiting (generous headroom for shared cellular CGNAT / GP Wi-Fi)
     app.use(
         "/api/",
         createRateLimit(
             15 * 60 * 1000,
-            1000,
+            2000,
             "Too many requests, please try again later",
             logger,
         ),
@@ -51,12 +51,12 @@ export function configureRateLimiting(app: Express, logger: Logger) {
         ),
     );
 
-    // Upload rate limiting
+    // Upload rate limiting — allow headroom for offline batch syncs (up to 200 uploads per 5 minutes)
     app.use(
         "/api/upload",
         createRateLimit(
             5 * 60 * 1000,
-            20,
+            200,
             "Too many upload requests, please try again later",
             logger,
         ),
@@ -85,13 +85,14 @@ export function configureRateLimiting(app: Express, logger: Logger) {
     );
 
     // Slow down repeated requests - configured for express-slow-down v2
+    // Allows 600 requests per 15 minutes before applying delay, accommodating shared CGNAT IPs
     app.use(
         "/api/",
         slowDown({
             windowMs: 15 * 60 * 1000, // 15 minutes
-            delayAfter: 100, // Allow 100 requests per windowMs without delay
+            delayAfter: 600, // Allow 600 requests per windowMs without delay
             delayMs: () => 500, // Add 500ms delay per request after delayAfter (v2 syntax)
-            maxDelayMs: 20000, // Maximum delay of 20 seconds
+            maxDelayMs: 5000, // Maximum delay of 5 seconds (avoids client socket timeouts)
             validate: { delayMs: false }, // Suppress deprecation warning
         }),
     );

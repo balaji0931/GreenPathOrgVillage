@@ -48,4 +48,7 @@ export const API_ENDPOINTS = {
 
   // Profile
   changePassword: '/api/auth/change-password',
+
+  // Subscriptions
+  activeSubscription: (villageId: string) => `/api/subscriptions/villages/${villageId}/active`,
 } as const;

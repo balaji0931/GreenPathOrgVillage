@@ -415,6 +415,15 @@ async function syncOneRecord(record: QueuedCollection): Promise<void> {
       return;
     }
 
+    if (err?.status === 429) {
+      // ── RATE LIMITED (HTTP 429) ──
+      // Transient throttle from server or cellular proxy.
+      // Reset to QUEUED without incrementing failure attempts; will retry next cycle.
+      console.warn(`[SyncEngine] Rate limited (429) for record #${record.id}; will retry next cycle.`);
+      resetToQueued(record.id);
+      return;
+    }
+
     // ── DEFINITIVE SERVER ERROR (4xx/5xx) ──
     // This is a real failure (bad data, conflict, server bug).
     // Count it toward the 5-attempt limit.

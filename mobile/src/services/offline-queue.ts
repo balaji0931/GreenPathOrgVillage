@@ -176,6 +176,12 @@ function initializeSchema(): void {
       createdAt TEXT NOT NULL
     );
     CREATE INDEX IF NOT EXISTS idx_waste_log_sync ON waste_log_queue(syncStatus);
+
+    CREATE TABLE IF NOT EXISTS cached_subscription (
+      villageId TEXT PRIMARY KEY,
+      dataJson TEXT NOT NULL,
+      updatedAt INTEGER NOT NULL
+    );
   `);
 }
 
@@ -242,6 +248,32 @@ export function getCachedVillageData(villageId: string): VillageData | null {
   if (!row) return null;
   try {
     return JSON.parse(row.dataJson) as VillageData;
+  } catch {
+    return null;
+  }
+}
+
+export function saveCachedSubscription(villageId: string, data: any): void {
+  if (!villageId) return;
+  const database = getDb();
+  database.runSync(
+    `INSERT OR REPLACE INTO cached_subscription (villageId, dataJson, updatedAt) VALUES (?, ?, ?)`,
+    villageId,
+    JSON.stringify(data),
+    Date.now(),
+  );
+}
+
+export function getCachedSubscription(villageId: string): any | null {
+  if (!villageId) return null;
+  const database = getDb();
+  const row = database.getFirstSync<{ dataJson: string }>(
+    `SELECT dataJson FROM cached_subscription WHERE villageId = ?`,
+    villageId,
+  );
+  if (!row) return null;
+  try {
+    return JSON.parse(row.dataJson);
   } catch {
     return null;
   }
@@ -776,6 +808,7 @@ export function clearAllQueueData(): void {
   database.runSync(`DELETE FROM waste_log_queue`);
   database.runSync(`DELETE FROM cached_server_collections`);
   database.runSync(`DELETE FROM today_collected_households`);
+  database.runSync(`DELETE FROM cached_subscription`);
 }
 
 // ── Public API: Waste Log Queue (Offline-First) ───────────────

@@ -12,6 +12,8 @@ import { StatusBadge } from '../../components/common/StatusBadge';
 import { LoadingState } from '../../components/common/LoadingState';
 import { QRScannerModal } from '../../components/scanner/QRScannerModal';
 import { DatePickerModal } from '../../components/common/DatePickerModal';
+import { ServiceUnavailableModal } from '../../components/common/ServiceUnavailableModal';
+import { useSubscription } from '../../hooks/useSubscription';
 import {
   fetchShiftState,
   scanShift,
@@ -97,6 +99,8 @@ export function ShiftScreen() {
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [attendance, setAttendance] = useState<AttendanceStatusResponse | null>(null);
   const [isAttendanceLoading, setIsAttendanceLoading] = useState(false);
+  const { isWriteBlocked } = useSubscription();
+  const [showUnavailableModal, setShowUnavailableModal] = useState(false);
 
   const loadData = useCallback(async () => {
     try {
@@ -131,6 +135,10 @@ export function ShiftScreen() {
 
   const handleScan = async (result: ScanResult) => {
     setShowScanner(false);
+    if (isWriteBlocked) {
+      setShowUnavailableModal(true);
+      return;
+    }
     if (result.kind !== 'attendance') {
       Alert.alert('Invalid QR', 'Please scan an attendance QR code.');
       return;
@@ -255,7 +263,13 @@ export function ShiftScreen() {
 
               <TouchableOpacity
                 style={styles.endShiftButton}
-                onPress={() => setShowScanner(true)}
+                onPress={() => {
+                  if (isWriteBlocked) {
+                    setShowUnavailableModal(true);
+                    return;
+                  }
+                  setShowScanner(true);
+                }}
                 disabled={isScanning}
                 activeOpacity={0.8}
               >
@@ -285,7 +299,13 @@ export function ShiftScreen() {
 
               <TouchableOpacity
                 style={styles.startShiftButton}
-                onPress={() => setShowScanner(true)}
+                onPress={() => {
+                  if (isWriteBlocked) {
+                    setShowUnavailableModal(true);
+                    return;
+                  }
+                  setShowScanner(true);
+                }}
                 disabled={isScanning}
                 activeOpacity={0.8}
               >
@@ -351,6 +371,12 @@ export function ShiftScreen() {
           setSelectedDate(newDate);
         }}
         onClose={() => setShowDatePicker(false)}
+      />
+
+      {/* Subscription Expired / Write Blocked Modal */}
+      <ServiceUnavailableModal
+        visible={showUnavailableModal}
+        onDismiss={() => setShowUnavailableModal(false)}
       />
     </View>
   );
