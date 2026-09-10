@@ -17,7 +17,7 @@ export function registerRoadMappingRoutes(
   app.get(
     "/api/village-roads",
     requireAuth,
-    requireRole(["manager"]),
+    requireRole(["manager", "fieldworker"]),
     requireVillageAccess,
     async (req, res) => {
       try {

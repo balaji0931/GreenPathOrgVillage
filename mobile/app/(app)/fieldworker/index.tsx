@@ -1,4 +1,5 @@
-import { PlaceholderDashboard } from '../../../src/components/PlaceholderDashboard';
+import { FieldWorkerDashboard } from '../../../src/screens/fieldworker/FieldWorkerDashboard';
+
 export default function FieldWorkerScreen() {
-  return <PlaceholderDashboard />;
+  return <FieldWorkerDashboard />;
 }

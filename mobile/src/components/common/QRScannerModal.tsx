@@ -13,6 +13,7 @@
  */
 import { useState, useRef, useCallback } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Linking, Modal } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { CameraView, useCameraPermissions, type BarcodeScanningResult } from 'expo-camera';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors, Typography, Spacing, BorderRadius } from '../../constants/theme';
@@ -58,6 +59,7 @@ function parseScannedCode(rawString: string): ScanResult {
 }
 
 export function QRScannerModal({ visible, onScan, onClose, scanMode = 'all' }: QRScannerModalProps) {
+  const insets = useSafeAreaInsets();
   const [permission, requestPermission] = useCameraPermissions();
   const scanLockRef = useRef(false);
 
@@ -163,7 +165,7 @@ export function QRScannerModal({ visible, onScan, onClose, scanMode = 'all' }: Q
         {/* Overlay */}
         <View style={styles.overlay}>
           {/* Top bar */}
-          <View style={styles.topBar}>
+          <View style={[styles.topBar, { paddingTop: Math.max(insets.top, 24) + 8 }]}>
             <TouchableOpacity style={styles.backButton} onPress={handleClose} activeOpacity={0.7}>
               <Ionicons name="arrow-back" size={24} color={Colors.white} />
             </TouchableOpacity>
