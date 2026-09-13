@@ -204,9 +204,11 @@ export function getPendingMappingRecordsForManualSync(): QueuedMapping[] {
 
 /**
  * Get all records in queue (for the Sync Queue screen list).
+ * Automatically purges confirmed records older than 24h or from previous calendar days.
  */
 export function getAllMappingRecords(): QueuedMapping[] {
   const database = getDb();
+  purgeOldConfirmedMappingRecords();
   const rows = database.getAllSync<any>(
     `SELECT * FROM fieldworker_mapping_queue ORDER BY id DESC LIMIT 500`
   );
@@ -262,10 +264,11 @@ export function resetMappingToQueued(id: number): void {
 }
 
 /**
- * Reset any stale records stuck in SYNCING state on app launch.
+ * Reset any stale records stuck in SYNCING state on app launch and purge old confirmed mappings.
  */
 export function resetStaleMappingSync(): void {
   const database = getDb();
+  purgeOldConfirmedMappingRecords();
   database.runSync(
     `UPDATE fieldworker_mapping_queue SET syncStatus = 'QUEUED' WHERE syncStatus = 'SYNCING'`
   );
@@ -282,13 +285,40 @@ export function retryFailedMappingRecords(): void {
 }
 
 /**
- * Clear confirmed records older than 24 hours.
+ * Automatically purge confirmed mapping records that are:
+ * 1. Older than 24 hours, OR
+ * 2. Created on a previous calendar day (different from today's date).
+ *
+ * This ensures field workers see today's confirmed mappings during their active shift,
+ * while automatically purging them on the next day or after 24 hours without any manual action.
+ */
+export function purgeOldConfirmedMappingRecords(): number {
+  const database = getDb();
+  const now = new Date();
+  // Start of today in local time (00:00:00.000) converted to ISO string
+  const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString();
+  // 24 hours ago
+  const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+
+  const result = database.runSync(
+    `DELETE FROM fieldworker_mapping_queue
+     WHERE syncStatus = 'CONFIRMED'
+       AND (
+         createdAt < ?
+         OR (syncedAt != '' AND syncedAt < ?)
+         OR createdAt < ?
+       )`,
+    [todayStart, twentyFourHoursAgo, twentyFourHoursAgo]
+  );
+
+  return result.changes;
+}
+
+/**
+ * Clear confirmed records (now automatically delegated to auto-purge).
  */
 export function clearConfirmedMappingRecords(): void {
-  const database = getDb();
-  database.runSync(
-    `DELETE FROM fieldworker_mapping_queue WHERE syncStatus = 'CONFIRMED'`
-  );
+  purgeOldConfirmedMappingRecords();
 }
 
 /**
@@ -296,6 +326,7 @@ export function clearConfirmedMappingRecords(): void {
  */
 export function getFieldWorkerQueueStats(): FieldWorkerQueueStats {
   const database = getDb();
+  purgeOldConfirmedMappingRecords();
   const rows = database.getAllSync<{ syncStatus: QueueSyncStatus; count: number }>(
     `SELECT syncStatus, COUNT(*) as count FROM fieldworker_mapping_queue GROUP BY syncStatus`
   );

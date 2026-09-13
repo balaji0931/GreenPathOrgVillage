@@ -18,7 +18,6 @@ import {
   StyleSheet,
   Animated,
   Easing,
-  Alert,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
@@ -33,7 +32,6 @@ import {
 import {
   getAllMappingRecords,
   retryFailedMappingRecords,
-  clearConfirmedMappingRecords,
 } from '../../services/fieldworker-queue';
 import type { FieldWorkerQueueStats, QueuedMapping } from '../../types/fieldworker';
 
@@ -170,23 +168,6 @@ export function FieldWorkerSyncQueueScreen() {
     }
   };
 
-  const handleClearConfirmed = () => {
-    Alert.alert(
-      'Clear Confirmed',
-      'Remove successfully synced records from the local history list?',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Clear',
-          style: 'destructive',
-          onPress: () => {
-            clearConfirmedMappingRecords();
-            loadQueueData();
-          },
-        },
-      ]
-    );
-  };
 
   const handleRefresh = async () => {
     setIsRefreshing(true);
@@ -427,16 +408,7 @@ export function FieldWorkerSyncQueueScreen() {
               </TouchableOpacity>
             )}
 
-            {stats.confirmed > 0 && (
-              <TouchableOpacity
-                style={styles.clearButton}
-                onPress={handleClearConfirmed}
-                activeOpacity={0.8}
-              >
-                <Ionicons name="trash-outline" size={16} color={Colors.slate500} />
-                <Text style={styles.clearButtonText}>Clear Synced</Text>
-              </TouchableOpacity>
-            )}
+
           </View>
         </View>
 
@@ -638,20 +610,7 @@ const styles = StyleSheet.create({
     fontFamily: Typography.fontFamilySemiBold,
     color: Colors.destructive,
   },
-  clearButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: Colors.slate100,
-    paddingVertical: 10,
-    paddingHorizontal: Spacing.md,
-    borderRadius: BorderRadius.lg,
-    gap: 4,
-  },
-  clearButtonText: {
-    fontSize: 13,
-    fontFamily: Typography.fontFamilyMedium,
-    color: Colors.slate600,
-  },
+
   filterTabsRow: {
     flexDirection: 'row',
     gap: Spacing.xs,
