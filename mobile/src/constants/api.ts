@@ -58,4 +58,12 @@ export const API_ENDPOINTS = {
   householdTypes: '/api/household-types',
   villageRoads: '/api/village-roads',
   villageDetails: (villageId: string) => `/api/villages/${encodeURIComponent(villageId)}`,
+
+  // Manager endpoints
+  managerWards: (villageId: string) => `/api/villages/${encodeURIComponent(villageId)}/wards`,
+  managerVehicles: (villageId: string) => `/api/villages/${encodeURIComponent(villageId)}/vehicles`,
+  managerDailySummary: (date: string) => `/api/collections/daily-summary?date=${encodeURIComponent(date)}`,
+  managerAnalyticsPremium: (villageId: string, date: string) =>
+    `/api/analytics/premium?village=${encodeURIComponent(villageId)}&date=${encodeURIComponent(date)}`,
+  managerIssuesPaginated: (page = 1, limit = 20) => `/api/issues/paginated?page=${page}&limit=${limit}`,
 } as const;

@@ -1,4 +1,5 @@
-import { PlaceholderDashboard } from '../../../src/components/PlaceholderDashboard';
+import { ManagerDashboard } from '../../../src/screens/manager/ManagerDashboard';
+
 export default function ManagerScreen() {
-  return <PlaceholderDashboard />;
+  return <ManagerDashboard />;
 }
