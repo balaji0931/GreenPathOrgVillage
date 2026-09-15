@@ -10,6 +10,7 @@ import React from 'react';
 import {
   View,
   Text,
+  Image,
   TouchableOpacity,
   StyleSheet,
   Platform,
@@ -54,9 +55,11 @@ export function ManagerHeader({
       <View style={styles.container}>
         {/* Left: Square [G] Brand Logo & 2-Line Title Stack */}
         <View style={styles.leftCol}>
-          <View style={styles.brandBadge}>
-            <Text style={styles.brandBadgeText}>G</Text>
-          </View>
+          <Image
+            source={require('../../../assets/logo-g-green.png')}
+            style={styles.brandLogo}
+            resizeMode="contain"
+          />
           <View style={styles.titleStack}>
             <Text style={styles.villageName} numberOfLines={1}>
               {villageName}
@@ -76,7 +79,7 @@ export function ManagerHeader({
             accessibilityLabel="Announcements and Alerts"
             activeOpacity={0.7}
           >
-            <Ionicons name="notifications-outline" size={22} color={Colors.slate700} />
+            <Ionicons name="notifications-outline" size={28} color={Colors.slate700} />
             {announcementsCount > 0 && (
               <View style={styles.notificationDot} />
             )}
@@ -123,10 +126,16 @@ const styles = StyleSheet.create({
     width: 38,
     height: 38,
     borderRadius: BorderRadius.md,
-    backgroundColor: Colors.emerald700,
+    backgroundColor: Colors.white,
     alignItems: 'center',
     justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: Colors.slate200,
     ...Shadows.sm,
+  },
+  brandLogo: {
+    width: 44,
+    height: 44,
   },
   brandBadgeText: {
     fontSize: 20,
@@ -138,22 +147,21 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
   },
-  villageName: {
-    fontSize: 15,
+  subtitle: {
+    fontSize: 20,
     fontFamily: Typography.fontFamilyBold,
     color: Colors.slate900,
     letterSpacing: -0.2,
   },
-  subtitle: {
+  villageName: {
     fontSize: 12,
     fontFamily: Typography.fontFamilyMedium,
-    color: Colors.slate500,
-    marginTop: 1,
+    color: Colors.greenPrimary,
   },
   rightCol: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: Spacing.sm,
+    gap: Spacing.md,
   },
   actionIconButton: {
     width: 38,

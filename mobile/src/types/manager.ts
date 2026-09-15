@@ -115,3 +115,79 @@ export interface MoreGroupDescriptor {
   items: MoreMenuItemDescriptor[];
   isGated?: boolean;
 }
+
+// ── Tab 1: Daily Reports & KPI Analytics Types ─────────────────
+
+export interface ReportKpiData {
+  totalHouseholds: number;
+  collectedToday: number;
+  collectedYesterday: number;
+  nonCollectedToday: number;
+  avgSegregationRating: number;
+}
+
+export interface ReportPulseItem {
+  day: string;
+  collections: number;
+  rating: number;
+}
+
+export interface ReportWardPerformance {
+  name: string;
+  total: number;
+  collected: number;
+  nonCollected: number;
+}
+
+export interface ReportMaterialData {
+  wet: number;
+  dry: number;
+  specialCare: number;
+  sanitary: number;
+  mixed: number;
+  isLogged: boolean;
+  source: 'manager' | 'collectors' | 'none';
+}
+
+export interface ReportVehicleSession {
+  index: number;
+  startTime: string;
+  endTime: string;
+  durationMs: number;
+  breakBeforeMs: number;
+  count: number;
+}
+
+export interface ReportVehicleStat {
+  registrationNumber: string;
+  vehicleName: string;
+  collectorNames: string;
+  count: number;
+  startTime: string | null;
+  endTime: string | null;
+  sessions: ReportVehicleSession[];
+  totalWorkMs: number;
+  totalBreakMs: number;
+}
+
+export interface ReportVehicleInfo {
+  name: string;
+  color: string;
+}
+
+export interface ReportHourlyTimeline {
+  vehicles: ReportVehicleInfo[];
+  hourly: Array<{
+    hour: string;
+    [vehicleName: string]: any;
+  }>;
+}
+
+export interface ManagerPremiumReportData {
+  kpis: ReportKpiData;
+  pulses: ReportPulseItem[];
+  wardPerformance: ReportWardPerformance[];
+  materialData: ReportMaterialData;
+  vehicleStats: ReportVehicleStat[];
+  collectionTimeline: ReportHourlyTimeline;
+}

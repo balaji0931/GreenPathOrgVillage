@@ -461,16 +461,21 @@ export function ManagerDashboard() {
             onBack={handleSubScreenBack}
           />
         ) : (
-          <>
-            {/* Tab 1: Daily Reports */}
-            {activeTab === 'reports' && (
+          <View style={styles.tabContentContainer}>
+            {/* Tab 1: Daily Reports (Preserves mount state and scroll position for instant tab switching) */}
+            <View style={[styles.tabPane, activeTab === 'reports' ? styles.tabPaneActive : styles.tabPaneHidden]}>
               <ManagerReportsScreen
                 villageData={villageData}
                 onNavigateToTab={handleSelectTab}
+                onNavigateToSubScreen={(screenId) => {
+                  setActiveTab('more');
+                  setActiveMoreScreen(screenId);
+                }}
+                isActive={activeTab === 'reports'}
                 isRefreshing={isRefreshing}
                 onRefresh={handleRefresh}
               />
-            )}
+            </View>
 
             {/* Tab 2: Live Collections */}
             {activeTab === 'collections' && <ManagerCollectionsScreen />}
@@ -488,7 +493,7 @@ export function ManagerDashboard() {
                 onSelectScreen={setActiveMoreScreen}
               />
             )}
-          </>
+          </View>
         )}
       </View>
 
@@ -510,5 +515,17 @@ const styles = StyleSheet.create({
   },
   contentContainer: {
     flex: 1,
+  },
+  tabContentContainer: {
+    flex: 1,
+  },
+  tabPane: {
+    flex: 1,
+  },
+  tabPaneActive: {
+    display: 'flex',
+  },
+  tabPaneHidden: {
+    display: 'none',
   },
 });

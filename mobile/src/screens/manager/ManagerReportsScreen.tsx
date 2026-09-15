@@ -1,29 +1,69 @@
 /**
- * GreenPath Village Manager — Tab 1: Daily Reports & KPI Pulse Screen
+ * GreenPath Village Manager — Tab 1: Daily Reports & KPI Analytics Screen
  *
- * Primary operational dashboard view:
- * - Daily Pulse metrics: Total waste kg, Wet kg, Dry kg, Segregation %
- * - Household coverage ring / progress summary
- * - Active collector status summary
- * - Pull to refresh
+ * Master Screen Orchestrator:
+ * - Pinned sticky date switcher (previous/next day, calendar picker, today snap)
+ * - Daily insights & pulse grid (households, not collected, collection & segregation pulses with 7-day sparklines)
+ * - Household collection efficiency card with insight banner and feed shortcut
+ * - Daily waste material logs card with 5 streams and actionable empty state
+ * - Landfill waste diversion rate card (formula-based gauge and comparative metrics)
+ * - Ward performance breakdown with horizontal stacked bars
+ * - Fleet performance and collector session breakdown with interactive details modal
+ * - Hourly collection timeline with peak window highlight
+ * - Bottom-right PDF Export FAB
+ * - Full pull-to-refresh support
  */
-import React from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
   ScrollView,
   RefreshControl,
+  ActivityIndicator,
+  Alert,
   TouchableOpacity,
+  AppState,
+  type AppStateStatus,
   StyleSheet,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
+import * as Sharing from 'expo-sharing';
 import { Colors, Typography, Spacing, BorderRadius, Shadows } from '../../constants/theme';
-import type { ManagerVillageData } from '../../types/manager';
+import { fetchManagerAnalyticsPremium, fetchManagerDailyAttendance } from '../../api/manager.api';
+import { useAuth } from '../../auth/AuthProvider';
+import { generateDailyReportPDFMobile, type PDFReportData } from '../../services/daily-report-pdf.service';
+import {
+  getCachedReport,
+  saveCachedReport,
+  isTodayDate,
+  getTodayDateStr,
+  purgeOldReportsCache,
+} from '../../services/manager-cache';
+import {
+  ReportsDateSwitcher,
+  ReportsKpiPulseGrid,
+  ReportsCoverageCard,
+  ReportsMaterialBreakdownCard,
+  ReportsDiversionRateCard,
+  ReportsWardPerformanceCard,
+  ReportsVehiclePerformanceCard,
+  SessionDetailsView,
+  ReportsHourlyTimelineCard,
+  ReportsPdfFab,
+} from './reports';
+import type {
+  ManagerVillageData,
+  ManagerTab,
+  ManagerMoreScreenId,
+  ManagerPremiumReportData,
+} from '../../types/manager';
 
 interface ManagerReportsScreenProps {
   villageData: ManagerVillageData | null;
-  onNavigateToTab: (tab: 'collections' | 'map-viz' | 'issues' | 'more') => void;
+  onNavigateToTab: (tab: ManagerTab) => void;
+  onNavigateToSubScreen?: (screenId: ManagerMoreScreenId) => void;
+  isActive?: boolean;
   isRefreshing?: boolean;
   onRefresh?: () => void;
 }
@@ -31,294 +71,512 @@ interface ManagerReportsScreenProps {
 export function ManagerReportsScreen({
   villageData,
   onNavigateToTab,
+  onNavigateToSubScreen,
+  isActive = true,
   isRefreshing = false,
   onRefresh,
 }: ManagerReportsScreenProps) {
-  return (
-    <ScrollView
-      style={styles.container}
-      contentContainerStyle={styles.contentContainer}
-      showsVerticalScrollIndicator={false}
-      refreshControl={
-        onRefresh ? (
-          <RefreshControl
-            refreshing={isRefreshing}
-            onRefresh={onRefresh}
-            colors={[Colors.emerald700]}
-            tintColor={Colors.emerald700}
-          />
-        ) : undefined
+  const { user } = useAuth();
+  const effectiveVillageId = (villageData?.id || user?.villageId || '').trim();
+  const [selectedDate, setSelectedDate] = useState<string>(getTodayDateStr);
+
+  // Purge any cache from previous days immediately on mount
+  useEffect(() => {
+    purgeOldReportsCache();
+  }, []);
+
+  // Initialize synchronously from cache (ONLY if today, 0ms render, zero spinner)
+  const [reportData, setReportData] = useState<ManagerPremiumReportData | null>(() => {
+    return getCachedReport(effectiveVillageId, getTodayDateStr());
+  });
+  const [isLoading, setIsLoading] = useState<boolean>(() => {
+    const cached = getCachedReport(effectiveVillageId, getTodayDateStr());
+    return !cached;
+  });
+  const [hasError, setHasError] = useState<boolean>(false);
+  const [localRefreshing, setLocalRefreshing] = useState<boolean>(false);
+  const [sessionDetailsOpen, setSessionDetailsOpen] = useState<boolean>(false);
+  const [isGeneratingPdf, setIsGeneratingPdf] = useState<boolean>(false);
+  const [pdfToastMessage, setPdfToastMessage] = useState<string | null>(null);
+  const [downloadedPdfUri, setDownloadedPdfUri] = useState<string | null>(null);
+
+  // Fetch report data for village and selectedDate
+  // Caching and silent background sync are ONLY applied to TODAY
+  const loadReportData = useCallback(
+    async (showLoadingSpinner = true) => {
+      if (!effectiveVillageId) {
+        setIsLoading(false);
+        return;
       }
-    >
-      {/* Village Banner */}
-      <View style={styles.bannerCard}>
-        <View style={styles.bannerLeft}>
-          <Text style={styles.bannerGreeting}>Good day, Manager</Text>
-          <Text style={styles.bannerVillage}>{villageData?.name || 'GreenPath Village'}</Text>
-          <Text style={styles.bannerDate}>
-            {new Date().toLocaleDateString('en-US', {
-              weekday: 'short',
-              month: 'short',
-              day: 'numeric',
-              year: 'numeric',
-            })}
-          </Text>
-        </View>
-        <View style={styles.bannerIconBadge}>
-          <Ionicons name="leaf" size={28} color={Colors.emerald700} />
-        </View>
+
+      const isToday = isTodayDate(selectedDate);
+      const cached = isToday ? getCachedReport(effectiveVillageId, selectedDate) : null;
+
+      if (cached) {
+        setReportData(cached);
+        setIsLoading(false);
+      } else if (showLoadingSpinner) {
+        setIsLoading(true);
+      }
+
+      setHasError(false);
+      try {
+        const data = await fetchManagerAnalyticsPremium(effectiveVillageId, selectedDate);
+        if (data) {
+          // ONLY cache today's date (historical dates are never cached)
+          if (isToday) {
+            saveCachedReport(effectiveVillageId, selectedDate, data);
+          }
+          setReportData(data);
+          setHasError(false);
+        } else if (!cached) {
+          setHasError(true);
+        }
+      } catch (err) {
+        console.warn('[ManagerReportsScreen] Failed to load manager report data:', err);
+        if (!cached) {
+          setHasError(true);
+        }
+      } finally {
+        setIsLoading(false);
+        setLocalRefreshing(false);
+      }
+    },
+    [effectiveVillageId, selectedDate]
+  );
+
+  useEffect(() => {
+    const isToday = isTodayDate(selectedDate);
+    const cached = isToday ? getCachedReport(effectiveVillageId, selectedDate) : null;
+    // For Today: only show spinner if not yet cached. For other dates: show spinner once.
+    loadReportData(!cached);
+  }, [loadReportData, effectiveVillageId, selectedDate]);
+
+  // Listen for AppState changes (e.g. app brought to foreground the next day)
+  useEffect(() => {
+    const handleAppStateChange = (nextAppState: AppStateStatus) => {
+      if (nextAppState === 'active') {
+        const todayStr = getTodayDateStr();
+        // Purge any cache for dates other than current today
+        purgeOldReportsCache();
+
+        // If currently viewing "today", trigger silent sync; if date rolled over, advance to new today
+        setSelectedDate((prevDate) => {
+          if (isTodayDate(prevDate)) {
+            return prevDate;
+          }
+          if (prevDate < todayStr) {
+            return todayStr;
+          }
+          return prevDate;
+        });
+
+        if (isTodayDate(selectedDate)) {
+          loadReportData(false);
+        }
+      }
+    };
+
+    const sub = AppState.addEventListener('change', handleAppStateChange);
+    return () => sub.remove();
+  }, [selectedDate, loadReportData]);
+
+  // When Reports tab becomes active from another tab, purge old dates & silently refresh today
+  useEffect(() => {
+    if (isActive) {
+      purgeOldReportsCache();
+      if (isTodayDate(selectedDate)) {
+        loadReportData(false);
+      }
+    }
+  }, [isActive, selectedDate, loadReportData]);
+
+  // Pull-to-refresh handler
+  const handlePullRefresh = useCallback(async () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    setLocalRefreshing(true);
+    if (onRefresh) {
+      onRefresh();
+    }
+    await loadReportData(false);
+  }, [loadReportData, onRefresh]);
+
+  // Date change handler from DateSwitcher
+  const handleChangeDate = (newDateStr: string) => {
+    const isToday = isTodayDate(newDateStr);
+    const cached = isToday ? getCachedReport(effectiveVillageId, newDateStr) : null;
+    if (cached) {
+      setReportData(cached);
+      setIsLoading(false);
+    } else {
+      // Historical dates are never cached: clear old data and show spinner
+      setReportData(null);
+      setIsLoading(true);
+    }
+    setSelectedDate(newDateStr);
+  };
+
+  // Shortcut to Collections feed
+  const handleGoToCollections = () => {
+    onNavigateToTab('collections');
+  };
+
+  // Shortcut to Daily Waste Logs tool
+  const handleGoToWasteLogs = () => {
+    if (onNavigateToSubScreen) {
+      onNavigateToSubScreen('daily-waste-logs');
+    } else {
+      onNavigateToTab('more');
+    }
+  };
+
+  // PDF FAB export trigger — client-side background generation without blocking modals
+  const handlePressPdfExport = async () => {
+    if (isGeneratingPdf) return;
+
+    if (!reportData) {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+      setPdfToastMessage('Report data is still loading...');
+      setTimeout(() => setPdfToastMessage(null), 3000);
+      return;
+    }
+
+    try {
+      setIsGeneratingPdf(true);
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+
+      // Fetch attendance for all worker types in parallel (matching web manager-dashboard.tsx)
+      let attendance: PDFReportData['attendance'] | undefined;
+      try {
+        const [colData, helpData, segData] = await Promise.all([
+          fetchManagerDailyAttendance(selectedDate, 'collector'),
+          fetchManagerDailyAttendance(selectedDate, 'helper'),
+          fetchManagerDailyAttendance(selectedDate, 'segregator'),
+        ]);
+        attendance = {
+          collectors: (colData.workers || []).map((w) => ({ workerName: w.workerName, attendance: w.attendance })),
+          helpers: (helpData.workers || []).map((w) => ({ workerName: w.workerName, attendance: w.attendance })),
+          segregators: (segData.workers || []).map((w) => ({ workerName: w.workerName, attendance: w.attendance })),
+        };
+      } catch {
+        // Attendance optional fallback
+      }
+
+      const pdfData: PDFReportData = {
+        villageName: villageData?.name || 'GreenPath Village',
+        villageId: villageData?.id || user?.villageId || 'VILLAGE',
+        date: selectedDate,
+        managerName: user?.name || 'Manager',
+        kpis: {
+          totalHouseholds: reportData.kpis.totalHouseholds,
+          collectedToday: reportData.kpis.collectedToday,
+          collectedYesterday: reportData.kpis.collectedYesterday,
+          nonCollectedToday: reportData.kpis.nonCollectedToday,
+          avgSegregationRating: reportData.kpis.avgSegregationRating,
+        },
+        pulses: reportData.pulses,
+        wardPerformance: reportData.wardPerformance,
+        materialData: reportData.materialData,
+        vehicleStats: reportData.vehicleStats,
+        collectionTimeline: reportData.collectionTimeline,
+        attendance,
+      };
+
+      const result = await generateDailyReportPDFMobile(pdfData);
+
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      setDownloadedPdfUri(result.uri);
+      setPdfToastMessage(`Daily report downloaded: ${result.fileName}`);
+
+      // Auto-dismiss the non-blocking toast after 4 seconds
+      setTimeout(() => {
+        setPdfToastMessage(null);
+      }, 4000);
+    } catch (err) {
+      console.warn('[ManagerReportsScreen] Failed to generate PDF:', err);
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+      setPdfToastMessage('Failed to download PDF report');
+      setTimeout(() => setPdfToastMessage(null), 3500);
+    } finally {
+      setIsGeneratingPdf(false);
+    }
+  };
+
+  // Quick action to share the downloaded PDF
+  const handleSharePdf = async () => {
+    if (!downloadedPdfUri) return;
+    try {
+      const isAvailable = await Sharing.isAvailableAsync();
+      if (isAvailable) {
+        await Sharing.shareAsync(downloadedPdfUri, {
+          mimeType: 'application/pdf',
+          dialogTitle: 'Share Daily Operations Report',
+          UTI: 'com.adobe.pdf',
+        });
+      }
+    } catch (err) {
+      console.warn('[ManagerReportsScreen] Share error:', err);
+    }
+  };
+
+  // If session details view is open, render it inline (header + bottom nav stay visible)
+  if (sessionDetailsOpen && reportData?.vehicleStats) {
+    return (
+      <View style={styles.root}>
+        <SessionDetailsView
+          vehicleStats={reportData.vehicleStats}
+          dateLabel={selectedDate}
+          onBack={() => setSessionDetailsOpen(false)}
+        />
       </View>
+    );
+  }
 
-      {/* KPI Grid */}
-      <View style={styles.kpiGrid}>
-        {/* Total Collected */}
-        <View style={[styles.kpiCard, { borderColor: Colors.emerald100 }]}>
-          <View style={[styles.kpiIconBox, { backgroundColor: Colors.emerald50 }]}>
-            <Ionicons name="scale-outline" size={20} color={Colors.emerald700} />
-          </View>
-          <Text style={styles.kpiValue}>-- kg</Text>
-          <Text style={styles.kpiLabel}>Total Waste Today</Text>
+  return (
+    <View style={styles.root}>
+      {/* Sticky Date Switcher pinned at top */}
+      <ReportsDateSwitcher
+        date={selectedDate}
+        onChangeDate={handleChangeDate}
+      />
+
+      {/* Main Content Area */}
+      {isLoading ? (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={Colors.emerald700} />
+          <Text style={styles.loadingText}>Generating Daily Reports...</Text>
+          <Text style={styles.loadingSubText}>{selectedDate}</Text>
         </View>
+      ) : (
+        <ScrollView
+          style={styles.scroll}
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+          refreshControl={
+            <RefreshControl
+              refreshing={isRefreshing || localRefreshing}
+              onRefresh={handlePullRefresh}
+              colors={[Colors.emerald700]}
+              tintColor={Colors.emerald700}
+            />
+          }
+        >
+          {/* Error Banner if reportData could not be fetched */}
+          {hasError && !reportData && (
+            <View style={styles.errorCard}>
+              <Ionicons name="cloud-offline-outline" size={36} color={Colors.warning} />
+              <Text style={styles.errorTitle}>Unable to Load Report</Text>
+              <Text style={styles.errorDesc}>
+                Could not retrieve report data for {selectedDate}. Check your connection or tap below to retry.
+              </Text>
+              <TouchableOpacity
+                style={styles.retryButton}
+                onPress={() => loadReportData(true)}
+                activeOpacity={0.8}
+              >
+                <Ionicons name="refresh" size={16} color={Colors.white} />
+                <Text style={styles.retryButtonText}>Retry Loading</Text>
+              </TouchableOpacity>
+            </View>
+          )}
 
-        {/* Segregation Index */}
-        <View style={[styles.kpiCard, { borderColor: Colors.blue100 }]}>
-          <View style={[styles.kpiIconBox, { backgroundColor: Colors.blue50 }]}>
-            <Ionicons name="pie-chart-outline" size={20} color={Colors.blue600} />
+          {/* Section 1: KPI Pulse Grid (Households, Not Collected, Collection & Segregation Pulses) */}
+          {reportData?.kpis && reportData?.pulses && (
+            <ReportsKpiPulseGrid
+              kpis={reportData.kpis}
+              pulses={reportData.pulses}
+            />
+          )}
+
+          {/* Section 2: Household Collection Efficiency / Coverage Card */}
+          {reportData?.kpis && (
+            <ReportsCoverageCard
+              collectedCount={reportData.kpis.collectedToday}
+              totalHouseholds={reportData.kpis.totalHouseholds}
+              onNavigateToCollections={handleGoToCollections}
+            />
+          )}
+
+          {/* Section 3: Daily Waste Material Breakdown (5 Streams & Empty State) */}
+          {reportData?.materialData && (
+            <ReportsMaterialBreakdownCard
+              materialData={reportData.materialData}
+              onNavigateToWasteLog={handleGoToWasteLogs}
+            />
+          )}
+
+          {/* Section 3.5: Waste Diversion Rate Card */}
+          {reportData?.materialData && (
+            <ReportsDiversionRateCard materialData={reportData.materialData} />
+          )}
+
+          {/* Section 4: Ward Performance Breakdown */}
+          {reportData?.wardPerformance && (
+            <ReportsWardPerformanceCard
+              wardPerformance={reportData.wardPerformance}
+            />
+          )}
+
+          {/* Section 5: Fleet & Collector Session Breakdown */}
+          {reportData?.vehicleStats && (
+            <ReportsVehiclePerformanceCard
+              vehicleStats={reportData.vehicleStats}
+              dateLabel={selectedDate}
+              onOpenSessionDetails={() => setSessionDetailsOpen(true)}
+            />
+          )}
+
+          {/* Section 6: Hourly Collection Timeline */}
+          {reportData?.collectionTimeline && (
+            <ReportsHourlyTimelineCard
+              timeline={reportData.collectionTimeline}
+            />
+          )}
+
+          {/* Bottom spacing so FAB does not overlap content */}
+          <View style={styles.bottomSpacer} />
+        </ScrollView>
+      )}
+
+      {/* Non-blocking Downloaded Toast */}
+      {pdfToastMessage && (
+        <View style={styles.pdfToastContainer}>
+          <View style={styles.pdfToast}>
+            <Ionicons name="checkmark-circle" size={18} color={Colors.emerald600} />
+            <Text style={styles.pdfToastText} numberOfLines={1}>
+              {pdfToastMessage}
+            </Text>
+            {downloadedPdfUri && (
+              <TouchableOpacity
+                style={styles.pdfToastShareButton}
+                onPress={handleSharePdf}
+                activeOpacity={0.8}
+              >
+                <Text style={styles.pdfToastShareText}>Share</Text>
+              </TouchableOpacity>
+            )}
           </View>
-          <Text style={[styles.kpiValue, { color: Colors.blue600 }]}>-- %</Text>
-          <Text style={styles.kpiLabel}>Segregation Index</Text>
         </View>
+      )}
 
-        {/* Wet Waste */}
-        <View style={[styles.kpiCard, { borderColor: Colors.borderLight }]}>
-          <View style={[styles.kpiIconBox, { backgroundColor: Colors.emerald50 }]}>
-            <Ionicons name="water-outline" size={20} color={Colors.emerald700} />
-          </View>
-          <Text style={styles.kpiValue}>-- kg</Text>
-          <Text style={styles.kpiLabel}>Wet (Organic)</Text>
-        </View>
-
-        {/* Dry Waste */}
-        <View style={[styles.kpiCard, { borderColor: Colors.borderLight }]}>
-          <View style={[styles.kpiIconBox, { backgroundColor: Colors.warningLight }]}>
-            <Ionicons name="cube-outline" size={20} color={Colors.amber600} />
-          </View>
-          <Text style={styles.kpiValue}>-- kg</Text>
-          <Text style={styles.kpiLabel}>Dry (Recyclable)</Text>
-        </View>
-      </View>
-
-      {/* Household Coverage Card */}
-      <View style={styles.coverageCard}>
-        <View style={styles.cardHeader}>
-          <View style={styles.cardHeaderTitleRow}>
-            <Ionicons name="home-outline" size={18} color={Colors.slate700} />
-            <Text style={styles.cardTitle}>Household Coverage</Text>
-          </View>
-          <TouchableOpacity
-            onPress={() => {
-              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-              onNavigateToTab('collections');
-            }}
-          >
-            <Text style={styles.linkText}>View Feed ›</Text>
-          </TouchableOpacity>
-        </View>
-
-        <View style={styles.progressRow}>
-          <View style={styles.progressTrack}>
-            <View style={[styles.progressBar, { width: '0%' }]} />
-          </View>
-        </View>
-
-        <View style={styles.statsRow}>
-          <View style={styles.statCol}>
-            <Text style={styles.statNumber}>--</Text>
-            <Text style={styles.statText}>Collected</Text>
-          </View>
-          <View style={styles.statCol}>
-            <Text style={styles.statNumber}>--</Text>
-            <Text style={styles.statText}>Pending</Text>
-          </View>
-          <View style={styles.statCol}>
-            <Text style={[styles.statNumber, { color: Colors.destructive }]}>--</Text>
-            <Text style={styles.statText}>Missed</Text>
-          </View>
-        </View>
-      </View>
-
-      {/* Phase 2 Notification */}
-      <View style={styles.phaseNotice}>
-        <Ionicons name="information-circle-outline" size={18} color={Colors.emerald700} />
-        <Text style={styles.phaseNoticeText}>
-          Navigation Frame Active. Daily live report charts, session timelines & metrics will connect in Phase 2.
-        </Text>
-      </View>
-    </ScrollView>
+      {/* Floating Action Button (FAB) for PDF Export */}
+      <ReportsPdfFab
+        onPress={handlePressPdfExport}
+        isLoading={isGeneratingPdf}
+        disabled={isGeneratingPdf}
+      />
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  root: {
     flex: 1,
     backgroundColor: Colors.background,
   },
-  contentContainer: {
-    padding: Spacing.lg,
-    paddingBottom: 40,
-  },
-  bannerCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    backgroundColor: Colors.white,
-    borderRadius: BorderRadius.xl,
-    padding: Spacing.lg,
-    borderWidth: 1,
-    borderColor: Colors.slate200,
-    marginBottom: Spacing.lg,
-    ...Shadows.sm,
-  },
-  bannerLeft: {
+  scroll: {
     flex: 1,
   },
-  bannerGreeting: {
-    fontSize: 12,
-    fontFamily: Typography.fontFamilyMedium,
-    color: Colors.slate500,
-  },
-  bannerVillage: {
-    fontSize: 18,
-    fontFamily: Typography.fontFamilyBold,
-    color: Colors.slate900,
-    marginTop: 2,
-  },
-  bannerDate: {
-    fontSize: 12,
-    fontFamily: Typography.fontFamilyMedium,
-    color: Colors.emerald700,
-    marginTop: 4,
-  },
-  bannerIconBadge: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: Colors.emerald50,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  kpiGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: Spacing.md,
-    marginBottom: Spacing.lg,
-  },
-  kpiCard: {
-    width: '47.5%',
-    backgroundColor: Colors.white,
-    borderRadius: BorderRadius.lg,
+  scrollContent: {
     padding: Spacing.md,
-    borderWidth: 1,
-    borderColor: Colors.slate200,
-    ...Shadows.sm,
+    paddingBottom: 70,
   },
-  kpiIconBox: {
-    width: 32,
-    height: 32,
-    borderRadius: BorderRadius.md,
+  loadingContainer: {
+    flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: Spacing.xs,
-  },
-  kpiValue: {
-    fontSize: 18,
-    fontFamily: Typography.fontFamilyBold,
-    color: Colors.slate900,
-  },
-  kpiLabel: {
-    fontSize: 11,
-    fontFamily: Typography.fontFamilyMedium,
-    color: Colors.slate500,
-    marginTop: 2,
-  },
-  coverageCard: {
-    backgroundColor: Colors.white,
-    borderRadius: BorderRadius.xl,
-    padding: Spacing.lg,
-    borderWidth: 1,
-    borderColor: Colors.slate200,
-    marginBottom: Spacing.lg,
-    ...Shadows.sm,
-  },
-  cardHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: Spacing.md,
-  },
-  cardHeaderTitleRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    padding: Spacing.xl,
     gap: Spacing.xs,
   },
-  cardTitle: {
+  loadingText: {
     fontSize: 14,
     fontFamily: Typography.fontFamilyBold,
-    color: Colors.slate900,
-  },
-  linkText: {
-    fontSize: 12,
-    fontFamily: Typography.fontFamilySemiBold,
-    color: Colors.emerald700,
-  },
-  progressRow: {
-    marginBottom: Spacing.md,
-  },
-  progressTrack: {
-    height: 8,
-    backgroundColor: Colors.slate100,
-    borderRadius: 4,
-    overflow: 'hidden',
-  },
-  progressBar: {
-    height: '100%',
-    backgroundColor: Colors.emerald700,
-    borderRadius: 4,
-  },
-  statsRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    paddingTop: Spacing.xs,
-  },
-  statCol: {
-    alignItems: 'center',
-  },
-  statNumber: {
-    fontSize: 16,
-    fontFamily: Typography.fontFamilyBold,
     color: Colors.slate800,
+    marginTop: Spacing.sm,
   },
-  statText: {
-    fontSize: 11,
+  loadingSubText: {
+    fontSize: 12,
     fontFamily: Typography.fontFamilyMedium,
     color: Colors.slate400,
-    marginTop: 2,
   },
-  phaseNotice: {
+  errorCard: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: Colors.white,
+    borderRadius: BorderRadius.xl,
+    padding: Spacing.xl,
+    borderWidth: 1,
+    borderColor: Colors.slate200,
+    marginTop: Spacing.lg,
+    ...Shadows.sm,
+  },
+  errorTitle: {
+    fontSize: 16,
+    fontFamily: Typography.fontFamilyBold,
+    color: Colors.slate900,
+    marginTop: Spacing.sm,
+  },
+  errorDesc: {
+    fontSize: 12,
+    fontFamily: Typography.fontFamily,
+    color: Colors.slate500,
+    textAlign: 'center',
+    marginTop: Spacing.xs,
+    marginBottom: Spacing.lg,
+    lineHeight: 18,
+    maxWidth: 280,
+  },
+  retryButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: Spacing.sm,
-    backgroundColor: Colors.emerald50,
-    borderRadius: BorderRadius.lg,
-    padding: Spacing.md,
-    borderWidth: 1,
-    borderColor: Colors.emerald100,
+    gap: 6,
+    backgroundColor: Colors.emerald700,
+    paddingVertical: Spacing.sm,
+    paddingHorizontal: Spacing.xl,
+    borderRadius: BorderRadius.full,
+    ...Shadows.sm,
   },
-  phaseNoticeText: {
+  retryButtonText: {
+    fontSize: 13,
+    fontFamily: Typography.fontFamilyBold,
+    color: Colors.white,
+  },
+  bottomSpacer: {
+    height: 40,
+  },
+  pdfToastContainer: {
+    position: 'absolute',
+    bottom: 24,
+    left: 16,
+    right: 85,
+    zIndex: 90,
+  },
+  pdfToast: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: Colors.slate900,
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    borderRadius: BorderRadius.lg,
+    gap: 8,
+    ...Shadows.md,
+    elevation: 8,
+  },
+  pdfToastText: {
     flex: 1,
-    fontSize: 12,
+    fontSize: 11,
     fontFamily: Typography.fontFamilyMedium,
-    color: Colors.emerald700,
-    lineHeight: 16,
+    color: Colors.white,
+  },
+  pdfToastShareButton: {
+    backgroundColor: Colors.emerald700,
+    paddingVertical: 4,
+    paddingHorizontal: 10,
+    borderRadius: BorderRadius.sm,
+  },
+  pdfToastShareText: {
+    fontSize: 11,
+    fontFamily: Typography.fontFamilyBold,
+    color: Colors.white,
   },
 });

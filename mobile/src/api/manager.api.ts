@@ -12,6 +12,7 @@ import { API_ENDPOINTS } from '../constants/api';
 import type {
   ManagerVillageData,
   ManagerAnnouncement,
+  ManagerPremiumReportData,
 } from '../types/manager';
 
 /**
@@ -23,7 +24,7 @@ export async function fetchManagerVillageData(villageId: string): Promise<Manage
   const raw = await apiRequest<any>(API_ENDPOINTS.villageDetails(cleanId));
 
   return {
-    id: String(raw.id || cleanId),
+    id: String(raw.villageId || cleanId || raw.id),
     name: String(raw.name || 'GreenPath Village'),
     state: raw.state,
     district: raw.district,
@@ -82,3 +83,44 @@ export async function fetchManagerDailySummary(dateStr: string): Promise<any> {
     return null;
   }
 }
+
+/**
+ * Fetch premium analytics report data (KPIs, 7-day pulses, ward performance,
+ * materials breakdown, fleet sessions, hourly timeline).
+ * Calls GET /api/analytics/premium?village=:villageId&date=:date
+ */
+export async function fetchManagerAnalyticsPremium(
+  villageId: string,
+  dateStr: string
+): Promise<ManagerPremiumReportData | null> {
+  try {
+    const cleanId = villageId.trim();
+    return await apiRequest<ManagerPremiumReportData>(
+      API_ENDPOINTS.managerAnalyticsPremium(cleanId, dateStr)
+    );
+  } catch (err) {
+    console.warn('[fetchManagerAnalyticsPremium] Failed to load report data:', err);
+    return null;
+  }
+}
+
+/**
+ * Fetch daily attendance for a specific worker type.
+ * Calls GET /api/attendance/daily?date=:date&workerType=:workerType
+ */
+export async function fetchManagerDailyAttendance(
+  dateStr: string,
+  workerType: 'collector' | 'helper' | 'segregator'
+): Promise<{ workers: Array<{ workerName: string; attendance: string | null }> }> {
+  try {
+    const res = await apiRequest<{
+      workers: Array<{ workerName: string; attendance: string | null }>;
+    }>(
+      `/api/attendance/daily?date=${encodeURIComponent(dateStr)}&workerType=${encodeURIComponent(workerType)}`
+    );
+    return res || { workers: [] };
+  } catch {
+    return { workers: [] };
+  }
+}
+
