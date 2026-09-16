@@ -4,7 +4,7 @@
  * Provides typed REST client methods for the Manager dashboard:
  * - Village details & feature flag configuration
  * - Announcements and village broadcast notices
- * - Issues and open grievances
+ * - Issues and open issues
  * - Daily collections summary and KPI pulse
  */
 import { apiRequest } from './client';
@@ -13,6 +13,11 @@ import type {
   ManagerVillageData,
   ManagerAnnouncement,
   ManagerPremiumReportData,
+  ManagerDailyCollectionSummary,
+  ManagerHouseholdCollectionsResponse,
+  VillageBoundary,
+  VillageRoad,
+  ManagerIssue,
 } from '../types/manager';
 
 /**
@@ -41,6 +46,9 @@ export async function fetchManagerVillageData(villageId: string): Promise<Manage
     notificationWindowEnd: raw.notificationWindowEnd,
     totalHouseholds: raw.totalHouseholds,
     activeCollectors: raw.activeCollectors,
+    wards: Array.isArray(raw.wards)
+      ? raw.wards.filter((w: any) => typeof w === 'string' && w.trim().length > 0)
+      : [],
   };
 }
 
@@ -58,15 +66,13 @@ export async function fetchManagerAnnouncements(): Promise<ManagerAnnouncement[]
 }
 
 /**
- * Fetch open grievance issues count for the Issues tab badge.
- * Calls GET /api/issues/paginated?page=1&limit=1
+ * Fetch active issue issues count (open + in_progress only) for the Issues tab badge.
+ * Calls GET /api/issues and filters out resolved issues.
  */
 export async function fetchManagerOpenIssuesCount(): Promise<number> {
   try {
-    const res = await apiRequest<{ total?: number; issues?: any[] }>(
-      API_ENDPOINTS.managerIssuesPaginated(1, 1)
-    );
-    return typeof res?.total === 'number' ? res.total : Array.isArray(res?.issues) ? res.issues.length : 0;
+    const list = await fetchManagerIssues();
+    return list.filter((i) => i.status === 'open' || i.status === 'in_progress').length;
   } catch {
     return 0;
   }
@@ -76,11 +82,34 @@ export async function fetchManagerOpenIssuesCount(): Promise<number> {
  * Fetch daily collection summary for reports / collections pulse.
  * Calls GET /api/collections/daily-summary?date=YYYY-MM-DD
  */
-export async function fetchManagerDailySummary(dateStr: string): Promise<any> {
+export async function fetchManagerDailySummary(
+  dateStr: string
+): Promise<ManagerDailyCollectionSummary | null> {
   try {
-    return await apiRequest<any>(API_ENDPOINTS.managerDailySummary(dateStr));
+    return await apiRequest<ManagerDailyCollectionSummary>(
+      API_ENDPOINTS.managerDailySummary(dateStr)
+    );
   } catch {
     return null;
+  }
+}
+
+/**
+ * Fetch collection history and aggregates for a single household.
+ * Calls GET /api/waste-collections/household/:uid?limit=:limit&offset=:offset
+ */
+export async function fetchHouseholdCollectionHistory(
+  uid: string,
+  limit = 10,
+  offset = 0
+): Promise<ManagerHouseholdCollectionsResponse> {
+  try {
+    const res = await apiRequest<ManagerHouseholdCollectionsResponse>(
+      API_ENDPOINTS.householdCollections(uid, limit, offset)
+    );
+    return res || { data: [], stats: { avgRating: 0, totalCollections: 0 } };
+  } catch {
+    return { data: [], stats: { avgRating: 0, totalCollections: 0 } };
   }
 }
 
@@ -122,5 +151,85 @@ export async function fetchManagerDailyAttendance(
   } catch {
     return { workers: [] };
   }
+}
+
+/**
+ * Fetch official configured wards for a village.
+ * Calls GET /api/villages/:villageId/wards
+ */
+export async function fetchManagerWards(villageId: string): Promise<string[]> {
+  try {
+    const cleanId = villageId.trim();
+    const list = await apiRequest<string[]>(API_ENDPOINTS.managerWards(cleanId));
+    return Array.isArray(list)
+      ? list.filter((w) => typeof w === 'string' && w.trim().length > 0)
+      : [];
+  } catch (err) {
+    console.warn('[fetchManagerWards] Failed to load wards:', err);
+    return [];
+  }
+}
+
+/**
+ * Fetch GIS polygon boundaries for village and wards.
+ * Calls GET /api/village-boundaries
+ */
+export async function fetchVillageBoundaries(): Promise<VillageBoundary[]> {
+  try {
+    const list = await apiRequest<VillageBoundary[]>(API_ENDPOINTS.villageBoundaries);
+    return Array.isArray(list) ? list : [];
+  } catch (err) {
+    console.warn('[fetchVillageBoundaries] Failed to load boundaries:', err);
+    return [];
+  }
+}
+
+/**
+ * Fetch GIS road networks for village.
+ * Calls GET /api/village-roads
+ */
+export async function fetchVillageRoads(): Promise<VillageRoad[]> {
+  try {
+    const list = await apiRequest<VillageRoad[]>(API_ENDPOINTS.villageRoads);
+    return Array.isArray(list) ? list : [];
+  } catch (err) {
+    console.warn('[fetchVillageRoads] Failed to load roads:', err);
+    return [];
+  }
+}
+
+/**
+ * Fetch citizen issues / issues for the manager's village.
+ * Calls GET /api/issues
+ */
+export async function fetchManagerIssues(): Promise<ManagerIssue[]> {
+  try {
+    const list = await apiRequest<ManagerIssue[]>(API_ENDPOINTS.managerIssues);
+    return Array.isArray(list) ? list : [];
+  } catch (err) {
+    console.warn('[fetchManagerIssues] Failed to load issues:', err);
+    return [];
+  }
+}
+
+/**
+ * Update issue status, manager reply, and optional/required proof photo URL.
+ * Calls PATCH /api/issues/:id
+ */
+export async function updateManagerIssue(
+  id: number,
+  payload: {
+    status: string;
+    managerReply?: string;
+    managerProofPhotoUrl?: string;
+  }
+): Promise<ManagerIssue> {
+  return await apiRequest<ManagerIssue>(API_ENDPOINTS.managerIssueUpdate(id), {
+    method: 'PATCH',
+    body: JSON.stringify(payload),
+    headers: {
+      'Content-Type': 'application/json',
+    },
+  });
 }
 

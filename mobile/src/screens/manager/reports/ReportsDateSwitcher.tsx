@@ -22,11 +22,13 @@ import { Colors, Typography, Spacing, BorderRadius, Shadows } from '../../../con
 interface ReportsDateSwitcherProps {
   date: string; // 'YYYY-MM-DD'
   onChangeDate: (newDateStr: string) => void;
+  rightAction?: React.ReactNode;
 }
 
 export function ReportsDateSwitcher({
   date,
   onChangeDate,
+  rightAction,
 }: ReportsDateSwitcherProps) {
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
 
@@ -136,19 +138,12 @@ export function ReportsDateSwitcher({
           >
             <Ionicons name="chevron-forward" size={20} color={Colors.slate700} />
           </TouchableOpacity>
-        </View>
 
-        {/* Quick 'Today' reset chip when looking at past/future dates */}
-        {!isToday && (
-          <TouchableOpacity
-            style={styles.todaySnapChip}
-            onPress={handleResetToToday}
-            activeOpacity={0.8}
-          >
-            <Ionicons name="refresh" size={12} color={Colors.emerald700} />
-            <Text style={styles.todaySnapText}>Jump to Today</Text>
-          </TouchableOpacity>
-        )}
+          {/* Optional Right Action (e.g. Collections Filter Button) */}
+          {rightAction ? (
+            <View style={styles.rightActionWrapper}>{rightAction}</View>
+          ) : null}
+        </View>
       </View>
 
       {/* Reusable Calendar Date Picker Modal */}
@@ -251,5 +246,8 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontFamily: Typography.fontFamilySemiBold,
     color: Colors.emerald700,
+  },
+  rightActionWrapper: {
+    marginLeft: 6,
   },
 });

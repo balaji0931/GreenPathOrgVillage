@@ -8,7 +8,7 @@
  * 4. Maximum storage footprint is capped to 1 single row (~5KB) indefinitely.
  */
 import { openDatabaseSync, type SQLiteDatabase } from 'expo-sqlite';
-import type { ManagerPremiumReportData } from '../types/manager';
+import type { ManagerPremiumReportData, ManagerDailyCollectionSummary } from '../types/manager';
 
 const DB_NAME = 'greenpath_manager.db';
 
@@ -17,6 +17,12 @@ let todayMemoryCache: {
   villageId: string;
   date: string;
   data: ManagerPremiumReportData;
+} | null = null;
+
+let todayCollectionsMemoryCache: {
+  villageId: string;
+  date: string;
+  data: ManagerDailyCollectionSummary;
 } | null = null;
 
 // ── Persistent SQLite L2 Cache ─────────────────────────────────
@@ -46,11 +52,21 @@ function getDb(): SQLiteDatabase | null {
           data_json TEXT NOT NULL,
           updated_at INTEGER NOT NULL
         );
+        CREATE TABLE IF NOT EXISTS manager_collections_cache (
+          village_id TEXT PRIMARY KEY,
+          collection_date TEXT NOT NULL,
+          data_json TEXT NOT NULL,
+          updated_at INTEGER NOT NULL
+        );
       `);
       // Immediately purge any stale records from previous days upon open
       const todayStr = getTodayDateStr();
       db.runSync(
         `DELETE FROM manager_reports_cache WHERE report_date != ?`,
+        [todayStr]
+      );
+      db.runSync(
+        `DELETE FROM manager_collections_cache WHERE collection_date != ?`,
         [todayStr]
       );
     } catch (err) {
@@ -62,7 +78,7 @@ function getDb(): SQLiteDatabase | null {
 }
 
 /**
- * Purge any cached reports from previous dates (guarantees table has <= 1 row)
+ * Purge any cached reports from previous dates (guarantees tables have <= 1 row)
  */
 export function purgeOldReportsCache(): void {
   const todayStr = getTodayDateStr();
@@ -71,6 +87,9 @@ export function purgeOldReportsCache(): void {
   if (todayMemoryCache && todayMemoryCache.date !== todayStr) {
     todayMemoryCache = null;
   }
+  if (todayCollectionsMemoryCache && todayCollectionsMemoryCache.date !== todayStr) {
+    todayCollectionsMemoryCache = null;
+  }
 
   // Purge SQLite records not matching today
   try {
@@ -78,6 +97,10 @@ export function purgeOldReportsCache(): void {
     if (database) {
       database.runSync(
         `DELETE FROM manager_reports_cache WHERE report_date != ?`,
+        [todayStr]
+      );
+      database.runSync(
+        `DELETE FROM manager_collections_cache WHERE collection_date != ?`,
         [todayStr]
       );
     }
@@ -192,12 +215,112 @@ export function saveCachedReport(
  */
 export function clearAllReportsCache(): void {
   todayMemoryCache = null;
+  todayCollectionsMemoryCache = null;
   try {
     const database = getDb();
     if (database) {
       database.runSync(`DELETE FROM manager_reports_cache`);
+      database.runSync(`DELETE FROM manager_collections_cache`);
     }
   } catch (err) {
     console.warn('[ManagerCache] Error wiping reports cache:', err);
+  }
+}
+
+/**
+ * Get cached daily collection summary synchronously — ONLY for today.
+ * If date is not today, returns null immediately.
+ */
+export function getCachedCollectionsSummary(
+  villageId: string,
+  date: string
+): ManagerDailyCollectionSummary | null {
+  if (!villageId || !date) return null;
+
+  if (!isTodayDate(date)) {
+    return null;
+  }
+
+  const cleanVillageId = villageId.trim();
+  const todayStr = getTodayDateStr();
+
+  // 1. Check in-memory L1 cache
+  if (
+    todayCollectionsMemoryCache &&
+    todayCollectionsMemoryCache.villageId === cleanVillageId &&
+    todayCollectionsMemoryCache.date === todayStr
+  ) {
+    return todayCollectionsMemoryCache.data;
+  }
+
+  // 2. Check SQLite L2 cache
+  try {
+    const database = getDb();
+    if (!database) return null;
+
+    purgeOldReportsCache();
+
+    const row = database.getFirstSync<{ data_json: string; collection_date: string }>(
+      `SELECT data_json, collection_date FROM manager_collections_cache WHERE village_id = ? AND collection_date = ? LIMIT 1`,
+      [cleanVillageId, todayStr]
+    );
+
+    if (row && row.data_json && row.collection_date === todayStr) {
+      const parsed = JSON.parse(row.data_json) as ManagerDailyCollectionSummary;
+      todayCollectionsMemoryCache = {
+        villageId: cleanVillageId,
+        date: todayStr,
+        data: parsed,
+      };
+      return parsed;
+    }
+  } catch (err) {
+    console.warn('[ManagerCache] Error reading cached collections summary:', err);
+  }
+
+  return null;
+}
+
+/**
+ * Save daily collection summary — ONLY if date is today.
+ */
+export function saveCachedCollectionsSummary(
+  villageId: string,
+  date: string,
+  data: ManagerDailyCollectionSummary
+): void {
+  if (!villageId || !date || !data) return;
+
+  if (!isTodayDate(date)) {
+    return;
+  }
+
+  const cleanVillageId = villageId.trim();
+  const todayStr = getTodayDateStr();
+
+  // 1. Update in-memory L1 cache
+  todayCollectionsMemoryCache = {
+    villageId: cleanVillageId,
+    date: todayStr,
+    data,
+  };
+
+  // 2. Write to SQLite
+  try {
+    const database = getDb();
+    if (!database) return;
+
+    purgeOldReportsCache();
+
+    const json = JSON.stringify(data);
+    const now = Date.now();
+
+    database.runSync(
+      `INSERT OR REPLACE INTO manager_collections_cache (village_id, collection_date, data_json, updated_at)
+       VALUES (?, ?, ?, ?)`,
+      [cleanVillageId, todayStr, json, now]
+    );
+  } catch (err) {
+    console.warn('[ManagerCache] Error saving cached collections summary:', err);
   }
 }

@@ -25,6 +25,7 @@ interface ManagerBottomNavProps {
   onSelectTab: (tab: ManagerTab) => void;
   locationServicesEnabled?: boolean;
   issuesCount?: number;
+  collectionsAttentionCount?: number;
 }
 
 interface TabItemConfig {
@@ -33,6 +34,7 @@ interface TabItemConfig {
   iconActive: keyof typeof Ionicons.glyphMap;
   iconInactive: keyof typeof Ionicons.glyphMap;
   badgeCount?: number;
+  badgeColor?: string;
 }
 
 export function ManagerBottomNav({
@@ -40,6 +42,7 @@ export function ManagerBottomNav({
   onSelectTab,
   locationServicesEnabled = false,
   issuesCount = 0,
+  collectionsAttentionCount = 0,
 }: ManagerBottomNavProps) {
   const insets = useSafeAreaInsets();
 
@@ -55,6 +58,8 @@ export function ManagerBottomNav({
       label: 'Collections',
       iconActive: 'trash',
       iconInactive: 'trash-outline',
+      badgeCount: collectionsAttentionCount,
+      badgeColor: Colors.destructive,
     },
     ...(locationServicesEnabled
       ? [
@@ -72,6 +77,7 @@ export function ManagerBottomNav({
       iconActive: 'alert-circle',
       iconInactive: 'alert-circle-outline',
       badgeCount: issuesCount,
+      badgeColor: Colors.destructive,
     },
     {
       id: 'more',
@@ -114,7 +120,12 @@ export function ManagerBottomNav({
                   color={isActive ? Colors.emerald700 : Colors.slate400}
                 />
                 {tab.badgeCount !== undefined && tab.badgeCount > 0 && (
-                  <View style={styles.badge}>
+                  <View
+                    style={[
+                      styles.badge,
+                      Boolean(tab.badgeColor) && { backgroundColor: tab.badgeColor },
+                    ]}
+                  >
                     <Text style={styles.badgeText}>
                       {tab.badgeCount > 99 ? '99+' : tab.badgeCount}
                     </Text>

@@ -33,7 +33,13 @@ import {
   fetchManagerVillageData,
   fetchManagerAnnouncements,
   fetchManagerOpenIssuesCount,
+  fetchManagerDailySummary,
 } from '../../api/manager.api';
+import {
+  getCachedCollectionsSummary,
+  saveCachedCollectionsSummary,
+  getTodayDateStr,
+} from '../../services/manager-cache';
 import { Colors } from '../../constants/theme';
 import type {
   ManagerTab,
@@ -284,21 +290,38 @@ export function ManagerDashboard() {
   const [villageData, setVillageData] = useState<ManagerVillageData | null>(null);
   const [announcementsCount, setAnnouncementsCount] = useState<number>(0);
   const [issuesCount, setIssuesCount] = useState<number>(0);
+  const [needsAttentionCount, setNeedsAttentionCount] = useState<number>(() => {
+    if (!user?.villageId) return 0;
+    const cached = getCachedCollectionsSummary(user.villageId, getTodayDateStr());
+    return cached?.needsAttention?.length || 0;
+  });
   const [isRefreshing, setIsRefreshing] = useState<boolean>(false);
 
   // Load Village Data & Metadata
   const loadDashboardData = useCallback(async () => {
     if (!user?.villageId) return;
+    const todayStr = getTodayDateStr();
     try {
-      const [vData, announcements, openIssues] = await Promise.all([
+      const [vData, announcements, openIssues, dailySummary] = await Promise.all([
         fetchManagerVillageData(user.villageId),
         fetchManagerAnnouncements(),
         fetchManagerOpenIssuesCount(),
+        fetchManagerDailySummary(todayStr),
       ]);
 
       if (vData) setVillageData(vData);
       setAnnouncementsCount(announcements.length);
       setIssuesCount(openIssues);
+
+      if (dailySummary) {
+        saveCachedCollectionsSummary(user.villageId, todayStr, dailySummary);
+        setNeedsAttentionCount(dailySummary.needsAttention?.length || 0);
+      } else {
+        const cached = getCachedCollectionsSummary(user.villageId, todayStr);
+        if (cached) {
+          setNeedsAttentionCount(cached.needsAttention?.length || 0);
+        }
+      }
     } catch {
       // Fallback data if network unavailable
       if (!villageData) {
@@ -313,8 +336,12 @@ export function ManagerDashboard() {
           paymentsEnabled: false,
         });
       }
+      const cached = getCachedCollectionsSummary(user.villageId, todayStr);
+      if (cached) {
+        setNeedsAttentionCount(cached.needsAttention?.length || 0);
+      }
     }
-  }, [user?.villageId]);
+  }, [user?.villageId, villageData]);
 
   useEffect(() => {
     loadDashboardData();
@@ -382,7 +409,7 @@ export function ManagerDashboard() {
       case 'map-viz':
         return 'Village Map View';
       case 'issues':
-        return 'Citizen Grievances';
+        return 'Citizen Issues';
       case 'more':
         return 'Management Hub';
       default:
@@ -478,13 +505,28 @@ export function ManagerDashboard() {
             </View>
 
             {/* Tab 2: Live Collections */}
-            {activeTab === 'collections' && <ManagerCollectionsScreen />}
+            {activeTab === 'collections' && (
+              <ManagerCollectionsScreen
+                villageData={villageData}
+                isActive={activeTab === 'collections'}
+                isRefreshing={isRefreshing}
+                onRefresh={handleRefresh}
+                onNeedsAttentionCountChange={setNeedsAttentionCount}
+              />
+            )}
 
             {/* Tab 3: Village GIS Map (Conditional) */}
             {activeTab === 'map-viz' && <ManagerMapScreen villageData={villageData} />}
 
-            {/* Tab 4: Citizen Grievances */}
-            {activeTab === 'issues' && <ManagerIssuesScreen />}
+            {/* Tab 4: Citizen Issues */}
+            {activeTab === 'issues' && (
+              <ManagerIssuesScreen
+                isActive={activeTab === 'issues'}
+                isRefreshing={isRefreshing}
+                onRefresh={handleRefresh}
+                onIssuesCountChange={setIssuesCount}
+              />
+            )}
 
             {/* Tab 5: More Tools & Governance Matrix */}
             {activeTab === 'more' && (
@@ -503,6 +545,7 @@ export function ManagerDashboard() {
         onSelectTab={handleSelectTab}
         locationServicesEnabled={Boolean(villageData?.locationServicesEnabled)}
         issuesCount={issuesCount}
+        collectionsAttentionCount={needsAttentionCount}
       />
     </View>
   );

@@ -80,6 +80,7 @@ export interface ManagerVillageData {
   notificationWindowEnd?: string;
   totalHouseholds?: number;
   activeCollectors?: number;
+  wards?: string[];
 }
 
 // ── Announcement & Alerts ──────────────────────────────────────
@@ -191,3 +192,105 @@ export interface ManagerPremiumReportData {
   vehicleStats: ReportVehicleStat[];
   collectionTimeline: ReportHourlyTimeline;
 }
+
+// ── Tab 2: Collections Screen Domain Types ─────────────────────
+
+export interface ManagerCollectionHousehold {
+  id: number;
+  uid: string;
+  headName: string;
+  houseNumber: string;
+  ward: string;
+  phone: string | null;
+  latitude: number | null;
+  longitude: number | null;
+  collected: boolean;
+  segregationRating: number | null;
+  collectorName: string | null;
+  collectionPhotoUrl: string | null;
+  collectionVoiceUrl: string | null;
+  collectionTime: string | null;
+}
+
+export interface ManagerAttentionHousehold {
+  householdId: number;
+  uid: string;
+  headName: string;
+  houseNumber: string;
+  ward: string;
+  phone: string | null;
+  latitude: number | null;
+  longitude: number | null;
+  segregationRating: number;
+  photoUrl: string | null;
+  voiceUrl: string | null;
+  collectorName: string;
+}
+
+export interface ManagerDailyCollectionSummary {
+  date: string;
+  needsAttention: ManagerAttentionHousehold[];
+  households: ManagerCollectionHousehold[];
+}
+
+export interface ManagerHouseholdCollectionItem {
+  id: number;
+  collectionDate: string;
+  segregationRating: number | null;
+  remarks: string | null;
+  photoUrl: string | null;
+  voiceUrl: string | null;
+  status: 'collected' | 'missed' | string;
+  missedReason: string | null;
+  householdId: number;
+  collectorId: number | null;
+  collectorName: string | null;
+}
+
+export interface ManagerHouseholdCollectionsResponse {
+  data: ManagerHouseholdCollectionItem[];
+  stats: {
+    avgRating: number;
+    totalCollections: number;
+  };
+}
+
+// ── GIS & Map Visualization Types ──────────────────────────────
+
+export interface VillageBoundary {
+  id: number;
+  type: 'village' | 'ward' | string;
+  wardName?: string | null;
+  coordinates: [number, number][]; // [lat, lng]
+}
+
+export interface VillageRoad {
+  id: number;
+  name: string;
+  coordinates: [number, number][]; // [lat, lng]
+}
+
+export type MapLayerType =
+  | 'collection-status'
+  | 'ward-coverage'
+  | 'segregation-quality';
+
+// ── Citizen Issues & Issues Types ──────────────────────────
+
+export type IssueStatus = 'open' | 'in_progress' | 'resolved';
+
+export interface ManagerIssue {
+  id: number;
+  title: string;
+  description: string;
+  category: string;
+  reportedBy: string;
+  villageId: string;
+  status: IssueStatus;
+  photoUrl: string | null;
+  managerReply: string | null;
+  managerProofPhotoUrl: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+

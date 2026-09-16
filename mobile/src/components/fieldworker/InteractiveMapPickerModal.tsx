@@ -4,19 +4,22 @@
  * Allows field workers to view their satellite GPS position and interactively
  * tap anywhere on the map or drag to mark the exact household location.
  *
+ * Rendered using high-performance Leaflet inside WebView (Esri World Imagery + OpenStreetMap)
+ * matching the Manager Dashboard map engine, while preserving 100% of Field Worker UI & UX.
+ *
  * Features:
- * - 100% pure React Native + Slippy Map tiles (Zero native map modules required)
- * - Satellite (Esri World Imagery) and Street (OpenStreetMap) toggle on top-right
- * - Tap anywhere on map to instantly place pin on that spot
- * - Smooth drag pan responder
- * - Zoom controls (+ / -) positioned on bottom-left of map
+ * - High-resolution Esri World Imagery (Satellite) & OpenStreetMap (Street)
+ * - Multi-touch smooth pinch-to-zoom & drag panning via Leaflet engine
+ * - Top-right Satellite vs Street layer switcher
+ * - Tap anywhere on map to smoothly glide pin to that position
+ * - Floating zoom controls (+ / -) on bottom-left
  * - Real-time distance shift badge (Live GPS Match vs Shifted Xm)
  * - Two bottom buttons:
- *    1. "Live Location" (Left): re-captures satellite GPS with high accuracy
+ *    1. "Live Location" (Left): re-captures satellite GPS with high accuracy & re-centers
  *    2. "Confirm Location" (Right): locks the selected coordinates
  * - Consistent GreenPath header with safe-area status bar
  */
-import React, { useState, useEffect, useRef, useMemo } from 'react';
+import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import {
   View,
   Text,
@@ -24,16 +27,12 @@ import {
   Modal,
   StyleSheet,
   StatusBar,
-  Image,
-  PanResponder,
-  type GestureResponderEvent,
-  type PanResponderGestureState,
-  LayoutChangeEvent,
   ActivityIndicator,
   Alert,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import { WebView, type WebViewMessageEvent } from 'react-native-webview';
 import * as Location from 'expo-location';
 import * as Haptics from 'expo-haptics';
 import { Colors, Typography, Spacing, BorderRadius, Shadows } from '../../constants/theme';
@@ -43,26 +42,6 @@ interface InteractiveMapPickerModalProps {
   initialLocation: { latitude: number; longitude: number } | null;
   onConfirm: (location: { latitude: number; longitude: number; distanceShiftMeters: number }) => void;
   onClose: () => void;
-}
-
-// Slippy Map Math Helpers
-const TILE_SIZE = 256;
-
-function toWorld(lat: number, lng: number, zoom: number) {
-  const n = Math.pow(2, zoom);
-  const x = ((lng + 180) / 360) * n * TILE_SIZE;
-  const latRad = (lat * Math.PI) / 180;
-  const y = ((1 - Math.log(Math.tan(Math.PI / 4 + latRad / 2)) / Math.PI) / 2) * n * TILE_SIZE;
-  return { x, y };
-}
-
-function toLatLng(worldX: number, worldY: number, zoom: number) {
-  const n = Math.pow(2, zoom);
-  const lng = (worldX / (TILE_SIZE * n)) * 360 - 180;
-  const yNorm = 1 - (2 * worldY) / (TILE_SIZE * n);
-  const latRad = 2 * Math.atan(Math.exp(yNorm * Math.PI)) - Math.PI / 2;
-  const lat = (latRad * 180) / Math.PI;
-  return { lat, lng };
 }
 
 function getDistanceMeters(lat1: number, lng1: number, lat2: number, lng2: number): number {
@@ -86,50 +65,18 @@ export function InteractiveMapPickerModal({
   onClose,
 }: InteractiveMapPickerModalProps) {
   const insets = useSafeAreaInsets();
+  const webViewRef = useRef<WebView>(null);
 
   // Selected & live coordinates
   const [currentLat, setCurrentLat] = useState<number>(initialLocation?.latitude || 12.9716);
   const [currentLng, setCurrentLng] = useState<number>(initialLocation?.longitude || 77.5946);
   const [liveGpsCoords, setLiveGpsCoords] = useState<{ latitude: number; longitude: number } | null>(initialLocation);
   const [isAcquiringGps, setIsAcquiringGps] = useState(false);
-  const [zoom, setZoom] = useState<number>(18); // Default to high-detail roof/street level
+  const [zoom, setZoom] = useState<number>(18);
   const [mapLayer, setMapLayer] = useState<'satellite' | 'street'>('satellite');
 
-  // Viewport size & screen bounds measurement
-  const [viewport, setViewport] = useState({ width: 360, height: 400 });
-  const viewportRef = useRef<View>(null);
-  const viewportBoundsRef = useRef({
-    pageX: 0,
-    pageY: insets.top + 52,
-    width: 360,
-    height: 400,
-  });
-
-  // Keep live mutable refs so PanResponder callbacks never suffer from stale closures
-  const coordsRef = useRef({ lat: currentLat, lng: currentLng });
-  coordsRef.current = { lat: currentLat, lng: currentLng };
-
-  const zoomRef = useRef(zoom);
-  zoomRef.current = zoom;
-
-  const panStartRef = useRef({ lat: currentLat, lng: currentLng });
-
-  const handleViewportLayout = (e: LayoutChangeEvent) => {
-    const { width, height } = e.nativeEvent.layout;
-    if (width > 0 && height > 0) {
-      setViewport({ width, height });
-      viewportBoundsRef.current.width = width;
-      viewportBoundsRef.current.height = height;
-    }
-    viewportRef.current?.measureInWindow((x, y, w, h) => {
-      if (w > 0 && h > 0) {
-        viewportBoundsRef.current = { pageX: x, pageY: y, width: w, height: h };
-      }
-    });
-  };
-
   // Re-capture high-accuracy satellite GPS
-  const handleRecaptureLiveGps = async () => {
+  const handleRecaptureLiveGps = useCallback(async () => {
     setIsAcquiringGps(true);
     try {
       const { status } = await Location.requestForegroundPermissionsAsync();
@@ -145,40 +92,42 @@ export function InteractiveMapPickerModal({
       setCurrentLat(newLat);
       setCurrentLng(newLng);
       setLiveGpsCoords({ latitude: newLat, longitude: newLng });
-      panStartRef.current = { lat: newLat, lng: newLng };
-      coordsRef.current = { lat: newLat, lng: newLng };
+
+      // Pan Leaflet map to the new live GPS location
+      webViewRef.current?.injectJavaScript(`
+        if (window.recenterMap) {
+          window.recenterMap(${newLat}, ${newLng});
+        }
+        true;
+      `);
+
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     } catch (err: any) {
       Alert.alert('GPS Error', err?.message || 'Could not acquire high-accuracy satellite GPS signal.');
     } finally {
       setIsAcquiringGps(false);
     }
-  };
+  }, []);
 
   // Sync state when initialLocation changes or modal opens
   useEffect(() => {
     if (visible) {
-      // Re-measure exact viewport bounds on screen after modal presentation
-      setTimeout(() => {
-        viewportRef.current?.measureInWindow((x, y, w, h) => {
-          if (w > 0 && h > 0) {
-            viewportBoundsRef.current = { pageX: x, pageY: y, width: w, height: h };
-          }
-        });
-      }, 150);
-
       if (initialLocation) {
         setCurrentLat(initialLocation.latitude);
         setCurrentLng(initialLocation.longitude);
         setLiveGpsCoords(initialLocation);
-        panStartRef.current = { lat: initialLocation.latitude, lng: initialLocation.longitude };
-        coordsRef.current = { lat: initialLocation.latitude, lng: initialLocation.longitude };
+
+        webViewRef.current?.injectJavaScript(`
+          if (window.recenterMap) {
+            window.recenterMap(${initialLocation.latitude}, ${initialLocation.longitude});
+          }
+          true;
+        `);
       } else {
-        // Auto-capture live GPS if no initial coordinates were passed
         handleRecaptureLiveGps();
       }
     }
-  }, [visible, initialLocation]);
+  }, [visible, initialLocation, handleRecaptureLiveGps]);
 
   // Distance shift from device's live GPS fix
   const distanceShift = useMemo(() => {
@@ -191,78 +140,57 @@ export function InteractiveMapPickerModal({
     );
   }, [liveGpsCoords, currentLat, currentLng]);
 
-  // PanResponder with drag and accurate tap-to-point support
-  const panResponder = useMemo(
-    () =>
-      PanResponder.create({
-        onStartShouldSetPanResponder: () => true,
-        onMoveShouldSetPanResponder: (_, gestureState) => {
-          return Math.abs(gestureState.dx) > 3 || Math.abs(gestureState.dy) > 3;
-        },
-        onPanResponderGrant: () => {
-          // Always read latest live coordinates from ref to prevent stale closures
-          panStartRef.current = { lat: coordsRef.current.lat, lng: coordsRef.current.lng };
-        },
-        onPanResponderMove: (_, gestureState: PanResponderGestureState) => {
-          const currentZoom = zoomRef.current;
-          const startWorld = toWorld(panStartRef.current.lat, panStartRef.current.lng, currentZoom);
-          const next = toLatLng(
-            startWorld.x - gestureState.dx,
-            startWorld.y - gestureState.dy,
-            currentZoom
-          );
-          setCurrentLat(next.lat);
-          setCurrentLng(next.lng);
-        },
-        onPanResponderRelease: (e: GestureResponderEvent, gestureState: PanResponderGestureState) => {
-          const isDrag = Math.abs(gestureState.dx) >= 6 || Math.abs(gestureState.dy) >= 6;
-          const currentZoom = zoomRef.current;
-
-          if (isDrag) {
-            const startWorld = toWorld(panStartRef.current.lat, panStartRef.current.lng, currentZoom);
-            const final = toLatLng(
-              startWorld.x - gestureState.dx,
-              startWorld.y - gestureState.dy,
-              currentZoom
-            );
-            setCurrentLat(final.lat);
-            setCurrentLng(final.lng);
-            panStartRef.current = { lat: final.lat, lng: final.lng };
-          } else {
-            // Tap to point on map: calculate exact touch offset from screen coordinates
-            const { pageX, pageY } = e.nativeEvent;
-            const bounds = viewportBoundsRef.current;
-
-            if (pageX != null && pageY != null && bounds.width > 0 && bounds.height > 0) {
-              const touchX = pageX - bounds.pageX;
-              const touchY = pageY - bounds.pageY;
-              const deltaX = touchX - bounds.width / 2;
-              const deltaY = touchY - bounds.height / 2;
-
-              const centerWorld = toWorld(panStartRef.current.lat, panStartRef.current.lng, currentZoom);
-              const tappedWorld = { x: centerWorld.x + deltaX, y: centerWorld.y + deltaY };
-              const next = toLatLng(tappedWorld.x, tappedWorld.y, currentZoom);
-
-              setCurrentLat(next.lat);
-              setCurrentLng(next.lng);
-              panStartRef.current = { lat: next.lat, lng: next.lng };
-              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-            }
-          }
-        },
-      }),
-    []
-  );
+  // Handle messages from Leaflet map inside WebView
+  const handleWebViewMessage = (event: WebViewMessageEvent) => {
+    try {
+      const data = JSON.parse(event.nativeEvent.data);
+      if (data.type === 'move') {
+        if (typeof data.lat === 'number' && typeof data.lng === 'number') {
+          setCurrentLat(data.lat);
+          setCurrentLng(data.lng);
+        }
+        if (typeof data.zoom === 'number') {
+          setZoom(Math.round(data.zoom));
+        }
+      } else if (data.type === 'tap') {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      }
+    } catch {
+      // Ignore non-JSON messages
+    }
+  };
 
   // Zoom controls
   const handleZoomIn = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    setZoom((z) => Math.min(19, z + 1));
+    webViewRef.current?.injectJavaScript(`
+      if (window.zoomIn) {
+        window.zoomIn();
+      }
+      true;
+    `);
   };
 
   const handleZoomOut = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    setZoom((z) => Math.max(15, z - 1));
+    webViewRef.current?.injectJavaScript(`
+      if (window.zoomOut) {
+        window.zoomOut();
+      }
+      true;
+    `);
+  };
+
+  // Base tile layer toggle
+  const handleSwitchLayer = (layer: 'satellite' | 'street') => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    setMapLayer(layer);
+    webViewRef.current?.injectJavaScript(`
+      if (window.setBaseTile) {
+        window.setBaseTile('${layer}');
+      }
+      true;
+    `);
   };
 
   // Confirm selection
@@ -275,56 +203,110 @@ export function InteractiveMapPickerModal({
     });
   };
 
-  // Render 5x5 tile grid around current coordinates
-  const renderTileGrid = () => {
-    const centerWorld = toWorld(currentLat, currentLng, zoom);
-    const centerTileX = Math.floor(centerWorld.x / TILE_SIZE);
-    const centerTileY = Math.floor(centerWorld.y / TILE_SIZE);
+  // High-performance Leaflet HTML matching the Manager Dashboard map engine
+  const htmlContent = useMemo(
+    () => `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <style>
+    html, body, #map {
+      height: 100%;
+      width: 100%;
+      margin: 0;
+      padding: 0;
+      background: #0f172a;
+      overflow: hidden;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+    }
+    .leaflet-control-attribution {
+      display: none !important;
+    }
+  </style>
+</head>
+<body>
+  <div id="map"></div>
+  <script>
+    var initialLat = ${currentLat};
+    var initialLng = ${currentLng};
+    var initialZoom = 18;
 
-    const tileOffsetX = centerWorld.x % TILE_SIZE;
-    const tileOffsetY = centerWorld.y % TILE_SIZE;
+    var map = L.map('map', {
+      zoomControl: false,
+      attributionControl: false,
+      maxZoom: 19,
+      minZoom: 12
+    }).setView([initialLat, initialLng], initialZoom);
 
-    const baseOriginX = viewport.width / 2 - tileOffsetX;
-    const baseOriginY = viewport.height / 2 - tileOffsetY;
+    var satelliteTiles = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+      maxZoom: 19
+    });
 
-    const tiles: React.ReactNode[] = [];
-    const maxTile = Math.pow(2, zoom) - 1;
+    var streetTiles = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 19
+    });
 
-    // 5x5 tile grid ensures no gray edges during pans
-    for (let dx = -2; dx <= 2; dx++) {
-      for (let dy = -2; dy <= 2; dy++) {
-        const tx = centerTileX + dx;
-        const ty = centerTileY + dy;
+    satelliteTiles.addTo(map);
+    var currentTileLayer = satelliteTiles;
 
-        if (tx < 0 || tx > maxTile || ty < 0 || ty > maxTile) continue;
-
-        const posX = baseOriginX + dx * TILE_SIZE;
-        const posY = baseOriginY + dy * TILE_SIZE;
-
-        const tileUrl =
-          mapLayer === 'satellite'
-            ? `https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/${zoom}/${ty}/${tx}`
-            : `https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/${zoom}/${ty}/${tx}`;
-
-        tiles.push(
-          <Image
-            key={`${zoom}-${tx}-${ty}-${mapLayer}`}
-            source={{ uri: tileUrl }}
-            style={[
-              styles.tileImage,
-              {
-                left: posX,
-                top: posY,
-              },
-            ]}
-            fadeDuration={0}
-          />
-        );
-      }
+    function postCenter() {
+      try {
+        var center = map.getCenter();
+        window.ReactNativeWebView.postMessage(JSON.stringify({
+          type: 'move',
+          lat: center.lat,
+          lng: center.lng,
+          zoom: map.getZoom()
+        }));
+      } catch (e) {}
     }
 
-    return tiles;
-  };
+    map.on('move', postCenter);
+    map.on('moveend', postCenter);
+
+    map.on('click', function(e) {
+      map.panTo(e.latlng, { animate: true, duration: 0.35 });
+      try {
+        window.ReactNativeWebView.postMessage(JSON.stringify({ type: 'tap' }));
+      } catch (e) {}
+    });
+
+    window.setBaseTile = function(tile) {
+      if (tile === 'street' && currentTileLayer !== streetTiles) {
+        map.removeLayer(satelliteTiles);
+        streetTiles.addTo(map);
+        currentTileLayer = streetTiles;
+      } else if (tile === 'satellite' && currentTileLayer !== satelliteTiles) {
+        map.removeLayer(streetTiles);
+        satelliteTiles.addTo(map);
+        currentTileLayer = satelliteTiles;
+      }
+    };
+
+    window.zoomIn = function() {
+      map.zoomIn();
+    };
+
+    window.zoomOut = function() {
+      map.zoomOut();
+    };
+
+    window.recenterMap = function(lat, lng) {
+      map.setView([lat, lng], 18, { animate: true });
+      postCenter();
+    };
+
+    // Initial post
+    setTimeout(postCenter, 300);
+  </script>
+</body>
+</html>`,
+    [] // Stable initial HTML, dynamic interactions handled via injectJavaScript
+  );
 
   return (
     <Modal visible={visible} animationType="slide" onRequestClose={onClose}>
@@ -351,31 +333,33 @@ export function InteractiveMapPickerModal({
         </View>
 
         {/* Interactive Map Viewport */}
-        <View
-          ref={viewportRef}
-          style={styles.mapViewport}
-          onLayout={handleViewportLayout}
-        >
-          {/* Main Gesture Catchment Area for dragging & tapping the map */}
-          <View style={StyleSheet.absoluteFill} {...panResponder.panHandlers}>
-            {/* Tiles Layer - pointerEvents="none" guarantees images never hijack touch targets */}
-            <View style={StyleSheet.absoluteFill} pointerEvents="none">
-              {renderTileGrid()}
-            </View>
+        <View style={styles.mapViewport}>
+          {/* Leaflet WebView Rendering Engine */}
+          <WebView
+            ref={webViewRef}
+            originWhitelist={['*']}
+            source={{ html: htmlContent }}
+            style={StyleSheet.absoluteFill}
+            onMessage={handleWebViewMessage}
+            javaScriptEnabled={true}
+            domStorageEnabled={true}
+            scrollEnabled={false}
+            bounces={false}
+            overScrollMode="never"
+          />
 
-            {/* Center Target Crosshair & Pin */}
-            <View style={styles.centerPinContainer} pointerEvents="none">
-              {/* Exact target ring on the center pixel */}
-              <View style={styles.centerTargetRing}>
-                <View style={styles.centerTargetDot} />
+          {/* Center Target Crosshair & Pin */}
+          <View style={styles.centerPinContainer} pointerEvents="none">
+            {/* Exact target ring on the center pixel */}
+            <View style={styles.centerTargetRing}>
+              <View style={styles.centerTargetDot} />
+            </View>
+            {/* Elevated Pin with tip pointing directly to the target ring */}
+            <View style={styles.pinWrapper}>
+              <View style={styles.pinBubble}>
+                <Ionicons name="home" size={14} color="#ffffff" />
               </View>
-              {/* Elevated Pin with tip pointing directly to the target ring */}
-              <View style={styles.pinWrapper}>
-                <View style={styles.pinBubble}>
-                  <Ionicons name="home" size={14} color="#ffffff" />
-                </View>
-                <View style={styles.pinTail} />
-              </View>
+              <View style={styles.pinTail} />
             </View>
           </View>
 
@@ -383,7 +367,7 @@ export function InteractiveMapPickerModal({
           <View style={styles.layerSwitcher}>
             <TouchableOpacity
               style={[styles.layerButton, mapLayer === 'satellite' && styles.layerButtonActive]}
-              onPress={() => setMapLayer('satellite')}
+              onPress={() => handleSwitchLayer('satellite')}
               activeOpacity={0.8}
             >
               <Ionicons
@@ -403,7 +387,7 @@ export function InteractiveMapPickerModal({
 
             <TouchableOpacity
               style={[styles.layerButton, mapLayer === 'street' && styles.layerButtonActive]}
-              onPress={() => setMapLayer('street')}
+              onPress={() => handleSwitchLayer('street')}
               activeOpacity={0.8}
             >
               <Ionicons
@@ -434,12 +418,12 @@ export function InteractiveMapPickerModal({
             </TouchableOpacity>
             <View style={styles.zoomDivider} />
             <TouchableOpacity
-              style={[styles.zoomButton, zoom <= 15 && styles.zoomButtonDisabled]}
+              style={[styles.zoomButton, zoom <= 12 && styles.zoomButtonDisabled]}
               onPress={handleZoomOut}
-              disabled={zoom <= 15}
+              disabled={zoom <= 12}
               activeOpacity={0.7}
             >
-              <Ionicons name="remove" size={22} color={zoom <= 15 ? Colors.slate300 : Colors.slate800} />
+              <Ionicons name="remove" size={22} color={zoom <= 12 ? Colors.slate300 : Colors.slate800} />
             </TouchableOpacity>
           </View>
 
@@ -452,7 +436,7 @@ export function InteractiveMapPickerModal({
             pointerEvents="none"
           >
             <Ionicons
-              name={distanceShift > 0 ? "navigate" : "checkmark-circle"}
+              name={distanceShift > 0 ? 'navigate' : 'checkmark-circle'}
               size={13}
               color={distanceShift > 0 ? '#b45309' : Colors.emerald700}
             />
@@ -469,7 +453,7 @@ export function InteractiveMapPickerModal({
           {/* Map Overlay: Right Bottom Map Copyright / Attribution */}
           <View style={styles.mapAttributionOverlay} pointerEvents="none">
             <Text style={styles.mapAttributionText}>
-              {mapLayer === 'satellite' ? '© Esri, Maxar' : '© Esri'}
+              {mapLayer === 'satellite' ? '© Esri, Maxar' : '© OpenStreetMap'}
             </Text>
           </View>
         </View>
@@ -551,11 +535,6 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     position: 'relative',
     backgroundColor: '#0f172a',
-  },
-  tileImage: {
-    position: 'absolute',
-    width: TILE_SIZE,
-    height: TILE_SIZE,
   },
   centerPinContainer: {
     position: 'absolute',

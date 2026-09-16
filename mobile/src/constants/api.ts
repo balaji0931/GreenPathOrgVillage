@@ -57,13 +57,18 @@ export const API_ENDPOINTS = {
   qrMap: (uid: string) => `/api/qr-codes/${encodeURIComponent(uid)}/map`,
   householdTypes: '/api/household-types',
   villageRoads: '/api/village-roads',
+  villageBoundaries: '/api/village-boundaries',
   villageDetails: (villageId: string) => `/api/villages/${encodeURIComponent(villageId)}`,
 
   // Manager endpoints
   managerWards: (villageId: string) => `/api/villages/${encodeURIComponent(villageId)}/wards`,
   managerVehicles: (villageId: string) => `/api/villages/${encodeURIComponent(villageId)}/vehicles`,
   managerDailySummary: (date: string) => `/api/collections/daily-summary?date=${encodeURIComponent(date)}`,
+  householdCollections: (uid: string, limit = 10, offset = 0) =>
+    `/api/waste-collections/household/${encodeURIComponent(uid)}?limit=${limit}&offset=${offset}`,
   managerAnalyticsPremium: (villageId: string, date: string) =>
     `/api/analytics/premium?village=${encodeURIComponent(villageId)}&date=${encodeURIComponent(date)}`,
   managerIssuesPaginated: (page = 1, limit = 20) => `/api/issues/paginated?page=${page}&limit=${limit}`,
+  managerIssues: '/api/issues',
+  managerIssueUpdate: (id: number) => `/api/issues/${id}`,
 } as const;
