@@ -30,6 +30,11 @@ import {
   getCoverageForExport, COVERAGE_HEADERS, coverageToRow,
   getWardDailyForExport, WARD_DAILY_HEADERS, wardDailyToRow,
   getVehicleDailyForExport, VEHICLE_DAILY_HEADERS, vehicleDailyToRow,
+  getDailyExecutiveForExport, DAILY_EXECUTIVE_HEADERS, dailyExecutiveToRow,
+  getAttendanceForExport, ATTENDANCE_HEADERS, attendanceToRow,
+  getHouseholdBehaviourForExport, HOUSEHOLD_BEHAVIOUR_HEADERS, householdBehaviourToRow,
+  getHourlyVelocityForExport, HOURLY_VELOCITY_HEADERS, hourlyVelocityToRow,
+  getVillageStaffForExport, VILLAGE_STAFF_HEADERS, villageStaffToRow,
 } from './export.storage';
 import { logAction } from '../audit/audit.storage';
 
@@ -59,7 +64,10 @@ const bulkExportSchema = z.object({
 });
 
 // Export types that need date ranges
-const RANGED_EXPORTS = ['collections', 'daily-waste', 'compost', 'sales', 'issues', 'coverage', 'ward-daily', 'vehicle-daily'];
+const RANGED_EXPORTS = [
+  'collections', 'daily-waste', 'compost', 'sales', 'issues', 'coverage',
+  'ward-daily', 'vehicle-daily', 'daily-executive', 'attendance', 'hourly-velocity'
+];
 // Export types that need billing month
 const MONTHLY_EXPORTS = ['payments'];
 
@@ -429,6 +437,41 @@ async function generateSingleCsv(
       headers = VEHICLE_DAILY_HEADERS;
       rows = data.map(r => vehicleDailyToRow(r));
       fileName = `GreenPath_VehicleDaily_${vName}_${opts.from}_to_${opts.to}.csv`;
+      break;
+    }
+    case 'daily-executive': {
+      const data = await getDailyExecutiveForExport(opts);
+      headers = DAILY_EXECUTIVE_HEADERS;
+      rows = data.map(r => dailyExecutiveToRow(r));
+      fileName = `GreenPath_DailyExecutive_${vName}_${opts.from}_to_${opts.to}.csv`;
+      break;
+    }
+    case 'attendance': {
+      const data = await getAttendanceForExport(opts);
+      headers = ATTENDANCE_HEADERS;
+      rows = data.map(r => attendanceToRow(r, mask));
+      fileName = `GreenPath_Attendance_${vName}_${opts.from}_to_${opts.to}.csv`;
+      break;
+    }
+    case 'household-behaviour': {
+      const data = await getHouseholdBehaviourForExport(opts);
+      headers = HOUSEHOLD_BEHAVIOUR_HEADERS;
+      rows = data.map(r => householdBehaviourToRow(r, mask));
+      fileName = `GreenPath_HouseholdBehaviour_${vName}_${dateStr}.csv`;
+      break;
+    }
+    case 'hourly-velocity': {
+      const data = await getHourlyVelocityForExport(opts);
+      headers = HOURLY_VELOCITY_HEADERS;
+      rows = data.map(r => hourlyVelocityToRow(r));
+      fileName = `GreenPath_HourlyVelocity_${vName}_${opts.from}_to_${opts.to}.csv`;
+      break;
+    }
+    case 'village-staff': {
+      const data = await getVillageStaffForExport(opts);
+      headers = VILLAGE_STAFF_HEADERS;
+      rows = data.map(r => villageStaffToRow(r, mask));
+      fileName = `GreenPath_VillageStaff_${vName}_${dateStr}.csv`;
       break;
     }
     default:

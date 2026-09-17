@@ -126,6 +126,11 @@ export const EXPORT_SENSITIVITY: Record<string, 'personal' | 'aggregated'> = {
   coverage: 'aggregated',
   'ward-daily': 'aggregated',
   'vehicle-daily': 'aggregated',
+  'daily-executive': 'aggregated',
+  attendance: 'personal',
+  'household-behaviour': 'personal',
+  'hourly-velocity': 'aggregated',
+  'village-staff': 'personal',
 };
 
 /**
@@ -143,6 +148,11 @@ export const EXPORT_LABELS: Record<string, string> = {
   coverage: 'Coverage & Segregation Summary',
   'ward-daily': 'Ward-Level Daily Report',
   'vehicle-daily': 'Vehicle Daily Report',
+  'daily-executive': 'Daily Executive Master Report',
+  attendance: 'Worker Attendance Register',
+  'household-behaviour': 'Household Compliance & Behaviour',
+  'hourly-velocity': 'Hourly Vehicle Velocity',
+  'village-staff': 'Village Staff Roster',
 };
 
 /** All valid export type keys */

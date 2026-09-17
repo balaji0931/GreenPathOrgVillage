@@ -15,7 +15,8 @@ import {
   ArrowLeft, ArrowRight, Download, FileDown, Check, Copy,
   AlertTriangle, Shield, Loader2, Lock, Eye, EyeOff,
   Home, Package, Scale, Leaf, DollarSign, CreditCard,
-  Users, AlertCircle, BarChart3, Building2, Truck, Info
+  Users, AlertCircle, BarChart3, Building2, Truck, Info,
+  FileSpreadsheet, UserCheck, Activity, Clock, UserCog
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
@@ -49,17 +50,22 @@ interface Props {
 
 // ─── Constants ───
 const EXPORT_TYPES: ExportType[] = [
-  { id: "households",     label: "Household Register",               description: "Full household list with addresses, QR status",   icon: Home,        needsDateRange: false, needsBillingMonth: false, sensitivity: "personal" },
-  { id: "collections",    label: "Waste Collections",                description: "Door-to-door collection records",                 icon: Package,     needsDateRange: true,  needsBillingMonth: false, sensitivity: "personal" },
-  { id: "daily-waste",    label: "Daily Waste Quantity",              description: "Wet/dry/mixed waste weights by date",              icon: Scale,       needsDateRange: true,  needsBillingMonth: false, sensitivity: "aggregated" },
-  { id: "compost",        label: "Compost Production",               description: "Composting logs with quality ratings",             icon: Leaf,        needsDateRange: true,  needsBillingMonth: false, sensitivity: "aggregated" },
-  { id: "sales",          label: "Dry Waste Sales",                  description: "Material sales with revenue breakdown",            icon: DollarSign,  needsDateRange: true,  needsBillingMonth: false, sensitivity: "aggregated" },
-  { id: "payments",       label: "Payment Ledger",                   description: "Monthly billing status per household",             icon: CreditCard,  needsDateRange: false, needsBillingMonth: true,  sensitivity: "personal" },
-  { id: "collectors",     label: "Collector Performance",            description: "Collector stats and ratings",                      icon: Users,       needsDateRange: false, needsBillingMonth: false, sensitivity: "personal" },
-  { id: "issues",         label: "Issue Tracker",                    description: "Complaints and resolutions",                      icon: AlertCircle, needsDateRange: true,  needsBillingMonth: false, sensitivity: "personal" },
-  { id: "coverage",       label: "Coverage & Segregation Summary",   description: "Daily coverage & segregation",                    icon: BarChart3,   needsDateRange: true,  needsBillingMonth: false, sensitivity: "aggregated" },
-  { id: "ward-daily",     label: "Ward-Level Daily Report",          description: "Ward-wise collection breakdown",                  icon: Building2,   needsDateRange: true,  needsBillingMonth: false, sensitivity: "aggregated" },
-  { id: "vehicle-daily",  label: "Vehicle Daily Report",             description: "Vehicle/fleet performance by date",               icon: Truck,       needsDateRange: true,  needsBillingMonth: false, sensitivity: "aggregated" },
+  { id: "daily-executive",    label: "Daily Executive Master Report",    description: "All-in-one daily operational summary (Coverage, Waste kg, Fleet, Staff, Revenue)", icon: FileSpreadsheet, needsDateRange: true,  needsBillingMonth: false, sensitivity: "aggregated" },
+  { id: "households",         label: "Household Register",               description: "Full household list with addresses, QR status",   icon: Home,             needsDateRange: false, needsBillingMonth: false, sensitivity: "personal" },
+  { id: "collections",        label: "Waste Collections",                description: "Door-to-door collection records",                 icon: Package,          needsDateRange: true,  needsBillingMonth: false, sensitivity: "personal" },
+  { id: "daily-waste",        label: "Daily Waste Quantity",             description: "Wet/dry/mixed waste weights by date",              icon: Scale,            needsDateRange: true,  needsBillingMonth: false, sensitivity: "aggregated" },
+  { id: "coverage",           label: "Coverage & Segregation Summary",   description: "Daily coverage & segregation",                    icon: BarChart3,        needsDateRange: true,  needsBillingMonth: false, sensitivity: "aggregated" },
+  { id: "ward-daily",         label: "Ward-Level Daily Report",          description: "Ward-wise collection breakdown",                  icon: Building2,        needsDateRange: true,  needsBillingMonth: false, sensitivity: "aggregated" },
+  { id: "vehicle-daily",      label: "Vehicle Daily Report",             description: "Vehicle/fleet performance by date",               icon: Truck,            needsDateRange: true,  needsBillingMonth: false, sensitivity: "aggregated" },
+  { id: "hourly-velocity",    label: "Hourly Vehicle Velocity",          description: "Hour-by-hour fleet collection volume and peak curves", icon: Clock,       needsDateRange: true,  needsBillingMonth: false, sensitivity: "aggregated" },
+  { id: "attendance",         label: "Worker Attendance Register",       description: "Staff and collector daily attendance & shift logs", icon: UserCheck,      needsDateRange: true,  needsBillingMonth: false, sensitivity: "personal" },
+  { id: "household-behaviour", label: "Household Compliance & Behaviour", description: "Household compliance scores, 7-day streak & risk flags", icon: Activity, needsDateRange: false, needsBillingMonth: false, sensitivity: "personal" },
+  { id: "compost",            label: "Compost Production",               description: "Composting logs with quality ratings",             icon: Leaf,             needsDateRange: true,  needsBillingMonth: false, sensitivity: "aggregated" },
+  { id: "sales",              label: "Dry Waste Sales",                  description: "Material sales with revenue breakdown",            icon: DollarSign,       needsDateRange: true,  needsBillingMonth: false, sensitivity: "aggregated" },
+  { id: "payments",           label: "Payment Ledger",                   description: "Monthly billing status per household",             icon: CreditCard,       needsDateRange: false, needsBillingMonth: true,  sensitivity: "personal" },
+  { id: "collectors",         label: "Collector Performance",            description: "Collector stats and ratings",                      icon: Users,            needsDateRange: false, needsBillingMonth: false, sensitivity: "personal" },
+  { id: "village-staff",      label: "Village Staff Roster",             description: "Staff directory (helpers, segregators, drivers, sweepers)", icon: UserCog, needsDateRange: false, needsBillingMonth: false, sensitivity: "personal" },
+  { id: "issues",             label: "Issue Tracker",                    description: "Complaints and resolutions",                      icon: AlertCircle,      needsDateRange: true,  needsBillingMonth: false, sensitivity: "personal" },
 ];
 
 function getDefaultDateRange() {

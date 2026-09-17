@@ -8,6 +8,7 @@ import {
   households, collectors, wasteCollections, issues,
   dailyWasteLog, compostProductionLog, dryWasteSales, dryWasteSaleMaterials,
   householdMonthlyBills, dailyVillageStats, dailyWardStats, dailyVehicleStats,
+  dailyHourlyStats, householdBehaviourStats, workerAttendance, villageStaff,
 } from '@shared/schema';
 import { eq, and, gte, lte, count, sql, desc, asc, inArray } from 'drizzle-orm';
 
@@ -45,6 +46,16 @@ export async function estimateExport(
       return estimateCount(dailyWardStats, and(eq(dailyWardStats.villageId, villageId), gte(dailyWardStats.reportDate, from!), lte(dailyWardStats.reportDate, to!)));
     case 'vehicle-daily':
       return estimateCount(dailyVehicleStats, and(eq(dailyVehicleStats.villageId, villageId), gte(dailyVehicleStats.reportDate, from!), lte(dailyVehicleStats.reportDate, to!)));
+    case 'daily-executive':
+      return estimateCount(dailyVillageStats, and(eq(dailyVillageStats.villageId, villageId), gte(dailyVillageStats.reportDate, from!), lte(dailyVillageStats.reportDate, to!)));
+    case 'attendance':
+      return estimateCount(workerAttendance, and(eq(workerAttendance.villageId, villageId), gte(workerAttendance.attendanceDate, from!), lte(workerAttendance.attendanceDate, to!)));
+    case 'household-behaviour':
+      return estimateCount(householdBehaviourStats, eq(householdBehaviourStats.villageId, villageId));
+    case 'hourly-velocity':
+      return estimateCount(dailyHourlyStats, and(eq(dailyHourlyStats.villageId, villageId), gte(dailyHourlyStats.reportDate, from!), lte(dailyHourlyStats.reportDate, to!)));
+    case 'village-staff':
+      return estimateCount(villageStaff, eq(villageStaff.villageId, villageId));
     default:
       return 0;
   }
@@ -559,9 +570,346 @@ export function vehicleDailyToRow(row: any): any[] {
   ];
 }
 
+// 12. Daily Executive Master Report
+export async function getDailyExecutiveForExport(opts: ExportOptions) {
+  // Primary timeline: dailyVillageStats
+  const villageStats = await db
+    .select()
+    .from(dailyVillageStats)
+    .where(and(
+      eq(dailyVillageStats.villageId, opts.villageId),
+      gte(dailyVillageStats.reportDate, opts.from!),
+      lte(dailyVillageStats.reportDate, opts.to!)
+    ))
+    .orderBy(asc(dailyVillageStats.reportDate));
+
+  const wasteLogs = await db
+    .select()
+    .from(dailyWasteLog)
+    .where(and(
+      eq(dailyWasteLog.villageId, opts.villageId),
+      gte(dailyWasteLog.date, opts.from!),
+      lte(dailyWasteLog.date, opts.to!)
+    ));
+
+  const attendanceLogs = await db
+    .select()
+    .from(workerAttendance)
+    .where(and(
+      eq(workerAttendance.villageId, opts.villageId),
+      gte(workerAttendance.attendanceDate, opts.from!),
+      lte(workerAttendance.attendanceDate, opts.to!)
+    ));
+
+  const vehicleStats = await db
+    .select()
+    .from(dailyVehicleStats)
+    .where(and(
+      eq(dailyVehicleStats.villageId, opts.villageId),
+      gte(dailyVehicleStats.reportDate, opts.from!),
+      lte(dailyVehicleStats.reportDate, opts.to!)
+    ));
+
+  const compostLogs = await db
+    .select()
+    .from(compostProductionLog)
+    .where(and(
+      eq(compostProductionLog.villageId, opts.villageId),
+      gte(compostProductionLog.date, opts.from!),
+      lte(compostProductionLog.date, opts.to!)
+    ));
+
+  const salesLogs = await db
+    .select({
+      saleDate: dryWasteSales.saleDate,
+      totalAmount: dryWasteSales.totalAmount,
+      quantityKg: dryWasteSaleMaterials.quantityKg,
+    })
+    .from(dryWasteSales)
+    .leftJoin(dryWasteSaleMaterials, eq(dryWasteSaleMaterials.saleId, dryWasteSales.id))
+    .where(and(
+      eq(dryWasteSales.villageId, opts.villageId),
+      gte(dryWasteSales.saleDate, opts.from!),
+      lte(dryWasteSales.saleDate, opts.to!)
+    ));
+
+  // Indexing maps
+  const wasteByDate = new Map<string, any>();
+  for (const w of wasteLogs) {
+    wasteByDate.set(w.date, w);
+  }
+
+  const attByDate = new Map<string, { present: number; absent: number }>();
+  for (const a of attendanceLogs) {
+    const d = a.attendanceDate;
+    if (!attByDate.has(d)) attByDate.set(d, { present: 0, absent: 0 });
+    const entry = attByDate.get(d)!;
+    if (a.status === 'present' || a.status === 'half_day') entry.present++;
+    else entry.absent++;
+  }
+
+  const vehiclesByDate = new Map<string, { activeVehicles: Set<string>; totalCollections: number }>();
+  for (const v of vehicleStats) {
+    const d = v.reportDate;
+    if (!vehiclesByDate.has(d)) vehiclesByDate.set(d, { activeVehicles: new Set(), totalCollections: 0 });
+    const entry = vehiclesByDate.get(d)!;
+    entry.activeVehicles.add(v.registrationNumber);
+    entry.totalCollections += (v.collectedCount || 0);
+  }
+
+  const compostByDate = new Map<string, number>();
+  for (const c of compostLogs) {
+    const d = c.date;
+    compostByDate.set(d, (compostByDate.get(d) || 0) + Number(c.quantityKg || 0));
+  }
+
+  const salesByDate = new Map<string, { revenue: number; kg: number }>();
+  for (const s of salesLogs) {
+    const d = s.saleDate;
+    if (!salesByDate.has(d)) salesByDate.set(d, { revenue: 0, kg: 0 });
+    const entry = salesByDate.get(d)!;
+    entry.revenue += Number(s.totalAmount || 0);
+    entry.kg += Number(s.quantityKg || 0);
+  }
+
+  const dateSet = new Set<string>();
+  for (const vs of villageStats) dateSet.add(vs.reportDate);
+  for (const w of wasteLogs) dateSet.add(w.date);
+  for (const a of attendanceLogs) dateSet.add(a.attendanceDate);
+
+  const sortedDates = Array.from(dateSet).sort();
+
+  return sortedDates.map(date => {
+    const vs = villageStats.find(s => s.reportDate === date);
+    const waste = wasteByDate.get(date);
+    const att = attByDate.get(date) || { present: 0, absent: 0 };
+    const veh = vehiclesByDate.get(date) || { activeVehicles: new Set(), totalCollections: 0 };
+    const compostKg = compostByDate.get(date) || 0;
+    const sales = salesByDate.get(date) || { revenue: 0, kg: 0 };
+
+    const totalHouseholds = vs?.totalHouseholds || 0;
+    const collectedCount = vs?.collectedCount || 0;
+    const missedCount = Math.max(0, totalHouseholds - collectedCount);
+    const coveragePct = totalHouseholds > 0 ? ((collectedCount / totalHouseholds) * 100).toFixed(1) : '0.0';
+    const avgSegregation = collectedCount > 0 && vs?.segregationSum
+      ? (Number(vs.segregationSum) / collectedCount).toFixed(1)
+      : '0.0';
+
+    const wetKg = Number(waste?.wetWasteKg || 0);
+    const dryKg = Number(waste?.dryWasteKg || 0);
+    const sanitaryKg = Number(waste?.sanitaryWasteKg || 0);
+    const specialKg = Number(waste?.specialCareWasteKg || 0);
+    const mixedKg = Number(waste?.mixedWasteKg || 0);
+    const totalKg = wetKg + dryKg + sanitaryKg + specialKg + mixedKg;
+
+    const totalWorkers = att.present + att.absent;
+    const attendancePct = totalWorkers > 0 ? ((att.present / totalWorkers) * 100).toFixed(1) : '0.0';
+
+    return {
+      date,
+      totalHouseholds,
+      collectedCount,
+      missedCount,
+      coveragePct,
+      avgSegregation,
+      wetKg: wetKg.toFixed(2),
+      dryKg: dryKg.toFixed(2),
+      sanitaryKg: sanitaryKg.toFixed(2),
+      specialKg: specialKg.toFixed(2),
+      mixedKg: mixedKg.toFixed(2),
+      totalKg: totalKg.toFixed(2),
+      activeVehicles: veh.activeVehicles.size,
+      fleetCollections: veh.totalCollections,
+      workersPresent: att.present,
+      workersAbsent: att.absent,
+      attendancePct,
+      compostKg: compostKg.toFixed(2),
+      dryWasteSoldKg: sales.kg.toFixed(2),
+      salesRevenue: sales.revenue.toFixed(2),
+    };
+  });
+}
+
+export const DAILY_EXECUTIVE_HEADERS = [
+  'Date', 'Total Households', 'Households Collected', 'Households Missed', 'Coverage %',
+  'Avg Segregation (1-5)', 'Wet Waste (kg)', 'Dry Waste (kg)', 'Sanitary (kg)',
+  'Special Care (kg)', 'Mixed (kg)', 'Total Waste (kg)', 'Active Vehicles',
+  'Fleet Collections', 'Workers Present', 'Workers Absent', 'Worker Attendance %',
+  'Compost Produced (kg)', 'Dry Waste Sold (kg)', 'Sales Revenue (INR)'
+];
+
+export function dailyExecutiveToRow(r: any): any[] {
+  return [
+    r.date, r.totalHouseholds, r.collectedCount, r.missedCount, r.coveragePct + '%',
+    r.avgSegregation, r.wetKg, r.dryKg, r.sanitaryKg, r.specialKg, r.mixedKg, r.totalKg,
+    r.activeVehicles, r.fleetCollections, r.workersPresent, r.workersAbsent, r.attendancePct + '%',
+    r.compostKg, r.dryWasteSoldKg, r.salesRevenue
+  ];
+}
+
+// 13. Worker Attendance Register
+export async function getAttendanceForExport(opts: ExportOptions) {
+  return db
+    .select()
+    .from(workerAttendance)
+    .where(and(
+      eq(workerAttendance.villageId, opts.villageId),
+      gte(workerAttendance.attendanceDate, opts.from!),
+      lte(workerAttendance.attendanceDate, opts.to!)
+    ))
+    .orderBy(desc(workerAttendance.attendanceDate), asc(workerAttendance.workerName));
+}
+
+export const ATTENDANCE_HEADERS = [
+  'Date', 'Worker UID', 'Worker Name', 'Status', 'Marked By (User ID)', 'Remarks', 'Recorded At'
+];
+
+export function attendanceToRow(r: any, mask: boolean = false): any[] {
+  const workerName = mask ? maskName(r.workerName) : r.workerName;
+  const statusLabel = r.status === 'present' ? 'Present' : r.status === 'half_day' ? 'Half Day' : 'Absent';
+  return [
+    r.attendanceDate,
+    r.workerId,
+    workerName,
+    statusLabel,
+    r.markedByUserId || '',
+    r.remarks || '',
+    r.createdAt ? formatDate(r.createdAt) : '',
+  ];
+}
+
+// 14. Household Compliance & Behaviour
+export async function getHouseholdBehaviourForExport(opts: ExportOptions) {
+  return db
+    .select({
+      uid: households.uid,
+      headName: households.headName,
+      phone: households.phone,
+      ward: householdBehaviourStats.ward,
+      totalCollections: householdBehaviourStats.totalCollections,
+      collectionsLast7: householdBehaviourStats.collectionsLast7,
+      collectionsLast30: householdBehaviourStats.collectionsLast30,
+      avgRatingLast10: householdBehaviourStats.avgRatingLast10,
+      mixedCountLast7: householdBehaviourStats.mixedCountLast7,
+      daysSinceLastCollection: householdBehaviourStats.daysSinceLastCollection,
+      lastCollectionType: householdBehaviourStats.lastCollectionType,
+      updatedAt: householdBehaviourStats.updatedAt,
+    })
+    .from(householdBehaviourStats)
+    .innerJoin(households, eq(householdBehaviourStats.householdId, households.id))
+    .where(eq(householdBehaviourStats.villageId, opts.villageId))
+    .orderBy(asc(householdBehaviourStats.ward), asc(households.uid));
+}
+
+export const HOUSEHOLD_BEHAVIOUR_HEADERS = [
+  'Household UID', 'Head of Household', 'Contact Number', 'Ward',
+  'Total Collections', 'Collections (Last 7 Days)', 'Collections (Last 30 Days)',
+  'Avg Rating (Last 10)', 'Mixed Waste Drops (Last 7 Days)', 'Days Since Last Collection',
+  'Last Collection Type', 'Compliance Status', 'Last Updated'
+];
+
+export function householdBehaviourToRow(r: any, mask: boolean = false): any[] {
+  const headName = mask ? maskName(r.headName) : r.headName;
+  const phone = mask ? maskPhone(r.phone) : (r.phone || '');
+
+  let status = 'Compliant';
+  const daysSince = r.daysSinceLastCollection != null ? Number(r.daysSinceLastCollection) : 999;
+  const c7 = Number(r.collectionsLast7 || 0);
+  const mixed7 = Number(r.mixedCountLast7 || 0);
+  const avgR = r.avgRatingLast10 ? Number(r.avgRatingLast10) : 5;
+
+  if (daysSince >= 7 || c7 === 0) {
+    status = 'Critical Inactive / Defaulter';
+  } else if (mixed7 >= 3 || avgR < 2.5) {
+    status = 'High Risk (Mixed Waste)';
+  } else if (c7 < 3) {
+    status = 'Irregular';
+  }
+
+  return [
+    r.uid,
+    headName,
+    phone,
+    r.ward || '',
+    r.totalCollections || 0,
+    c7,
+    r.collectionsLast30 || 0,
+    r.avgRatingLast10 != null ? Number(r.avgRatingLast10).toFixed(1) : 'N/A',
+    mixed7,
+    daysSince !== 999 ? daysSince : 'Never',
+    r.lastCollectionType || 'None',
+    status,
+    r.updatedAt ? formatDate(r.updatedAt) : '',
+  ];
+}
+
+// 15. Hourly Vehicle Velocity
+export async function getHourlyVelocityForExport(opts: ExportOptions) {
+  return db
+    .select()
+    .from(dailyHourlyStats)
+    .where(and(
+      eq(dailyHourlyStats.villageId, opts.villageId),
+      gte(dailyHourlyStats.reportDate, opts.from!),
+      lte(dailyHourlyStats.reportDate, opts.to!)
+    ))
+    .orderBy(asc(dailyHourlyStats.reportDate), asc(dailyHourlyStats.hour), asc(dailyHourlyStats.vehicleName));
+}
+
+export const HOURLY_VELOCITY_HEADERS = [
+  'Date', 'Hour Window', 'Vehicle Name', 'Collections in Hour'
+];
+
+export function hourlyVelocityToRow(r: any): any[] {
+  const startHour = String(r.hour).padStart(2, '0');
+  const endHour = String((r.hour + 1) % 24).padStart(2, '0');
+  const windowStr = `${startHour}:00 - ${endHour}:00`;
+  return [
+    r.reportDate,
+    windowStr,
+    r.vehicleName || 'Vehicle',
+    r.collectionCount || 0,
+  ];
+}
+
+// 16. Village Staff Roster
+export async function getVillageStaffForExport(opts: ExportOptions) {
+  return db
+    .select()
+    .from(villageStaff)
+    .where(eq(villageStaff.villageId, opts.villageId))
+    .orderBy(asc(villageStaff.staffType), asc(villageStaff.name));
+}
+
+export const VILLAGE_STAFF_HEADERS = [
+  'Staff UID', 'Full Name', 'Phone', 'Role Type', 'Assigned Work', 'Active Status', 'Registered Date'
+];
+
+export function villageStaffToRow(r: any, mask: boolean = false): any[] {
+  const name = mask ? maskName(r.name) : r.name;
+  const phone = mask ? maskPhone(r.phone) : (r.phone || '');
+  const role = r.staffType ? r.staffType.charAt(0).toUpperCase() + r.staffType.slice(1) : '';
+  const work = r.workType ? r.workType.replace(/_/g, ' ').replace(/\b\w/g, (c: string) => c.toUpperCase()) : 'General';
+  const status = r.isActive ? 'Active' : 'Inactive';
+  return [
+    r.uid,
+    name,
+    phone,
+    role,
+    work,
+    status,
+    r.createdAt ? formatDate(r.createdAt) : '',
+  ];
+}
+
 // ═══════════════════════════════════════════════════════════════
 // Helpers
 // ═══════════════════════════════════════════════════════════════
+
+function maskName(name: string | null | undefined): string {
+  if (!name) return '';
+  return '***';
+}
 
 function formatDate(d: Date | string): string {
   const date = typeof d === 'string' ? new Date(d) : d;
