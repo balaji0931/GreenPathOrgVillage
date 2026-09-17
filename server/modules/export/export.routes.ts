@@ -67,6 +67,16 @@ const MONTHLY_EXPORTS = ['payments'];
 // Route Registration
 // ═══════════════════════════════════════════════════════════════
 
+function getAuthUser(req: Request) {
+  const reqAny = req as any;
+  return {
+    userId: (reqAny.user?.userId || req.session?.userId) as string,
+    role: (reqAny.user?.role || req.session?.role) as string,
+    villageId: (reqAny.user?.villageId || req.session?.villageId) as string | undefined,
+    name: (reqAny.user?.userId || req.session?.userId) as string,
+  };
+}
+
 export function registerExportRoutes(
   app: Express,
   requireAuth: any,
@@ -79,11 +89,7 @@ export function registerExportRoutes(
   app.post('/api/export/estimate', ...exportAuth, async (req: Request, res: Response) => {
     try {
       const body = estimateSchema.parse(req.body);
-      const user = {
-        userId: req.session.userId!,
-        role: req.session.role!,
-        villageId: req.session.villageId,
-      };
+      const user = getAuthUser(req);
 
       // Validate village access
       const accessibleVillages = await getAccessibleVillages(user, body.villageIds);
@@ -133,22 +139,18 @@ export function registerExportRoutes(
         suggestedPassword: generateSuggestedPassword(),
       });
     } catch (error: any) {
+      console.error('Export estimate error:', error);
       if (error.name === 'ZodError') {
         return res.status(400).json({ message: 'Invalid request', errors: error.errors });
       }
-      res.status(500).json({ message: 'Failed to estimate export' });
+      res.status(500).json({ message: error.message || 'Failed to estimate export' });
     }
   });
 
   // ─── Single CSV export ───
   app.get('/api/export/single', ...exportAuth, rateLimitExport, async (req: Request, res: Response) => {
     try {
-      const user = {
-        userId: req.session.userId!,
-        role: req.session.role!,
-        villageId: req.session.villageId,
-        name: req.session.userId,
-      };
+      const user = getAuthUser(req);
       const villageId = req.query.villageId as string;
       const type = req.query.type as string;
       const from = req.query.from as string | undefined;
@@ -185,7 +187,8 @@ export function registerExportRoutes(
       setCsvHeaders(res, fileName);
       res.send(csvContent);
     } catch (error: any) {
-      res.status(500).json({ message: 'Export failed' });
+      console.error('Export single error:', error);
+      res.status(500).json({ message: error.message || 'Export failed' });
     }
   });
 
@@ -193,12 +196,7 @@ export function registerExportRoutes(
   app.post('/api/export/bulk', ...exportAuth, rateLimitExport, async (req: Request, res: Response) => {
     try {
       const body = bulkExportSchema.parse(req.body);
-      const user = {
-        userId: req.session.userId!,
-        role: req.session.role!,
-        villageId: req.session.villageId,
-        name: req.session.userId,
-      };
+      const user = getAuthUser(req);
 
       // Validate village access
       const accessibleVillages = await getAccessibleVillages(user, body.villageIds);
@@ -301,11 +299,7 @@ export function registerExportRoutes(
   // ─── Password verification (for sensitive exports) ───
   app.post('/api/export/verify-password', ...exportAuth, async (req: Request, res: Response) => {
     try {
-      const user = {
-        userId: req.session.userId!,
-        role: req.session.role!,
-        villageId: req.session.villageId,
-      };
+      const user = getAuthUser(req);
       const { password } = req.body;
 
       if (!password) {

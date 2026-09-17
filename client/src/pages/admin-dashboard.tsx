@@ -954,15 +954,25 @@ export default function AdminDashboard() {
                       <Input
                         type="number"
                         min="0"
-                        className="w-20 h-7 text-xs"
+                        className="w-24 h-7 text-xs"
                         defaultValue={village.maxHouseholds ?? 0}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            (e.target as HTMLInputElement).blur();
+                          }
+                        }}
                         onBlur={(e) => {
                           const val = parseInt(e.target.value) || 0;
                           if (val !== (village.maxHouseholds ?? 0)) {
-                            apiRequest('PUT', `/api/villages/${village.villageId}`, { maxHouseholds: val }).then(() => {
-                              queryClient.invalidateQueries({ queryKey: ['/api/villages'] });
-                              toast({ title: 'Updated', description: `Household limit set to ${val}` });
-                            });
+                            apiRequest('PUT', `/api/villages/${village.villageId}`, { maxHouseholds: val })
+                              .then(() => {
+                                queryClient.invalidateQueries({ queryKey: ['/api/villages'] });
+                                queryClient.invalidateQueries({ queryKey: ['/api/qr-codes/stats'] });
+                                toast({ title: 'Updated', description: `${village.name} household limit set to ${val}` });
+                              })
+                              .catch((err: any) => {
+                                toast({ title: 'Failed to update limit', description: err.message, variant: 'destructive' });
+                              });
                           }
                         }}
                       />

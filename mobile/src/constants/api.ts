@@ -71,4 +71,10 @@ export const API_ENDPOINTS = {
   managerIssuesPaginated: (page = 1, limit = 20) => `/api/issues/paginated?page=${page}&limit=${limit}`,
   managerIssues: '/api/issues',
   managerIssueUpdate: (id: number) => `/api/issues/${id}`,
+
+  // Manager QR endpoints
+  managerQrStats: '/api/qr-codes/stats',
+  managerQrCodes: '/api/qr-codes',
+  managerQrBatch: '/api/qr-codes/batch',
 } as const;
+

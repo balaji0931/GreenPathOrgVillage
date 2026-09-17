@@ -116,11 +116,16 @@ export async function apiRequest<T = unknown>(
 
   const url = `${API_BASE_URL}${endpoint}`;
 
+  const serializedBody =
+    body !== undefined && body !== null
+      ? (typeof body === 'string' ? body : JSON.stringify(body))
+      : undefined;
+
   // ── Step 2: Make the request ──
   let response = await safeFetch(url, {
     method,
     headers: requestHeaders,
-    body: body ? JSON.stringify(body) : undefined,
+    body: serializedBody,
   });
 
   // ── Step 3: Handle 401 — refresh and retry ONCE ──
@@ -137,7 +142,7 @@ export async function apiRequest<T = unknown>(
         response = await safeFetch(url, {
           method,
           headers: requestHeaders,
-          body: body ? JSON.stringify(body) : undefined,
+          body: serializedBody,
         });
       }
     } catch (err) {

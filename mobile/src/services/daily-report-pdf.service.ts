@@ -10,6 +10,7 @@
 import * as Print from 'expo-print';
 import * as FileSystem from 'expo-file-system/legacy';
 import { LOGO_BASE64 } from '../constants/logo-base64';
+import { saveFileToPublicDeviceStorage } from './public-file-storage.service';
 
 export interface PDFReportData {
   villageName: string;
@@ -638,6 +639,13 @@ export async function generateDailyReportPDFMobile(
   await FileSystem.copyAsync({
     from: uri,
     to: destinationPath,
+  });
+
+  // Automatically save directly to public Downloads folder (Android SAF) / Files app (iOS)
+  await saveFileToPublicDeviceStorage({
+    localUri: destinationPath,
+    fileName,
+    mimeType: 'application/pdf',
   });
 
   return {

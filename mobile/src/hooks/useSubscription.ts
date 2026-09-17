@@ -108,13 +108,16 @@ export function useSubscription(): UseSubscriptionResult {
     }
   }, [villageId]);
 
+  const subDataRef = useRef(subData);
+  subDataRef.current = subData;
+
   const loadSubscription = useCallback(async (silent = true) => {
     if (!villageId || user?.role === 'admin') {
       setIsLoading(false);
       return;
     }
 
-    if (!silent && !subData) {
+    if (!silent && !subDataRef.current) {
       setIsLoading(true);
     }
 
@@ -147,7 +150,7 @@ export function useSubscription(): UseSubscriptionResult {
       }
       lastFetchRef.current = Date.now();
     }
-  }, [villageId, user?.role, subData]);
+  }, [villageId, user?.role]);
 
   // Initial load on mount
   useEffect(() => {

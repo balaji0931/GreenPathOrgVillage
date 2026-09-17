@@ -22,7 +22,9 @@
       "infoPlist": {
         "NSCameraUsageDescription": "Allow GreenPath to access your camera to take waste collection photos.",
         "NSMicrophoneUsageDescription": "Allow GreenPath to access your microphone to record voice notes and collector remarks.",
-        "NSLocationWhenInUseUsageDescription": "Allow GreenPath to access your location to verify collection routes."
+        "NSLocationWhenInUseUsageDescription": "Allow GreenPath to access your location to verify collection routes.",
+        "UIFileSharingEnabled": true,
+        "LSSupportsOpeningDocumentsInPlace": true
       }
     },
     "android": {

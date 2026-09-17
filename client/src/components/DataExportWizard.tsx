@@ -3,7 +3,7 @@
  * Steps: Villages → Date Range → Reports → Preview → Options → Terms & Download
  * Shared by Manager, Moderator, and Admin dashboards.
  */
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { fetchWithCsrf, getFetchHeaders } from "@/lib/queryClient";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -89,6 +89,12 @@ export function DataExportWizard({ role, userVillageId, userId, onBack }: Props)
   const [selectedVillages, setSelectedVillages] = useState<string[]>(
     role === "manager" && userVillageId ? [userVillageId] : []
   );
+
+  useEffect(() => {
+    if (role === "manager" && userVillageId && selectedVillages.length === 0) {
+      setSelectedVillages([userVillageId]);
+    }
+  }, [role, userVillageId, selectedVillages.length]);
   const [dateRange, setDateRange] = useState(getDefaultDateRange);
   const [billingMonth, setBillingMonth] = useState(getDefaultBillingMonth);
   const [selectedExports, setSelectedExports] = useState<string[]>([]);
@@ -517,7 +523,7 @@ export function DataExportWizard({ role, userVillageId, userId, onBack }: Props)
                   <div>
                     <p className="font-medium">Failed to load estimates</p>
                     <p className="text-xs text-red-500 mt-1">
-                      {"Something went wrong. Please check your connection and try again."}
+                      {(estimateMutation.error as any)?.message || "Something went wrong. Please check your connection and try again."}
                     </p>
                   </div>
                 </div>

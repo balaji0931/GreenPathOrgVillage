@@ -294,3 +294,39 @@ export interface ManagerIssue {
   updatedAt: string;
 }
 
+// ── QR Code Domain Types ─────────────────────────────────────
+
+export interface ManagerQrStats {
+  total: number;
+  mapped: number;
+  unmapped: number;
+  max: number;
+  remaining: number;
+}
+
+export interface ManagerQrCodeRecord {
+  id: number;
+  uid: string;
+  villageId: string;
+  batchId: string;
+  status: 'mapped' | 'notMapped';
+  householdId?: number | null;
+  createdAt?: string;
+}
+
+export interface ManagerQrBatchResponse {
+  batchId: string;
+  count: number;
+  qrCodes: ManagerQrCodeRecord[];
+}
+
+export interface ManagerQrBatchGroup {
+  batchId: string;
+  total: number;
+  mapped: number;
+  unmapped: number;
+  qrCodes: ManagerQrCodeRecord[];
+  createdAt?: string;
+}
+
+

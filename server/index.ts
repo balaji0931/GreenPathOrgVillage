@@ -22,11 +22,11 @@ const { app, logger } = createApp();
     // Create error ID for tracking
     const errorId = Math.random().toString(36).substring(2, 15);
 
-    // Log error details securely (remove sensitive information in production)
+    // Log error details securely (remove sensitive internal details in production for 5xx)
     const logData = {
       errorId,
       error: {
-        message: process.env.NODE_ENV === 'production' ? 'Internal Server Error' : err.message,
+        message: process.env.NODE_ENV === 'production' && status >= 500 ? 'Internal Server Error' : (err.message || 'Unknown error'),
         status: status,
         ...(process.env.NODE_ENV !== 'production' && { stack: err.stack })
       },
@@ -49,10 +49,11 @@ const { app, logger } = createApp();
     // Secure error response - don't expose internal details in production
     const errorResponse = process.env.NODE_ENV === "production"
       ? {
-        error: status === 404 ? "Not Found" :
-          status === 403 ? "Forbidden" :
-            status === 401 ? "Unauthorized" :
-              "Internal Server Error",
+        error: status === 400 ? "Bad Request" :
+          status === 404 ? "Not Found" :
+            status === 403 ? "Forbidden" :
+              status === 401 ? "Unauthorized" :
+                "Internal Server Error",
         status,
         errorId // For support purposes only
       }

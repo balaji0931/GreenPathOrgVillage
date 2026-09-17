@@ -9,7 +9,7 @@ export async function requireWriteAccess(req: Request, res: Response, next: Next
     return next();
   }
 
-  // Bypass paths that should always be allowed
+  // Bypass paths that should always be allowed (authentication and read-only data exports)
   const bypassPaths = [
     "/auth/login",
     "/auth/logout",
@@ -17,7 +17,7 @@ export async function requireWriteAccess(req: Request, res: Response, next: Next
     "/auth/change-password"
   ];
 
-  if (bypassPaths.some(path => req.path === path)) {
+  if (bypassPaths.some(path => req.path === path) || req.path.startsWith("/export/")) {
     return next();
   }
 

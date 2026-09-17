@@ -29,6 +29,7 @@ import { ManagerMapScreen } from './ManagerMapScreen';
 import { ManagerIssuesScreen } from './ManagerIssuesScreen';
 import { ManagerMoreScreen } from './ManagerMoreScreen';
 import { ManagerProfileScreen } from './ManagerProfileScreen';
+import { GenerateQrScreen, DownloadQrScreen } from './qr';
 import {
   fetchManagerVillageData,
   fetchManagerAnnouncements,
@@ -324,9 +325,10 @@ export function ManagerDashboard() {
       }
     } catch {
       // Fallback data if network unavailable
-      if (!villageData) {
-        setVillageData({
-          id: user.villageId,
+      setVillageData((prev) => {
+        if (prev) return prev;
+        return {
+          id: String(user.villageId || ''),
           name: 'GreenPath Village',
           locationServicesEnabled: true,
           weightRequired: false,
@@ -334,14 +336,14 @@ export function ManagerDashboard() {
           collectorWasteLogEnabled: false,
           attendanceEnabled: true,
           paymentsEnabled: false,
-        });
-      }
+        };
+      });
       const cached = getCachedCollectionsSummary(user.villageId, todayStr);
       if (cached) {
         setNeedsAttentionCount(cached.needsAttention?.length || 0);
       }
     }
-  }, [user?.villageId, villageData]);
+  }, [user?.villageId]);
 
   useEffect(() => {
     loadDashboardData();
@@ -475,6 +477,18 @@ export function ManagerDashboard() {
             }}
             onBack={() => setIsProfileOpen(false)}
             onLogout={logout}
+          />
+        ) : activeTab === 'more' && activeMoreScreen === 'generate-qr' ? (
+          <GenerateQrScreen
+            villageData={villageData}
+            onBack={handleSubScreenBack}
+            onNavigateToDownload={() => setActiveMoreScreen('download-qr')}
+          />
+        ) : activeTab === 'more' && activeMoreScreen === 'download-qr' ? (
+          <DownloadQrScreen
+            villageData={villageData}
+            onBack={handleSubScreenBack}
+            onNavigateToGenerate={() => setActiveMoreScreen('generate-qr')}
           />
         ) : activeTab === 'more' && activeMoreScreen !== null ? (
           <SubScreenContainer

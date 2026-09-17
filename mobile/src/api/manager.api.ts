@@ -18,6 +18,9 @@ import type {
   VillageBoundary,
   VillageRoad,
   ManagerIssue,
+  ManagerQrStats,
+  ManagerQrCodeRecord,
+  ManagerQrBatchResponse,
 } from '../types/manager';
 
 /**
@@ -226,10 +229,37 @@ export async function updateManagerIssue(
 ): Promise<ManagerIssue> {
   return await apiRequest<ManagerIssue>(API_ENDPOINTS.managerIssueUpdate(id), {
     method: 'PATCH',
-    body: JSON.stringify(payload),
-    headers: {
-      'Content-Type': 'application/json',
-    },
+    body: payload,
+  });
+}
+
+/**
+ * Fetch QR quota stats for the village (total, mapped, unmapped, max, remaining).
+ * Calls GET /api/qr-codes/stats
+ */
+export async function fetchManagerQrStats(): Promise<ManagerQrStats> {
+  return await apiRequest<ManagerQrStats>(API_ENDPOINTS.managerQrStats);
+}
+
+/**
+ * Fetch all QR code records for the village.
+ * Calls GET /api/qr-codes
+ */
+export async function fetchManagerQrCodes(): Promise<ManagerQrCodeRecord[]> {
+  const res = await apiRequest<ManagerQrCodeRecord[]>(API_ENDPOINTS.managerQrCodes);
+  return Array.isArray(res) ? res : [];
+}
+
+/**
+ * Create a new batch of pre-mapped QR codes in database.
+ * Calls POST /api/qr-codes/batch with { quantity }
+ */
+export async function createManagerQrBatch(
+  quantity: number
+): Promise<ManagerQrBatchResponse> {
+  return await apiRequest<ManagerQrBatchResponse>(API_ENDPOINTS.managerQrBatch, {
+    method: 'POST',
+    body: { quantity },
   });
 }
 

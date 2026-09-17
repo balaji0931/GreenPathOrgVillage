@@ -9,6 +9,7 @@
  */
 import { Paths, File } from 'expo-file-system';
 import * as Sharing from 'expo-sharing';
+import { saveFileToPublicDeviceStorage } from './public-file-storage.service';
 import type { VillageBoundary, VillageRoad, ManagerCollectionHousehold } from '../types/manager';
 
 export interface ExportKmlParams {
@@ -222,6 +223,13 @@ export async function exportAndShareKML(params: ExportKmlParams): Promise<boolea
     targetFile.create();
     targetFile.write(kmlContent);
 
+    // Auto-save to public device storage (Downloads folder)
+    await saveFileToPublicDeviceStorage({
+      localUri: targetFile.uri,
+      fileName: filename,
+      mimeType: 'application/vnd.google-earth.kml+xml',
+    });
+
     const isAvailable = await Sharing.isAvailableAsync();
     if (isAvailable) {
       await Sharing.shareAsync(targetFile.uri, {
@@ -257,6 +265,13 @@ export async function exportAndShareMapSnapshot(
     targetFile.create();
     const cleanBase64 = base64Png.replace(/^data:image\/\w+;base64,/, '');
     targetFile.write(cleanBase64);
+
+    // Auto-save to public device storage
+    await saveFileToPublicDeviceStorage({
+      localUri: targetFile.uri,
+      fileName: filename,
+      mimeType: 'image/png',
+    });
 
     const isAvailable = await Sharing.isAvailableAsync();
     if (isAvailable) {

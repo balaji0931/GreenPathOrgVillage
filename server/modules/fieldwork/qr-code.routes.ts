@@ -10,17 +10,33 @@ import {
 } from "./qr-code.service";
 import { logAction } from "../audit/audit.storage";
 
+function getAuthContext(req: any) {
+  return {
+    villageId: (req.user?.villageId || req.session?.villageId) as string | undefined,
+    userId: (req.user?.userId || req.session?.userId) as string | undefined,
+  };
+}
+
 export function registerQRCodeRoutes(app: Express, requireAuth: any, requireRole: any, requireVillageAccess: any) {
   app.post('/api/qr-codes/batch', requireAuth, requireRole(['manager']), requireVillageAccess, async (req, res) => {
     try {
-      const { quantity } = req.body;
-      const villageId = req.session.villageId!;
+      const { villageId, userId } = getAuthContext(req);
+      if (!villageId) {
+        return res.status(400).json({ message: "Village context is required" });
+      }
+
+      const quantity = Number(req.body?.quantity);
+      if (!quantity || isNaN(quantity) || quantity < 1 || quantity > 500) {
+        return res.status(400).json({ message: "Quantity must be between 1 and 500" });
+      }
 
       const result = await createBatchQRCodes(villageId, quantity);
 
-      logAction(villageId, req.session.userId!, 'created', 'qr_batch', result.batchId, {
-        quantity,
-      });
+      if (userId) {
+        logAction(villageId, userId, 'created', 'qr_batch', result.batchId, {
+          quantity,
+        });
+      }
 
       res.json(result);
     } catch (error: any) {
@@ -43,7 +59,11 @@ export function registerQRCodeRoutes(app: Express, requireAuth: any, requireRole
   // QR stats for the village (used by manager dashboard progress bar)
   app.get('/api/qr-codes/stats', requireAuth, requireRole(['manager']), requireVillageAccess, async (req, res) => {
     try {
-      const villageId = req.session.villageId!;
+      const { villageId } = getAuthContext(req);
+      if (!villageId) {
+        return res.status(400).json({ message: "Village context is required" });
+      }
+
       const village = await storage.getVillageByVillageId(villageId);
       const total = await storage.getQRCodeCountByVillage(villageId);
       const unmapped = await storage.getUnmappedQRCodesByVillage(villageId);
@@ -63,15 +83,17 @@ export function registerQRCodeRoutes(app: Express, requireAuth: any, requireRole
 
   app.get('/api/qr-codes', requireAuth, requireRole(['manager']), requireVillageAccess, async (req, res) => {
     try {
-      const villageId = req.session.villageId!;
+      const { villageId } = getAuthContext(req);
+      if (!villageId) {
+        return res.status(400).json({ message: "Village context is required" });
+      }
+
       const qrCodes = await storage.getQRCodesByVillage(villageId);
       res.json(qrCodes);
     } catch (error) {
       res.status(500).json({ message: "Failed to get QR codes" });
     }
   });
-
-
 
   app.get('/api/qr-codes/batch/:batchId/pdf', requireAuth, requireRole(['manager']), requireVillageAccess, async (req, res) => {
     try {
@@ -110,7 +132,11 @@ export function registerQRCodeRoutes(app: Express, requireAuth: any, requireRole
   // All unmapped QR codes across all batches for the village
   app.get('/api/qr-codes/unmapped/pdf', requireAuth, requireRole(['manager']), requireVillageAccess, async (req, res) => {
     try {
-      const villageId = req.session.villageId!;
+      const { villageId } = getAuthContext(req);
+      if (!villageId) {
+        return res.status(400).json({ message: "Village context is required" });
+      }
+
       const pdfBuffer = await generateAllUnmappedPDF(villageId);
 
       res.setHeader('Content-Type', 'application/pdf');
@@ -128,6 +154,7 @@ export function registerQRCodeRoutes(app: Express, requireAuth: any, requireRole
   app.get('/api/qr-codes/:uid/image', requireAuth, async (req, res) => {
     try {
       const { uid } = req.params;
+      const { villageId } = getAuthContext(req);
       const { generateQRBuffer, toFullUid } = await import('./qr-service');
       const fullUid = toFullUid(uid);
 
@@ -136,10 +163,10 @@ export function registerQRCodeRoutes(app: Express, requireAuth: any, requireRole
       if (!qrCode) {
         // Also check households table (for directly-created households)
         const household = await storage.getHouseholdByUid(uid.replace(/^GEN-/, ''));
-        if (!household || household.villageId !== req.session.villageId) {
+        if (!household || (villageId && household.villageId !== villageId)) {
           return res.status(404).json({ message: "QR code not found" });
         }
-      } else if (qrCode.villageId !== req.session.villageId) {
+      } else if (villageId && qrCode.villageId !== villageId) {
         return res.status(403).json({ message: "Access denied" });
       }
 
@@ -155,7 +182,10 @@ export function registerQRCodeRoutes(app: Express, requireAuth: any, requireRole
   app.get('/api/qr-codes/:uid', requireAuth, requireRole(['fieldworker', 'manager']), requireVillageAccess, async (req, res) => {
     try {
       const { uid } = req.params;
-      const villageId = req.session.villageId!;
+      const { villageId } = getAuthContext(req);
+      if (!villageId) {
+        return res.status(400).json({ message: "Village context is required" });
+      }
 
       const qrCode = await validateQRAccess(uid, villageId);
 
@@ -175,7 +205,10 @@ export function registerQRCodeRoutes(app: Express, requireAuth: any, requireRole
     try {
       const { uid } = req.params;
       const { headName, phone, houseNumber, ward, familySize, address, latitude, longitude, householdType, accessRoadId, preferredCollectionTime } = req.body;
-      const villageId = req.session.villageId!;
+      const { villageId, userId } = getAuthContext(req);
+      if (!villageId) {
+        return res.status(400).json({ message: "Village context is required" });
+      }
 
       const result = await mapQRToHousehold(uid, villageId, {
         headName,
@@ -191,10 +224,12 @@ export function registerQRCodeRoutes(app: Express, requireAuth: any, requireRole
         preferredCollectionTime,
       });
 
-      logAction(villageId, req.session.userId!, 'mapped', 'qr_mapping', uid, {
-        headName,
-        ward,
-      });
+      if (userId) {
+        logAction(villageId, userId, 'mapped', 'qr_mapping', uid, {
+          headName,
+          ward,
+        });
+      }
 
       res.json(result);
     } catch (error: any) {

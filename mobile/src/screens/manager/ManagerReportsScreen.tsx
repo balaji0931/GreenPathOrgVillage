@@ -97,8 +97,6 @@ export function ManagerReportsScreen({
   const [localRefreshing, setLocalRefreshing] = useState<boolean>(false);
   const [sessionDetailsOpen, setSessionDetailsOpen] = useState<boolean>(false);
   const [isGeneratingPdf, setIsGeneratingPdf] = useState<boolean>(false);
-  const [pdfToastMessage, setPdfToastMessage] = useState<string | null>(null);
-  const [downloadedPdfUri, setDownloadedPdfUri] = useState<string | null>(null);
 
   // Fetch report data for village and selectedDate
   // Caching and silent background sync are ONLY applied to TODAY
@@ -236,8 +234,7 @@ export function ManagerReportsScreen({
 
     if (!reportData) {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
-      setPdfToastMessage('Report data is still loading...');
-      setTimeout(() => setPdfToastMessage(null), 3000);
+      Alert.alert('Please Wait', 'Daily report data is still loading.');
       return;
     }
 
@@ -285,37 +282,24 @@ export function ManagerReportsScreen({
       const result = await generateDailyReportPDFMobile(pdfData);
 
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      setDownloadedPdfUri(result.uri);
-      setPdfToastMessage(`Daily report downloaded: ${result.fileName}`);
 
-      // Auto-dismiss the non-blocking toast after 4 seconds
-      setTimeout(() => {
-        setPdfToastMessage(null);
-      }, 4000);
-    } catch (err) {
-      console.warn('[ManagerReportsScreen] Failed to generate PDF:', err);
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-      setPdfToastMessage('Failed to download PDF report');
-      setTimeout(() => setPdfToastMessage(null), 3500);
-    } finally {
-      setIsGeneratingPdf(false);
-    }
-  };
-
-  // Quick action to share the downloaded PDF
-  const handleSharePdf = async () => {
-    if (!downloadedPdfUri) return;
-    try {
+      // Directly open native OS share and save dialog (matching map download)
       const isAvailable = await Sharing.isAvailableAsync();
       if (isAvailable) {
-        await Sharing.shareAsync(downloadedPdfUri, {
+        await Sharing.shareAsync(result.uri, {
           mimeType: 'application/pdf',
-          dialogTitle: 'Share Daily Operations Report',
+          dialogTitle: `Export ${result.fileName}`,
           UTI: 'com.adobe.pdf',
         });
+      } else {
+        Alert.alert('Export Notice', 'Sharing is not supported on this device.');
       }
     } catch (err) {
-      console.warn('[ManagerReportsScreen] Share error:', err);
+      console.warn('[ManagerReportsScreen] Failed to generate or share PDF:', err);
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+      Alert.alert('Export Error', 'Failed to generate and share the PDF report.');
+    } finally {
+      setIsGeneratingPdf(false);
     }
   };
 
@@ -438,27 +422,6 @@ export function ManagerReportsScreen({
         </ScrollView>
       )}
 
-      {/* Non-blocking Downloaded Toast */}
-      {pdfToastMessage && (
-        <View style={styles.pdfToastContainer}>
-          <View style={styles.pdfToast}>
-            <Ionicons name="checkmark-circle" size={18} color={Colors.emerald600} />
-            <Text style={styles.pdfToastText} numberOfLines={1}>
-              {pdfToastMessage}
-            </Text>
-            {downloadedPdfUri && (
-              <TouchableOpacity
-                style={styles.pdfToastShareButton}
-                onPress={handleSharePdf}
-                activeOpacity={0.8}
-              >
-                <Text style={styles.pdfToastShareText}>Share</Text>
-              </TouchableOpacity>
-            )}
-          </View>
-        </View>
-      )}
-
       {/* Floating Action Button (FAB) for PDF Export */}
       <ReportsPdfFab
         onPress={handlePressPdfExport}
@@ -543,40 +506,5 @@ const styles = StyleSheet.create({
   },
   bottomSpacer: {
     height: 40,
-  },
-  pdfToastContainer: {
-    position: 'absolute',
-    bottom: 24,
-    left: 16,
-    right: 85,
-    zIndex: 90,
-  },
-  pdfToast: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: Colors.slate900,
-    paddingVertical: 10,
-    paddingHorizontal: 14,
-    borderRadius: BorderRadius.lg,
-    gap: 8,
-    ...Shadows.md,
-    elevation: 8,
-  },
-  pdfToastText: {
-    flex: 1,
-    fontSize: 11,
-    fontFamily: Typography.fontFamilyMedium,
-    color: Colors.white,
-  },
-  pdfToastShareButton: {
-    backgroundColor: Colors.emerald700,
-    paddingVertical: 4,
-    paddingHorizontal: 10,
-    borderRadius: BorderRadius.sm,
-  },
-  pdfToastShareText: {
-    fontSize: 11,
-    fontFamily: Typography.fontFamilyBold,
-    color: Colors.white,
   },
 });
