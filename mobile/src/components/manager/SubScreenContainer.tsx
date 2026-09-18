@@ -3,7 +3,7 @@
  *
  * Used for all 22 tools drilled down from the "More" screen.
  * Features:
- * - Top back navigation bar with [ ← Back to More ] button
+ * - Top back navigation bar with [ ← ] button
  * - Active screen title
  * - Optional custom content or rich placeholder UI
  */
@@ -61,7 +61,6 @@ export function SubScreenContainer({
           accessibilityLabel="Back to More Menu"
         >
           <Ionicons name="arrow-back" size={20} color={Colors.slate700} />
-          <Text style={styles.backText}>Back to More</Text>
         </TouchableOpacity>
 
         <View style={styles.headerTitleBox}>

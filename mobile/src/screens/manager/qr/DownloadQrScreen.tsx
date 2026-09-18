@@ -319,7 +319,6 @@ export function DownloadQrScreen({
           activeOpacity={0.7}
         >
           <Ionicons name="arrow-back" size={20} color={Colors.slate700} />
-          <Text style={styles.backText}>Back to More</Text>
         </TouchableOpacity>
 
         <View style={styles.headerCenter}>
@@ -581,15 +580,6 @@ export function DownloadQrScreen({
                   {/* Actions Row: Share Unmapped vs All */}
                   <View style={styles.batchActionsRow}>
                     <TouchableOpacity
-                      onPress={() => handleShareBatchAll(batch)}
-                      style={styles.batchOutlineBtn}
-                      activeOpacity={0.7}
-                    >
-                      <Ionicons name="share-outline" size={15} color={Colors.slate700} />
-                      <Text style={styles.batchOutlineBtnText}>All ({batch.total})</Text>
-                    </TouchableOpacity>
-
-                    <TouchableOpacity
                       onPress={() => handleShareBatchUnmapped(batch)}
                       disabled={batch.unmapped === 0}
                       style={[
@@ -600,7 +590,7 @@ export function DownloadQrScreen({
                     >
                       <Ionicons name="print-outline" size={15} color="#ffffff" />
                       <Text style={styles.batchPrimaryBtnText}>
-                        Share Unmapped ({batch.unmapped})
+                        Print Unmapped ({batch.unmapped})
                       </Text>
                     </TouchableOpacity>
                   </View>
@@ -999,7 +989,6 @@ const styles = StyleSheet.create({
     paddingVertical: 7,
     paddingHorizontal: 12,
     borderRadius: BorderRadius.lg,
-    borderWidth: 1,
     borderColor: Colors.slate200,
     backgroundColor: Colors.white,
   },
